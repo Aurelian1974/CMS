@@ -1,0 +1,59 @@
+// ValyanClinic — Entry point SCSS global
+// Importat o singură dată în main.tsx
+
+// 1. Variabile proprii (înainte de orice)
+@use 'variables' as *;
+@use 'mixins' as *;
+
+// 2. Tema Bootstrap 5 (include override-uri + Bootstrap complet)
+@use 'theme';
+
+// 3. Override-uri Syncfusion
+@use 'syncfusion';
+
+// ===== Reset & Base =====
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 15px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  line-height: $line-height-base;
+  background-color: $body-bg;
+  color: $gray-700;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// ===== Scrollbar custom (opțional) =====
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: $gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  background: $gray-300;
+  border-radius: $border-radius;
+
+  &:hover {
+    background: $gray-400;
+  }
+}
+
+// ===== Utilități custom =====
+.text-primary-dark  { color: $primary-dark !important; }
+.bg-sidebar         { background-color: $sidebar-bg !important; }
+.shadow-card        { box-shadow: $box-shadow-sm !important; }
+.rounded-card       { border-radius: $border-radius-lg !important; }
