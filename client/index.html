@@ -14,7 +14,20 @@
     />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><p style="font-family:sans-serif;padding:2rem;color:#333">Se încarcă aplicația...</p></div>
+    <script>
+      window.onerror = function(msg, src, line, col, err) {
+        document.getElementById('root').innerHTML =
+          '<div style="padding:2rem;font-family:monospace;color:red;background:#fff">' +
+          '<h2>⛔ JS Error</h2><pre style="white-space:pre-wrap">' + msg + '\n\n' + (err ? err.stack : '') + '</pre></div>';
+        return true;
+      };
+      window.addEventListener('unhandledrejection', function(e) {
+        document.getElementById('root').innerHTML =
+          '<div style="padding:2rem;font-family:monospace;color:red;background:#fff">' +
+          '<h2>⛔ Promise Rejection</h2><pre style="white-space:pre-wrap">' + String(e.reason) + '</pre></div>';
+      });
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
