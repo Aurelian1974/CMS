@@ -339,8 +339,6 @@ export const DoctorsListPage = () => {
           height="auto"
           gridLines="Horizontal"
           rowHeight={52}
-          excelExportComplete={handleExcelExportComplete}
-          pdfExportComplete={handlePdfExportComplete}
         >
           <ColumnsDirective>
 
