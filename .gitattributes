@@ -1,0 +1,43 @@
+# ============================================================
+# ValyanClinic — .gitattributes
+# ============================================================
+
+# Line endings — normalizare automată
+* text=auto eol=lf
+
+# Forțează LF pe fișiere text
+*.cs        text eol=lf
+*.csproj    text eol=lf
+*.sln       text eol=lf
+*.json      text eol=lf
+*.xml       text eol=lf
+*.sql       text eol=lf
+*.md        text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.tsx       text eol=lf
+*.ts        text eol=lf
+*.jsx       text eol=lf
+*.js        text eol=lf
+*.scss      text eol=lf
+*.css       text eol=lf
+*.html      text eol=lf
+*.env*      text eol=lf
+
+# Fișiere binare — fără modificare line endings
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.pdf       binary
+*.woff      binary
+*.woff2     binary
+*.ttf       binary
+*.eot       binary
+*.pfx       binary
+
+# Diff — afișare mai bună pentru anumite tipuri
+*.cs        diff=csharp
+*.sql       diff=sql
+*.md        diff=markdown

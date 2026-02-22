@@ -1,0 +1,122 @@
+# ============================================================
+# ValyanClinic — .gitignore
+# ============================================================
+
+# ==================== CREDENȚIALE & SECRETE ====================
+# NICIODATĂ credentials pe GitHub
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Local.json
+*.pfx
+*.pem
+*.key
+*.p12
+*.jks
+.env
+.env.*
+!.env.example
+client/.env
+client/.env.*
+!client/.env.example
+
+# ==================== FIȘIERE MODEL / REFERINȚĂ ====================
+# Fișierele de referință sunt locale — nu se urcă pe GitHub
+.github/reference/
+
+# ==================== .NET / C# ====================
+bin/
+obj/
+*.user
+*.suo
+*.userosscimport
+*.sln.docstates
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+*.nupkg
+*.snupkg
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+publish/
+PublishOutput/
+launchSettings.json
+
+# NuGet
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nupkg
+**/NuGet.Config
+
+# ==================== FRONTEND / NODE ====================
+node_modules/
+dist/
+build/
+.cache/
+.parcel-cache/
+*.tsbuildinfo
+.vite/
+client/node_modules/
+client/dist/
+client/build/
+
+# ==================== IDE ====================
+# Visual Studio
+.vs/
+*.rsuser
+*.sln.iml
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# ==================== OS ====================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# ==================== STOCARE LOCALĂ ====================
+# Fișiere medicale stocate local — nu pe GitHub
+Storage/
+ValyanClinicStorage/
+*.bak
+*.mdf
+*.ldf
+*.ndf
+
+# ==================== TESTE & COVERAGE ====================
+TestResults/
+coverage/
+*.coveragexml
+lcov.info
+
+# ==================== BUILD & TEMP ====================
+*.tmp
+*.temp
+*.log
+*.swp
+*~
