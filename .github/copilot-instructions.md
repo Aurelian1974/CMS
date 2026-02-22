@@ -37,6 +37,7 @@
 21. [Structură API Endpoints](#21-structură-api-endpoints)
 22. [Configurare Aplicație — appsettings.json](#22-configurare-aplicație)
 23. [Biblioteca de Referință — Fișiere Model](#23-biblioteca-de-referință)
+24. [Consistență UI — Reguli Obligatorii](#24-consistență-ui)
 
 ---
 
@@ -2297,10 +2298,24 @@ export const useApiError = () => {
 12. CSS: Bootstrap 5 utilities pentru layout, CSS Modules pentru stiluri specifice
 13. Niciodată CSS inline (excepție: valori dinamice calculate)
 14. Variabilele temei din `_variables.scss` — niciodată culori hardcodate
+15. **Consistență UI obligatorie** — toate paginile de același tip arată identic (vezi secțiunea 24)
 
 ---
 
 ## 17. INSTRUCȚIUNI SPECIFICE PENTRU CLAUDE
+
+### Plan înainte de implementare — OBLIGATORIU
+**Înainte de a crea tabele, stored procedures, migrări SQL sau alte obiecte de bază de date:**
+1. **Prezintă planul** — listează toate obiectele care urmează a fi create (tabele, SP-uri, indecși, seed data, constante C#, DTOs etc.)
+2. **Revizuire împreună** — așteaptă confirmarea / feedback-ul utilizatorului înainte de a genera cod
+3. **Implementare** — doar după aprobare, generează codul efectiv
+
+Aceeași regulă se aplică și la:
+- Refactoring major (restructurare directoare, redenumire entități, schimbare arhitectură)
+- Adăugare feature complet nou (prezintă lista fișierelor care vor fi create/modificate)
+- Migrări destructive (DROP, ALTER cu pierdere date, redenumire coloane)
+
+**Nu se aplică** la modificări mici și evidente (fix bug, adaugă o coloană, corectează un validator).
 
 ### La generare cod:
 1. Generează fișiere separate — nu combina clase/componente în același fișier
@@ -2312,7 +2327,8 @@ export const useApiError = () => {
 7. Wrap componente Syncfusion — nu le folosi direct în feature components
 8. Folosește Bootstrap 5 utilities pentru layout, CSS Modules pentru stiluri specifice
 9. Include `CancellationToken ct` în toate metodele repository
-10. Generează constante SP în clasa statică corespunzătoare, nu string-uri inline
+10. **Consistență UI obligatorie** — înainte de a genera o pagină nouă, consultă paginile existente de același tip și replică exact structura, layout-ul, spacing-ul și stilurile (vezi secțiunea 24)
+11. Generează constante SP în clasa statică corespunzătoare, nu string-uri inline
 11. **No hardcode în SQL sau cod C#** — regula se aplică la toate nivelurile:
     - Niciodată magic numbers: `new { StatusId = 2 }` → `new { StatusId = AppointmentStatusIds.Confirmed }`
     - Niciodată magic strings: `if (role == "Admin")` → `if (role == Roles.Admin)`
@@ -2801,3 +2817,143 @@ Fișiere de referință cu pattern-uri complete, folosite de Claude ca inspiraț
 | [syncfusion-patterns.md](.github/reference/syncfusion-patterns.md) | Componente Syncfusion avansate: DataGrid, Scheduler, PivotGrid, Charts |
 
 **Regulă**: Când Claude generează cod pentru un feature nou, consultă mai întâi fișierele de referință relevante și urmează aceleași pattern-uri.
+
+---
+
+## 24. CONSISTENȚĂ UI — Reguli Obligatorii
+
+**Principiu fundamental**: Toate paginile de același tip trebuie să fie **vizual și structural identice**. Utilizatorul trebuie să simtă aceeași experiență indiferent de feature. Zero devieri de la pattern-ul stabilit.
+
+### 24.1 ListPage — Pagini cu DataGrid (identice peste tot)
+
+**Fiecare pagină de tip listă respectă exact această structură — fără excepții:**
+
+| Element | Implementare | Obligatoriu |
+|---------|-------------|-------------|
+| **Container** | `div.page` cu `padding: 1.5rem` | DA |
+| **PageHeader** | `<PageHeader title="..." subtitle="N entități">` cu buton acțiune dreapta | DA |
+| **Card conținut** | `div.content` cu `background: $card-bg`, `border-radius: $border-radius-lg`, `padding: 1.5rem`, `box-shadow: $box-shadow-sm` | DA |
+| **Bară căutare** | `<input>` cu `className="form-control"`, `placeholder` descriptiv, `mb-3` deasupra grid-ului | DA |
+| **DataGrid** | `<AppDataGrid>` — wraperul din `components/data-display/` | DA |
+| **Paginare** | `<Pagination>` centrat cu `d-flex justify-content-center mt-3`, vizibil doar dacă `totalPages > 1` | DA |
+| **State management** | `useState` pentru `params` (page, pageSize, search, sortBy, sortDir) | DA |
+| **Hook date** | `use[Feature]s(params)` cu TanStack Query | DA |
+| **Click rând** | `handleRowSelected` → `navigate('/[feature]/${id}')` | DA |
+
+**CSS Module standard ListPage** — copiat identic pe fiecare feature:
+```scss
+@import '@/styles/variables';
+
+.page {
+  padding: 1.5rem;
+}
+
+.content {
+  background: $card-bg;
+  border-radius: $border-radius-lg;
+  padding: 1.5rem;
+  box-shadow: $box-shadow-sm;
+}
+```
+
+**Verificare înainte de generare**: Dacă există deja `PatientsListPage`, noul `AppointmentsListPage` trebuie să aibă **exact** aceeași structură JSX, aceleași clase CSS module, aceleași pattern-uri de state. Singurele diferențe permise: titlul, coloanele grid, hook-ul de date, ruta de navigare.
+
+### 24.2 DetailPage — Pagini detalii (identice peste tot)
+
+| Element | Implementare | Obligatoriu |
+|---------|-------------|-------------|
+| **Container** | `div.page` cu `padding: 1.5rem` | DA |
+| **PageHeader** | `<PageHeader title="..." subtitle="..." onBack={...}>` cu buton Editează dreapta | DA |
+| **Card conținut** | `div.content` cu aceleași stiluri ca ListPage | DA |
+| **Info card** | `<[Feature]InfoCard>` — date principale ale entității | DA |
+| **Tab-uri** | `<TabComponent>` Syncfusion pentru secțiuni (istoric, documente etc.) | DA (dacă > 1 secțiune) |
+| **Loading** | `<LoadingSpinner />` cât se încarcă | DA |
+| **Error state** | `alert alert-danger` dacă entitatea nu e găsită | DA |
+
+### 24.3 FormPage — Pagini creare/editare (identice peste tot)
+
+| Element | Implementare | Obligatoriu |
+|---------|-------------|-------------|
+| **Container** | `div.page` cu `padding: 1.5rem` | DA |
+| **PageHeader** | Titlu dinamic: `'Editează X'` / `'X Nou'`, `onBack` mereu prezent | DA |
+| **Card conținut** | `div.content` cu `max-width: 900px`, padding `2rem` | DA |
+| **Formular** | `<[Feature]Form>` — componentă separată cu React Hook Form + Zod | DA |
+| **Mod edit/create** | Detectat prin `useParams().id` — `isEdit = !!id` | DA |
+| **Submit** | `handleSubmit` cu try/catch, `showError` pe eșec, `navigate` pe succes | DA |
+| **Butoane** | `<AppButton type="submit">Salvează</AppButton>` aliniat dreapta cu `d-flex justify-content-end mt-3` | DA |
+
+**CSS Module standard FormPage:**
+```scss
+@import '@/styles/variables';
+
+.page {
+  padding: 1.5rem;
+}
+
+.content {
+  background: $card-bg;
+  border-radius: $border-radius-lg;
+  padding: 2rem;
+  box-shadow: $box-shadow-sm;
+  max-width: 900px;
+}
+```
+
+### 24.4 DashboardPage — Dashboard-uri (identice ca structură)
+
+| Element | Implementare | Obligatoriu |
+|---------|-------------|-------------|
+| **Container** | `div.page` cu `padding: 1.5rem` | DA |
+| **PageHeader** | `<PageHeader title="Dashboard" subtitle="Rezumatul zilei" />` | DA |
+| **Stat cards** | Rând cu `row g-3 mb-4`, coloane `col-md-3`, componenta `<StatCard>` | DA |
+| **Conținut principal** | `row g-3` cu `col-lg-8` + `col-lg-4` | DA |
+| **Carduri widget** | `div.card` cu titlu `h5.cardTitle` (separator `border-bottom: 1px solid $gray-200`) | DA |
+| **Grafice** | Rând separat `row mt-3` cu `col-12` | DA (dacă există date grafice) |
+
+**CSS Module standard DashboardPage:**
+```scss
+@import '@/styles/variables';
+
+.page {
+  padding: 1.5rem;
+}
+
+.card {
+  background: $card-bg;
+  border-radius: $border-radius-lg;
+  padding: 1.5rem;
+  box-shadow: $box-shadow-sm;
+  height: 100%;
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: $gray-700;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid $gray-200;
+}
+```
+
+### 24.5 Reguli transversale — TOATE tipurile de pagini
+
+1. **PageHeader prezent mereu** — pe orice pagină, prima componentă e `<PageHeader>` cu titlu + subtitle opțional + acțiuni dreapta
+2. **Spacing identic** — `padding: 1.5rem` pe container, `gap: 1.5rem` implicit prin Bootstrap `g-3`
+3. **Card design identic** — `$card-bg`, `$border-radius-lg`, `$box-shadow-sm` — niciodată variații
+4. **Loading identic** — `<LoadingSpinner />` full-page (nu schelet diferit per pagină)
+5. **Error identic** — `<div className="alert alert-danger">` cu mesaj descriptiv
+6. **Acțiuni identice** — butoanele de acțiune mereu în `<PageHeader>` dreapta, niciodată sub grid sau în altă poziție
+7. **Navigare identică** — click pe rând în grid → detail page, buton "Editează" → form page, buton "Înapoi" → list page
+8. **Toast notificări** — succes/eroare mereu prin `ToastUtility` Syncfusion, niciodată alert inline pentru operații CRUD
+
+### 24.6 Checklist înainte de generare pagină nouă
+
+Înainte de a genera orice pagină pentru un feature nou, Claude **trebuie**:
+
+1. **Identifică tipul paginii** — ListPage / DetailPage / FormPage / Dashboard
+2. **Consultă o pagină existentă de același tip** (dacă există) — copiază structura exactă
+3. **Consultă template-ul din `.github/reference/page-templates.md`** (dacă nu există pagini anterioare)
+4. **Verifică consistența** — aceeași clasă CSS module, aceeași ordine elemente, același pattern de hooks
+5. **NU adăuga elemente extra** — dacă ListPage existentă nu are filtru avansat, noul ListPage nu adaugă filtru avansat (doar la cerere explicită)
+6. **NU schimba layout-ul** — dacă paginile existente au search bar deasupra grid-ului, noua pagină nu mută search bar-ul în altă parte
