@@ -74,8 +74,8 @@ $left-border: rgba(91, 141, 184, 0.18);
 .brandIcon {
   width: 36px;
   height: 36px;
-  background: rgba(91, 141, 184, 0.18);
-  border: 1.5px solid rgba(91, 141, 184, 0.35);
+  background: rgba(204, 41, 54, 0.1);
+  border: 1.5px solid rgba(204, 41, 54, 0.28);
   border-radius: 9px;
   display: flex;
   align-items: center;
@@ -220,7 +220,7 @@ $left-border: rgba(91, 141, 184, 0.18);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 3rem 3.75rem;
+  padding: 3rem 2.5rem;
   background: $body-bg;
   position: relative;
 
@@ -238,7 +238,7 @@ $left-border: rgba(91, 141, 184, 0.18);
 
 .formBox {
   width: 100%;
-  max-width: 380px;
+  max-width: 475px;
   position: relative;
   z-index: 1;
 }
@@ -248,7 +248,7 @@ $left-border: rgba(91, 141, 184, 0.18);
   background: $card-bg;
   border: 1px solid rgba(91, 141, 184, 0.13);
   border-radius: 20px;
-  padding: 2.375rem 2.125rem;
+  padding: 2.75rem 2.625rem;
   box-shadow: 0 2px 8px rgba(42, 85, 120, 0.06), 0 14px 44px rgba(42, 85, 120, 0.08);
 }
 

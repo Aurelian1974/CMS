@@ -1,0 +1,45 @@
+@import '@/styles/variables';
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  font-size: 0.875rem;
+}
+
+.link {
+  color: $gray-500;
+  text-decoration: none;
+  font-weight: 400;
+  transition: color 0.15s ease;
+  padding: 0.1rem 0.2rem;
+  border-radius: 4px;
+
+  &:hover {
+    color: $primary;
+    text-decoration: none;
+  }
+}
+
+.current {
+  color: $gray-700;
+  font-weight: 600;
+  padding: 0.1rem 0.2rem;
+}
+
+.separator {
+  color: $gray-300;
+  margin: 0 0.2rem;
+  font-size: 0.75rem;
+  line-height: 1;
+  user-select: none;
+}
