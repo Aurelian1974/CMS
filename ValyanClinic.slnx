@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ValyanClinic.API/ValyanClinic.API.csproj" />
+    <Project Path="src/ValyanClinic.Application/ValyanClinic.Application.csproj" />
+    <Project Path="src/ValyanClinic.Domain/ValyanClinic.Domain.csproj" />
+    <Project Path="src/ValyanClinic.Infrastructure/ValyanClinic.Infrastructure.csproj" />
+    <Project Path="src/ValyanClinic.Shared/ValyanClinic.Shared.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,33 @@
+// Override-uri Bootstrap 5 — setate ÎNAINTE de import Bootstrap
+
+// Override culori Bootstrap
+$primary:   #5B8DB8;
+$secondary: #6C8EAD;
+$success:   #7BC8A4;
+$info:      #7CB8D4;
+$warning:   #F0C76E;
+$danger:    #D98B8B;
+
+// Override layout Bootstrap
+$body-bg: #F4F7FA;
+$card-bg: #FFFFFF;
+
+// Override tipografie
+$font-family-sans-serif: 'Inter', 'Segoe UI', system-ui, sans-serif;
+$font-size-base:          0.9375rem;
+$line-height-base:        1.5;
+
+// Override border-radius
+$border-radius:    0.5rem;
+$border-radius-sm: 0.375rem;
+$border-radius-lg: 0.75rem;
+
+// Override shadows
+$box-shadow-sm: 0 1px 3px rgba(42, 63, 82, 0.08);
+$box-shadow:    0 2px 8px rgba(42, 63, 82, 0.1);
+$box-shadow-lg: 0 8px 24px rgba(42, 63, 82, 0.12);
+
+$enable-rounded: true;
+
+// Import Bootstrap
+@import 'bootstrap/scss/bootstrap';

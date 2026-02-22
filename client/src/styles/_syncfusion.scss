@@ -1,0 +1,53 @@
+// Override-uri globale Syncfusion — tema Bootstrap 5
+
+:root {
+  --color-sf-primary: #5B8DB8;
+  --color-sf-primary-light: #7DA8CC;
+}
+
+// DataGrid
+.e-grid {
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 3px rgba(42, 63, 82, 0.08);
+
+  .e-headercell {
+    background-color: #2A5578 !important;
+    color: #fff !important;
+  }
+
+  .e-row:hover td {
+    background-color: rgba(#A8C8E0, 0.3) !important;
+  }
+}
+
+// Butoane
+.e-btn.e-primary {
+  background-color: #5B8DB8;
+  border-color: #5B8DB8;
+
+  &:hover:not(:disabled) {
+    background-color: #3A6F99;
+    border-color: #3A6F99;
+  }
+}
+
+// Input-uri
+.e-input-group {
+  border-radius: 0.5rem;
+
+  &.e-error {
+    border-color: #D98B8B !important;
+    box-shadow: 0 0 0 0.2rem rgba(#D98B8B, 0.25);
+  }
+}
+
+// DatePicker / TimePicker
+.e-datepicker,
+.e-timepicker {
+  border-radius: 0.5rem;
+}
+
+// DropdownList
+.e-dropdownlist {
+  border-radius: 0.5rem;
+}
