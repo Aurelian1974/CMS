@@ -1,0 +1,245 @@
+// Stiluri pentru Sidebar-ul aplicației
+$nav-item-height: 42px;
+$icon-size: 18px;
+
+// ===== Container sidebar =====
+.sidebar {
+  width: $sidebar-width;
+  min-height: 100vh;
+  background: $sidebar-bg;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.25s ease;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 100;
+
+  &.collapsed {
+    width: $sidebar-collapsed;
+
+    .navLabel,
+    .brandName,
+    .sectionLabel,
+    .userInfo {
+      display: none;
+    }
+
+    .navItem {
+      justify-content: center;
+      padding: 0;
+    }
+
+    .navIcon {
+      margin: 0;
+    }
+
+    .brand {
+      justify-content: center;
+      padding: 0 0 1.5rem;
+    }
+
+    .userBlock {
+      justify-content: center;
+      padding: 1rem 0;
+    }
+  }
+}
+
+// ===== Brand =====
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.5rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  text-decoration: none;
+  transition: padding 0.25s ease;
+}
+
+.brandIcon {
+  width: 34px;
+  height: 34px;
+  background: rgba(204, 41, 54, 0.15);
+  border: 1.5px solid rgba(204, 41, 54, 0.35);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.brandName {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-size: 1.1rem;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+
+  span {
+    color: $primary-light;
+  }
+}
+
+// ===== Navigare =====
+.nav {
+  flex: 1;
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  // Scrollbar subtilă
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 2px; }
+}
+
+// ===== Grup secțiune =====
+.navGroup {
+  margin-bottom: 0.25rem;
+}
+
+.sectionLabel {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.75rem 1.25rem 0.25rem;
+  white-space: nowrap;
+}
+
+// ===== Item navigare =====
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  height: $nav-item-height;
+  padding: 0 1.125rem;
+  margin: 0 0.5rem;
+  border-radius: $border-radius;
+  color: rgba(255, 255, 255, 0.58);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 400;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  &.active {
+    background: rgba($primary, 0.25);
+    color: #fff;
+    font-weight: 500;
+
+    .navIcon {
+      color: $primary-lighter;
+    }
+  }
+}
+
+.navIcon {
+  width: $icon-size;
+  height: $icon-size;
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.45);
+  transition: color 0.15s ease;
+}
+
+.navLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// ===== Bloc utilizator (bottom) =====
+.userBlock {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 1rem 1.125rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  margin-top: auto;
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: $primary-dark;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.userInfo {
+  overflow: hidden;
+  flex: 1;
+  min-width: 0;
+}
+
+.userName {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userRole {
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// ===== Buton collapse =====
+.collapseBtn {
+  position: absolute;
+  top: 50%;
+  right: -12px;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  background: $sidebar-bg;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.5);
+  transition: background 0.15s ease, color 0.15s ease;
+  z-index: 101;
+
+  &:hover {
+    background: $primary-dark;
+    color: #fff;
+    border-color: $primary-dark;
+  }
+
+  svg {
+    transition: transform 0.25s ease;
+  }
+
+  &.rotated svg {
+    transform: rotate(180deg);
+  }
+}

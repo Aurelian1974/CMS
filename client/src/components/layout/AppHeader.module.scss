@@ -1,0 +1,85 @@
+// Stiluri Header principal al aplicației
+
+.header {
+  height: 60px;
+  background: $card-bg;
+  border-bottom: 1px solid $gray-200;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: $box-shadow-sm;
+}
+
+// ===== Zona stânga — titlu pagină =====
+.left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pageTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: $gray-700;
+}
+
+// ===== Zona dreapta — acțiuni =====
+.right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+// ===== Buton acțiune header =====
+.headerBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: $border-radius;
+  border: 1px solid $gray-200;
+  background: transparent;
+  color: $gray-500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  position: relative;
+
+  &:hover {
+    background: $gray-100;
+    color: $primary;
+    border-color: $primary-lighter;
+  }
+}
+
+// ===== Badge notificări =====
+.badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background: $danger;
+  border-radius: 50%;
+  border: 1.5px solid $card-bg;
+}
+
+// ===== Divider =====
+.divider {
+  width: 1px;
+  height: 24px;
+  background: $gray-200;
+  margin: 0 0.25rem;
+}
+
+// ===== Data curentă =====
+.dateInfo {
+  font-size: 0.8rem;
+  color: $gray-400;
+  padding: 0 0.5rem;
+}

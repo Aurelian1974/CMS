@@ -1,0 +1,98 @@
+@import '@/styles/variables';
+
+.card {
+  background: $card-bg;
+  border-radius: $border-radius-lg;
+  padding: 1.25rem 1.5rem;
+  box-shadow: $box-shadow-sm;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  height: 100%;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+
+  &:hover {
+    box-shadow: $box-shadow;
+    transform: translateY(-1px);
+  }
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: $gray-500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.value {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: $gray-800;
+  line-height: 1.1;
+}
+
+.trendRow {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.125rem;
+}
+
+.trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+
+  &.up {
+    color: darken(#7BC8A4, 20%);
+    background: rgba(#7BC8A4, 0.18);
+  }
+
+  &.down {
+    color: darken(#D98B8B, 20%);
+    background: rgba(#D98B8B, 0.18);
+  }
+
+  &.neutral {
+    color: $gray-500;
+    background: $gray-100;
+  }
+}
+
+.trendLabel {
+  font-size: 0.78rem;
+  color: $gray-400;
+}
+
+.iconBox {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: $border-radius;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.blue    { background: rgba($primary, 0.12); color: $primary-dark; }
+  &.green   { background: rgba(#7BC8A4, 0.18);  color: darken(#7BC8A4, 22%); }
+  &.orange  { background: rgba(#E8A87C, 0.18);  color: darken(#E8A87C, 22%); }
+  &.purple  { background: rgba(#9B8DC8, 0.18);  color: darken(#9B8DC8, 18%); }
+  &.red     { background: rgba(#D98B8B, 0.15);  color: darken(#D98B8B, 22%); }
+  &.teal    { background: rgba(#7CB8D4, 0.18);  color: darken(#7CB8D4, 22%); }
+}

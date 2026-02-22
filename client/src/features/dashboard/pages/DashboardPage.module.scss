@@ -1,0 +1,175 @@
+@import '@/styles/variables';
+
+.page {
+  padding: 1.5rem;
+}
+
+.card {
+  background: $card-bg;
+  border-radius: $border-radius-lg;
+  padding: 1.5rem;
+  box-shadow: $box-shadow-sm;
+  height: 100%;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid $gray-200;
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: $gray-700;
+  margin: 0;
+}
+
+.cardBadge {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: $gray-500;
+  background: $gray-100;
+  border-radius: 20px;
+  padding: 0.2rem 0.625rem;
+}
+
+// ── Programări ──────────────────────────────────────────
+
+.appointmentList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.appointmentRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: $border-radius;
+  background: $gray-50;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: rgba($primary, 0.05);
+  }
+}
+
+.aptTime {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: $gray-500;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  min-width: 58px;
+}
+
+.aptInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.aptPatient {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: $gray-700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aptType {
+  font-size: 0.78rem;
+  color: $gray-500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 20px;
+  padding: 0.2rem 0.625rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &.confirmed {
+    color: darken(#5B8DB8, 10%);
+    background: rgba(#5B8DB8, 0.12);
+  }
+
+  &.pending {
+    color: darken(#F0C76E, 30%);
+    background: rgba(#F0C76E, 0.2);
+  }
+
+  &.completed {
+    color: darken(#7BC8A4, 22%);
+    background: rgba(#7BC8A4, 0.18);
+  }
+
+  &.cancelled {
+    color: darken(#D98B8B, 20%);
+    background: rgba(#D98B8B, 0.15);
+  }
+}
+
+// ── Activitate recentă ───────────────────────────────────
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.activityRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid $gray-100;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.activityDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 0.35rem;
+}
+
+.activityInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.activityText {
+  font-size: 0.875rem;
+  color: $gray-700;
+  line-height: 1.4;
+}
+
+.activityTime {
+  font-size: 0.78rem;
+  color: $gray-400;
+}
