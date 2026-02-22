@@ -3,6 +3,18 @@ import { createRoot } from 'react-dom/client'
 import { registerLicense } from '@syncfusion/ej2-base'
 import { setCulture, setCurrencyCode } from '@syncfusion/ej2-base'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+// ===== Syncfusion CSS — Bootstrap 5 theme (import order matters) =====
+import '@syncfusion/ej2-base/styles/bootstrap5.css'
+import '@syncfusion/ej2-buttons/styles/bootstrap5.css'
+import '@syncfusion/ej2-inputs/styles/bootstrap5.css'
+import '@syncfusion/ej2-lists/styles/bootstrap5.css'
+import '@syncfusion/ej2-popups/styles/bootstrap5.css'
+import '@syncfusion/ej2-navigations/styles/bootstrap5.css'
+import '@syncfusion/ej2-dropdowns/styles/bootstrap5.css'
+import '@syncfusion/ej2-splitbuttons/styles/bootstrap5.css'
+import '@syncfusion/ej2-grids/styles/bootstrap5.css'
+
 import App from './App.tsx'
 import './styles/main.scss'
 
