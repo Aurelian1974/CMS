@@ -56,4 +56,23 @@ public static class ErrorMessages
     {
         public const string NotFound = "Documentul medical nu a fost găsit.";
     }
+
+    public static class Specialty
+    {
+        public const string NotFound      = "Specializarea nu a fost găsită.";
+        public const string CodeDuplicate = "O specializare cu acest cod există deja.";
+        public const string ParentNotFound = "Specializarea părinte nu a fost găsită.";
+        public const string SelfParent    = "O specializare nu poate fi propria sa părinte.";
+    }
+
+    public static class Clinic
+    {
+        public const string NotFound           = "Clinica nu a fost găsită.";
+        public const string FiscalCodeDuplicate = "O clinică cu acest CUI/CIF există deja.";
+    }
+
+    public static class ClinicLocation
+    {
+        public const string NotFound = "Locația nu a fost găsită.";
+    }
 }

@@ -847,6 +847,8 @@ WHERE p.IsDeleted = 0
 11. Un fișier SQL per SP în `Scripts/StoredProcedures/[Entitate]_[Actiune].sql`
 12. **GUID cu NEWSEQUENTIALID()** — toate PK-urile sunt `UNIQUEIDENTIFIER DEFAULT NEWSEQUENTIALID()`, niciodată `INT IDENTITY`
 13. **Fără diacritice în codul SQL** — nume tabele, coloane, variabile, SP-uri, parametri se scriu **fără** ă/â/î/ș/ț. Diacriticele apar **doar** în valori string (seed data, mesaje THROW). Exemplu: coloana `FirstName` nu `PrenumePacient`, SP `Patient_Create` nu `Pacient_Creare`, dar `';THROW 50001, ''Un pacient cu acest CNP există deja.'', 1;'` conține diacritice în mesaj
+14. **Verificare diacritice la execuție manuală** — când se rulează scripturi SQL manual prin `sqlcmd`, **obligatoriu** se folosește `-f 65001` (UTF-8 codepage) pentru a preserva diacriticele românești (ă, â, î, ș, ț) din valorile `NVARCHAR`. Fără acest flag, `sqlcmd` citește fișierele UTF-8 ca ANSI/Windows-1252 și corupe caracterele (ex: `ă` → `Ä\x83`, `ț` → mojibake). Comandă corectă: `sqlcmd -S "server" -d DB -E -C -f 65001 -i "script.sql"`. **După inserare seed data cu diacritice**, verifică cu: `SELECT UNICODE(SUBSTRING(Name, pos, 1))` — valorile corecte: ă=259, â=226, î=238, ș=537, ț=539
+15. **GUID-uri — doar caractere hex valide (0-9, A-F)** — `UNIQUEIDENTIFIER` acceptă exclusiv cifre hexazecimale. Litere ca `S`, `G`, `H` etc. NU sunt hex valide și provoacă `Conversion failed`. Exemplu: `S0000001-0000-0000-0000-000000000001` → **INVALID** ('S' nu e hex). Corect: `A0000001-...`, `B0000001-...`, `C0000001-...`, `D0000001-...`, `E0000001-...`, `F0000001-...`. Caractere hex valide: `0 1 2 3 4 5 6 7 8 9 A B C D E F`
 
 ```sql
 -- GREȘIT
@@ -1618,6 +1620,7 @@ Infrastructure/Data/Scripts/
 - **Idempotente** unde posibil — `IF NOT EXISTS` pentru CREATE TABLE, `IF COL_LENGTH` pentru ADD COLUMN
 - **SP-urile** nu sunt migrări — se re-rulează la fiecare deploy cu `CREATE OR ALTER`
 - **Fișierele de migrare** nu se modifică niciodată după ce au rulat în producție — se adaugă un nou fișier
+- **Encoding UTF-8 obligatoriu** — toate fișierele `.sql` se salvează în **UTF-8 with BOM** sau **UTF-8** și se execută cu `sqlcmd -f 65001` pentru a preserva diacriticele românești din seed data. Fără `-f 65001`, `sqlcmd` corupe caracterele non-ASCII din `NVARCHAR` (mojibake). **Verificare post-insert**: `SELECT UNICODE(SUBSTRING(col, pos, 1))` — ă=259, â=226, î=238, ș=537, ț=539
 
 ```sql
 -- Exemplu 0001_InitialSchema.sql
@@ -2426,6 +2429,8 @@ public static class ErrorMessages
 3. TRY-CATCH + tranzacție pe SP cu INSERT/UPDATE/DELETE
 4. `WHERE IsDeleted = 0` implicit pe toate query-urile
 5. `CREATE OR ALTER PROCEDURE` — niciodată `CREATE PROCEDURE` singur
+6. **GUID-uri seed** — doar caractere hex valide (0-9, A-F). `S`, `G`, `H` etc. NU sunt hex. Folosește `A0000001-...`, `B0000001-...`, `C0000001-...` etc.
+7. **Execuție manuală** — `sqlcmd -f 65001` obligatoriu pentru preservare diacritice. Verificare post-insert: `SELECT UNICODE(SUBSTRING(col, pos, 1))` — ă=259, â=226, î=238, ș=537, ț=539
 
 ---
 

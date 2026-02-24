@@ -61,6 +61,21 @@ const IconUsers = () => (
   </svg>
 );
 
+const IconSpecialties = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" />
+    <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" />
+  </svg>
+);
+
+const IconClinic = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="4" y="2" width="16" height="20" rx="2" /><line x1="9" y1="22" x2="9" y2="2" />
+    <line x1="15" y1="22" x2="15" y2="2" /><line x1="4" y1="12" x2="20" y2="12" />
+    <line x1="4" y1="7" x2="20" y2="7" /><line x1="4" y1="17" x2="20" y2="17" />
+  </svg>
+);
+
 const IconChevron = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
     <polyline points="15 18 9 12 15 6" />
@@ -106,8 +121,10 @@ const NAV_SECTIONS: NavSection[] = [
   {
     section: 'Administrare',
     items: [
-      { to: '/doctors', label: 'Doctori',     icon: <IconDoctors /> },
-      { to: '/users',   label: 'Utilizatori', icon: <IconUsers /> },
+      { to: '/doctors',       label: 'Doctori',        icon: <IconDoctors /> },
+      { to: '/users',         label: 'Utilizatori',    icon: <IconUsers /> },
+      { to: '/specialties',   label: 'Specializări',   icon: <IconSpecialties /> },
+      { to: '/clinic',         label: 'Clinica',        icon: <IconClinic /> },
     ],
   },
 ];

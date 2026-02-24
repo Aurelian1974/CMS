@@ -86,6 +86,13 @@ try
     app.UseCors("ValyanClinicCors");
 
     app.UseAuthentication();
+
+    // DEV: Bypass autentificare — injectează claims mock când nu există JWT valid
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseMiddleware<DevAuthBypassMiddleware>();
+    }
+
     app.UseAuthorization();
 
     app.MapControllers();
