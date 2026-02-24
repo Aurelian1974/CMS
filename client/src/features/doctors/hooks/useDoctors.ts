@@ -16,7 +16,7 @@ export const useDoctors = (params: GetDoctorsParams) =>
   useQuery({
     queryKey: doctorKeys.list(params),
     queryFn: () =>
-      api.get<DoctorsPagedResult>('/doctors', { params }).then((r: any) => r.data),
+      api.get<DoctorsPagedResult>('/api/doctors', { params }).then((r: any) => r.data),
     placeholderData: keepPreviousData,
     staleTime: 3 * 60 * 1000,
   });
@@ -24,14 +24,14 @@ export const useDoctors = (params: GetDoctorsParams) =>
 export const useDoctorDetail = (id: string) =>
   useQuery({
     queryKey: doctorKeys.detail(id),
-    queryFn: () => api.get<DoctorDto>(`/doctors/${id}`).then((r: any) => r.data),
+    queryFn: () => api.get<DoctorDto>(`/api/doctors/${id}`).then((r: any) => r.data),
     enabled: !!id,
   });
 
 export const useDeactivateDoctor = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.patch(`/doctors/${id}/deactivate`),
+    mutationFn: (id: string) => api.patch(`/api/doctors/${id}/deactivate`),
     onSuccess: () => qc.invalidateQueries({ queryKey: doctorKeys.lists() }),
   });
 };
@@ -39,7 +39,7 @@ export const useDeactivateDoctor = () => {
 export const useActivateDoctor = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.patch(`/doctors/${id}/activate`),
+    mutationFn: (id: string) => api.patch(`/api/doctors/${id}/activate`),
     onSuccess: () => qc.invalidateQueries({ queryKey: doctorKeys.lists() }),
   });
 };

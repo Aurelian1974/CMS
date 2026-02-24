@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ValyanClinic.Application.Features.Nomenclature.Commands.CreateSpecialty;
 using ValyanClinic.Application.Features.Nomenclature.Commands.ToggleSpecialty;
@@ -14,7 +13,6 @@ public class NomenclatureController : BaseApiController
     // ==================== SPECIALITĂȚI ====================
 
     /// <summary>Returnează toate specializările (flat list). ?isActive=true/false pentru filtrare.</summary>
-    [AllowAnonymous]
     [HttpGet("specialties")]
     public async Task<IActionResult> GetSpecialties(
         [FromQuery] bool? isActive, CancellationToken ct)
@@ -24,7 +22,6 @@ public class NomenclatureController : BaseApiController
     }
 
     /// <summary>Returnează arborele ierarhic de specializări (categorii → specialități → subspecialități).</summary>
-    [AllowAnonymous]
     [HttpGet("specialties/tree")]
     public async Task<IActionResult> GetSpecialtyTree(
         [FromQuery] bool? isActive, CancellationToken ct)
@@ -34,7 +31,6 @@ public class NomenclatureController : BaseApiController
     }
 
     /// <summary>Returnează o specializare după Id.</summary>
-    [AllowAnonymous]
     [HttpGet("specialties/{id:guid}")]
     public async Task<IActionResult> GetSpecialtyById(Guid id, CancellationToken ct)
     {

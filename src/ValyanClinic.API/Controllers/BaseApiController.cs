@@ -1,5 +1,4 @@
 using MediatR;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ValyanClinic.Application.Common.Models;
 
@@ -7,10 +6,10 @@ namespace ValyanClinic.API.Controllers;
 
 /// <summary>
 /// Controller de bază — injecție MediatR + helper pentru maparea Result↔ActionResult.
+/// TODO: Adaugă [Authorize] înapoi când implementăm autentificarea reală.
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public abstract class BaseApiController : ControllerBase
 {
     private ISender? _mediator;

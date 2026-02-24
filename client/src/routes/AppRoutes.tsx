@@ -17,6 +17,7 @@ const DoctorsPage        = lazy(() => import('../features/doctors/pages/DoctorsL
 const UsersPage          = lazy(() => import('../features/users/pages/UsersListPage'))
 const SpecialtiesPage    = lazy(() => import('../features/nomenclature/pages/SpecialtiesListPage'))
 const ClinicPage         = lazy(() => import('../features/clinic/pages/ClinicPage'))
+const DepartmentsPage    = lazy(() => import('../features/departments/pages/DepartmentsPage'))
 
 const LoadingFallback = () => (
   <div className="d-flex justify-content-center align-items-center vh-100">
@@ -49,6 +50,7 @@ export const AppRoutes = () => (
           <Route path="/users"           element={<UsersPage />} />
           <Route path="/specialties"     element={<SpecialtiesPage />} />
           <Route path="/clinic"          element={<ClinicPage />} />
+          <Route path="/departments"    element={<DepartmentsPage />} />
         </Route>
       </Route>
 
