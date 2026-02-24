@@ -1,0 +1,1 @@
+export { DepartmentFormModal } from './DepartmentFormModal'

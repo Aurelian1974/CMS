@@ -34,6 +34,7 @@ public static class DependencyInjection
         services.AddScoped<ISpecialtyRepository, SpecialtyRepository>();
         services.AddScoped<IClinicRepository, ClinicRepository>();
         services.AddScoped<IClinicLocationRepository, ClinicLocationRepository>();
+        services.AddScoped<IDepartmentRepository, DepartmentRepository>();
 
         // ===== Autentificare =====
         services.AddHttpContextAccessor();
