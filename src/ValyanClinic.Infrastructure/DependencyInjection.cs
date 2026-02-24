@@ -7,6 +7,7 @@ using ValyanClinic.Application.Common.Interfaces;
 using ValyanClinic.Infrastructure.Authentication;
 using ValyanClinic.Infrastructure.Configuration;
 using ValyanClinic.Infrastructure.Data;
+using ValyanClinic.Infrastructure.Data.Repositories;
 
 namespace ValyanClinic.Infrastructure;
 
@@ -28,6 +29,11 @@ public static class DependencyInjection
 
         // ===== Baza de date =====
         services.AddSingleton<DapperContext>();
+
+        // ===== Repositories =====
+        services.AddScoped<ISpecialtyRepository, SpecialtyRepository>();
+        services.AddScoped<IClinicRepository, ClinicRepository>();
+        services.AddScoped<IClinicLocationRepository, ClinicLocationRepository>();
 
         // ===== Autentificare =====
         services.AddHttpContextAccessor();

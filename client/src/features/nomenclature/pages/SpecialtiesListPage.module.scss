@@ -1,0 +1,224 @@
+@import '@/styles/variables';
+
+.page {
+  padding: 1.5rem;
+}
+
+.content {
+  background: $card-bg;
+  border-radius: $border-radius-lg;
+  padding: 1.5rem;
+  box-shadow: $box-shadow-sm;
+}
+
+// ===== Toolbar =====
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.toolbarRight {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.checkLabel {
+  display: flex;
+  align-items: center;
+  font-size: 0.8125rem;
+  color: $gray-600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+// ===== Tree container =====
+
+.treeContainer {
+  border: 1px solid $gray-200;
+  border-radius: $border-radius;
+  overflow: hidden;
+}
+
+.treeHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  background: $gray-50;
+  border-bottom: 1px solid $gray-200;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: $gray-500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.headerExpand  { width: 28px; flex-shrink: 0; }
+.headerInfo    { flex: 1; }
+.headerLevel   { width: 110px; flex-shrink: 0; text-align: center; }
+.headerStatus  { width: 80px; flex-shrink: 0; text-align: center; }
+.headerActions { width: 60px; flex-shrink: 0; text-align: center; }
+
+// ===== Tree row =====
+
+.treeRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid $gray-100;
+  transition: background 0.12s ease;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: rgba($primary, 0.03); }
+
+  // Nivel stilizare
+  &.category {
+    background: rgba($primary-lighter, 0.12);
+    &:hover { background: rgba($primary-lighter, 0.22); }
+  }
+}
+
+.childrenBlock {
+  // Copiii sunt indentați prin paddingLeft inline
+}
+
+// ===== Expand button =====
+
+.expandBtn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: $border-radius-sm;
+  color: $gray-500;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.12s ease;
+
+  &:hover:not(:disabled) { background: $gray-100; }
+  &:disabled { cursor: default; opacity: 0; }
+}
+
+// ===== Node info =====
+
+.nodeInfo {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.nodeName {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: $gray-700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nodeCode {
+  font-size: 0.75rem;
+  color: $gray-400;
+  font-family: 'Consolas', 'Courier New', monospace;
+  white-space: nowrap;
+}
+
+// ===== Level badge =====
+
+.levelBadge {
+  width: 110px;
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 500;
+  border-radius: 20px;
+  padding: 0.15rem 0.5rem;
+  white-space: nowrap;
+
+  &.category {
+    color: darken($primary-dark, 5%);
+    background: rgba($primary, 0.12);
+  }
+
+  &.specialty {
+    color: darken($success, 20%);
+    background: rgba($success, 0.14);
+  }
+
+  &.subspecialty {
+    color: darken($warning, 30%);
+    background: rgba($warning, 0.18);
+  }
+}
+
+// ===== Status badge (clicabil) =====
+
+.statusBadge {
+  width: 80px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 500;
+  border-radius: 20px;
+  padding: 0.2rem 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+
+  &:hover { opacity: 0.8; }
+
+  &.active {
+    color: darken($success, 22%);
+    background: rgba($success, 0.15);
+  }
+
+  &.inactive {
+    color: darken($danger, 18%);
+    background: rgba($danger, 0.13);
+  }
+}
+
+// ===== Action button =====
+
+.actionBtn {
+  width: 60px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: $gray-400;
+  cursor: pointer;
+  border-radius: $border-radius-sm;
+  padding: 0.35rem;
+  transition: color 0.12s ease, background 0.12s ease;
+
+  &:hover {
+    color: $primary;
+    background: rgba($primary, 0.08);
+  }
+}
+
+// ===== Empty state =====
+
+.emptyState {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: $gray-400;
+  font-size: 0.9375rem;
+}

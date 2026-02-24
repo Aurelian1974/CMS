@@ -32,4 +32,15 @@ public static class SqlErrorCodes
     // ====== Utilizatori ======
     public const int UserEmailDuplicate = 50060;
     public const int UserNotFound       = 50061;
+
+    // ====== Specialități ======
+    public const int SpecialtyCodeDuplicate = 50100;
+    public const int SpecialtyParentNotFound = 50101;
+
+    // ====== Clinici ======
+    public const int ClinicFiscalCodeDuplicate = 50200;
+    public const int ClinicNotFound            = 50201;
+
+    // ====== Locații clinică ======
+    public const int ClinicLocationNotFound = 50210;
 }

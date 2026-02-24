@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import {
   GridComponent,
   ColumnsDirective,
@@ -21,6 +21,7 @@ import {
   type PdfExportProperties,
 } from '@syncfusion/ej2-react-grids';
 import type { DoctorDto, DoctorStatusFilter } from '../types/doctor.types';
+import { useDoctors } from '../hooks/useDoctors';
 import { formatDate, formatDateTime } from '@/utils/format';
 import styles from './DoctorsListPage.module.scss';
 
@@ -35,8 +36,8 @@ const IconLock    = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="
 const IconMedic   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4.5 2h-1A1.5 1.5 0 002 3.5v5A6.5 6.5 0 008.5 15h1A6.5 6.5 0 0016 8.5v-5A1.5 1.5 0 0014.5 2h-1"/><path d="M16 9a4 4 0 014 4 4 4 0 01-4 4m0 0v3"/><circle cx="16" cy="20" r="1"/></svg>;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const getInitials = (first: string, last: string) =>
-  `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
+const getInitials = (first?: string | null, last?: string | null) =>
+  `${(first ?? '').charAt(0)}${(last ?? '').charAt(0)}`.toUpperCase() || '?';
 
 const getLicenseClass = (expiresAt: string | null): string => {
   if (!expiresAt) return '';
@@ -45,18 +46,6 @@ const getLicenseClass = (expiresAt: string | null): string => {
   if (days < 60)  return styles['licenseExpiry--warning'];
   return styles['licenseExpiry--ok'];
 };
-
-// ── Date mock ─────────────────────────────────────────────────────────────────
-const MOCK_DOCTORS: DoctorDto[] = [
-  { id: '1', clinicId: 'c1', firstName: 'Andrei',   lastName: 'Ionescu',    fullName: 'Dr. Andrei Ionescu',    email: 'a.ionescu@clinica.ro',   phoneNumber: '0722111222', specialtyId: 's1', specialtyName: 'Cardiologie',   medicalCode: 'AI-4821', licenseNumber: 'CMR-00142', licenseExpiresAt: '2025-06-15', isActive: true,  lastLoginAt: '2026-02-22T08:30:00', createdAt: '2023-03-10' },
-  { id: '2', clinicId: 'c1', firstName: 'Maria',    lastName: 'Popa',       fullName: 'Dr. Maria Popa',        email: 'm.popa@clinica.ro',       phoneNumber: '0733222333', specialtyId: 's2', specialtyName: 'Pneumologie',   medicalCode: 'MP-3310', licenseNumber: 'CMR-00289', licenseExpiresAt: '2026-03-20', isActive: true,  lastLoginAt: '2026-02-22T09:15:00', createdAt: '2023-01-15' },
-  { id: '3', clinicId: 'c1', firstName: 'Cristina', lastName: 'Marin',      fullName: 'Dr. Cristina Marin',    email: 'c.marin@clinica.ro',      phoneNumber: '0766555666', specialtyId: 's3', specialtyName: 'Neurologie',    medicalCode: 'CM-9921', licenseNumber: 'CMR-00401', licenseExpiresAt: '2024-12-01', isActive: false, lastLoginAt: '2026-01-10T11:00:00', createdAt: '2022-11-05' },
-  { id: '4', clinicId: 'c1', firstName: 'Mihai',    lastName: 'Rusu',       fullName: 'Dr. Mihai Rusu',        email: 'm.rusu@clinica.ro',       phoneNumber: '0799888999', specialtyId: 's4', specialtyName: 'Pediatrie',     medicalCode: 'MR-7744', licenseNumber: 'CMR-00518', licenseExpiresAt: '2027-08-30', isActive: true,  lastLoginAt: '2026-02-22T08:00:00', createdAt: '2023-09-15' },
-  { id: '5', clinicId: 'c1', firstName: 'Florin',   lastName: 'Toma',       fullName: 'Dr. Florin Toma',       email: 'f.toma@clinica.ro',       phoneNumber: '0722100200', specialtyId: 's5', specialtyName: 'Ortopedie',     medicalCode: 'FT-2288', licenseNumber: 'CMR-00633', licenseExpiresAt: '2025-11-15', isActive: false, lastLoginAt: '2025-12-05T10:30:00', createdAt: '2023-04-12' },
-  { id: '6', clinicId: 'c1', firstName: 'Elena',    lastName: 'Constantin', fullName: 'Dr. Elena Constantin',  email: 'e.constantin@clinica.ro', phoneNumber: '0744333444', specialtyId: 's6', specialtyName: 'Dermatologie',  medicalCode: 'EC-1155', licenseNumber: 'CMR-00712', licenseExpiresAt: '2026-09-01', isActive: true,  lastLoginAt: '2026-02-21T14:00:00', createdAt: '2024-02-01' },
-  { id: '7', clinicId: 'c1', firstName: 'George',   lastName: 'Dumitru',    fullName: 'Dr. George Dumitru',    email: 'g.dumitru@clinica.ro',    phoneNumber: '0711777888', specialtyId: 's7', specialtyName: 'Ginecologie',   medicalCode: 'GD-5544', licenseNumber: 'CMR-00834', licenseExpiresAt: '2028-01-10', isActive: true,  lastLoginAt: '2026-02-20T10:30:00', createdAt: '2024-05-15' },
-  { id: '8', clinicId: 'c1', firstName: 'Ioana',    lastName: 'Niculescu',  fullName: 'Dr. Ioana Niculescu',   email: 'i.niculescu@clinica.ro',  phoneNumber: '0755666777', specialtyId: 's1', specialtyName: 'Cardiologie',   medicalCode: 'IN-3367', licenseNumber: 'CMR-00945', licenseExpiresAt: '2026-05-20', isActive: true,  lastLoginAt: '2026-02-22T11:00:00', createdAt: '2024-08-20' },
-];
 
 // ── Configurare grid ──────────────────────────────────────────────────────────
 const filterSettings: FilterSettingsModel = { type: 'Menu', showFilterBarStatus: true };
@@ -71,11 +60,8 @@ const groupSettings: GroupSettingsModel = {
 const pageSettings: PageSettingsModel = { pageSize: 10, pageSizes: [5, 10, 20, 50] };
 
 const sortSettings: SortSettingsModel = {
-  columns: [{ field: 'lastName', direction: 'Ascending' }],
+  columns: [{ field: 'fullName', direction: 'Ascending' }],
 };
-
-// Specializări unice din mock — în producție vin din API nomenclator
-const SPECIALTIES = [...new Set(MOCK_DOCTORS.map(d => d.specialtyName).filter(Boolean))].sort() as string[];
 
 // ── Componenta principală ─────────────────────────────────────────────────────
 export const DoctorsListPage = () => {
@@ -83,22 +69,34 @@ export const DoctorsListPage = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<DoctorStatusFilter>('all');
   const [specialtyFilter, setSpecialtyFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
 
-  // Filtrare locală pe mock — în producție: useDoctors({ page, pageSize, search, ... })
-  const filteredData = MOCK_DOCTORS.filter(d => {
-    const matchSearch = !search ||
-      [d.fullName, d.email, d.medicalCode ?? '', d.specialtyName ?? '']
-        .some(v => v.toLowerCase().includes(search.toLowerCase()));
-    const matchStatus =
-      statusFilter === 'all' ? true :
-      statusFilter === 'active' ? d.isActive : !d.isActive;
-    const matchSpecialty = !specialtyFilter || d.specialtyName === specialtyFilter;
-    return matchSearch && matchStatus && matchSpecialty;
+  // Date reale din API
+  const { data, isLoading, isError } = useDoctors({
+    page,
+    pageSize,
+    search: search || undefined,
+    isActive: statusFilter === 'all' ? undefined : statusFilter === 'active',
+    sortBy: 'fullName',
+    sortDir: 'asc',
   });
 
-  const totalActive   = MOCK_DOCTORS.filter(d => d.isActive).length;
-  const totalInactive = MOCK_DOCTORS.filter(d => !d.isActive).length;
-  const specialties   = [...new Set(MOCK_DOCTORS.map(d => d.specialtyName).filter(Boolean))];
+  const doctors = data?.items ?? [];
+  const totalCount = data?.totalCount ?? 0;
+
+  // Filtrare locală doar pentru specialitate (restul se face server-side)
+  const filteredData = specialtyFilter
+    ? doctors.filter(d => d.specialtyName === specialtyFilter)
+    : doctors;
+
+  // Statistici compute din datele curente
+  const totalActive   = doctors.filter(d => d.isActive).length;
+  const totalInactive = doctors.filter(d => !d.isActive).length;
+  const specialties   = useMemo(
+    () => [...new Set(doctors.map(d => d.specialtyName).filter(Boolean))].sort() as string[],
+    [doctors],
+  );
 
   // Date transformate pentru export — plain objects, fără template JSX
   const buildExportData = useCallback(() =>
@@ -119,26 +117,83 @@ export const DoctorsListPage = () => {
   const handleExcelExport = useCallback(() => {
     const grid = gridRef.current;
     if (!grid) return;
-    grid.hideColumns(['id'], 'field');
+
+    // Salvăm template-urile JSX și le ștergem temporar pentru export curat
+    const columns = grid.getColumns() as Array<Record<string, unknown>>;
+    const saved = new Map<string, unknown>();
+    columns.forEach(col => {
+      if (col.template) {
+        saved.set(col.field as string, col.template);
+        col.template = null;
+      }
+    });
+
     const props: ExcelExportProperties = {
       fileName: `doctori_${new Date().toISOString().slice(0, 10)}.xlsx`,
       dataSource: buildExportData(),
     };
-    (grid.excelExport(props) as unknown as Promise<void>)
-      ?.finally?.(() => grid.showColumns(['id'], 'field'));
+
+    const restore = () => {
+      columns.forEach(col => {
+        const key = col.field as string;
+        if (saved.has(key)) col.template = saved.get(key);
+      });
+      grid.refreshColumns();
+    };
+
+    const result = grid.excelExport(props) as unknown as Promise<unknown>;
+    result?.then?.(restore).catch((err: unknown) => {
+      console.error('Excel export error:', err);
+      restore();
+    });
   }, [buildExportData]);
 
   const handlePdfExport = useCallback(() => {
     const grid = gridRef.current;
     if (!grid) return;
-    grid.hideColumns(['id'], 'field');
+
+    // Salvăm template-urile JSX și le ștergem temporar — Syncfusion nu poate serializa React elements în PDF
+    const columns = grid.getColumns() as Array<Record<string, unknown>>;
+    const saved = new Map<string, unknown>();
+    columns.forEach(col => {
+      if (col.template) {
+        saved.set(col.field as string, col.template);
+        col.template = null;
+      }
+    });
+
     const props: PdfExportProperties = {
       fileName: `doctori_${new Date().toISOString().slice(0, 10)}.pdf`,
       pageOrientation: 'Landscape',
       dataSource: buildExportData(),
+      theme: {
+        header: {
+          bold: true,
+          fontColor: '#ffffff',
+          fontName: 'Helvetica',
+          fontSize: 10,
+        },
+        record: {
+          fontName: 'Helvetica',
+          fontSize: 9,
+        },
+      },
     };
-    (grid.pdfExport(props) as unknown as Promise<void>)
-      ?.finally?.(() => grid.showColumns(['id'], 'field'));
+
+    // Restaurează template-urile după export (succes sau eroare)
+    const restore = () => {
+      columns.forEach(col => {
+        const key = col.field as string;
+        if (saved.has(key)) col.template = saved.get(key);
+      });
+      grid.refreshColumns();
+    };
+
+    const result = grid.pdfExport(props) as unknown as Promise<unknown>;
+    result?.then?.(restore).catch((err: unknown) => {
+      console.error('PDF export error:', err);
+      restore();
+    });
   }, [buildExportData]);
 
   // ── Cell templates ─────────────────────────────────────────────────────────
@@ -205,6 +260,16 @@ export const DoctorsListPage = () => {
   ), []);
 
   // ── Render ─────────────────────────────────────────────────────────────────
+  if (isError) {
+    return (
+      <div className={styles.page}>
+        <div className="alert alert-danger m-4">
+          Nu s-au putut încărca datele. Verifică conexiunea la server.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.page}>
 
@@ -215,9 +280,7 @@ export const DoctorsListPage = () => {
           <p className={styles.pageSubtitle}>Gestionare medici, specialități și avize CMR</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.btnSecondary} onClick={handlePdfExport}>
-            <IconPdf /> Export PDF
-          </button>
+          {/* TODO: Export PDF — dezactivat temporar, de revenit */}
           <button className={styles.btnSecondary} onClick={handleExcelExport}>
             <IconExcel /> Export Excel
           </button>
@@ -232,7 +295,7 @@ export const DoctorsListPage = () => {
         <div className={styles.statCard}>
           <div className={`${styles.statIcon} ${styles['statIcon--blue']}`}><IconMedic /></div>
           <div className={styles.statContent}>
-            <span className={styles.statValue}>{MOCK_DOCTORS.length}</span>
+            <span className={styles.statValue}>{totalCount}</span>
             <span className={styles.statLabel}>Total doctori</span>
           </div>
         </div>
@@ -286,7 +349,7 @@ export const DoctorsListPage = () => {
             onChange={e => setSpecialtyFilter(e.target.value)}
           >
             <option value="">Toate</option>
-            {SPECIALTIES.map(s => (
+            {specialties.map(s => (
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
@@ -427,6 +490,7 @@ export const DoctorsListPage = () => {
               allowGrouping={false}
               allowReordering={false}
               allowResizing={false}
+              allowExporting={false}
               freeze="Right"
             />
 
