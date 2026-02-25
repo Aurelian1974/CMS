@@ -24,6 +24,7 @@ import type { DoctorDto, DoctorStatusFilter } from '../types/doctor.types'
 import type { DoctorFormData } from '../schemas/doctor.schema'
 import { useDoctors, useCreateDoctor, useUpdateDoctor, useDeleteDoctor, useDoctorLookup } from '../hooks/useDoctors'
 import { useSpecialties } from '@/features/nomenclature/hooks/useSpecialties'
+import { useMedicalTitles } from '@/features/nomenclature/hooks/useMedicalTitles'
 import { useDepartments } from '@/features/departments/hooks/useDepartments'
 import { DoctorFormModal } from '../components/DoctorFormModal/DoctorFormModal'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
@@ -99,6 +100,7 @@ export const DoctorsListPage = () => {
 
   // Date auxiliare pentru modal
   const { data: specialtiesResp } = useSpecialties(true)
+  const { data: medicalTitlesResp } = useMedicalTitles(true)
   const { data: departmentsResp } = useDepartments(true)
   const { data: lookupResp } = useDoctorLookup()
 
@@ -110,6 +112,7 @@ export const DoctorsListPage = () => {
   const doctors = doctorsResp?.data?.items ?? []
   const totalCount = doctorsResp?.data?.totalCount ?? 0
   const allSpecialties = specialtiesResp?.data ?? []
+  const medicalTitles = medicalTitlesResp?.data ?? []
   const departments = departmentsResp?.data ?? []
   const doctorLookup = lookupResp?.data ?? []
 
@@ -170,6 +173,7 @@ export const DoctorsListPage = () => {
           supervisorDoctorId: toNull(formData.supervisorDoctorId),
           specialtyId: toNull(formData.specialtyId),
           subspecialtyId: toNull(formData.subspecialtyId),
+          medicalTitleId: toNull(formData.medicalTitleId),
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
@@ -191,6 +195,7 @@ export const DoctorsListPage = () => {
           supervisorDoctorId: toNull(formData.supervisorDoctorId),
           specialtyId: toNull(formData.specialtyId),
           subspecialtyId: toNull(formData.subspecialtyId),
+          medicalTitleId: toNull(formData.medicalTitleId),
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
@@ -485,7 +490,7 @@ export const DoctorsListPage = () => {
         <div className={styles.toolbarRight}>
           <button
             className={styles.btnSecondary}
-            onClick={() => gridRef.current?.showColumnChooser()}
+            onClick={() => gridRef.current?.openColumnChooser()}
           >
             <IconColumns /> Coloane
           </button>
@@ -642,6 +647,7 @@ export const DoctorsListPage = () => {
         isLoading={createDoctor.isPending || updateDoctor.isPending}
         editData={editingDoctor}
         specialties={allSpecialties}
+        medicalTitles={medicalTitles}
         departments={departments}
         doctorLookup={doctorLookup}
         serverError={modalOpen ? errorMsg : null}

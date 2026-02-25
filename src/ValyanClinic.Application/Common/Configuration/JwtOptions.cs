@@ -1,7 +1,8 @@
-namespace ValyanClinic.Infrastructure.Configuration;
+namespace ValyanClinic.Application.Common.Configuration;
 
 /// <summary>
 /// Opțiuni pentru configurarea JWT (token-uri de autentificare).
+/// Definit în Application layer pentru acces din handlers.
 /// </summary>
 public sealed class JwtOptions
 {

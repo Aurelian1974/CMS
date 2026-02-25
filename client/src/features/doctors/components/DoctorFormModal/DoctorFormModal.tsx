@@ -5,6 +5,7 @@ import { doctorSchema, type DoctorFormData } from '../../schemas/doctor.schema'
 import type { DoctorDto } from '../../types/doctor.types'
 import type { DoctorLookupDto } from '../../types/doctor.types'
 import type { SpecialtyDto } from '@/features/nomenclature/types/specialty.types'
+import type { MedicalTitleDto } from '@/features/nomenclature/types/medicalTitle.types'
 import type { DepartmentDto } from '@/features/departments/types/department.types'
 import styles from './DoctorFormModal.module.scss'
 
@@ -21,6 +22,8 @@ interface DoctorFormModalProps {
   departments: DepartmentDto[]
   /** Lista doctori pentru dropdown supervisor */
   doctorLookup: DoctorLookupDto[]
+  /** Lista titulaturi medicale (toate — filtrarea se face intern) */
+  medicalTitles: MedicalTitleDto[]
   /** Eroare server (ex: email duplicat) — afișată în modal */
   serverError?: string | null
 }
@@ -34,6 +37,7 @@ export const DoctorFormModal = ({
   specialties,
   departments,
   doctorLookup,
+  medicalTitles,
   serverError,
 }: DoctorFormModalProps) => {
   const isEdit = !!editData
@@ -52,6 +56,7 @@ export const DoctorFormModal = ({
       supervisorDoctorId: '',
       specialtyId: '',
       subspecialtyId: '',
+      medicalTitleId: '',
       firstName: '',
       lastName: '',
       email: '',
@@ -81,6 +86,12 @@ export const DoctorFormModal = ({
     [specialties, selectedSpecialtyId],
   )
 
+  // Titulaturi filtrate — doar cele de tip medic (cod începe cu MEDIC)
+  const doctorTitles = useMemo(
+    () => medicalTitles.filter(t => t.isActive && t.code.startsWith('MEDIC')),
+    [medicalTitles],
+  )
+
   // Doctori supervisor (excludem doctorul curent la editare)
   const supervisorOptions = useMemo(
     () => editData
@@ -108,6 +119,7 @@ export const DoctorFormModal = ({
         supervisorDoctorId: editData.supervisorDoctorId ?? '',
         specialtyId: editData.specialtyId ?? '',
         subspecialtyId: editData.subspecialtyId ?? '',
+        medicalTitleId: editData.medicalTitleId ?? '',
         firstName: editData.firstName,
         lastName: editData.lastName,
         email: editData.email,
@@ -125,6 +137,7 @@ export const DoctorFormModal = ({
         supervisorDoctorId: '',
         specialtyId: '',
         subspecialtyId: '',
+        medicalTitleId: '',
         firstName: '',
         lastName: '',
         email: '',
@@ -266,7 +279,22 @@ export const DoctorFormModal = ({
 
             {/* Departament + Supervisor */}
             <div className="row g-3">
-              <div className="col-md-6">
+              <div className="col-md-4">
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Titulatură</label>
+                  <select
+                    className={`form-select${errors.medicalTitleId ? ' is-invalid' : ''}`}
+                    {...register('medicalTitleId')}
+                  >
+                    <option value="">— Selectează titulatura —</option>
+                    {doctorTitles.map(t => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                  {errors.medicalTitleId && <span className={styles.error}>{errors.medicalTitleId.message}</span>}
+                </div>
+              </div>
+              <div className="col-md-4">
                 <div className={styles.formGroup}>
                   <label className={styles.label}>Departament</label>
                   <select
@@ -281,7 +309,7 @@ export const DoctorFormModal = ({
                   {errors.departmentId && <span className={styles.error}>{errors.departmentId.message}</span>}
                 </div>
               </div>
-              <div className="col-md-6">
+              <div className="col-md-4">
                 <div className={styles.formGroup}>
                   <label className={styles.label}>Șef ierarhic</label>
                   <select

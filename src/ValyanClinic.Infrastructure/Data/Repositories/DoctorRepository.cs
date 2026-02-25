@@ -64,7 +64,7 @@ public sealed class DoctorRepository(DapperContext context) : IDoctorRepository
 
     public async Task<Guid> CreateAsync(
         Guid clinicId, Guid? departmentId, Guid? supervisorDoctorId,
-        Guid? specialtyId, Guid? subspecialtyId,
+        Guid? specialtyId, Guid? subspecialtyId, Guid? medicalTitleId,
         string firstName, string lastName, string email,
         string? phoneNumber, string? medicalCode, string? licenseNumber,
         DateTime? licenseExpiresAt, Guid createdBy,
@@ -81,6 +81,7 @@ public sealed class DoctorRepository(DapperContext context) : IDoctorRepository
                     SupervisorDoctorId = supervisorDoctorId,
                     SpecialtyId = specialtyId,
                     SubspecialtyId = subspecialtyId,
+                    MedicalTitleId = medicalTitleId,
                     FirstName = firstName,
                     LastName = lastName,
                     Email = email,
@@ -96,7 +97,7 @@ public sealed class DoctorRepository(DapperContext context) : IDoctorRepository
 
     public async Task UpdateAsync(
         Guid id, Guid clinicId, Guid? departmentId, Guid? supervisorDoctorId,
-        Guid? specialtyId, Guid? subspecialtyId,
+        Guid? specialtyId, Guid? subspecialtyId, Guid? medicalTitleId,
         string firstName, string lastName, string email,
         string? phoneNumber, string? medicalCode, string? licenseNumber,
         DateTime? licenseExpiresAt, bool isActive, Guid updatedBy,
@@ -114,6 +115,7 @@ public sealed class DoctorRepository(DapperContext context) : IDoctorRepository
                     SupervisorDoctorId = supervisorDoctorId,
                     SpecialtyId = specialtyId,
                     SubspecialtyId = subspecialtyId,
+                    MedicalTitleId = medicalTitleId,
                     FirstName = firstName,
                     LastName = lastName,
                     Email = email,

@@ -10,6 +10,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   'prescriptions': 'Prescripții',
   'invoices':      'Facturi',
   'doctors':       'Doctori',
+  'medical-staff': 'Personal Medical',
   'users':         'Utilizatori',
   'new':           'Nou',
   'edit':          'Editare',

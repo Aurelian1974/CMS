@@ -2,7 +2,8 @@
 -- Doctor_Update — actualizare doctor cu validări business
 -- Coduri eroare: 50300=not found, 50301=email duplicat,
 --   50302=departament invalid, 50303=supervisor invalid,
---   50304=supervisor circular, 50305=subspecialitate invalidă
+--   50304=supervisor circular, 50305=subspecialitate invalidă,
+--   50306=titulatură invalidă
 -- ============================================================
 SET QUOTED_IDENTIFIER ON;
 GO
@@ -14,6 +15,7 @@ CREATE OR ALTER PROCEDURE dbo.Doctor_Update
     @SupervisorDoctorId UNIQUEIDENTIFIER = NULL,
     @SpecialtyId        UNIQUEIDENTIFIER = NULL,
     @SubspecialtyId     UNIQUEIDENTIFIER = NULL,
+    @MedicalTitleId     UNIQUEIDENTIFIER = NULL,
     @FirstName          NVARCHAR(100),
     @LastName           NVARCHAR(100),
     @Email              NVARCHAR(200),
@@ -90,11 +92,21 @@ BEGIN
             ;THROW 50305, N'Subspecialitatea selectată nu este validă pentru specializarea aleasă.', 1;
         END;
 
+        -- Validare: titulatura medicală există și este activă
+        IF @MedicalTitleId IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM MedicalTitles
+            WHERE Id = @MedicalTitleId AND IsActive = 1
+        )
+        BEGIN
+            ;THROW 50306, N'Titulatura medicală selectată nu există sau nu este activă.', 1;
+        END;
+
         UPDATE Doctors
         SET DepartmentId       = @DepartmentId,
             SupervisorDoctorId = @SupervisorDoctorId,
             SpecialtyId        = @SpecialtyId,
             SubspecialtyId     = @SubspecialtyId,
+            MedicalTitleId     = @MedicalTitleId,
             FirstName          = @FirstName,
             LastName           = @LastName,
             Email              = @Email,

@@ -31,6 +31,8 @@ BEGIN
         sp.Name                 AS SpecialtyName,
         d.SubspecialtyId,
         ssp.Name                AS SubspecialtyName,
+        d.MedicalTitleId,
+        mt.Name                 AS MedicalTitleName,
         d.FirstName,
         d.LastName,
         d.FirstName + ' ' + d.LastName AS FullName,
@@ -46,6 +48,7 @@ BEGIN
     LEFT JOIN Doctors      sup ON sup.Id = d.SupervisorDoctorId AND sup.IsDeleted = 0
     LEFT JOIN Specialties  sp  ON sp.Id  = d.SpecialtyId        AND sp.IsActive = 1
     LEFT JOIN Specialties  ssp ON ssp.Id = d.SubspecialtyId     AND ssp.IsActive = 1
+    LEFT JOIN MedicalTitles mt ON mt.Id  = d.MedicalTitleId     AND mt.IsActive = 1
     WHERE d.ClinicId = @ClinicId
       AND d.IsDeleted = 0
       AND (@IsActive IS NULL OR d.IsActive = @IsActive)

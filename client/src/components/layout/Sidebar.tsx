@@ -1,6 +1,7 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useUiStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
+import { authApi } from '@/api/endpoints/auth.api';
 import styles from './Sidebar.module.scss';
 
 // ===== Icoane SVG inline pentru navigare (nu depind de librării externe) =====
@@ -85,9 +86,26 @@ const IconDepartments = () => (
   </svg>
 );
 
+const IconMedicalTitles = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 7V4a2 2 0 012-2h8.5L20 7.5V20a2 2 0 01-2 2H6a2 2 0 01-2-2v-3" />
+    <polyline points="14 2 14 8 20 8" />
+    <line x1="1" y1="13" x2="11" y2="13" />
+    <line x1="6" y1="10" x2="6" y2="16" />
+  </svg>
+);
+
 const IconChevron = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
     <polyline points="15 18 9 12 15 6" />
+  </svg>
+);
+
+const IconLogout = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+    <polyline points="16 17 21 12 16 7" />
+    <line x1="21" y1="12" x2="9" y2="12" />
   </svg>
 );
 
@@ -131,9 +149,11 @@ const NAV_SECTIONS: NavSection[] = [
     section: 'Administrare',
     items: [
       { to: '/doctors',        label: 'Doctori',        icon: <IconDoctors /> },
+      { to: '/medical-staff', label: 'Personal Medical', icon: <IconPatients /> },
       { to: '/departments',   label: 'Departamente',   icon: <IconDepartments /> },
       { to: '/users',          label: 'Utilizatori',    icon: <IconUsers /> },
       { to: '/specialties',    label: 'Specializări',   icon: <IconSpecialties /> },
+      { to: '/medical-titles', label: 'Titulaturi',     icon: <IconMedicalTitles /> },
       { to: '/clinic',         label: 'Clinica',        icon: <IconClinic /> },
     ],
   },
@@ -150,9 +170,21 @@ const getInitials = (name: string): string => {
 export const Sidebar = () => {
   const { sidebarCollapsed, toggleSidebar } = useUiStore();
   const user = useAuthStore((s) => s.user);
+  const clearAuth = useAuthStore((s) => s.clearAuth);
+  const navigate = useNavigate();
 
-  // Utilizator mock pentru preview UI
-  const displayUser = user ?? { fullName: 'Dr. Admin', role: 'Admin' };
+  const displayUser = user ?? { fullName: 'Utilizator', role: 'N/A' };
+
+  const handleLogout = async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // Ignorăm erori la logout — oricum curățăm sesiunea local
+    } finally {
+      clearAuth();
+      navigate('/login', { replace: true });
+    }
+  };
 
   return (
     <aside className={`${styles.sidebar}${sidebarCollapsed ? ` ${styles.collapsed}` : ''}`}>
@@ -197,6 +229,14 @@ export const Sidebar = () => {
           <div className={styles.userName}>{displayUser.fullName}</div>
           <div className={styles.userRole}>{displayUser.role}</div>
         </div>
+        <button
+          className={styles.logoutBtn}
+          onClick={handleLogout}
+          aria-label="Deconectare"
+          title="Deconectare"
+        >
+          <IconLogout />
+        </button>
       </div>
 
       {/* Buton collapse/expand */}

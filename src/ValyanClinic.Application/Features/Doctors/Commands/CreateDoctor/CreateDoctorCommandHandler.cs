@@ -22,6 +22,7 @@ public sealed class CreateDoctorCommandHandler(
                 request.SupervisorDoctorId,
                 request.SpecialtyId,
                 request.SubspecialtyId,
+                request.MedicalTitleId,
                 request.FirstName,
                 request.LastName,
                 request.Email,
@@ -49,6 +50,10 @@ public sealed class CreateDoctorCommandHandler(
         catch (SqlException ex) when (ex.Number == 50305)
         {
             return Result<Guid>.Failure(ErrorMessages.Doctor.InvalidSubspecialty);
+        }
+        catch (SqlException ex) when (ex.Number == 50306)
+        {
+            return Result<Guid>.Failure(ErrorMessages.Doctor.InvalidMedicalTitle);
         }
         catch (SqlException ex) when (ex.Number >= 50000 && ex.Number < 60000)
         {

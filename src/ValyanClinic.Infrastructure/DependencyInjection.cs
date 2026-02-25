@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using ValyanClinic.Application.Common.Interfaces;
 using ValyanClinic.Infrastructure.Authentication;
+using ValyanClinic.Application.Common.Configuration;
 using ValyanClinic.Infrastructure.Configuration;
 using ValyanClinic.Infrastructure.Data;
 using ValyanClinic.Infrastructure.Data.Repositories;
@@ -26,6 +27,7 @@ public static class DependencyInjection
         services.Configure<PaginationOptions>(configuration.GetSection(PaginationOptions.SectionName));
         services.Configure<CorsOptions>(configuration.GetSection(CorsOptions.SectionName));
         services.Configure<SecurityOptions>(configuration.GetSection(SecurityOptions.SectionName));
+        services.Configure<RateLimitingOptions>(configuration.GetSection(RateLimitingOptions.SectionName));
 
         // ===== Baza de date =====
         services.AddSingleton<DapperContext>();
@@ -36,6 +38,14 @@ public static class DependencyInjection
         services.AddScoped<IClinicLocationRepository, ClinicLocationRepository>();
         services.AddScoped<IDepartmentRepository, DepartmentRepository>();
         services.AddScoped<IDoctorRepository, DoctorRepository>();
+        services.AddScoped<IMedicalTitleRepository, MedicalTitleRepository>();
+        services.AddScoped<IMedicalStaffRepository, MedicalStaffRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IAuthRepository, AuthRepository>();
+
+        // ===== Servicii =====
+        services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
+        services.AddScoped<ITokenService, JwtTokenService>();
 
         // ===== Autentificare =====
         services.AddHttpContextAccessor();

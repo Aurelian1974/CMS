@@ -10,6 +10,8 @@ export interface DoctorDto {
   specialtyName: string | null
   subspecialtyId: string | null
   subspecialtyName: string | null
+  medicalTitleId: string | null
+  medicalTitleName: string | null
   firstName: string
   lastName: string
   fullName: string
@@ -31,6 +33,9 @@ export interface DoctorDetailDto extends DoctorDto {
 export interface DoctorLookupDto {
   id: string
   fullName: string
+  firstName: string
+  lastName: string
+  email: string | null
   medicalCode: string | null
   specialtyId: string | null
   specialtyName: string | null
@@ -64,6 +69,7 @@ export interface CreateDoctorPayload {
   supervisorDoctorId: string | null
   specialtyId: string | null
   subspecialtyId: string | null
+  medicalTitleId: string | null
   firstName: string
   lastName: string
   email: string

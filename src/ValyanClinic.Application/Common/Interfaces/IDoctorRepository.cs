@@ -19,7 +19,7 @@ public interface IDoctorRepository
 
     Task<Guid> CreateAsync(
         Guid clinicId, Guid? departmentId, Guid? supervisorDoctorId,
-        Guid? specialtyId, Guid? subspecialtyId,
+        Guid? specialtyId, Guid? subspecialtyId, Guid? medicalTitleId,
         string firstName, string lastName, string email,
         string? phoneNumber, string? medicalCode, string? licenseNumber,
         DateTime? licenseExpiresAt, Guid createdBy,
@@ -27,7 +27,7 @@ public interface IDoctorRepository
 
     Task UpdateAsync(
         Guid id, Guid clinicId, Guid? departmentId, Guid? supervisorDoctorId,
-        Guid? specialtyId, Guid? subspecialtyId,
+        Guid? specialtyId, Guid? subspecialtyId, Guid? medicalTitleId,
         string firstName, string lastName, string email,
         string? phoneNumber, string? medicalCode, string? licenseNumber,
         DateTime? licenseExpiresAt, bool isActive, Guid updatedBy,

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Serilog;
 using ValyanClinic.API.Middleware;
 using ValyanClinic.Infrastructure;
+using ValyanClinic.Application.Common.Configuration;
 using ValyanClinic.Infrastructure.Configuration;
 
 // ===== Serilog bootstrap logger (înainte de a construi aplicația) =====
@@ -87,12 +88,7 @@ try
 
     app.UseAuthentication();
 
-    // DEV: Bypass autentificare — injectează claims mock când nu există JWT valid
-    if (app.Environment.IsDevelopment())
-    {
-        app.UseMiddleware<DevAuthBypassMiddleware>();
-    }
-
+    // Autorizare — controller-ele care nu au [AllowAnonymous] cer JWT valid
     app.UseAuthorization();
 
     app.MapControllers();

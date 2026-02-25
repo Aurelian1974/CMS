@@ -29,6 +29,12 @@ BEGIN
               AND doc.ClinicId = d.ClinicId
               AND doc.IsDeleted = 0
            )              AS DoctorCount,
+           (SELECT COUNT(*)
+            FROM MedicalStaff ms
+            WHERE ms.DepartmentId = d.Id
+              AND ms.ClinicId = d.ClinicId
+              AND ms.IsDeleted = 0
+           )              AS MedicalStaffCount,
            d.IsActive,
            d.CreatedAt,
            d.UpdatedAt

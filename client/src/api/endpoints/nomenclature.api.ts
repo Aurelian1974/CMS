@@ -7,6 +7,12 @@ import type {
   UpdateSpecialtyPayload,
   ToggleSpecialtyPayload,
 } from '@/features/nomenclature/types/specialty.types'
+import type {
+  MedicalTitleDto,
+  CreateMedicalTitlePayload,
+  UpdateMedicalTitlePayload,
+  ToggleMedicalTitlePayload,
+} from '@/features/nomenclature/types/medicalTitle.types'
 
 export const nomenclatureApi = {
   // ===== Specializări =====
@@ -28,4 +34,18 @@ export const nomenclatureApi = {
 
   toggleSpecialty: (id: string, payload: ToggleSpecialtyPayload): Promise<ApiResponse<null>> =>
     api.patch(`/api/nomenclature/specialties/${id}/toggle`, payload),
+
+  // ===== Titulaturi medicale =====
+
+  getMedicalTitles: (isActive?: boolean): Promise<ApiResponse<MedicalTitleDto[]>> =>
+    api.get('/api/nomenclature/medical-titles', { params: { isActive } }),
+
+  createMedicalTitle: (payload: CreateMedicalTitlePayload): Promise<ApiResponse<string>> =>
+    api.post('/api/nomenclature/medical-titles', payload),
+
+  updateMedicalTitle: ({ id, ...data }: UpdateMedicalTitlePayload): Promise<ApiResponse<null>> =>
+    api.put(`/api/nomenclature/medical-titles/${id}`, data),
+
+  toggleMedicalTitle: (id: string, payload: ToggleMedicalTitlePayload): Promise<ApiResponse<null>> =>
+    api.patch(`/api/nomenclature/medical-titles/${id}/toggle`, payload),
 }

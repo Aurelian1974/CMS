@@ -13,6 +13,7 @@ public sealed class Doctor
     public Guid? SupervisorDoctorId { get; set; }
     public Guid? SpecialtyId { get; set; }
     public Guid? SubspecialtyId { get; set; }
+    public Guid? MedicalTitleId { get; set; }
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;

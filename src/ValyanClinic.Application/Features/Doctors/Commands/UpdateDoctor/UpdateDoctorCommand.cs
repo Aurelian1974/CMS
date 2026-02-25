@@ -10,6 +10,7 @@ public sealed record UpdateDoctorCommand(
     Guid? SupervisorDoctorId,
     Guid? SpecialtyId,
     Guid? SubspecialtyId,
+    Guid? MedicalTitleId,
     string FirstName,
     string LastName,
     string Email,

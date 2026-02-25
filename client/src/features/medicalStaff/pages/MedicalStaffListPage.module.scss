@@ -1,0 +1,468 @@
+// MedicalStaffListPage.module.scss
+@import '@/styles/variables';
+
+// ── Page wrapper ──────────────────────────────────────────────────────────────
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 28px;
+  background: $body-bg;
+  min-height: 100%;
+}
+
+// ── Page header ───────────────────────────────────────────────────────────────
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pageTitle {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: $gray-700;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.pageSubtitle {
+  font-size: 0.82rem;
+  color: $gray-400;
+  font-weight: 400;
+  margin-top: 2px;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+// ── Stats bar ─────────────────────────────────────────────────────────────────
+.statsBar {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.statCard {
+  background: $card-bg;
+  border: 1px solid rgba($primary, 0.12);
+  border-radius: 12px;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 160px;
+  flex: 1;
+  transition: box-shadow 0.2s, border-color 0.2s;
+
+  &:hover {
+    box-shadow: 0 4px 16px rgba($primary-dark, 0.08);
+    border-color: rgba($primary, 0.22);
+  }
+}
+
+.statIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &--blue   { background: rgba($primary, 0.1);   color: $primary; }
+  &--green  { background: rgba($success, 0.15);  color: darken($success, 20%); }
+  &--orange { background: rgba($accent, 0.15);   color: darken($accent, 15%); }
+  &--gray   { background: rgba($gray-300, 0.4);  color: $gray-500; }
+}
+
+.statContent { display: flex; flex-direction: column; gap: 2px; }
+
+.statValue {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: $gray-700;
+  line-height: 1;
+}
+
+.statLabel {
+  font-size: 0.72rem;
+  color: $gray-400;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-weight: 500;
+}
+
+// ── Toolbar / filters ─────────────────────────────────────────────────────────
+.toolbar {
+  background: $card-bg;
+  border: 1px solid rgba($primary, 0.1);
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-shadow: 0 1px 4px rgba($primary-dark, 0.05);
+}
+
+.searchWrap {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+  max-width: 320px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: $gray-400;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.searchInput {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px 0 34px;
+  background: $body-bg;
+  border: 1.5px solid $gray-200;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  color: $gray-700;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &::placeholder { color: $gray-300; }
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+    background: $card-bg;
+  }
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterLabel {
+  font-size: 0.75rem;
+  color: $gray-400;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.filterSelect {
+  height: 38px;
+  padding: 0 28px 0 10px;
+  background: $body-bg;
+  border: 1.5px solid $gray-200;
+  border-radius: 9px;
+  font-size: 0.83rem;
+  color: $gray-600;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239EADB9' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  transition: border-color 0.2s;
+
+  &:focus { border-color: $primary; }
+}
+
+.toolbarDivider {
+  width: 1px;
+  height: 24px;
+  background: $gray-200;
+  flex-shrink: 0;
+}
+
+.toolbarRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+// Status filter pills
+.statusPills {
+  display: flex;
+  background: $body-bg;
+  border: 1.5px solid $gray-200;
+  border-radius: 9px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.pill {
+  padding: 4px 12px;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: $gray-500;
+  transition: all 0.15s;
+
+  &.active {
+    background: $card-bg;
+    color: $primary-dark;
+    box-shadow: 0 1px 4px rgba($primary-dark, 0.1);
+  }
+
+  &:hover:not(.active) { color: $gray-700; }
+}
+
+// ── Grid container ─────────────────────────────────────────────────────────────
+.gridContainer {
+  background: $card-bg;
+  border: 1px solid rgba($primary, 0.1);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba($primary-dark, 0.05);
+
+  :global {
+    .e-grid {
+      border: none !important;
+      border-radius: 0 !important;
+    }
+
+    .e-gridheader {
+      border-top: none !important;
+    }
+
+    .e-headercell {
+      background-color: rgba($primary-lighter, 0.25) !important;
+      color: $gray-600 !important;
+      font-size: 0.72rem !important;
+      font-weight: 600 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.06em !important;
+      border-color: rgba($primary, 0.1) !important;
+    }
+
+    .e-rowcell {
+      font-size: 0.855rem !important;
+      color: $gray-700 !important;
+      border-color: rgba($primary, 0.06) !important;
+      padding: 10px 14px !important;
+    }
+
+    .e-row:hover .e-rowcell {
+      background-color: rgba($primary-lighter, 0.15) !important;
+    }
+
+    .e-row.e-altrow .e-rowcell {
+      background-color: rgba($primary-lighter, 0.06) !important;
+    }
+
+    .e-pager {
+      background: rgba($body-bg, 0.6) !important;
+      border-top: 1px solid rgba($primary, 0.08) !important;
+      padding: 8px 16px !important;
+      font-size: 0.8rem !important;
+    }
+
+    .e-pagercontainer .e-numericitem.e-currentitem {
+      background: $primary !important;
+      border-color: $primary !important;
+      color: #fff !important;
+    }
+
+    .e-toolbar {
+      background: rgba($primary-lighter, 0.12) !important;
+      border-bottom: 1px solid rgba($primary, 0.1) !important;
+    }
+
+    .e-filterbar .e-filterbarcell input {
+      border-color: rgba($primary, 0.2) !important;
+      border-radius: 6px !important;
+      font-size: 0.8rem !important;
+    }
+
+    .e-groupdroparea {
+      background: rgba($primary-lighter, 0.2) !important;
+      border-bottom: 1px solid rgba($primary, 0.1) !important;
+      color: $gray-500 !important;
+      font-size: 0.8rem !important;
+    }
+  }
+}
+
+// ── Custom cell renders ───────────────────────────────────────────────────────
+.avatarCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba($primary, 0.12);
+  border: 1.5px solid rgba($primary, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: $primary-dark;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.staffName  { font-weight: 500; color: $gray-700; }
+.staffEmail { font-size: 0.75rem; color: $gray-400; margin-top: 1px; }
+
+.titleBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  white-space: nowrap;
+  background: rgba($primary, 0.08);
+  color: $primary-dark;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 500;
+
+  &::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  &--active {
+    background: rgba($success, 0.12);
+    color: darken($success, 25%);
+    &::before { background: darken($success, 10%); }
+  }
+
+  &--inactive {
+    background: rgba($gray-300, 0.3);
+    color: $gray-500;
+    &::before { background: $gray-400; }
+  }
+}
+
+// ── Butoane ───────────────────────────────────────────────────────────────────
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 18px;
+  height: 38px;
+  background: $primary;
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  font-size: 0.84rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+  box-shadow: 0 3px 10px rgba($primary, 0.3);
+  white-space: nowrap;
+
+  &:hover  { background: $primary-dark; box-shadow: 0 4px 14px rgba($primary, 0.38); transform: translateY(-1px); }
+  &:active { transform: translateY(0); }
+}
+
+.btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 14px;
+  height: 38px;
+  background: transparent;
+  color: $gray-600;
+  border: 1.5px solid $gray-200;
+  border-radius: 9px;
+  font-size: 0.84rem;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+
+  &:hover { border-color: $primary-lighter; color: $primary-dark; background: rgba($primary, 0.04); }
+}
+
+// ── Confirm delete dialog ─────────────────────────────────────────────────────
+.confirmOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1060;
+  animation: fadeIn 0.15s ease;
+}
+
+.confirmDialog {
+  background: $card-bg;
+  border-radius: $border-radius-lg;
+  box-shadow: $box-shadow-lg;
+  padding: 1.5rem;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  animation: slideUp 0.2s ease;
+}
+
+.confirmTitle {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  color: $gray-700;
+}
+
+.confirmText {
+  margin: 0 0 1.25rem;
+  color: $gray-500;
+  font-size: 0.875rem;
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
