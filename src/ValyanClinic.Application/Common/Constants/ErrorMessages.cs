@@ -49,7 +49,12 @@ public static class ErrorMessages
 
     public static class Doctor
     {
-        public const string NotFound = "Doctorul nu a fost găsit.";
+        public const string NotFound           = "Doctorul nu a fost găsit.";
+        public const string EmailDuplicate     = "Un doctor cu această adresă de email există deja.";
+        public const string InvalidDepartment  = "Departamentul selectat nu există sau nu aparține acestei clinici.";
+        public const string InvalidSupervisor  = "Supervizorul selectat nu există sau nu aparține acestei clinici.";
+        public const string CircularSupervisor = "Un doctor nu poate fi propriul său supervizor.";
+        public const string InvalidSubspecialty = "Subspecialitatea selectată nu este validă pentru specializarea aleasă.";
     }
 
     public static class MedicalDocument

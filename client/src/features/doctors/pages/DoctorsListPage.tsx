@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react'
 import {
   GridComponent,
   ColumnsDirective,
@@ -19,11 +19,15 @@ import {
   type SortSettingsModel,
   type ExcelExportProperties,
   type PdfExportProperties,
-} from '@syncfusion/ej2-react-grids';
-import type { DoctorDto, DoctorStatusFilter } from '../types/doctor.types';
-import { useDoctors } from '../hooks/useDoctors';
-import { formatDate, formatDateTime } from '@/utils/format';
-import styles from './DoctorsListPage.module.scss';
+} from '@syncfusion/ej2-react-grids'
+import type { DoctorDto, DoctorStatusFilter } from '../types/doctor.types'
+import type { DoctorFormData } from '../schemas/doctor.schema'
+import { useDoctors, useCreateDoctor, useUpdateDoctor, useDeleteDoctor, useDoctorLookup } from '../hooks/useDoctors'
+import { useSpecialties } from '@/features/nomenclature/hooks/useSpecialties'
+import { useDepartments } from '@/features/departments/hooks/useDepartments'
+import { DoctorFormModal } from '../components/DoctorFormModal/DoctorFormModal'
+import { formatDate, formatDateTime } from '@/utils/format'
+import styles from './DoctorsListPage.module.scss'
 
 // ── Icoane SVG inline ─────────────────────────────────────────────────────────
 const IconPlus    = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
@@ -31,8 +35,9 @@ const IconExcel   = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="
 const IconPdf     = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M10 12.5c0-.8.7-1.5 1.5-1.5s1.5.7 1.5 1.5-.7 1.5-1.5 1.5H10v2"/></svg>;
 const IconColumns = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="18"/><rect x="14" y="3" width="7" height="18"/></svg>;
 const IconSearch  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
-const IconEdit    = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>;
-const IconLock    = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>;
+const IconEdit    = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+const IconTrash   = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+const IconLock    = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
 const IconMedic   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4.5 2h-1A1.5 1.5 0 002 3.5v5A6.5 6.5 0 008.5 15h1A6.5 6.5 0 0016 8.5v-5A1.5 1.5 0 0014.5 2h-1"/><path d="M16 9a4 4 0 014 4 4 4 0 01-4 4m0 0v3"/><circle cx="16" cy="20" r="1"/></svg>;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -65,53 +70,165 @@ const sortSettings: SortSettingsModel = {
 
 // ── Componenta principală ─────────────────────────────────────────────────────
 export const DoctorsListPage = () => {
-  const gridRef = useRef<GridComponent>(null);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<DoctorStatusFilter>('all');
-  const [specialtyFilter, setSpecialtyFilter] = useState('');
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(20);
+  const gridRef = useRef<GridComponent>(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<DoctorStatusFilter>('all')
+  const [specialtyFilter, setSpecialtyFilter] = useState('')
+  const [page, setPage] = useState(1)
+  const [pageSize] = useState(20)
+
+  // Modal formular
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editingDoctor, setEditingDoctor] = useState<DoctorDto | null>(null)
+
+  // Confirmare ștergere
+  const [deleteTarget, setDeleteTarget] = useState<DoctorDto | null>(null)
+
+  // Mesaje feedback
+  const [successMsg, setSuccessMsg] = useState<string | null>(null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   // Date reale din API
-  const { data, isLoading, isError } = useDoctors({
+  const { data: doctorsResp, isLoading, isError } = useDoctors({
     page,
     pageSize,
     search: search || undefined,
     isActive: statusFilter === 'all' ? undefined : statusFilter === 'active',
     sortBy: 'fullName',
     sortDir: 'asc',
-  });
+  })
 
-  const doctors = data?.items ?? [];
-  const totalCount = data?.totalCount ?? 0;
+  // Date auxiliare pentru modal
+  const { data: specialtiesResp } = useSpecialties(true)
+  const { data: departmentsResp } = useDepartments(true)
+  const { data: lookupResp } = useDoctorLookup()
+
+  // Mutații
+  const createDoctor = useCreateDoctor()
+  const updateDoctor = useUpdateDoctor()
+  const deleteDoctor = useDeleteDoctor()
+
+  const doctors = doctorsResp?.data?.items ?? []
+  const totalCount = doctorsResp?.data?.totalCount ?? 0
+  const allSpecialties = specialtiesResp?.data ?? []
+  const departments = departmentsResp?.data ?? []
+  const doctorLookup = lookupResp?.data ?? []
 
   // Filtrare locală doar pentru specialitate (restul se face server-side)
   const filteredData = specialtyFilter
     ? doctors.filter(d => d.specialtyName === specialtyFilter)
-    : doctors;
+    : doctors
 
   // Statistici compute din datele curente
-  const totalActive   = doctors.filter(d => d.isActive).length;
-  const totalInactive = doctors.filter(d => !d.isActive).length;
+  const totalActive   = doctors.filter(d => d.isActive).length
+  const totalInactive = doctors.filter(d => !d.isActive).length
   const specialties   = useMemo(
     () => [...new Set(doctors.map(d => d.specialtyName).filter(Boolean))].sort() as string[],
     [doctors],
-  );
+  )
+
+  // Funcții helper — mesaje feedback
+  const showSuccess = (msg: string) => {
+    setErrorMsg(null)
+    setSuccessMsg(msg)
+    setTimeout(() => setSuccessMsg(null), 3000)
+  }
+
+  const showError = (err: unknown) => {
+    setSuccessMsg(null)
+    const message = err instanceof Error ? err.message : 'A apărut o eroare neașteptată.'
+    setErrorMsg(message)
+  }
+
+  // ── Modal handlers ─────────────────────────────────────────────────────────
+  const handleOpenCreate = () => {
+    setEditingDoctor(null)
+    setModalOpen(true)
+  }
+
+  const handleOpenEdit = (doctor: DoctorDto) => {
+    setEditingDoctor(doctor)
+    setModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setModalOpen(false)
+    setEditingDoctor(null)
+  }
+
+  const handleFormSubmit = (formData: DoctorFormData) => {
+    // Transformare: string gol → null pentru câmpurile opționale
+    const toNull = (v: string | undefined) => v || null
+
+    if (editingDoctor) {
+      updateDoctor.mutate(
+        {
+          id: editingDoctor.id,
+          departmentId: toNull(formData.departmentId),
+          supervisorDoctorId: toNull(formData.supervisorDoctorId),
+          specialtyId: toNull(formData.specialtyId),
+          subspecialtyId: toNull(formData.subspecialtyId),
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phoneNumber: toNull(formData.phoneNumber),
+          medicalCode: toNull(formData.medicalCode),
+          licenseNumber: toNull(formData.licenseNumber),
+          licenseExpiresAt: toNull(formData.licenseExpiresAt),
+          isActive: formData.isActive,
+        },
+        {
+          onSuccess: () => { handleCloseModal(); showSuccess('Doctorul a fost actualizat cu succes.') },
+          onError: (err) => showError(err),
+        },
+      )
+    } else {
+      createDoctor.mutate(
+        {
+          departmentId: toNull(formData.departmentId),
+          supervisorDoctorId: toNull(formData.supervisorDoctorId),
+          specialtyId: toNull(formData.specialtyId),
+          subspecialtyId: toNull(formData.subspecialtyId),
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phoneNumber: toNull(formData.phoneNumber),
+          medicalCode: toNull(formData.medicalCode),
+          licenseNumber: toNull(formData.licenseNumber),
+          licenseExpiresAt: toNull(formData.licenseExpiresAt),
+        },
+        {
+          onSuccess: () => { handleCloseModal(); showSuccess('Doctorul a fost adăugat cu succes.') },
+          onError: (err) => showError(err),
+        },
+      )
+    }
+  }
+
+  // ── Confirmare ștergere ────────────────────────────────────────────────────
+  const handleConfirmDelete = () => {
+    if (!deleteTarget) return
+    deleteDoctor.mutate(deleteTarget.id, {
+      onSuccess: () => { setDeleteTarget(null); showSuccess('Doctorul a fost șters cu succes.') },
+      onError: (err) => { setDeleteTarget(null); showError(err) },
+    })
+  }
 
   // Date transformate pentru export — plain objects, fără template JSX
   const buildExportData = useCallback(() =>
     filteredData.map(d => ({
-      fullName:         d.fullName,
-      specialtyName:    d.specialtyName ?? '—',
-      medicalCode:      d.medicalCode   ?? '—',
-      licenseNumber:    d.licenseNumber ?? '—',
-      licenseExpiresAt: d.licenseExpiresAt ? formatDate(d.licenseExpiresAt) : '—',
-      phoneNumber:      d.phoneNumber   ?? '—',
-      isActive:         d.isActive ? 'Activ' : 'Inactiv',
-      lastLoginAt:      d.lastLoginAt ? formatDateTime(d.lastLoginAt) : '—',
-      createdAt:        d.createdAt ? formatDate(d.createdAt) : '—',
+      fullName:            d.fullName,
+      specialtyName:       d.specialtyName ?? '—',
+      subspecialtyName:    d.subspecialtyName ?? '—',
+      departmentName:      d.departmentName ?? '—',
+      medicalCode:         d.medicalCode   ?? '—',
+      licenseNumber:       d.licenseNumber ?? '—',
+      licenseExpiresAt:    d.licenseExpiresAt ? formatDate(d.licenseExpiresAt) : '—',
+      phoneNumber:         d.phoneNumber   ?? '—',
+      isActive:            d.isActive ? 'Activ' : 'Inactiv',
+      createdAt:           d.createdAt ? formatDate(d.createdAt) : '—',
     }))
-  , [filteredData]);
+  , [filteredData])
 
   // ── Export handlers ────────────────────────────────────────────────────────
   const handleExcelExport = useCallback(() => {
@@ -211,7 +328,19 @@ export const DoctorsListPage = () => {
     row.specialtyName
       ? <span className={styles.specialtyBadge}>{row.specialtyName}</span>
       : <span style={{ color: '#C9D3DC', fontSize: '0.78rem' }}>—</span>
-  , []);
+  , [])
+
+  const subspecialtyTemplate = useCallback((row: DoctorDto) =>
+    row.subspecialtyName
+      ? <span className={styles.specialtyBadge}>{row.subspecialtyName}</span>
+      : <span style={{ color: '#C9D3DC', fontSize: '0.78rem' }}>—</span>
+  , [])
+
+  const departmentTemplate = useCallback((row: DoctorDto) =>
+    row.departmentName
+      ? <span style={{ fontSize: '0.85rem' }}>{row.departmentName}</span>
+      : <span style={{ color: '#C9D3DC', fontSize: '0.78rem' }}>—</span>
+  , [])
 
   const medicalCodeTemplate = useCallback((row: DoctorDto) =>
     row.medicalCode
@@ -232,32 +361,26 @@ export const DoctorsListPage = () => {
     <span className={`${styles.statusBadge} ${styles[row.isActive ? 'statusBadge--active' : 'statusBadge--inactive']}`}>
       {row.isActive ? 'Activ' : 'Inactiv'}
     </span>
-  ), []);
-
-  const lastLoginTemplate = useCallback((row: DoctorDto) =>
-    row.lastLoginAt
-      ? <span style={{ fontSize: '0.8rem', color: '#6E8090' }}>{formatDateTime(row.lastLoginAt)}</span>
-      : <span style={{ color: '#C9D3DC', fontSize: '0.78rem' }}>—</span>
-  , []);
+  ), [])
 
   const actionsTemplate = useCallback((row: DoctorDto) => (
     <div className={styles.actionCell}>
       <button
         className={styles.actionBtn}
         title="Editare"
-        onClick={() => console.log('edit', row.id)}
+        onClick={() => handleOpenEdit(row)}
       >
         <IconEdit />
       </button>
       <button
-        className={`${styles.actionBtn} ${row.isActive ? styles['actionBtn--danger'] : ''}`}
-        title={row.isActive ? 'Dezactivare' : 'Activare'}
-        onClick={() => console.log('toggle', row.id)}
+        className={`${styles.actionBtn} ${styles['actionBtn--danger']}`}
+        title="Ștergere"
+        onClick={() => setDeleteTarget(row)}
       >
-        <IconLock />
+        <IconTrash />
       </button>
     </div>
-  ), []);
+  ), [])
 
   // ── Render ─────────────────────────────────────────────────────────────────
   if (isError) {
@@ -284,7 +407,7 @@ export const DoctorsListPage = () => {
           <button className={styles.btnSecondary} onClick={handleExcelExport}>
             <IconExcel /> Export Excel
           </button>
-          <button className={styles.btnPrimary} onClick={() => console.log('add doctor')}>
+          <button className={styles.btnPrimary} onClick={handleOpenCreate}>
             <IconPlus /> Doctor nou
           </button>
         </div>
@@ -423,6 +546,23 @@ export const DoctorsListPage = () => {
             />
 
             <ColumnDirective
+              field="subspecialtyName"
+              headerText="SUBSPECIALIZARE"
+              width="150"
+              minWidth="120"
+              template={subspecialtyTemplate}
+              visible={false}
+            />
+
+            <ColumnDirective
+              field="departmentName"
+              headerText="DEPARTAMENT"
+              width="140"
+              minWidth="110"
+              template={departmentTemplate}
+            />
+
+            <ColumnDirective
               field="medicalCode"
               headerText="PARAFĂ"
               width="110"
@@ -463,14 +603,6 @@ export const DoctorsListPage = () => {
             />
 
             <ColumnDirective
-              field="lastLoginAt"
-              headerText="ULTIMA AUTENTIFICARE"
-              width="175"
-              minWidth="140"
-              template={lastLoginTemplate}
-            />
-
-            <ColumnDirective
               field="createdAt"
               headerText="ÎNREGISTRAT"
               width="120"
@@ -504,8 +636,58 @@ export const DoctorsListPage = () => {
         </GridComponent>
       </div>
 
-    </div>
-  );
-};
+      {/* Mesaje feedback */}
+      {successMsg && (
+        <div className="alert alert-success alert-dismissible fade show mt-3" role="alert">
+          {successMsg}
+          <button type="button" className="btn-close" onClick={() => setSuccessMsg(null)} />
+        </div>
+      )}
+      {errorMsg && (
+        <div className="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+          {errorMsg}
+          <button type="button" className="btn-close" onClick={() => setErrorMsg(null)} />
+        </div>
+      )}
 
-export default DoctorsListPage;
+      {/* Modal creare / editare */}
+      <DoctorFormModal
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+        onSubmit={handleFormSubmit}
+        isLoading={createDoctor.isPending || updateDoctor.isPending}
+        editData={editingDoctor}
+        specialties={allSpecialties}
+        departments={departments}
+        doctorLookup={doctorLookup}
+      />
+
+      {/* Dialog confirmare ștergere */}
+      {deleteTarget && (
+        <div className={styles.confirmOverlay} onClick={() => setDeleteTarget(null)}>
+          <div className={styles.confirmDialog} onClick={(e) => e.stopPropagation()}>
+            <h6 className={styles.confirmTitle}>Confirmare ștergere</h6>
+            <p className={styles.confirmText}>
+              Sigur dorești să ștergi doctorul <strong>{deleteTarget.fullName}</strong>?
+            </p>
+            <div className={styles.confirmActions}>
+              <button className="btn btn-outline-secondary btn-sm" onClick={() => setDeleteTarget(null)}>
+                Anulează
+              </button>
+              <button
+                className="btn btn-danger btn-sm"
+                onClick={handleConfirmDelete}
+                disabled={deleteDoctor.isPending}
+              >
+                {deleteDoctor.isPending ? 'Se șterge...' : 'Șterge'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  )
+}
+
+export default DoctorsListPage
