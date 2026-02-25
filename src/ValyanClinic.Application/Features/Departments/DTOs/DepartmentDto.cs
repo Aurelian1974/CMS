@@ -13,6 +13,7 @@ public sealed class DepartmentDto
     public Guid? HeadDoctorId { get; init; }
     public string? HeadDoctorName { get; init; }
     public int DoctorCount { get; init; }
+    public int MedicalStaffCount { get; init; }
     public bool IsActive { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime? UpdatedAt { get; init; }

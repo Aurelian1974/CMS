@@ -1,13 +1,19 @@
 import api from '@/api/axiosInstance';
+import type { ApiResponse } from '@/types/common.types';
 import type { LoginPayload, LoginResponse } from '@/features/auth/types/auth.types';
 
-// Axiosinstance returnează response.data direct prin interceptor
+// Axios interceptor returnează response.data = ApiResponse<T>
+// Pentru login extragem .data din wrapper-ul ApiResponse
 export const authApi = {
-  login: (payload: LoginPayload): Promise<LoginResponse> =>
-    api.post('/api/auth/login', payload),
+  login: async (payload: LoginPayload): Promise<LoginResponse> => {
+    const response = await api.post<unknown, ApiResponse<LoginResponse>>('/api/auth/login', payload);
+    return response.data!;
+  },
 
-  refresh: (): Promise<LoginResponse> =>
-    api.post('/api/auth/refresh'),
+  refresh: async (): Promise<LoginResponse> => {
+    const response = await api.post<unknown, ApiResponse<LoginResponse>>('/api/auth/refresh');
+    return response.data!;
+  },
 
   logout: (): Promise<void> =>
     api.post('/api/auth/logout'),

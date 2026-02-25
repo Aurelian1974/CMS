@@ -13,6 +13,8 @@ public sealed class DoctorDetailDto
     public string? SpecialtyName { get; init; }
     public Guid? SubspecialtyId { get; init; }
     public string? SubspecialtyName { get; init; }
+    public Guid? MedicalTitleId { get; init; }
+    public string? MedicalTitleName { get; init; }
     public string FirstName { get; init; } = string.Empty;
     public string LastName { get; init; } = string.Empty;
     public string FullName { get; init; } = string.Empty;

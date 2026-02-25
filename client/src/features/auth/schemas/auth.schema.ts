@@ -3,8 +3,7 @@ import { z } from 'zod';
 export const loginSchema = z.object({
   email: z
     .string()
-    .min(1, 'Email-ul este obligatoriu.')
-    .email('Adresa de email nu este validă.'),
+    .min(1, 'Email-ul sau username-ul este obligatoriu.'),
   password: z
     .string()
     .min(1, 'Parola este obligatorie.'),

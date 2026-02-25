@@ -49,12 +49,14 @@ api.interceptors.response.use(
           { withCredentials: true }
         )
 
-        useAuthStore.getState().setAuth(data.user, data.accessToken)
+        // axios.post direct returnează AxiosResponse.data = ApiResponse<{ accessToken, user }>
+        const loginData = data.data
+        useAuthStore.getState().setAuth(loginData.user, loginData.accessToken)
 
-        refreshQueue.forEach((cb) => cb(data.accessToken))
+        refreshQueue.forEach((cb) => cb(loginData.accessToken))
         refreshQueue = []
 
-        originalRequest!.headers!['Authorization'] = `Bearer ${data.accessToken}`
+        originalRequest!.headers!['Authorization'] = `Bearer ${loginData.accessToken}`
         return api(originalRequest!)
       } catch {
         useAuthStore.getState().clearAuth()

@@ -1,0 +1,165 @@
+@import '@/styles/variables';
+
+// ===== Overlay =====
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  animation: fadeIn 0.15s ease;
+}
+
+// ===== Modal =====
+.modal {
+  background: $card-bg;
+  border-radius: $border-radius-lg;
+  box-shadow: $box-shadow-lg;
+  max-width: 580px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  animation: slideUp 0.2s ease;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid $gray-200;
+}
+
+.modalTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: $gray-700;
+  margin: 0;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: $gray-400;
+  cursor: pointer;
+  padding: 0;
+
+  &:hover {
+    color: $gray-600;
+  }
+}
+
+.modalBody {
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+
+.modalFooter {
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid $gray-200;
+  display: flex;
+  justify-content: flex-end;
+}
+
+// ===== Loading =====
+.loadingWrap {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+// ===== Name row =====
+.nameRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid $gray-200;
+}
+
+.doctorName {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: $gray-800;
+  margin: 0 0 0.2rem;
+}
+
+.specialty {
+  font-size: 0.8125rem;
+  color: $primary;
+  font-weight: 500;
+}
+
+.subspecialty {
+  font-size: 0.8125rem;
+  color: $gray-500;
+}
+
+// ===== Badges =====
+.badgeActive {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: rgba($success, 0.15);
+  color: darken($success, 20%);
+  flex-shrink: 0;
+}
+
+.badgeInactive {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: rgba($gray-400, 0.2);
+  color: $gray-500;
+  flex-shrink: 0;
+}
+
+// ===== Info grid =====
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.infoField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.infoLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: $gray-500;
+}
+
+.infoValue {
+  font-size: 0.875rem;
+  color: $gray-700;
+  font-weight: 500;
+}
+
+// ===== Animations =====
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}

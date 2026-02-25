@@ -188,17 +188,17 @@ export const LoginPage = () => {
             <form onSubmit={handleSubmit(onSubmit)} noValidate>
               <div className={styles.fields}>
 
-                {/* Email */}
+                {/* Email sau username */}
                 <div className={styles.fieldGroup}>
                   <label className={styles.fieldLabel} htmlFor="email">
-                    Adresă email
+                    Email sau username
                   </label>
                   <div className={styles.inputWrap}>
                     <input
                       id="email"
-                      type="email"
-                      autoComplete="email"
-                      placeholder="doctor@clinica.ro"
+                      type="text"
+                      autoComplete="username"
+                      placeholder="email sau username"
                       className={
                         errors.email
                           ? `${styles.input} ${styles.inputError}`

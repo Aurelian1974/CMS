@@ -36,15 +36,24 @@ public static class ErrorMessages
 
     public static class Auth
     {
-        public const string InvalidCredentials = "Email sau parolă incorectă.";
-        public const string AccountLocked      = "Contul a fost blocat. Contactați administratorul.";
+        public const string InvalidCredentials = "Email/username sau parola incorectă.";
+        public const string AccountLocked      = "Contul este blocat temporar. Încercați din nou după {0} minute.";
+        public const string AccountInactive    = "Contul este dezactivat. Contactați administratorul.";
         public const string InvalidToken       = "Token-ul de autentificare este invalid sau expirat.";
     }
 
     public static class User
     {
-        public const string EmailDuplicate = "Un utilizator cu această adresă de email există deja.";
-        public const string NotFound       = "Utilizatorul nu a fost găsit.";
+        public const string EmailDuplicate          = "Un utilizator cu această adresă de email există deja.";
+        public const string UsernameDuplicate        = "Un utilizator cu acest username există deja.";
+        public const string NotFound                = "Utilizatorul nu a fost găsit.";
+        public const string InvalidAssociation      = "Utilizatorul trebuie asociat fie unui doctor, fie unui membru al personalului medical.";
+        public const string InvalidDoctor           = "Doctorul selectat nu există sau nu aparține acestei clinici.";
+        public const string InvalidMedicalStaff     = "Personalul medical selectat nu există sau nu aparține acestei clinici.";
+        public const string InvalidRole             = "Rolul selectat nu există sau nu este activ.";
+        public const string DoctorAlreadyLinked     = "Acest doctor are deja un cont de utilizator asociat.";
+        public const string MedicalStaffAlreadyLinked = "Acest membru al personalului medical are deja un cont de utilizator asociat.";
+        public const string PasswordTooShort        = "Parola trebuie să aibă minimum 6 caractere.";
     }
 
     public static class Doctor
@@ -55,6 +64,7 @@ public static class ErrorMessages
         public const string InvalidSupervisor  = "Supervizorul selectat nu există sau nu aparține acestei clinici.";
         public const string CircularSupervisor = "Un doctor nu poate fi propriul său supervizor.";
         public const string InvalidSubspecialty = "Subspecialitatea selectată nu este validă pentru specializarea aleasă.";
+        public const string InvalidMedicalTitle = "Titulatura medicală selectată nu există sau nu este activă.";
     }
 
     public static class MedicalDocument
@@ -87,5 +97,20 @@ public static class ErrorMessages
         public const string CodeDuplicate     = "Un departament cu acest cod există deja.";
         public const string InvalidLocation   = "Locația selectată nu există sau nu aparține acestei clinici.";
         public const string InvalidHeadDoctor = "Doctorul selectat ca șef de departament nu există.";
+    }
+
+    public static class MedicalTitle
+    {
+        public const string NotFound      = "Titulatura medicală nu a fost găsită.";
+        public const string CodeDuplicate = "Există deja o titulatură cu acest cod.";
+    }
+
+    public static class MedicalStaffMember
+    {
+        public const string NotFound            = "Membrul personalului medical nu a fost găsit.";
+        public const string EmailDuplicate      = "Un membru al personalului medical cu această adresă de email există deja.";
+        public const string InvalidDepartment   = "Departamentul selectat nu există sau nu aparține acestei clinici.";
+        public const string InvalidSupervisor   = "Supervizorul (doctorul) selectat nu există sau nu aparține acestei clinici.";
+        public const string InvalidMedicalTitle = "Titulatura medicală selectată nu există sau nu este activă.";
     }
 }

@@ -1,7 +1,8 @@
 -- ============================================================
 -- Doctor_Create — creare doctor cu validări business
 -- Coduri eroare: 50301=email duplicat, 50302=departament invalid,
---   50303=supervisor invalid, 50305=subspecialitate invalidă
+--   50303=supervisor invalid, 50305=subspecialitate invalidă,
+--   50306=titulatură invalidă
 -- ============================================================
 SET QUOTED_IDENTIFIER ON;
 GO
@@ -12,6 +13,7 @@ CREATE OR ALTER PROCEDURE dbo.Doctor_Create
     @SupervisorDoctorId UNIQUEIDENTIFIER = NULL,
     @SpecialtyId        UNIQUEIDENTIFIER = NULL,
     @SubspecialtyId     UNIQUEIDENTIFIER = NULL,
+    @MedicalTitleId     UNIQUEIDENTIFIER = NULL,
     @FirstName          NVARCHAR(100),
     @LastName           NVARCHAR(100),
     @Email              NVARCHAR(200),
@@ -77,18 +79,27 @@ BEGIN
             ;THROW 50305, N'Nu se poate selecta o subspecialitate fără a selecta o specializare.', 1;
         END;
 
+        -- Validare: titulatura medicală există și este activă
+        IF @MedicalTitleId IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM MedicalTitles
+            WHERE Id = @MedicalTitleId AND IsActive = 1
+        )
+        BEGIN
+            ;THROW 50306, N'Titulatura medicală selectată nu există sau nu este activă.', 1;
+        END;
+
         DECLARE @OutputIds TABLE (Id UNIQUEIDENTIFIER);
 
         INSERT INTO Doctors (
             ClinicId, DepartmentId, SupervisorDoctorId, SpecialtyId, SubspecialtyId,
-            FirstName, LastName, Email, PhoneNumber, MedicalCode, LicenseNumber,
-            LicenseExpiresAt, IsActive, IsDeleted, CreatedAt, CreatedBy
+            MedicalTitleId, FirstName, LastName, Email, PhoneNumber, MedicalCode,
+            LicenseNumber, LicenseExpiresAt, IsActive, IsDeleted, CreatedAt, CreatedBy
         )
         OUTPUT INSERTED.Id INTO @OutputIds(Id)
         VALUES (
             @ClinicId, @DepartmentId, @SupervisorDoctorId, @SpecialtyId, @SubspecialtyId,
-            @FirstName, @LastName, @Email, @PhoneNumber, @MedicalCode, @LicenseNumber,
-            @LicenseExpiresAt, 1, 0, GETDATE(), @CreatedBy
+            @MedicalTitleId, @FirstName, @LastName, @Email, @PhoneNumber, @MedicalCode,
+            @LicenseNumber, @LicenseExpiresAt, 1, 0, GETDATE(), @CreatedBy
         );
 
         COMMIT TRANSACTION;

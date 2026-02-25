@@ -6,6 +6,7 @@ export const doctorSchema = z.object({
   supervisorDoctorId: z.string().optional().or(z.literal('')),
   specialtyId:        z.string().optional().or(z.literal('')),
   subspecialtyId:     z.string().optional().or(z.literal('')),
+  medicalTitleId:     z.string().optional().or(z.literal('')),
 
   firstName:  z.string().min(1, 'Prenumele este obligatoriu').max(100, 'Maxim 100 caractere'),
   lastName:   z.string().min(1, 'Numele este obligatoriu').max(100, 'Maxim 100 caractere'),

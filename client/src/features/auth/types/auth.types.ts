@@ -9,7 +9,7 @@ export interface AuthUser {
   id: string;
   email: string;
   fullName: string;
-  role: 'Admin' | 'Doctor' | 'Nurse' | 'Receptionist' | 'ClinicManager';
+  role: 'admin' | 'doctor' | 'nurse' | 'receptionist' | 'clinic_manager';
   clinicId: string;
 }
 

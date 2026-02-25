@@ -12,6 +12,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/prescriptions': 'Prescripții',
   '/invoices':      'Facturi',
   '/doctors':       'Doctori',
+  '/medical-staff': 'Personal Medical',
   '/users':         'Utilizatori',
 };
 

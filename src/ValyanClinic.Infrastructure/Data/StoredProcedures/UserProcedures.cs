@@ -14,6 +14,12 @@ public static class UserProcedures
     public const string ResetFailedLogin  = "dbo.User_ResetFailedLogin";
 }
 
+/// <summary>Stored procedures pentru roluri (nomenclator).</summary>
+public static class RoleProcedures
+{
+    public const string GetAll = "dbo.Role_GetAll";
+}
+
 /// <summary>Stored procedures pentru refresh token-uri.</summary>
 public static class RefreshTokenProcedures
 {

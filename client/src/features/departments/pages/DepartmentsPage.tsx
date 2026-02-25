@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { DepartmentFormModal } from '../components/DepartmentFormModal'
 import {
@@ -9,8 +9,11 @@ import {
 } from '../hooks/useDepartments'
 import { useClinicLocations } from '@/features/clinic/hooks/useClinic'
 import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
+import { useMedicalStaffLookup } from '@/features/medicalStaff/hooks/useMedicalStaff'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { IconPlus } from '@/components/ui/Icons'
+import { DoctorViewModal } from '@/features/doctors/components'
+import { MedicalStaffViewModal } from '@/features/medicalStaff/components'
 import type { DepartmentDto, CreateDepartmentPayload } from '../types/department.types'
 import type { DepartmentFormData } from '../schemas/department.schema'
 import styles from './DepartmentsPage.module.scss'
@@ -25,6 +28,38 @@ const IconDepartment = () => (
   </svg>
 )
 
+const IconChevron = ({ expanded }: { expanded: boolean }) => (
+  <svg
+    className={`${styles.chevronIcon} ${expanded ? styles.chevronExpanded : ''}`}
+    viewBox="0 0 24 24" fill="none" stroke="currentColor"
+    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+  >
+    <polyline points="9 18 15 12 9 6" />
+  </svg>
+)
+
+const IconStar = () => (
+  <svg className={styles.starIcon} viewBox="0 0 24 24" fill="currentColor" stroke="none">
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+  </svg>
+)
+
+const IconDoctor = () => (
+  <svg className={styles.doctorIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>
+)
+
+const IconStaff = () => (
+  <svg className={styles.doctorIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M23 21v-2a4 4 0 00-3-3.87" />
+    <path d="M16 3.13a4 4 0 010 7.75" />
+  </svg>
+)
+
 
 
 // ===== Componenta principală =====
@@ -33,6 +68,7 @@ const DepartmentsPage = () => {
   const { data: departmentsResp, isLoading: loadingDepts } = useDepartments()
   const { data: locationsResp, isLoading: loadingLocations } = useClinicLocations()
   const { data: doctorsResp } = useDoctorLookup()
+  const { data: staffResp } = useMedicalStaffLookup()
 
   // Mutații
   const createDepartment = useCreateDepartment()
@@ -46,6 +82,15 @@ const DepartmentsPage = () => {
   // State confirmare ștergere
   const [deleteTarget, setDeleteTarget] = useState<DepartmentDto | null>(null)
 
+  // State expandare departamente (master-detail)
+  const [expandedDepts, setExpandedDepts] = useState<Set<string>>(new Set())
+
+  // State vizualizare doctor (readonly modal)
+  const [viewDoctorId, setViewDoctorId] = useState<string | null>(null)
+
+  // State vizualizare personal medical (readonly modal)
+  const [viewStaffId, setViewStaffId] = useState<string | null>(null)
+
   // State mesaje feedback
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -53,7 +98,44 @@ const DepartmentsPage = () => {
   const departments = departmentsResp?.data ?? []
   const locations = locationsResp?.data ?? []
   const doctors = doctorsResp?.data ?? []
+  const staff = staffResp?.data ?? []
   const isLoading = loadingDepts || loadingLocations
+
+  // Grupare doctori per departament (pentru master-detail)
+  const doctorsByDept = useMemo(() => {
+    const map = new Map<string, typeof doctors>()
+    for (const doc of doctors) {
+      if (doc.departmentId) {
+        const list = map.get(doc.departmentId) ?? []
+        list.push(doc)
+        map.set(doc.departmentId, list)
+      }
+    }
+    return map
+  }, [doctors])
+
+  // Grupare personal medical per departament (pentru master-detail)
+  const staffByDept = useMemo(() => {
+    const map = new Map<string, typeof staff>()
+    for (const s of staff) {
+      if (s.departmentId) {
+        const list = map.get(s.departmentId) ?? []
+        list.push(s)
+        map.set(s.departmentId, list)
+      }
+    }
+    return map
+  }, [staff])
+
+  // Toggle expandare departament
+  const toggleExpand = (deptId: string) => {
+    setExpandedDepts((prev) => {
+      const next = new Set(prev)
+      if (next.has(deptId)) next.delete(deptId)
+      else next.add(deptId)
+      return next
+    })
+  }
 
   // Funcții helper — afișare mesaje feedback
   const showSuccess = (msg: string) => {
@@ -192,45 +274,175 @@ const DepartmentsPage = () => {
             <table className={styles.dataTable}>
               <thead>
                 <tr>
+                  <th style={{ width: '36px' }}></th>
                   <th>Denumire</th>
                   <th>Cod</th>
                   <th>Locație</th>
                   <th>Șef departament</th>
                   <th>Nr. medici</th>
+                  <th>Nr. personal</th>
                   <th>Descriere</th>
                   <th>Status</th>
                   <th style={{ width: '80px' }}>Acțiuni</th>
                 </tr>
               </thead>
               <tbody>
-                {departments.map((dept) => (
-                  <tr key={dept.id}>
-                    <td>{dept.name}</td>
-                    <td>
-                      <span className={styles.codeTag}>{dept.code}</span>
-                    </td>
-                    <td>{dept.locationName ?? '—'}</td>
-                    <td>{dept.headDoctorName ?? '—'}</td>
-                    <td className="text-center">{dept.doctorCount}</td>
-                    <td className={styles.descriptionCell}>{dept.description || '—'}</td>
-                    <td>
-                      <span className={dept.isActive ? styles.badgeActive : styles.badgeInactive}>
-                        {dept.isActive ? 'Activ' : 'Inactiv'}
-                      </span>
-                    </td>
-                    <td>
-                      <ActionButtons
-                        onEdit={() => handleOpenEdit(dept)}
-                        onDelete={() => setDeleteTarget(dept)}
-                      />
-                    </td>
-                  </tr>
-                ))}
+                {departments.map((dept) => {
+                  const isExpanded = expandedDepts.has(dept.id)
+                  const deptDoctors = doctorsByDept.get(dept.id) ?? []
+                  const deptStaff = staffByDept.get(dept.id) ?? []
+                  const hasMembers = deptDoctors.length > 0 || deptStaff.length > 0
+                  // Sortare: șeful departamentului primul
+                  const sortedDoctors = [...deptDoctors].sort((a, b) => {
+                    if (a.id === dept.headDoctorId) return -1
+                    if (b.id === dept.headDoctorId) return 1
+                    return a.fullName.localeCompare(b.fullName)
+                  })
+
+                  return (
+                    <>
+                      <tr key={dept.id} className={isExpanded ? styles.rowExpanded : ''}>
+                        <td className={styles.expandCell}>
+                          {hasMembers && (
+                            <button
+                              className={styles.expandBtn}
+                              onClick={() => toggleExpand(dept.id)}
+                              aria-label={isExpanded ? 'Restrânge' : 'Expandează'}
+                            >
+                              <IconChevron expanded={isExpanded} />
+                            </button>
+                          )}
+                        </td>
+                        <td>
+                          <span
+                            className={hasMembers ? styles.clickableName : ''}
+                            onClick={() => hasMembers && toggleExpand(dept.id)}
+                          >
+                            {dept.name}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={styles.codeTag}>{dept.code}</span>
+                        </td>
+                        <td>{dept.locationName ?? '—'}</td>
+                        <td>{dept.headDoctorName ?? '—'}</td>
+                        <td className="text-center">{dept.doctorCount}</td>
+                        <td className="text-center">{dept.medicalStaffCount}</td>
+                        <td className={styles.descriptionCell}>{dept.description || '—'}</td>
+                        <td>
+                          <span className={dept.isActive ? styles.badgeActive : styles.badgeInactive}>
+                            {dept.isActive ? 'Activ' : 'Inactiv'}
+                          </span>
+                        </td>
+                        <td>
+                          <ActionButtons
+                            onEdit={() => handleOpenEdit(dept)}
+                            onDelete={() => setDeleteTarget(dept)}
+                          />
+                        </td>
+                      </tr>
+
+                      {/* ===== Detail row: doctori + personal medical din departament ===== */}
+                      {isExpanded && (
+                        <tr key={`${dept.id}-detail`} className={styles.detailRow}>
+                          <td colSpan={10} className={styles.detailCell}>
+                            <div className={styles.detailContent}>
+                              {/* Secțiune medici */}
+                              <div className={styles.detailHeader}>
+                                <IconDoctor />
+                                <span>Medici în departamentul <strong>{dept.name}</strong></span>
+                              </div>
+                              {sortedDoctors.length === 0 ? (
+                                <p className={styles.detailEmpty}>Niciun medic asignat.</p>
+                              ) : (
+                                <div className={styles.doctorList}>
+                                  {sortedDoctors.map((doc) => {
+                                    const isHead = doc.id === dept.headDoctorId
+                                    return (
+                                      <div
+                                        key={doc.id}
+                                        className={`${styles.doctorCard} ${isHead ? styles.doctorCardHead : ''}`}
+                                        onClick={() => setViewDoctorId(doc.id)}
+                                        role="button"
+                                        tabIndex={0}
+                                        onKeyDown={(e) => e.key === 'Enter' && setViewDoctorId(doc.id)}
+                                      >
+                                        <div className={styles.doctorAvatar}>
+                                          {isHead ? <IconStar /> : <IconDoctor />}
+                                        </div>
+                                        <div className={styles.doctorInfo}>
+                                          <span className={styles.doctorName}>
+                                            {doc.fullName}
+                                            {isHead && (
+                                              <span className={styles.headBadge}>Șef</span>
+                                            )}
+                                          </span>
+                                          <span className={styles.doctorSpec}>
+                                            {doc.specialtyName ?? 'Fără specialitate'}
+                                            {doc.medicalCode && ` · ${doc.medicalCode}`}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )}
+
+                              {/* Secțiune personal medical */}
+                              <div className={`${styles.detailHeader} ${styles.staffSection}`}>
+                                <IconStaff />
+                                <span>Personal medical în departamentul <strong>{dept.name}</strong></span>
+                              </div>
+                              {deptStaff.length === 0 ? (
+                                <p className={styles.detailEmpty}>Niciun personal medical asignat.</p>
+                              ) : (
+                                <div className={styles.doctorList}>
+                                  {deptStaff.map((s) => (
+                                    <div
+                                      key={s.id}
+                                      className={styles.doctorCard}
+                                      onClick={() => setViewStaffId(s.id)}
+                                      role="button"
+                                      tabIndex={0}
+                                      onKeyDown={(e) => e.key === 'Enter' && setViewStaffId(s.id)}
+                                    >
+                                      <div className={styles.doctorAvatar}>
+                                        <IconStaff />
+                                      </div>
+                                      <div className={styles.doctorInfo}>
+                                        <span className={styles.doctorName}>{s.fullName}</span>
+                                        <span className={styles.doctorSpec}>
+                                          {s.medicalTitleName ?? 'Fără titulatură'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  )
+                })}
               </tbody>
             </table>
           </div>
         )}
       </div>
+
+      {/* ===== Modal vizualizare doctor (readonly) ===== */}
+      <DoctorViewModal
+        doctorId={viewDoctorId}
+        onClose={() => setViewDoctorId(null)}
+      />
+
+      {/* ===== Modal vizualizare personal medical (readonly) ===== */}
+      <MedicalStaffViewModal
+        staffId={viewStaffId}
+        onClose={() => setViewStaffId(null)}
+      />
 
       {/* ===== Modal formular departament ===== */}
       <DepartmentFormModal

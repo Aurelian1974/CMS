@@ -119,6 +119,166 @@
   }
 }
 
+// ===== Expand / Collapse =====
+.expandCell {
+  width: 36px;
+  padding: 0.625rem 0.25rem 0.625rem 0.75rem !important;
+}
+
+.expandBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0.15rem;
+  cursor: pointer;
+  color: $gray-500;
+  border-radius: 0.25rem;
+  transition: color 0.15s, background-color 0.15s;
+
+  &:hover {
+    color: $primary;
+    background-color: rgba($primary, 0.08);
+  }
+}
+
+.chevronIcon {
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s ease;
+}
+
+.chevronExpanded {
+  transform: rotate(90deg);
+}
+
+.clickableName {
+  cursor: pointer;
+  &:hover {
+    color: $primary;
+    text-decoration: underline;
+  }
+}
+
+.rowExpanded td {
+  border-bottom-color: transparent;
+  background-color: rgba($primary-lighter, 0.08);
+}
+
+// ===== Detail row (departamente din locație) =====
+.detailRow {
+  &:hover td {
+    background-color: transparent !important;
+  }
+}
+
+.detailCell {
+  padding: 0 0.75rem 1rem 0.75rem !important;
+  border-bottom: 2px solid $gray-200 !important;
+  background-color: rgba($primary-lighter, 0.04);
+}
+
+.detailContent {
+  margin-left: 36px;
+  padding: 0.75rem 1rem;
+  background: $card-bg;
+  border-radius: $border-radius;
+  border: 1px solid $gray-200;
+}
+
+.detailHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: $gray-600;
+}
+
+.detailEmpty {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: $gray-400;
+  font-style: italic;
+}
+
+.deptIcon {
+  width: 16px;
+  height: 16px;
+  color: $primary;
+}
+
+.starIcon {
+  width: 12px;
+  height: 12px;
+  color: $warning;
+  flex-shrink: 0;
+}
+
+.doctorSmIcon {
+  width: 12px;
+  height: 12px;
+  color: $primary;
+  flex-shrink: 0;
+}
+
+// ===== Department cards (grid) =====
+.deptList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 0.5rem;
+}
+
+.deptCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: $border-radius-sm;
+  background: $gray-50;
+  border: 1px solid $gray-200;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    border-color: $primary-light;
+    box-shadow: 0 1px 4px rgba($primary, 0.1);
+  }
+}
+
+.deptCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.deptName {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: $gray-700;
+}
+
+.deptCode {
+  display: inline-block;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.2rem;
+  font-size: 0.7rem;
+  font-weight: 500;
+  font-family: 'Consolas', 'Fira Code', monospace;
+  background: rgba($primary, 0.08);
+  color: $primary-dark;
+}
+
+.deptMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: $gray-500;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;

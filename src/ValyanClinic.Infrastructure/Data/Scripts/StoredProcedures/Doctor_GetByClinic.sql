@@ -11,6 +11,9 @@ BEGIN
     SELECT
         d.Id,
         d.FirstName + ' ' + d.LastName AS FullName,
+        d.FirstName,
+        d.LastName,
+        d.Email,
         d.MedicalCode,
         d.SpecialtyId,
         sp.Name AS SpecialtyName,

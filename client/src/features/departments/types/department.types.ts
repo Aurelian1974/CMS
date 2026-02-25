@@ -12,6 +12,7 @@ export interface DepartmentDto {
   headDoctorId: string | null
   headDoctorName: string | null
   doctorCount: number
+  medicalStaffCount: number
   isActive: boolean
   createdAt: string
   updatedAt: string | null
