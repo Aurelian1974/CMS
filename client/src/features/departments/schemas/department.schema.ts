@@ -17,6 +17,10 @@ export const departmentSchema = z.object({
   description: z
     .string()
     .max(500, 'Descrierea nu poate depăși 500 de caractere'),
+  headDoctorId: z
+    .string()
+    .optional()
+    .transform(val => val === '' ? undefined : val),
   isActive: z.boolean(),
 })
 

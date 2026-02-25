@@ -11,6 +11,7 @@ export interface DepartmentDto {
   description: string | null
   headDoctorId: string | null
   headDoctorName: string | null
+  doctorCount: number
   isActive: boolean
   createdAt: string
   updatedAt: string | null
@@ -31,5 +32,6 @@ export interface UpdateDepartmentPayload {
   name: string
   code: string
   description: string | null
+  headDoctorId: string | null
   isActive: boolean
 }

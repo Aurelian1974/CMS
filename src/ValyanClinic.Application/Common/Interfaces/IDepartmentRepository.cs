@@ -15,6 +15,6 @@ public interface IDepartmentRepository
         CancellationToken ct);
     Task UpdateAsync(
         Guid id, Guid clinicId, Guid locationId, string name, string code,
-        string? description, bool isActive, CancellationToken ct);
+        string? description, Guid? headDoctorId, bool isActive, CancellationToken ct);
     Task DeleteAsync(Guid id, Guid clinicId, CancellationToken ct);
 }

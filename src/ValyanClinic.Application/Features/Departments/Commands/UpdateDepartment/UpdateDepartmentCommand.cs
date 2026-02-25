@@ -10,5 +10,6 @@ public sealed record UpdateDepartmentCommand(
     string Name,
     string Code,
     string? Description,
+    Guid? HeadDoctorId,
     bool IsActive
 ) : IRequest<Result<bool>>;

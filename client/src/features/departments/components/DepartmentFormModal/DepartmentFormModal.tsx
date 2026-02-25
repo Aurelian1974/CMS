@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { departmentSchema, type DepartmentFormData } from '../../schemas/department.schema'
 import type { DepartmentDto } from '../../types/department.types'
 import type { ClinicLocationDto } from '@/features/clinic/types/clinic.types'
+import type { DoctorLookupDto } from '@/features/doctors/types/doctor.types'
 import styles from './DepartmentFormModal.module.scss'
 
 interface DepartmentFormModalProps {
@@ -15,6 +16,8 @@ interface DepartmentFormModalProps {
   editData: DepartmentDto | null
   /** Lista locațiilor disponibile */
   locations: ClinicLocationDto[]
+  /** Lista doctorilor pentru selectare șef departament */
+  doctors: DoctorLookupDto[]
 }
 
 export const DepartmentFormModal = ({
@@ -24,6 +27,7 @@ export const DepartmentFormModal = ({
   isLoading,
   editData,
   locations,
+  doctors,
 }: DepartmentFormModalProps) => {
   const isEdit = !!editData
 
@@ -39,6 +43,7 @@ export const DepartmentFormModal = ({
       name: '',
       code: '',
       description: '',
+      headDoctorId: '',
       isActive: true,
     },
   })
@@ -51,6 +56,7 @@ export const DepartmentFormModal = ({
         name: editData.name,
         code: editData.code,
         description: editData.description ?? '',
+        headDoctorId: editData.headDoctorId ?? '',
         isActive: editData.isActive,
       })
     } else {
@@ -59,6 +65,7 @@ export const DepartmentFormModal = ({
         name: '',
         code: '',
         description: '',
+        headDoctorId: '',
         isActive: true,
       })
     }
@@ -141,6 +148,22 @@ export const DepartmentFormModal = ({
                 {...register('description')}
               />
               {errors.description && <span className={styles.error}>{errors.description.message}</span>}
+            </div>
+
+            {/* Șef departament */}
+            <div className={styles.formGroup}>
+              <label className={styles.label}>Șef departament</label>
+              <select
+                className="form-select"
+                {...register('headDoctorId')}
+              >
+                <option value="">— Fără șef desemnat —</option>
+                {doctors.map((doc) => (
+                  <option key={doc.id} value={doc.id}>
+                    {doc.fullName}{doc.specialtyName ? ` (${doc.specialtyName})` : ''}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Status activ (doar la editare) */}

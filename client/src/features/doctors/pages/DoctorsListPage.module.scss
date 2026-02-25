@@ -393,28 +393,6 @@
   &--ok      { color: $gray-500; }
 }
 
-.actionCell {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.actionBtn {
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: $gray-400;
-  transition: all 0.15s;
-
-  &:hover         { background: rgba($primary, 0.08); color: $primary; }
-  &--danger:hover { background: rgba($danger, 0.1);   color: darken($danger, 10%); }
-}
 
 // ── Butoane ───────────────────────────────────────────────────────────────────
 .btnPrimary {

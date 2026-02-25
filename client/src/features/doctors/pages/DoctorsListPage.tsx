@@ -26,6 +26,7 @@ import { useDoctors, useCreateDoctor, useUpdateDoctor, useDeleteDoctor, useDocto
 import { useSpecialties } from '@/features/nomenclature/hooks/useSpecialties'
 import { useDepartments } from '@/features/departments/hooks/useDepartments'
 import { DoctorFormModal } from '../components/DoctorFormModal/DoctorFormModal'
+import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { formatDate, formatDateTime } from '@/utils/format'
 import styles from './DoctorsListPage.module.scss'
 
@@ -35,8 +36,6 @@ const IconExcel   = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="
 const IconPdf     = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M10 12.5c0-.8.7-1.5 1.5-1.5s1.5.7 1.5 1.5-.7 1.5-1.5 1.5H10v2"/></svg>;
 const IconColumns = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="18"/><rect x="14" y="3" width="7" height="18"/></svg>;
 const IconSearch  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
-const IconEdit    = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-const IconTrash   = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
 const IconLock    = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
 const IconMedic   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4.5 2h-1A1.5 1.5 0 002 3.5v5A6.5 6.5 0 008.5 15h1A6.5 6.5 0 0016 8.5v-5A1.5 1.5 0 0014.5 2h-1"/><path d="M16 9a4 4 0 014 4 4 4 0 01-4 4m0 0v3"/><circle cx="16" cy="20" r="1"/></svg>;
 
@@ -143,17 +142,20 @@ export const DoctorsListPage = () => {
   // ── Modal handlers ─────────────────────────────────────────────────────────
   const handleOpenCreate = () => {
     setEditingDoctor(null)
+    setErrorMsg(null)
     setModalOpen(true)
   }
 
   const handleOpenEdit = (doctor: DoctorDto) => {
     setEditingDoctor(doctor)
+    setErrorMsg(null)
     setModalOpen(true)
   }
 
   const handleCloseModal = () => {
     setModalOpen(false)
     setEditingDoctor(null)
+    setErrorMsg(null)
   }
 
   const handleFormSubmit = (formData: DoctorFormData) => {
@@ -364,22 +366,10 @@ export const DoctorsListPage = () => {
   ), [])
 
   const actionsTemplate = useCallback((row: DoctorDto) => (
-    <div className={styles.actionCell}>
-      <button
-        className={styles.actionBtn}
-        title="Editare"
-        onClick={() => handleOpenEdit(row)}
-      >
-        <IconEdit />
-      </button>
-      <button
-        className={`${styles.actionBtn} ${styles['actionBtn--danger']}`}
-        title="Ștergere"
-        onClick={() => setDeleteTarget(row)}
-      >
-        <IconTrash />
-      </button>
-    </div>
+    <ActionButtons
+      onEdit={() => handleOpenEdit(row)}
+      onDelete={() => setDeleteTarget(row)}
+    />
   ), [])
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -636,17 +626,11 @@ export const DoctorsListPage = () => {
         </GridComponent>
       </div>
 
-      {/* Mesaje feedback */}
+      {/* Mesaj succes */}
       {successMsg && (
         <div className="alert alert-success alert-dismissible fade show mt-3" role="alert">
           {successMsg}
           <button type="button" className="btn-close" onClick={() => setSuccessMsg(null)} />
-        </div>
-      )}
-      {errorMsg && (
-        <div className="alert alert-danger alert-dismissible fade show mt-3" role="alert">
-          {errorMsg}
-          <button type="button" className="btn-close" onClick={() => setErrorMsg(null)} />
         </div>
       )}
 
@@ -660,6 +644,7 @@ export const DoctorsListPage = () => {
         specialties={allSpecialties}
         departments={departments}
         doctorLookup={doctorLookup}
+        serverError={modalOpen ? errorMsg : null}
       />
 
       {/* Dialog confirmare ștergere */}

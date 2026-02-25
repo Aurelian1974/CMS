@@ -23,6 +23,7 @@ public sealed class UpdateDepartmentCommandHandler(
                 request.Name,
                 request.Code,
                 request.Description,
+                request.HeadDoctorId,
                 request.IsActive,
                 cancellationToken);
 
@@ -39,6 +40,10 @@ public sealed class UpdateDepartmentCommandHandler(
         catch (SqlException ex) when (ex.Number == 50222)
         {
             return Result<bool>.Failure(ErrorMessages.Department.InvalidLocation);
+        }
+        catch (SqlException ex) when (ex.Number == 50223)
+        {
+            return Result<bool>.Failure(ErrorMessages.Department.InvalidHeadDoctor);
         }
         catch (SqlException ex) when (ex.Number >= 50000 && ex.Number < 60000)
         {
