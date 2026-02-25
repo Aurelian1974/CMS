@@ -1,6 +1,10 @@
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import api from '@/api/axiosInstance';
-import type { GetDoctorsParams, DoctorDto, DoctorsPagedResult } from '../types/doctor.types';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
+import { doctorsApi } from '@/api/endpoints/doctors.api'
+import type {
+  GetDoctorsParams,
+  CreateDoctorPayload,
+  UpdateDoctorPayload,
+} from '../types/doctor.types'
 
 // ── Query Keys ────────────────────────────────────────────────────────────────
 export const doctorKeys = {
@@ -9,37 +13,65 @@ export const doctorKeys = {
   list:    (params: GetDoctorsParams) => [...doctorKeys.lists(), params] as const,
   details: () => [...doctorKeys.all, 'detail'] as const,
   detail:  (id: string) => [...doctorKeys.details(), id] as const,
-};
+  lookup:  () => [...doctorKeys.all, 'lookup'] as const,
+}
 
-// ── Hooks ─────────────────────────────────────────────────────────────────────
+// ── Listare paginată ──────────────────────────────────────────────────────────
 export const useDoctors = (params: GetDoctorsParams) =>
   useQuery({
     queryKey: doctorKeys.list(params),
-    queryFn: () =>
-      api.get<DoctorsPagedResult>('/api/doctors', { params }).then((r: any) => r.data),
+    queryFn: () => doctorsApi.getAll(params),
     placeholderData: keepPreviousData,
     staleTime: 3 * 60 * 1000,
-  });
+  })
 
+// ── Detaliu doctor ────────────────────────────────────────────────────────────
 export const useDoctorDetail = (id: string) =>
   useQuery({
     queryKey: doctorKeys.detail(id),
-    queryFn: () => api.get<DoctorDto>(`/api/doctors/${id}`).then((r: any) => r.data),
+    queryFn: () => doctorsApi.getById(id),
     enabled: !!id,
-  });
+  })
 
-export const useDeactivateDoctor = () => {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => api.patch(`/api/doctors/${id}/deactivate`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: doctorKeys.lists() }),
-  });
-};
+// ── Lookup (dropdown) ─────────────────────────────────────────────────────────
+export const useDoctorLookup = () =>
+  useQuery({
+    queryKey: doctorKeys.lookup(),
+    queryFn: () => doctorsApi.getLookup(),
+    staleTime: 5 * 60 * 1000,
+  })
 
-export const useActivateDoctor = () => {
-  const qc = useQueryClient();
+// ── Creare doctor ─────────────────────────────────────────────────────────────
+export const useCreateDoctor = () => {
+  const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => api.patch(`/api/doctors/${id}/activate`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: doctorKeys.lists() }),
-  });
-};
+    mutationFn: (payload: CreateDoctorPayload) => doctorsApi.create(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: doctorKeys.lists() })
+      qc.invalidateQueries({ queryKey: doctorKeys.lookup() })
+    },
+  })
+}
+
+// ── Actualizare doctor ────────────────────────────────────────────────────────
+export const useUpdateDoctor = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: UpdateDoctorPayload) => doctorsApi.update(payload),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: doctorKeys.all })
+    },
+  })
+}
+
+// ── Ștergere doctor (soft delete) ─────────────────────────────────────────────
+export const useDeleteDoctor = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => doctorsApi.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: doctorKeys.lists() })
+      qc.invalidateQueries({ queryKey: doctorKeys.lookup() })
+    },
+  })
+}
