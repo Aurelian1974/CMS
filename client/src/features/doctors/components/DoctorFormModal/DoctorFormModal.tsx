@@ -21,6 +21,8 @@ interface DoctorFormModalProps {
   departments: DepartmentDto[]
   /** Lista doctori pentru dropdown supervisor */
   doctorLookup: DoctorLookupDto[]
+  /** Eroare server (ex: email duplicat) — afișată în modal */
+  serverError?: string | null
 }
 
 export const DoctorFormModal = ({
@@ -32,6 +34,7 @@ export const DoctorFormModal = ({
   specialties,
   departments,
   doctorLookup,
+  serverError,
 }: DoctorFormModalProps) => {
   const isEdit = !!editData
 
@@ -95,8 +98,10 @@ export const DoctorFormModal = ({
     setValue('subspecialtyId', '')
   }, [selectedSpecialtyId, setValue, editData])
 
-  // Populare formular la editare
+  // Populare formular la editare / reset la creare
   useEffect(() => {
+    if (!isOpen) return
+
     if (editData) {
       reset({
         departmentId: editData.departmentId ?? '',
@@ -130,7 +135,7 @@ export const DoctorFormModal = ({
         isActive: true,
       })
     }
-  }, [editData, reset])
+  }, [isOpen, editData, reset])
 
   if (!isOpen) return null
 
@@ -148,6 +153,13 @@ export const DoctorFormModal = ({
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className={styles.modalBody}>
+
+            {/* Eroare server */}
+            {serverError && (
+              <div className="alert alert-danger py-2 mb-3" role="alert">
+                {serverError}
+              </div>
+            )}
 
             {/* Nume + Prenume */}
             <div className="row g-3">

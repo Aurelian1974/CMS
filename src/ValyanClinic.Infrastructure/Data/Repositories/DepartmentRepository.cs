@@ -54,7 +54,7 @@ public sealed class DepartmentRepository(DapperContext context) : IDepartmentRep
 
     public async Task UpdateAsync(
         Guid id, Guid clinicId, Guid locationId, string name, string code,
-        string? description, bool isActive, CancellationToken ct)
+        string? description, Guid? headDoctorId, bool isActive, CancellationToken ct)
     {
         using var connection = context.CreateConnection();
         await connection.ExecuteAsync(
@@ -68,6 +68,7 @@ public sealed class DepartmentRepository(DapperContext context) : IDepartmentRep
                     Name = name,
                     Code = code,
                     Description = description,
+                    HeadDoctorId = headDoctorId,
                     IsActive = isActive
                 },
                 commandType: CommandType.StoredProcedure,

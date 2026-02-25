@@ -8,6 +8,9 @@ import {
   useDeleteDepartment,
 } from '../hooks/useDepartments'
 import { useClinicLocations } from '@/features/clinic/hooks/useClinic'
+import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
+import { ActionButtons } from '@/components/data-display/ActionButtons'
+import { IconPlus } from '@/components/ui/Icons'
 import type { DepartmentDto, CreateDepartmentPayload } from '../types/department.types'
 import type { DepartmentFormData } from '../schemas/department.schema'
 import styles from './DepartmentsPage.module.scss'
@@ -22,34 +25,14 @@ const IconDepartment = () => (
   </svg>
 )
 
-const IconEdit = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-  </svg>
-)
 
-const IconTrash = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="3 6 5 6 21 6" />
-    <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-    <line x1="10" y1="11" x2="10" y2="17" />
-    <line x1="14" y1="11" x2="14" y2="17" />
-  </svg>
-)
-
-const IconPlus = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="5" x2="12" y2="19" />
-    <line x1="5" y1="12" x2="19" y2="12" />
-  </svg>
-)
 
 // ===== Componenta principală =====
 const DepartmentsPage = () => {
   // Date departamente + locații (pentru dropdown)
   const { data: departmentsResp, isLoading: loadingDepts } = useDepartments()
   const { data: locationsResp, isLoading: loadingLocations } = useClinicLocations()
+  const { data: doctorsResp } = useDoctorLookup()
 
   // Mutații
   const createDepartment = useCreateDepartment()
@@ -69,6 +52,7 @@ const DepartmentsPage = () => {
 
   const departments = departmentsResp?.data ?? []
   const locations = locationsResp?.data ?? []
+  const doctors = doctorsResp?.data ?? []
   const isLoading = loadingDepts || loadingLocations
 
   // Funcții helper — afișare mesaje feedback
@@ -110,6 +94,7 @@ const DepartmentsPage = () => {
           name: data.name,
           code: data.code,
           description: data.description || null,
+          headDoctorId: data.headDoctorId || null,
           isActive: data.isActive,
         },
         {
@@ -210,6 +195,8 @@ const DepartmentsPage = () => {
                   <th>Denumire</th>
                   <th>Cod</th>
                   <th>Locație</th>
+                  <th>Șef departament</th>
+                  <th>Nr. medici</th>
                   <th>Descriere</th>
                   <th>Status</th>
                   <th style={{ width: '80px' }}>Acțiuni</th>
@@ -223,6 +210,8 @@ const DepartmentsPage = () => {
                       <span className={styles.codeTag}>{dept.code}</span>
                     </td>
                     <td>{dept.locationName ?? '—'}</td>
+                    <td>{dept.headDoctorName ?? '—'}</td>
+                    <td className="text-center">{dept.doctorCount}</td>
                     <td className={styles.descriptionCell}>{dept.description || '—'}</td>
                     <td>
                       <span className={dept.isActive ? styles.badgeActive : styles.badgeInactive}>
@@ -230,22 +219,10 @@ const DepartmentsPage = () => {
                       </span>
                     </td>
                     <td>
-                      <div className={styles.actionBtns}>
-                        <button
-                          className={styles.iconBtn}
-                          title="Editează"
-                          onClick={() => handleOpenEdit(dept)}
-                        >
-                          <IconEdit />
-                        </button>
-                        <button
-                          className={styles.iconBtnDanger}
-                          title="Șterge"
-                          onClick={() => setDeleteTarget(dept)}
-                        >
-                          <IconTrash />
-                        </button>
-                      </div>
+                      <ActionButtons
+                        onEdit={() => handleOpenEdit(dept)}
+                        onDelete={() => setDeleteTarget(dept)}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -263,6 +240,7 @@ const DepartmentsPage = () => {
         isLoading={createDepartment.isPending || updateDepartment.isPending}
         editData={editingDepartment}
         locations={locations}
+        doctors={doctors}
       />
 
       {/* ===== Dialog confirmare ștergere ===== */}

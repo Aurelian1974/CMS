@@ -83,8 +83,9 @@ public static class ErrorMessages
 
     public static class Department
     {
-        public const string NotFound        = "Departamentul nu a fost găsit.";
-        public const string CodeDuplicate   = "Un departament cu acest cod există deja.";
-        public const string InvalidLocation = "Locația selectată nu există sau nu aparține acestei clinici.";
+        public const string NotFound          = "Departamentul nu a fost găsit.";
+        public const string CodeDuplicate     = "Un departament cu acest cod există deja.";
+        public const string InvalidLocation   = "Locația selectată nu există sau nu aparține acestei clinici.";
+        public const string InvalidHeadDoctor = "Doctorul selectat ca șef de departament nu există.";
     }
 }

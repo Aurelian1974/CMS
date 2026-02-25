@@ -47,7 +47,7 @@ public class DepartmentsController : BaseApiController
     {
         var command = new UpdateDepartmentCommand(
             id, request.LocationId, request.Name, request.Code,
-            request.Description, request.IsActive);
+            request.Description, request.HeadDoctorId, request.IsActive);
 
         var result = await Mediator.Send(command, ct);
         return HandleResult(result);
@@ -69,4 +69,5 @@ public sealed record UpdateDepartmentRequest(
     string Name,
     string Code,
     string? Description,
+    Guid? HeadDoctorId,
     bool IsActive);
