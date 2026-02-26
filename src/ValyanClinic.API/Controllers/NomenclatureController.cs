@@ -9,6 +9,7 @@ using ValyanClinic.Application.Features.Nomenclature.Commands.ToggleSpecialty;
 using ValyanClinic.Application.Features.Nomenclature.Commands.UpdateMedicalTitle;
 using ValyanClinic.Application.Features.Nomenclature.Commands.UpdateSpecialty;
 using ValyanClinic.Application.Features.Nomenclature.Queries.GetMedicalTitles;
+using ValyanClinic.Application.Features.Nomenclature.Queries.GetNomenclatureLookup;
 using ValyanClinic.Application.Features.Nomenclature.Queries.GetSpecialties;
 using ValyanClinic.Application.Features.Nomenclature.Queries.GetSpecialtyTree;
 
@@ -97,6 +98,52 @@ public class NomenclatureController : BaseApiController
         [FromQuery] bool? isActive, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetMedicalTitlesQuery(isActive), ct);
+        return HandleResult(result);
+    }
+
+    // ==================== NOMENCLATOARE SIMPLE (Lookups) ====================
+
+    /// <summary>Returnează toate genurile (Masculin, Feminin, Nespecificat).</summary>
+    [HttpGet("genders")]
+    [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
+    public async Task<IActionResult> GetGenders(
+        [FromQuery] bool? isActive, CancellationToken ct)
+    {
+        var result = await Mediator.Send(
+            new GetNomenclatureLookupQuery(NomenclatureLookupType.Genders, isActive), ct);
+        return HandleResult(result);
+    }
+
+    /// <summary>Returnează toate grupele sanguine.</summary>
+    [HttpGet("blood-types")]
+    [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
+    public async Task<IActionResult> GetBloodTypes(
+        [FromQuery] bool? isActive, CancellationToken ct)
+    {
+        var result = await Mediator.Send(
+            new GetNomenclatureLookupQuery(NomenclatureLookupType.BloodTypes, isActive), ct);
+        return HandleResult(result);
+    }
+
+    /// <summary>Returnează toate tipurile de alergii.</summary>
+    [HttpGet("allergy-types")]
+    [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
+    public async Task<IActionResult> GetAllergyTypes(
+        [FromQuery] bool? isActive, CancellationToken ct)
+    {
+        var result = await Mediator.Send(
+            new GetNomenclatureLookupQuery(NomenclatureLookupType.AllergyTypes, isActive), ct);
+        return HandleResult(result);
+    }
+
+    /// <summary>Returnează toate severitățile alergiilor.</summary>
+    [HttpGet("allergy-severities")]
+    [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
+    public async Task<IActionResult> GetAllergySeverities(
+        [FromQuery] bool? isActive, CancellationToken ct)
+    {
+        var result = await Mediator.Send(
+            new GetNomenclatureLookupQuery(NomenclatureLookupType.AllergySeverities, isActive), ct);
         return HandleResult(result);
     }
 

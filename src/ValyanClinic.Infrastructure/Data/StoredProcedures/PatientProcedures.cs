@@ -9,4 +9,9 @@ public static class PatientProcedures
     public const string Update       = "dbo.Patient_Update";
     public const string Delete       = "dbo.Patient_Delete";
     public const string ExistsByCnp  = "dbo.Patient_ExistsByCnp";
+
+    // Sync — sincronizare colecții copil
+    public const string SyncAllergies         = "dbo.PatientAllergy_Sync";
+    public const string SyncDoctors           = "dbo.PatientDoctor_Sync";
+    public const string SyncEmergencyContacts = "dbo.PatientEmergencyContact_Sync";
 }
