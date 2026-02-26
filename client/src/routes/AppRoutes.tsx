@@ -20,6 +20,8 @@ const MedicalTitlesPage  = lazy(() => import('../features/nomenclature/pages/Med
 const ClinicPage         = lazy(() => import('../features/clinic/pages/ClinicPage'))
 const DepartmentsPage    = lazy(() => import('../features/departments/pages/DepartmentsPage'))
 const MedicalStaffPage   = lazy(() => import('../features/medicalStaff/pages/MedicalStaffListPage'))
+const RolePermissionsPage = lazy(() => import('../features/permissions/pages/RolePermissionsPage'))
+const UserOverridesPage   = lazy(() => import('../features/permissions/pages/UserOverridesPage'))
 
 const LoadingFallback = () => (
   <div className="d-flex justify-content-center align-items-center vh-100">
@@ -55,6 +57,8 @@ export const AppRoutes = () => (
           <Route path="/clinic"          element={<ClinicPage />} />
           <Route path="/departments"    element={<DepartmentsPage />} />
           <Route path="/medical-staff"  element={<MedicalStaffPage />} />
+          <Route path="/permissions/roles" element={<RolePermissionsPage />} />
+          <Route path="/permissions/users" element={<UserOverridesPage />} />
         </Route>
       </Route>
 

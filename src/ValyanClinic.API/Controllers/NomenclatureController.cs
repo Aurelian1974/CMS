@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using ValyanClinic.Application.Common.Constants;
+using ValyanClinic.Application.Common.Enums;
+using ValyanClinic.Infrastructure.Authentication;
 using ValyanClinic.Application.Features.Nomenclature.Commands.CreateMedicalTitle;
 using ValyanClinic.Application.Features.Nomenclature.Commands.CreateSpecialty;
 using ValyanClinic.Application.Features.Nomenclature.Commands.ToggleMedicalTitle;
@@ -18,6 +21,7 @@ public class NomenclatureController : BaseApiController
 
     /// <summary>Returnează toate specializările (flat list). ?isActive=true/false pentru filtrare.</summary>
     [HttpGet("specialties")]
+    [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
     public async Task<IActionResult> GetSpecialties(
         [FromQuery] bool? isActive, CancellationToken ct)
     {
@@ -27,6 +31,7 @@ public class NomenclatureController : BaseApiController
 
     /// <summary>Returnează arborele ierarhic de specializări (categorii → specialități → subspecialități).</summary>
     [HttpGet("specialties/tree")]
+    [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
     public async Task<IActionResult> GetSpecialtyTree(
         [FromQuery] bool? isActive, CancellationToken ct)
     {
@@ -36,6 +41,7 @@ public class NomenclatureController : BaseApiController
 
     /// <summary>Returnează o specializare după Id.</summary>
     [HttpGet("specialties/{id:guid}")]
+    [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
     public async Task<IActionResult> GetSpecialtyById(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetSpecialtiesQuery(), ct);
@@ -50,6 +56,7 @@ public class NomenclatureController : BaseApiController
 
     /// <summary>Creează o specializare nouă.</summary>
     [HttpPost("specialties")]
+    [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Write)]
     public async Task<IActionResult> CreateSpecialty(
         [FromBody] CreateSpecialtyCommand command, CancellationToken ct)
     {
@@ -59,6 +66,7 @@ public class NomenclatureController : BaseApiController
 
     /// <summary>Actualizează o specializare existentă.</summary>
     [HttpPut("specialties/{id:guid}")]
+    [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Write)]
     public async Task<IActionResult> UpdateSpecialty(
         Guid id, [FromBody] UpdateSpecialtyRequest request, CancellationToken ct)
     {
@@ -72,6 +80,7 @@ public class NomenclatureController : BaseApiController
 
     /// <summary>Activează sau dezactivează o specializare.</summary>
     [HttpPatch("specialties/{id:guid}/toggle")]
+    [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Write)]
     public async Task<IActionResult> ToggleSpecialty(
         Guid id, [FromBody] ToggleSpecialtyRequest request, CancellationToken ct)
     {
@@ -83,6 +92,7 @@ public class NomenclatureController : BaseApiController
 
     /// <summary>Returnează toate titularturile medicale. ?isActive=true/false pentru filtrare.</summary>
     [HttpGet("medical-titles")]
+    [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
     public async Task<IActionResult> GetMedicalTitles(
         [FromQuery] bool? isActive, CancellationToken ct)
     {
@@ -92,6 +102,7 @@ public class NomenclatureController : BaseApiController
 
     /// <summary>Creează o titulatură medicală nouă.</summary>
     [HttpPost("medical-titles")]
+    [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Write)]
     public async Task<IActionResult> CreateMedicalTitle(
         [FromBody] CreateMedicalTitleCommand command, CancellationToken ct)
     {
@@ -101,6 +112,7 @@ public class NomenclatureController : BaseApiController
 
     /// <summary>Actualizează o titulatură medicală existentă.</summary>
     [HttpPut("medical-titles/{id:guid}")]
+    [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Write)]
     public async Task<IActionResult> UpdateMedicalTitle(
         Guid id, [FromBody] UpdateMedicalTitleRequest request, CancellationToken ct)
     {
@@ -114,6 +126,7 @@ public class NomenclatureController : BaseApiController
 
     /// <summary>Activează sau dezactivează o titulatură medicală.</summary>
     [HttpPatch("medical-titles/{id:guid}/toggle")]
+    [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Write)]
     public async Task<IActionResult> ToggleMedicalTitle(
         Guid id, [FromBody] ToggleMedicalTitleRequest request, CancellationToken ct)
     {

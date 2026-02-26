@@ -7,6 +7,7 @@ public interface ICurrentUser
 {
     Guid Id { get; }
     Guid ClinicId { get; }
+    Guid RoleId { get; }
     string Email { get; }
     string FullName { get; }
     string Role { get; }

@@ -15,6 +15,7 @@ public sealed class LoginCommandHandler(
     IAuthRepository authRepository,
     IPasswordHasher passwordHasher,
     ITokenService tokenService,
+    IPermissionRepository permissionRepository,
     IOptions<JwtOptions> jwtOptions,
     IOptions<RateLimitingOptions> rateLimitingOptions)
     : IRequestHandler<LoginCommand, Result<LoginResponseDto>>
@@ -54,10 +55,10 @@ public sealed class LoginCommandHandler(
         // 5. Login reușit — reset failed attempts
         await authRepository.ResetFailedLoginAsync(user.Id, ct);
 
-        // 6. Generare access token
+        // 6. Generare access token (include roleId claim)
         var fullName = $"{user.FirstName} {user.LastName}".Trim();
         var accessToken = tokenService.GenerateAccessToken(
-            user.Id, user.ClinicId, user.Email, fullName, user.RoleCode);
+            user.Id, user.ClinicId, user.Email, fullName, user.RoleCode, user.RoleId);
 
         // 7. Generare refresh token + salvare în DB
         var refreshToken = tokenService.GenerateRefreshToken();
@@ -65,7 +66,20 @@ public sealed class LoginCommandHandler(
         await authRepository.CreateRefreshTokenAsync(
             user.Id, refreshToken, refreshExpiry, null, ct);
 
-        // 8. Returnare răspuns
+        // 8. Încărcare permisiuni efective (rol + override-uri)
+        var effectivePermissions = await permissionRepository.GetEffectiveByUserAsync(
+            user.Id, user.RoleId, ct);
+
+        var permissions = effectivePermissions
+            .Select(p => new ModulePermissionDto
+            {
+                Module = p.ModuleCode,
+                Level = p.AccessLevel,
+                IsOverridden = p.IsOverridden
+            })
+            .ToList();
+
+        // 9. Returnare răspuns
         var response = new LoginResponseDto
         {
             AccessToken = accessToken,
@@ -76,8 +90,10 @@ public sealed class LoginCommandHandler(
                 Email = user.Email,
                 FullName = fullName,
                 Role = user.RoleCode,
+                RoleId = user.RoleId.ToString(),
                 ClinicId = user.ClinicId.ToString(),
-            }
+            },
+            Permissions = permissions
         };
 
         return Result<LoginResponseDto>.Success(response);

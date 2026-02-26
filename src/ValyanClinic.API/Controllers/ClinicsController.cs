@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using ValyanClinic.Application.Common.Constants;
+using ValyanClinic.Application.Common.Enums;
+using ValyanClinic.Infrastructure.Authentication;
 using ValyanClinic.Application.Features.Clinics.Commands.CreateClinicLocation;
 using ValyanClinic.Application.Features.Clinics.Commands.DeleteClinicLocation;
 using ValyanClinic.Application.Features.Clinics.Commands.UpdateClinic;
@@ -18,6 +21,7 @@ public class ClinicsController : BaseApiController
 
     /// <summary>Returnează datele clinicii curente (din JWT ClinicId).</summary>
     [HttpGet("current")]
+    [HasAccess(ModuleCodes.Clinic, AccessLevel.Read)]
     public async Task<IActionResult> GetCurrentClinic(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetCurrentClinicQuery(), ct);
@@ -26,6 +30,7 @@ public class ClinicsController : BaseApiController
 
     /// <summary>Actualizează datele clinicii curente.</summary>
     [HttpPut("current")]
+    [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
     public async Task<IActionResult> UpdateCurrentClinic(
         [FromBody] UpdateClinicCommand command, CancellationToken ct)
     {
@@ -37,6 +42,7 @@ public class ClinicsController : BaseApiController
 
     /// <summary>Returnează locațiile clinicii curente. ?isActive=true/false pentru filtrare.</summary>
     [HttpGet("current/locations")]
+    [HasAccess(ModuleCodes.Clinic, AccessLevel.Read)]
     public async Task<IActionResult> GetLocations(
         [FromQuery] bool? isActive, CancellationToken ct)
     {
@@ -46,6 +52,7 @@ public class ClinicsController : BaseApiController
 
     /// <summary>Creează o locație nouă pentru clinica curentă.</summary>
     [HttpPost("current/locations")]
+    [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
     public async Task<IActionResult> CreateLocation(
         [FromBody] CreateClinicLocationCommand command, CancellationToken ct)
     {
@@ -55,6 +62,7 @@ public class ClinicsController : BaseApiController
 
     /// <summary>Actualizează o locație existentă.</summary>
     [HttpPut("current/locations/{id:guid}")]
+    [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
     public async Task<IActionResult> UpdateLocation(
         Guid id, [FromBody] UpdateClinicLocationRequest request, CancellationToken ct)
     {
@@ -68,6 +76,7 @@ public class ClinicsController : BaseApiController
 
     /// <summary>Șterge (soft delete) o locație.</summary>
     [HttpDelete("current/locations/{id:guid}")]
+    [HasAccess(ModuleCodes.Clinic, AccessLevel.Full)]
     public async Task<IActionResult> DeleteLocation(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new DeleteClinicLocationCommand(id), ct);

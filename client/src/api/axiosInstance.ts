@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { useAuthStore } from '../store/authStore'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: '',
   withCredentials: true,  // trimite HttpOnly cookie cu refresh token
 })
 
@@ -44,14 +44,14 @@ api.interceptors.response.use(
 
       try {
         const { data } = await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/auth/refresh`,
+          '/api/auth/refresh',
           {},
           { withCredentials: true }
         )
 
-        // axios.post direct returnează AxiosResponse.data = ApiResponse<{ accessToken, user }>
+        // axios.post direct returnează AxiosResponse.data = ApiResponse<{ accessToken, user, permissions }>
         const loginData = data.data
-        useAuthStore.getState().setAuth(loginData.user, loginData.accessToken)
+        useAuthStore.getState().setAuth(loginData.user, loginData.accessToken, loginData.permissions ?? [])
 
         refreshQueue.forEach((cb) => cb(loginData.accessToken))
         refreshQueue = []

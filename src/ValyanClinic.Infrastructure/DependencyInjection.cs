@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -42,6 +43,7 @@ public static class DependencyInjection
         services.AddScoped<IMedicalStaffRepository, MedicalStaffRepository>();
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAuthRepository, AuthRepository>();
+        services.AddScoped<IPermissionRepository, PermissionRepository>();
 
         // ===== Servicii =====
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
@@ -74,6 +76,11 @@ public static class DependencyInjection
                 ClockSkew                = TimeSpan.Zero
             };
         });
+
+        // ===== Autorizare dinamică — RBAC cu [HasAccess] =====
+        services.AddMemoryCache();
+        services.AddScoped<IAuthorizationHandler, ModuleAccessAuthorizationHandler>();
+        services.AddSingleton<IAuthorizationPolicyProvider, ModuleAccessPolicyProvider>();
 
         return services;
     }

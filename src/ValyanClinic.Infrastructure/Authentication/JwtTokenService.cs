@@ -18,7 +18,7 @@ public sealed class JwtTokenService(IOptions<JwtOptions> options) : ITokenServic
     private readonly JwtOptions _jwt = options.Value;
 
     public string GenerateAccessToken(
-        Guid userId, Guid clinicId, string email, string fullName, string role)
+        Guid userId, Guid clinicId, string email, string fullName, string role, Guid roleId)
     {
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -31,6 +31,7 @@ public sealed class JwtTokenService(IOptions<JwtOptions> options) : ITokenServic
             new Claim("clinicId", clinicId.ToString()),
             new Claim("fullName", fullName),
             new Claim(ClaimTypes.Role, role),
+            new Claim("roleId", roleId.ToString()),
         };
 
         var token = new JwtSecurityToken(
