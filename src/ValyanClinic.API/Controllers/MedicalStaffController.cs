@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using ValyanClinic.Application.Common.Constants;
+using ValyanClinic.Application.Common.Enums;
+using ValyanClinic.Infrastructure.Authentication;
 using ValyanClinic.Application.Features.MedicalStaff.Commands.CreateMedicalStaff;
 using ValyanClinic.Application.Features.MedicalStaff.Commands.DeleteMedicalStaff;
 using ValyanClinic.Application.Features.MedicalStaff.Commands.UpdateMedicalStaff;
@@ -15,6 +18,7 @@ public class MedicalStaffController : BaseApiController
 {
     /// <summary>Listare paginată personal medical cu filtre.</summary>
     [HttpGet]
+    [HasAccess(ModuleCodes.Users, AccessLevel.Read)]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? search,
         [FromQuery] Guid? departmentId,
@@ -34,6 +38,7 @@ public class MedicalStaffController : BaseApiController
 
     /// <summary>Listare simplificată personal medical (pentru dropdown-uri / departamente).</summary>
     [HttpGet("lookup")]
+    [HasAccess(ModuleCodes.Users, AccessLevel.Read)]
     public async Task<IActionResult> GetLookup(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetMedicalStaffByClinicQuery(), ct);
@@ -42,6 +47,7 @@ public class MedicalStaffController : BaseApiController
 
     /// <summary>Obținere personal medical după Id.</summary>
     [HttpGet("{id:guid}")]
+    [HasAccess(ModuleCodes.Users, AccessLevel.Read)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetMedicalStaffByIdQuery(id), ct);
@@ -50,6 +56,7 @@ public class MedicalStaffController : BaseApiController
 
     /// <summary>Creare membru personal medical nou.</summary>
     [HttpPost]
+    [HasAccess(ModuleCodes.Users, AccessLevel.Write)]
     public async Task<IActionResult> Create(
         [FromBody] CreateMedicalStaffCommand command, CancellationToken ct)
     {
@@ -59,6 +66,7 @@ public class MedicalStaffController : BaseApiController
 
     /// <summary>Actualizare membru personal medical existent.</summary>
     [HttpPut("{id:guid}")]
+    [HasAccess(ModuleCodes.Users, AccessLevel.Write)]
     public async Task<IActionResult> Update(
         Guid id, [FromBody] UpdateMedicalStaffRequest request, CancellationToken ct)
     {
@@ -79,6 +87,7 @@ public class MedicalStaffController : BaseApiController
 
     /// <summary>Soft delete membru personal medical.</summary>
     [HttpDelete("{id:guid}")]
+    [HasAccess(ModuleCodes.Users, AccessLevel.Full)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new DeleteMedicalStaffCommand(id), ct);

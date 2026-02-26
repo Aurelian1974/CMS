@@ -39,7 +39,8 @@ try
     builder.Services.AddValidatorsFromAssembly(
         typeof(ValyanClinic.Application.Common.Models.Result<>).Assembly);
 
-    // ===== Autorizare =====
+    // ===== Autorizare — politicile dinamice [HasAccess] sunt gestionate de ModuleAccessPolicyProvider =====
+    // Politicile statice rămân pentru backward compatibility (vor fi înlocuite treptat cu [HasAccess])
     builder.Services.AddAuthorization(options =>
     {
         options.AddPolicy("AdminOnly",        policy => policy.RequireRole("Admin"));

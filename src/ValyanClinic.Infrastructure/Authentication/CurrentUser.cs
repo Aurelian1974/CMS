@@ -21,6 +21,10 @@ public sealed class CurrentUser(IHttpContextAccessor httpContextAccessor) : ICur
         Guid.Parse(User.FindFirstValue("clinicId")
             ?? throw new UnauthorizedAccessException("Claim 'clinicId' lipsă din token."));
 
+    public Guid RoleId =>
+        Guid.Parse(User.FindFirstValue("roleId")
+            ?? throw new UnauthorizedAccessException("Claim 'roleId' lipsă din token."));
+
     public string Email =>
         User.FindFirstValue(ClaimTypes.Email)
             ?? throw new UnauthorizedAccessException("Claim 'email' lipsă din token.");

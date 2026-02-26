@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useUiStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
+import { useHasAccess, ACCESS_LEVEL, type ModuleCode } from '@/hooks/useHasAccess';
 import { authApi } from '@/api/endpoints/auth.api';
 import styles from './Sidebar.module.scss';
 
@@ -109,6 +110,13 @@ const IconLogout = () => (
   </svg>
 );
 
+const IconPermissions = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    <polyline points="9 12 11 14 15 10" />
+  </svg>
+);
+
 const RedCrossIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
     <rect x="9" y="2" width="6" height="20" fill="#CC2936" rx="1.2" />
@@ -121,6 +129,8 @@ interface NavItem {
   to: string;
   label: string;
   icon: React.ReactNode;
+  /** Modulul RBAC asociat — elementul se afișează doar dacă user-ul are cel puțin Read. */
+  module?: ModuleCode;
 }
 
 interface NavSection {
@@ -132,29 +142,31 @@ const NAV_SECTIONS: NavSection[] = [
   {
     section: 'Principal',
     items: [
-      { to: '/dashboard',     label: 'Dashboard',     icon: <IconDashboard /> },
-      { to: '/patients',      label: 'Pacienți',      icon: <IconPatients /> },
-      { to: '/appointments',  label: 'Programări',    icon: <IconAppointments /> },
-      { to: '/consultations', label: 'Consultații',   icon: <IconConsultations /> },
-      { to: '/prescriptions', label: 'Prescripții',   icon: <IconPrescriptions /> },
+      { to: '/dashboard',     label: 'Dashboard',     icon: <IconDashboard />,     module: 'dashboard' },
+      { to: '/patients',      label: 'Pacienți',      icon: <IconPatients />,      module: 'patients' },
+      { to: '/appointments',  label: 'Programări',    icon: <IconAppointments />,  module: 'appointments' },
+      { to: '/consultations', label: 'Consultații',   icon: <IconConsultations />, module: 'consultations' },
+      { to: '/prescriptions', label: 'Prescripții',   icon: <IconPrescriptions />, module: 'prescriptions' },
     ],
   },
   {
     section: 'Financiar',
     items: [
-      { to: '/invoices', label: 'Facturi', icon: <IconInvoices /> },
+      { to: '/invoices', label: 'Facturi', icon: <IconInvoices />, module: 'invoices' },
     ],
   },
   {
     section: 'Administrare',
     items: [
-      { to: '/doctors',        label: 'Doctori',        icon: <IconDoctors /> },
-      { to: '/medical-staff', label: 'Personal Medical', icon: <IconPatients /> },
-      { to: '/departments',   label: 'Departamente',   icon: <IconDepartments /> },
-      { to: '/users',          label: 'Utilizatori',    icon: <IconUsers /> },
-      { to: '/specialties',    label: 'Specializări',   icon: <IconSpecialties /> },
-      { to: '/medical-titles', label: 'Titulaturi',     icon: <IconMedicalTitles /> },
-      { to: '/clinic',         label: 'Clinica',        icon: <IconClinic /> },
+      { to: '/doctors',        label: 'Doctori',         icon: <IconDoctors />,       module: 'users' },
+      { to: '/medical-staff',  label: 'Personal Medical', icon: <IconPatients />,      module: 'users' },
+      { to: '/departments',    label: 'Departamente',    icon: <IconDepartments />,   module: 'clinic' },
+      { to: '/users',          label: 'Utilizatori',     icon: <IconUsers />,         module: 'users' },
+      { to: '/specialties',    label: 'Specializări',    icon: <IconSpecialties />,   module: 'nomenclature' },
+      { to: '/medical-titles', label: 'Titulaturi',      icon: <IconMedicalTitles />, module: 'nomenclature' },
+      { to: '/clinic',              label: 'Clinica',              icon: <IconClinic />,        module: 'clinic' },
+      { to: '/permissions/roles',  label: 'Permisiuni Roluri',    icon: <IconPermissions />,   module: 'users' },
+      { to: '/permissions/users',  label: 'Override Utilizatori', icon: <IconPermissions />,   module: 'users' },
     ],
   },
 ];
@@ -172,6 +184,7 @@ export const Sidebar = () => {
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const navigate = useNavigate();
+  const { canRead } = useHasAccess();
 
   const displayUser = user ?? { fullName: 'Utilizator', role: 'N/A' };
 
@@ -186,6 +199,15 @@ export const Sidebar = () => {
     }
   };
 
+  /// Filtrează secțiunile de navigare — afișează doar elementele la care userul are cel puțin Read.
+  /// Secțiunile goale (fără item-uri vizibile) sunt ascunse complet.
+  const visibleSections = NAV_SECTIONS
+    .map(({ section, items }) => ({
+      section,
+      items: items.filter((item) => !item.module || canRead(item.module)),
+    }))
+    .filter(({ items }) => items.length > 0);
+
   return (
     <aside className={`${styles.sidebar}${sidebarCollapsed ? ` ${styles.collapsed}` : ''}`}>
 
@@ -199,9 +221,9 @@ export const Sidebar = () => {
         </span>
       </NavLink>
 
-      {/* Navigare */}
+      {/* Navigare — filtrat pe baza permisiunilor */}
       <nav className={styles.nav}>
-        {NAV_SECTIONS.map(({ section, items }) => (
+        {visibleSections.map(({ section, items }) => (
           <div key={section} className={styles.navGroup}>
             <div className={styles.sectionLabel}>{section}</div>
             {items.map(({ to, label, icon }) => (

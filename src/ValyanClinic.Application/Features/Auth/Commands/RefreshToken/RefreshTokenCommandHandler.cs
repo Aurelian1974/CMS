@@ -14,6 +14,7 @@ namespace ValyanClinic.Application.Features.Auth.Commands.RefreshToken;
 public sealed class RefreshTokenCommandHandler(
     IAuthRepository authRepository,
     ITokenService tokenService,
+    IPermissionRepository permissionRepository,
     IOptions<JwtOptions> jwtOptions)
     : IRequestHandler<RefreshTokenCommand, Result<LoginResponseDto>>
 {
@@ -45,10 +46,23 @@ public sealed class RefreshTokenCommandHandler(
         if (user is null || !user.IsActive)
             return Result<LoginResponseDto>.Unauthorized(ErrorMessages.Auth.AccountInactive);
 
-        // 5. Generare access token
+        // 5. Generare access token (include roleId claim)
         var fullName = $"{user.FirstName} {user.LastName}".Trim();
         var accessToken = tokenService.GenerateAccessToken(
-            user.Id, user.ClinicId, user.Email, fullName, user.RoleCode);
+            user.Id, user.ClinicId, user.Email, fullName, user.RoleCode, user.RoleId);
+
+        // 6. Încărcare permisiuni efective
+        var effectivePermissions = await permissionRepository.GetEffectiveByUserAsync(
+            user.Id, user.RoleId, ct);
+
+        var permissions = effectivePermissions
+            .Select(p => new ModulePermissionDto
+            {
+                Module = p.ModuleCode,
+                Level = p.AccessLevel,
+                IsOverridden = p.IsOverridden
+            })
+            .ToList();
 
         var response = new LoginResponseDto
         {
@@ -60,8 +74,10 @@ public sealed class RefreshTokenCommandHandler(
                 Email = user.Email,
                 FullName = fullName,
                 Role = user.RoleCode,
+                RoleId = user.RoleId.ToString(),
                 ClinicId = user.ClinicId.ToString(),
-            }
+            },
+            Permissions = permissions
         };
 
         return Result<LoginResponseDto>.Success(response);

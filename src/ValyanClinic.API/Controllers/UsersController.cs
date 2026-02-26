@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using ValyanClinic.Application.Common.Constants;
+using ValyanClinic.Application.Common.Enums;
+using ValyanClinic.Infrastructure.Authentication;
 using ValyanClinic.Application.Features.Users.Commands.ChangePassword;
 using ValyanClinic.Application.Features.Users.Commands.CreateUser;
 using ValyanClinic.Application.Features.Users.Commands.DeleteUser;
@@ -13,6 +16,7 @@ public class UsersController : BaseApiController
 {
     /// <summary>Listare roluri active (nomenclator).</summary>
     [HttpGet("roles")]
+    [HasAccess(ModuleCodes.Users, AccessLevel.Read)]
     public async Task<IActionResult> GetRoles(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetRolesQuery(), ct);
@@ -21,6 +25,7 @@ public class UsersController : BaseApiController
 
     /// <summary>Listare paginată utilizatori cu căutare și filtre.</summary>
     [HttpGet]
+    [HasAccess(ModuleCodes.Users, AccessLevel.Read)]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? search,
         [FromQuery] Guid? roleId,
@@ -38,6 +43,7 @@ public class UsersController : BaseApiController
 
     /// <summary>Obținere utilizator după Id.</summary>
     [HttpGet("{id:guid}")]
+    [HasAccess(ModuleCodes.Users, AccessLevel.Read)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetUserByIdQuery(id), ct);
@@ -46,6 +52,7 @@ public class UsersController : BaseApiController
 
     /// <summary>Creare utilizator nou (parola se hash-uiește automat cu BCrypt).</summary>
     [HttpPost]
+    [HasAccess(ModuleCodes.Users, AccessLevel.Write)]
     public async Task<IActionResult> Create(
         [FromBody] CreateUserCommand command, CancellationToken ct)
     {
@@ -55,6 +62,7 @@ public class UsersController : BaseApiController
 
     /// <summary>Actualizare utilizator (fără parolă).</summary>
     [HttpPut("{id:guid}")]
+    [HasAccess(ModuleCodes.Users, AccessLevel.Write)]
     public async Task<IActionResult> Update(
         Guid id, [FromBody] UpdateUserRequest request, CancellationToken ct)
     {
@@ -74,6 +82,7 @@ public class UsersController : BaseApiController
 
     /// <summary>Schimbare parolă utilizator.</summary>
     [HttpPatch("{id:guid}/password")]
+    [HasAccess(ModuleCodes.Users, AccessLevel.Write)]
     public async Task<IActionResult> ChangePassword(
         Guid id, [FromBody] ChangePasswordRequest request, CancellationToken ct)
     {
@@ -84,6 +93,7 @@ public class UsersController : BaseApiController
 
     /// <summary>Soft delete utilizator.</summary>
     [HttpDelete("{id:guid}")]
+    [HasAccess(ModuleCodes.Users, AccessLevel.Full)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new DeleteUserCommand(id), ct);

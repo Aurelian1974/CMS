@@ -120,3 +120,5 @@ lcov.info
 *.log
 *.swp
 *~
+
+login_test.json

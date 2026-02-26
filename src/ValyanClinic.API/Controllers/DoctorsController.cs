@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using ValyanClinic.Application.Common.Constants;
+using ValyanClinic.Application.Common.Enums;
+using ValyanClinic.Infrastructure.Authentication;
 using ValyanClinic.Application.Features.Doctors.Commands.CreateDoctor;
 using ValyanClinic.Application.Features.Doctors.Commands.DeleteDoctor;
 using ValyanClinic.Application.Features.Doctors.Commands.UpdateDoctor;
@@ -15,6 +18,7 @@ public class DoctorsController : BaseApiController
 {
     /// <summary>Listare paginată doctori cu filtre.</summary>
     [HttpGet]
+    [HasAccess(ModuleCodes.Users, AccessLevel.Read)]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? search,
         [FromQuery] Guid? specialtyId,
@@ -34,6 +38,7 @@ public class DoctorsController : BaseApiController
 
     /// <summary>Obținere doctor după Id.</summary>
     [HttpGet("{id:guid}")]
+    [HasAccess(ModuleCodes.Users, AccessLevel.Read)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetDoctorByIdQuery(id), ct);
@@ -42,6 +47,7 @@ public class DoctorsController : BaseApiController
 
     /// <summary>Listare simplificată doctori (pentru dropdown-uri).</summary>
     [HttpGet("lookup")]
+    [HasAccess(ModuleCodes.Users, AccessLevel.Read)]
     public async Task<IActionResult> GetLookup(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetDoctorsByClinicQuery(), ct);
@@ -50,6 +56,7 @@ public class DoctorsController : BaseApiController
 
     /// <summary>Creare doctor nou.</summary>
     [HttpPost]
+    [HasAccess(ModuleCodes.Users, AccessLevel.Write)]
     public async Task<IActionResult> Create(
         [FromBody] CreateDoctorCommand command, CancellationToken ct)
     {
@@ -59,6 +66,7 @@ public class DoctorsController : BaseApiController
 
     /// <summary>Actualizare doctor existent.</summary>
     [HttpPut("{id:guid}")]
+    [HasAccess(ModuleCodes.Users, AccessLevel.Write)]
     public async Task<IActionResult> Update(
         Guid id, [FromBody] UpdateDoctorRequest request, CancellationToken ct)
     {
@@ -84,6 +92,7 @@ public class DoctorsController : BaseApiController
 
     /// <summary>Soft delete doctor.</summary>
     [HttpDelete("{id:guid}")]
+    [HasAccess(ModuleCodes.Users, AccessLevel.Full)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new DeleteDoctorCommand(id), ct);

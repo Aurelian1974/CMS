@@ -11,7 +11,7 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: (payload: LoginPayload) => authApi.login(payload),
     onSuccess: (data) => {
-      setAuth(data.user, data.accessToken);
+      setAuth(data.user, data.accessToken, data.permissions ?? []);
       navigate('/', { replace: true });
     },
   });
