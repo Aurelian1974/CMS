@@ -31,11 +31,12 @@ public class AuthController(IOptions<JwtOptions> jwtOptions) : BaseApiController
         // Setăm refresh token-ul ca HttpOnly cookie
         SetRefreshTokenCookie(result.Value!.RefreshToken);
 
-        // Returnăm doar access token + user info (fără refresh token în body)
+        // Returnăm access token + user info + permissions (fără refresh token în body)
         var response = new
         {
             accessToken = result.Value.AccessToken,
-            user = result.Value.User
+            user = result.Value.User,
+            permissions = result.Value.Permissions
         };
 
         return Ok(new ApiResponse<object>(true, response, null, null));
@@ -68,7 +69,8 @@ public class AuthController(IOptions<JwtOptions> jwtOptions) : BaseApiController
         var response = new
         {
             accessToken = result.Value.AccessToken,
-            user = result.Value.User
+            user = result.Value.User,
+            permissions = result.Value.Permissions
         };
 
         return Ok(new ApiResponse<object>(true, response, null, null));

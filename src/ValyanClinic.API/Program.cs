@@ -84,7 +84,12 @@ try
 
     app.UseSerilogRequestLogging();
 
-    app.UseHttpsRedirection();
+    // HTTPS redirect doar în producție — în development, Vite proxy gestionează conexiunea
+    if (!app.Environment.IsDevelopment())
+    {
+        app.UseHttpsRedirection();
+    }
+
     app.UseCors("ValyanClinicCors");
 
     app.UseAuthentication();

@@ -28,7 +28,8 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as typeof error.config & { _retry?: boolean }
 
-    if (error.response?.status === 401 && !originalRequest?._retry) {
+    const isAuthEndpoint = originalRequest?.url?.startsWith('/api/auth/');
+    if (error.response?.status === 401 && !originalRequest?._retry && !isAuthEndpoint) {
       if (isRefreshing) {
         // Pune în coadă până se termină refresh-ul curent
         return new Promise((resolve) => {
@@ -69,9 +70,20 @@ api.interceptors.response.use(
     }
 
     // Parsare mesaj eroare din API response
-    const apiError =
-      (error.response?.data as { message?: string } | undefined)?.message ??
-      'A apărut o eroare neașteptată.'
+    // Prioritate: mesaj backend > mesaj specific rețea > mesaj generic
+    let apiError: string
+
+    if (error.response?.data) {
+      // Backend a răspuns cu un mesaj de eroare
+      apiError =
+        (error.response.data as { message?: string }).message ??
+        'A apărut o eroare neașteptată.'
+    } else if (error.code === 'ERR_NETWORK' || error.code === 'ECONNREFUSED' || !error.response) {
+      // Eroare de rețea — serverul nu răspunde
+      apiError = 'Nu se poate conecta la server. Verificați dacă backend-ul este pornit.'
+    } else {
+      apiError = 'A apărut o eroare neașteptată.'
+    }
 
     return Promise.reject(new Error(apiError))
   }

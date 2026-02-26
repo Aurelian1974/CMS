@@ -13,6 +13,7 @@ import type {
   UpdateMedicalTitlePayload,
   ToggleMedicalTitlePayload,
 } from '@/features/nomenclature/types/medicalTitle.types'
+import type { NomenclatureItem } from '@/types/common.types'
 
 export const nomenclatureApi = {
   // ===== Specializări =====
@@ -48,4 +49,18 @@ export const nomenclatureApi = {
 
   toggleMedicalTitle: (id: string, payload: ToggleMedicalTitlePayload): Promise<ApiResponse<null>> =>
     api.patch(`/api/nomenclature/medical-titles/${id}/toggle`, payload),
+
+  // ===== Nomenclatoare simple (lookups) =====
+
+  getGenders: (isActive?: boolean): Promise<ApiResponse<NomenclatureItem[]>> =>
+    api.get('/api/nomenclature/genders', { params: { isActive } }),
+
+  getBloodTypes: (isActive?: boolean): Promise<ApiResponse<NomenclatureItem[]>> =>
+    api.get('/api/nomenclature/blood-types', { params: { isActive } }),
+
+  getAllergyTypes: (isActive?: boolean): Promise<ApiResponse<NomenclatureItem[]>> =>
+    api.get('/api/nomenclature/allergy-types', { params: { isActive } }),
+
+  getAllergySeverities: (isActive?: boolean): Promise<ApiResponse<NomenclatureItem[]>> =>
+    api.get('/api/nomenclature/allergy-severities', { params: { isActive } }),
 }

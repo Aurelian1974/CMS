@@ -1,6 +1,26 @@
 import { Component, type ReactNode } from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { AppRoutes } from './routes/AppRoutes'
+import { useAuthStore } from './store/authStore'
+
+// ===== Validare sesiune la startup =====
+// Dacă JWT-ul stocat în sessionStorage e expirat, curățăm sesiunea înainte de render.
+// Previne ciclul: pagini protejate → 401 → refresh eșuat → redirect → eroare inutilă.
+;(() => {
+  const { accessToken, isAuthenticated, clearAuth } = useAuthStore.getState()
+  if (!isAuthenticated || !accessToken) return
+
+  try {
+    const payload = JSON.parse(atob(accessToken.split('.')[1]))
+    const expMs = (payload.exp ?? 0) * 1000
+    if (Date.now() > expMs) {
+      clearAuth()
+    }
+  } catch {
+    // Token malformat — curățăm sesiunea
+    clearAuth()
+  }
+})()
 
 // Error Boundary temporar pentru debug — afișează eroarea în loc de blank page
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {

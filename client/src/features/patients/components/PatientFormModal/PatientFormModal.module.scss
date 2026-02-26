@@ -1,0 +1,186 @@
+@import '@/styles/variables';
+
+// ===== Overlay =====
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  animation: fadeIn 0.15s ease;
+}
+
+// ===== Modal — mai lat decât DoctorFormModal pentru sub-colecții =====
+.modal {
+  background: $card-bg;
+  border-radius: $border-radius-lg;
+  box-shadow: $box-shadow-lg;
+  max-width: 780px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  animation: slideUp 0.2s ease;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid $gray-200;
+}
+
+.modalTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: $gray-700;
+  margin: 0;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: $gray-400;
+  cursor: pointer;
+  padding: 0;
+  &:hover { color: $gray-600; }
+}
+
+.modalBody {
+  padding: 1.25rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid $gray-200;
+}
+
+// ===== Secțiuni =====
+.section {
+  border: 1px solid $gray-200;
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.sectionTitle {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: $primary-dark;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+// ===== Form elements =====
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: $gray-600;
+}
+
+.required {
+  color: $danger;
+}
+
+.error {
+  font-size: 0.78rem;
+  color: $danger;
+}
+
+// ===== Dynamic array rows (alergii, doctori, contacte) =====
+.arrayRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba($gray-200, 0.6);
+
+  &:last-child { border-bottom: none; }
+}
+
+.addBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border: 1.5px dashed rgba($primary, 0.35);
+  border-radius: 7px;
+  background: rgba($primary, 0.04);
+  color: $primary;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+
+  &:hover {
+    border-color: $primary;
+    background: rgba($primary, 0.08);
+  }
+}
+
+.removeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 6px;
+  background: rgba($danger, 0.06);
+  color: $danger;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: all 0.15s;
+
+  &:hover {
+    background: rgba($danger, 0.14);
+  }
+}
+
+.emptyHint {
+  font-size: 0.78rem;
+  color: $gray-400;
+  margin: 0;
+  font-style: italic;
+}
+
+// ===== Animații =====
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
