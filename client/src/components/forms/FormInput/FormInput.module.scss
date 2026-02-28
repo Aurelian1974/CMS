@@ -1,0 +1,100 @@
+@import '@/styles/variables';
+
+// ===== Container câmp =====
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+// ===== Label =====
+.label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: $gray-600;
+  line-height: 1.4;
+}
+
+.required {
+  color: $danger;
+  margin-left: 0.15rem;
+}
+
+// ===== Eroare =====
+.error {
+  font-size: 0.78rem;
+  color: $danger;
+  margin-top: 0.1rem;
+}
+
+// ===== Override-uri Syncfusion TextBox =====
+.formGroup :global {
+  // Container TextBox
+  .e-input-group,
+  .e-input-group.e-control-wrapper {
+    border-radius: $border-radius-sm;
+    border-color: $gray-200;
+    background: $card-bg;
+    font-family: $font-family-base;
+    font-size: $font-size-base;
+    min-height: 36px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover:not(.e-disabled):not(.e-input-focus) {
+      border-color: $gray-300;
+    }
+
+    &.e-input-focus {
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba($primary, 0.12);
+    }
+
+    // Input intern
+    input.e-input,
+    textarea.e-input {
+      color: $gray-700;
+      font-size: $font-size-base;
+      padding: 0.375rem 0.625rem;
+
+      &::placeholder {
+        color: $gray-400;
+      }
+    }
+
+    textarea.e-input {
+      resize: vertical;
+      min-height: 60px;
+    }
+
+    // Floating label
+    .e-float-text {
+      color: $gray-400;
+      font-size: $font-size-base;
+    }
+
+    &.e-input-focus .e-float-text {
+      color: $primary;
+    }
+  }
+
+  // Stare eroare
+  .e-input-group.e-error,
+  .e-input-group.e-control-wrapper.e-error {
+    border-color: $danger;
+
+    &.e-input-focus {
+      box-shadow: 0 0 0 3px rgba($danger, 0.12);
+    }
+  }
+
+  // Stare disabled
+  .e-input-group.e-disabled {
+    opacity: 0.6;
+    background: $gray-50;
+    cursor: not-allowed;
+
+    input.e-input {
+      cursor: not-allowed;
+    }
+  }
+}

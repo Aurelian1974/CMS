@@ -1,0 +1,188 @@
+@import '@/styles/variables';
+
+// ===== Buton base =====
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1.5px solid transparent;
+  border-radius: $border-radius-sm;
+  font-family: $font-family-base;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  user-select: none;
+  text-decoration: none;
+  line-height: 1.4;
+  position: relative;
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+}
+
+// ===== Variante =====
+.primary {
+  background-color: $primary;
+  color: #fff;
+  border-color: $primary;
+
+  &:hover:not(:disabled) {
+    background-color: $primary-dark;
+    border-color: $primary-dark;
+  }
+
+  &:active:not(:disabled) {
+    background-color: darken($primary-dark, 4%);
+  }
+}
+
+.secondary {
+  background-color: $gray-200;
+  color: $gray-700;
+  border-color: $gray-200;
+
+  &:hover:not(:disabled) {
+    background-color: $gray-300;
+    border-color: $gray-300;
+    color: $gray-800;
+  }
+
+  &:active:not(:disabled) {
+    background-color: darken($gray-300, 4%);
+  }
+}
+
+.danger {
+  background-color: $danger;
+  color: #fff;
+  border-color: $danger;
+
+  &:hover:not(:disabled) {
+    background-color: darken($danger, 8%);
+    border-color: darken($danger, 8%);
+  }
+
+  &:active:not(:disabled) {
+    background-color: darken($danger, 12%);
+  }
+}
+
+.ghost {
+  background-color: transparent;
+  color: $gray-600;
+  border-color: transparent;
+
+  &:hover:not(:disabled) {
+    background-color: rgba($gray-200, 0.6);
+    color: $gray-700;
+  }
+
+  &:active:not(:disabled) {
+    background-color: $gray-200;
+  }
+}
+
+.outlinePrimary {
+  background-color: transparent;
+  color: $primary;
+  border-color: $primary;
+
+  &:hover:not(:disabled) {
+    background-color: rgba($primary, 0.08);
+    color: $primary-dark;
+  }
+
+  &:active:not(:disabled) {
+    background-color: rgba($primary, 0.14);
+  }
+}
+
+.outlineSecondary {
+  background-color: transparent;
+  color: $gray-600;
+  border-color: $gray-300;
+
+  &:hover:not(:disabled) {
+    background-color: $gray-50;
+    border-color: $gray-400;
+    color: $gray-700;
+  }
+
+  &:active:not(:disabled) {
+    background-color: $gray-100;
+  }
+}
+
+.outlineDanger {
+  background-color: transparent;
+  color: $danger;
+  border-color: $danger;
+
+  &:hover:not(:disabled) {
+    background-color: rgba($danger, 0.08);
+    color: darken($danger, 8%);
+  }
+
+  &:active:not(:disabled) {
+    background-color: rgba($danger, 0.14);
+  }
+}
+
+// ===== Dimensiuni =====
+.sm {
+  padding: 0.3rem 0.65rem;
+  font-size: 0.8125rem;
+}
+
+.md {
+  padding: 0.45rem 1rem;
+  font-size: 0.875rem;
+}
+
+.lg {
+  padding: 0.575rem 1.5rem;
+  font-size: 0.9375rem;
+}
+
+// ===== Full width =====
+.fullWidth {
+  width: 100%;
+}
+
+// ===== Loading =====
+.loading {
+  position: relative;
+  pointer-events: none;
+}
+
+// ===== Spinner =====
+.spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.55s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// ===== Icon containers =====
+.icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}

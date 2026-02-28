@@ -1,0 +1,151 @@
+// Pagination.module.scss — Stiluri pager standalone (consistent cu grid pager)
+@import '@/styles/variables';
+
+.paginationContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0;
+
+  :global {
+    // ==================== PAGER STANDALONE ====================
+    .e-pager {
+      background: transparent !important;
+      border: none !important;
+      padding: 0 !important;
+      font-size: 0.8rem !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+      flex-wrap: wrap !important;
+      justify-content: center !important;
+      color: $gray-500 !important;
+      box-shadow: none !important;
+    }
+
+    // Container butoane paginare
+    .e-pagercontainer {
+      display: flex !important;
+      align-items: center !important;
+      gap: 4px !important;
+      margin: 0 !important;
+    }
+
+    // Toate butoanele numerice (inactive)
+    .e-pagercontainer .e-numericitem {
+      background: transparent !important;
+      border: 1px solid transparent !important;
+      border-radius: 6px !important;
+      color: $gray-600 !important;
+      font-size: 0.8rem !important;
+      font-weight: 500 !important;
+      min-width: 32px !important;
+      height: 32px !important;
+      line-height: 32px !important;
+      padding: 0 !important;
+      text-align: center !important;
+      transition: all 0.15s ease !important;
+
+      &:hover:not(.e-currentitem) {
+        background: rgba($primary-lighter, 0.2) !important;
+        border-color: rgba($primary, 0.15) !important;
+        color: $primary-dark !important;
+      }
+    }
+
+    // Pagina activă
+    .e-pagercontainer .e-numericitem.e-currentitem {
+      background: $primary !important;
+      border-color: $primary !important;
+      color: #fff !important;
+      font-weight: 600 !important;
+      box-shadow: 0 1px 3px rgba($primary-dark, 0.2) !important;
+    }
+
+    // Butoane navigare (prev, next, first, last)
+    .e-pagercontainer .e-prevpage,
+    .e-pagercontainer .e-nextpage,
+    .e-pagercontainer .e-first,
+    .e-pagercontainer .e-last,
+    .e-pagercontainer .e-pp,
+    .e-pagercontainer .e-np {
+      background: transparent !important;
+      border: 1px solid transparent !important;
+      border-radius: 6px !important;
+      color: $gray-500 !important;
+      min-width: 32px !important;
+      height: 32px !important;
+      line-height: 32px !important;
+      padding: 0 !important;
+      transition: all 0.15s ease !important;
+
+      &:hover:not(.e-disable) {
+        background: rgba($primary-lighter, 0.2) !important;
+        border-color: rgba($primary, 0.15) !important;
+        color: $primary-dark !important;
+      }
+
+      &.e-disable {
+        opacity: 0.35 !important;
+        cursor: default !important;
+      }
+    }
+
+    // Iconițe navigare
+    .e-pagercontainer .e-icon-prev,
+    .e-pagercontainer .e-icon-next,
+    .e-pagercontainer .e-icon-first,
+    .e-pagercontainer .e-icon-last {
+      font-size: 12px !important;
+    }
+
+    // Dropdown dimensiune pagină
+    .e-pager .e-pagesizes {
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      margin: 0 8px !important;
+
+      .e-pagerdropdown {
+        width: 70px !important;
+
+        .e-input-group {
+          border: 1px solid rgba($primary, 0.2) !important;
+          border-radius: 6px !important;
+          height: 32px !important;
+          background: $card-bg !important;
+
+          &:hover {
+            border-color: rgba($primary, 0.35) !important;
+          }
+
+          &.e-input-focus {
+            border-color: $primary !important;
+            box-shadow: 0 0 0 2px rgba($primary, 0.12) !important;
+          }
+
+          input {
+            font-size: 0.8rem !important;
+            color: $gray-600 !important;
+            text-align: center !important;
+            padding: 0 4px !important;
+          }
+        }
+      }
+
+      .e-pagecountmsg {
+        color: $gray-500 !important;
+        font-size: 0.78rem !important;
+        white-space: nowrap !important;
+      }
+    }
+
+    // Mesaj informativ ("1-10 din 45")
+    .e-pager .e-parentmsgbar {
+      color: $gray-500 !important;
+      font-size: 0.78rem !important;
+      padding: 0 8px !important;
+      white-space: nowrap !important;
+    }
+  }
+}

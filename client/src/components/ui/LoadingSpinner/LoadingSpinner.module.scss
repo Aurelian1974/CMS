@@ -1,0 +1,59 @@
+@import '@/styles/variables';
+
+// ===== Container =====
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.fullPage {
+  min-height: 300px;
+  width: 100%;
+  padding: 2rem;
+}
+
+.inline {
+  padding: 1rem 0;
+}
+
+// ===== Spinner ring =====
+.spinner {
+  border: 3px solid $gray-200;
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+}
+
+// Dimensiuni
+.sm {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+}
+
+.md {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+}
+
+.lg {
+  width: 48px;
+  height: 48px;
+  border-width: 3.5px;
+}
+
+// ===== Text =====
+.text {
+  font-size: 0.8125rem;
+  color: $gray-500;
+  font-weight: 400;
+}
+
+// ===== Animație =====
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
