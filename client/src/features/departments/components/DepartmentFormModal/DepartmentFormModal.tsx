@@ -5,6 +5,7 @@ import { departmentSchema, type DepartmentFormData } from '../../schemas/departm
 import type { DepartmentDto } from '../../types/department.types'
 import type { ClinicLocationDto } from '@/features/clinic/types/clinic.types'
 import type { DoctorLookupDto } from '@/features/doctors/types/doctor.types'
+import { AppModal } from '@/components/ui/AppModal'
 import styles from './DepartmentFormModal.module.scss'
 
 interface DepartmentFormModalProps {
@@ -71,22 +72,35 @@ export const DepartmentFormModal = ({
     }
   }, [editData, reset])
 
-  if (!isOpen) return null
-
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h5 className={styles.modalTitle}>
-            {isEdit ? 'Editează Departament' : 'Departament Nou'}
-          </h5>
-          <button className={styles.closeBtn} onClick={onClose} aria-label="Închide">
-            ×
+    <AppModal
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth={520}
+      title={isEdit ? 'Editează Departament' : 'Departament Nou'}
+      as="form"
+      onSubmit={handleSubmit(onSubmit)}
+      bodyClassName={styles.body}
+      footer={
+        <>
+          <button
+            type="button"
+            className="btn btn-outline-secondary"
+            onClick={onClose}
+            disabled={isLoading}
+          >
+            Anulează
           </button>
-        </div>
-
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <div className={styles.modalBody}>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Se salvează...' : isEdit ? 'Salvează' : 'Adaugă'}
+          </button>
+        </>
+      }
+    >
             {/* Denumire departament */}
             <div className={styles.formGroup}>
               <label className={styles.label}>
@@ -182,27 +196,6 @@ export const DepartmentFormModal = ({
                 </div>
               </div>
             )}
-          </div>
-
-          <div className={styles.modalFooter}>
-            <button
-              type="button"
-              className="btn btn-outline-secondary"
-              onClick={onClose}
-              disabled={isLoading}
-            >
-              Anulează
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Se salvează...' : isEdit ? 'Salvează' : 'Adaugă'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    </AppModal>
   )
 }

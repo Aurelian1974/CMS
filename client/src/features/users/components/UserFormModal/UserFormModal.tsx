@@ -5,6 +5,7 @@ import { createUserSchema, updateUserSchema, type CreateUserFormData, type Updat
 import type { UserDto, RoleDto, UserAssociationType } from '../../types/user.types'
 import type { DoctorLookupDto } from '@/features/doctors/types/doctor.types'
 import type { MedicalStaffLookupDto } from '@/features/medicalStaff/types/medicalStaff.types'
+import { AppModal } from '@/components/ui/AppModal'
 import styles from './UserFormModal.module.scss'
 
 interface UserFormModalProps {
@@ -133,22 +134,35 @@ export const UserFormModal = ({
     }
   }, [watchStaffId, staffLookup, setValue, isEdit])
 
-  if (!isOpen) return null
-
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h5 className={styles.modalTitle}>
-            {isEdit ? 'Editează Utilizator' : 'Utilizator Nou'}
-          </h5>
-          <button className={styles.closeBtn} onClick={onClose} aria-label="Închide">
-            ×
+    <AppModal
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth={680}
+      title={isEdit ? 'Editează Utilizator' : 'Utilizator Nou'}
+      as="form"
+      onSubmit={handleSubmit(onSubmit)}
+      bodyClassName={styles.body}
+      footer={
+        <>
+          <button
+            type="button"
+            className="btn btn-outline-secondary"
+            onClick={onClose}
+            disabled={isLoading}
+          >
+            Anulează
           </button>
-        </div>
-
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <div className={styles.modalBody}>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Se salvează...' : isEdit ? 'Salvează' : 'Creează cont'}
+          </button>
+        </>
+      }
+    >
 
             {/* Eroare server */}
             {serverError && (
@@ -363,27 +377,6 @@ export const UserFormModal = ({
                 </div>
               </div>
             )}
-          </div>
-
-          <div className={styles.modalFooter}>
-            <button
-              type="button"
-              className="btn btn-outline-secondary"
-              onClick={onClose}
-              disabled={isLoading}
-            >
-              Anulează
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Se salvează...' : isEdit ? 'Salvează' : 'Creează cont'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    </AppModal>
   )
 }
