@@ -3,6 +3,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { changePasswordSchema, type ChangePasswordFormData } from '../../schemas/user.schema'
 import { AppModal } from '@/components/ui/AppModal'
+import { FormInput } from '@/components/forms/FormInput'
+import { AppButton } from '@/components/ui/AppButton'
 import styles from './ChangePasswordModal.module.scss'
 
 interface ChangePasswordModalProps {
@@ -25,10 +27,9 @@ export const ChangePasswordModal = ({
   serverError,
 }: ChangePasswordModalProps) => {
   const {
-    register,
+    control,
     handleSubmit,
     reset,
-    formState: { errors },
   } = useForm<ChangePasswordFormData>({
     resolver: zodResolver(changePasswordSchema),
     defaultValues: {
@@ -55,21 +56,21 @@ export const ChangePasswordModal = ({
       bodyClassName={styles.body}
       footer={
         <>
-          <button
-            type="button"
-            className="btn btn-outline-secondary"
+          <AppButton
+            variant="outline-secondary"
             onClick={onClose}
             disabled={isLoading}
           >
             Anulează
-          </button>
-          <button
+          </AppButton>
+          <AppButton
             type="submit"
-            className="btn btn-primary"
-            disabled={isLoading}
+            variant="primary"
+            isLoading={isLoading}
+            loadingText="Se salvează..."
           >
-            {isLoading ? 'Se salvează...' : 'Schimbă parola'}
-          </button>
+            Schimbă parola
+          </AppButton>
         </>
       }
     >
@@ -81,34 +82,24 @@ export const ChangePasswordModal = ({
       )}
 
       {/* Parolă nouă */}
-      <div className={styles.formGroup}>
-        <label className={styles.label}>
-          Parolă nouă <span className={styles.required}>*</span>
-        </label>
-        <input
-          type="password"
-          className={`form-control${errors.newPassword ? ' is-invalid' : ''}`}
-          placeholder="Minim 6 caractere"
-          autoComplete="new-password"
-          {...register('newPassword')}
-        />
-        {errors.newPassword && <span className={styles.error}>{errors.newPassword.message}</span>}
-      </div>
+      <FormInput<ChangePasswordFormData>
+        name="newPassword"
+        control={control}
+        label="Parolă nouă"
+        type="password"
+        placeholder="Minim 6 caractere"
+        required
+      />
 
       {/* Confirmare parolă */}
-      <div className={styles.formGroup}>
-        <label className={styles.label}>
-          Confirmă parola <span className={styles.required}>*</span>
-        </label>
-        <input
-          type="password"
-          className={`form-control${errors.confirmPassword ? ' is-invalid' : ''}`}
-          placeholder="Repetă parola"
-          autoComplete="new-password"
-          {...register('confirmPassword')}
-        />
-        {errors.confirmPassword && <span className={styles.error}>{errors.confirmPassword.message}</span>}
-      </div>
+      <FormInput<ChangePasswordFormData>
+        name="confirmPassword"
+        control={control}
+        label="Confirmă parola"
+        type="password"
+        placeholder="Repetă parola"
+        required
+      />
     </AppModal>
   )
 }

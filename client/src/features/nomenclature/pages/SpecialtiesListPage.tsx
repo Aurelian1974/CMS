@@ -1,5 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { AppButton } from '@/components/ui/AppButton'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { useSpecialtyTree, useCreateSpecialty, useUpdateSpecialty, useToggleSpecialty } from '@/features/nomenclature/hooks/useSpecialties'
 import { SpecialtyFormModal } from '@/features/nomenclature/components/SpecialtyFormModal/SpecialtyFormModal'
 import type { SpecialtyDto, SpecialtyTreeNode } from '@/features/nomenclature/types/specialty.types'
@@ -270,9 +272,9 @@ export const SpecialtiesListPage = () => {
         title="Specializări Medicale"
         subtitle={`${totalCount} specializări`}
         actions={
-          <button className="btn btn-primary d-flex align-items-center gap-2" onClick={handleOpenCreate}>
+          <AppButton variant="primary" onClick={handleOpenCreate}>
             <IconPlus /> Adaugă
-          </button>
+          </AppButton>
         }
       />
 
@@ -299,21 +301,19 @@ export const SpecialtiesListPage = () => {
               Arată inactive
             </label>
 
-            <button className="btn btn-outline-secondary btn-sm" onClick={expandAll}>
+            <AppButton variant="outline-secondary" size="sm" onClick={expandAll}>
               Extinde tot
-            </button>
-            <button className="btn btn-outline-secondary btn-sm" onClick={collapseAll}>
+            </AppButton>
+            <AppButton variant="outline-secondary" size="sm" onClick={collapseAll}>
               Restrânge tot
-            </button>
+            </AppButton>
           </div>
         </div>
 
         {/* Conținut arbore */}
         {isLoading && (
           <div className="d-flex justify-content-center py-5">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Se încarcă…</span>
-            </div>
+            <LoadingSpinner />
           </div>
         )}
 

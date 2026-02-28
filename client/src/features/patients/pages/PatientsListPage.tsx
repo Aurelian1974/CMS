@@ -14,6 +14,7 @@ import { PatientFormModal } from '../components/PatientFormModal/PatientFormModa
 import { PatientDetailModal } from '../components/PatientDetailModal/PatientDetailModal'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { AppBadge, type BadgeVariant } from '@/components/ui/AppBadge'
+import { AppButton } from '@/components/ui/AppButton'
 import { formatDate } from '@/utils/format'
 import styles from './PatientsListPage.module.scss'
 
@@ -616,16 +617,18 @@ export const PatientsListPage = () => {
               Sigur dorești să ștergi pacientul <strong>{deleteTarget.fullName}</strong>?
             </p>
             <div className={styles.confirmActions}>
-              <button className="btn btn-outline-secondary btn-sm" onClick={() => setDeleteTarget(null)}>
+              <AppButton variant="outline-secondary" size="sm" onClick={() => setDeleteTarget(null)}>
                 Anulează
-              </button>
-              <button
-                className="btn btn-danger btn-sm"
+              </AppButton>
+              <AppButton
+                variant="danger"
+                size="sm"
                 onClick={handleConfirmDelete}
-                disabled={deletePatient.isPending}
+                isLoading={deletePatient.isPending}
+                loadingText="Se șterge..."
               >
-                {deletePatient.isPending ? 'Se șterge...' : 'Șterge'}
-              </button>
+                Șterge
+              </AppButton>
             </div>
           </div>
         </div>

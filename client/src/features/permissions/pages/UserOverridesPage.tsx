@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useUsersList, useRoles } from '@/features/users/hooks/useUsers'
+import { AppButton } from '@/components/ui/AppButton'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import {
   useModulesAndLevels,
   useRolePermissions,
@@ -237,7 +239,7 @@ export const UserOverridesPage = () => {
 
         {isLoading && selectedUserId && (
           <div className={styles.loading}>
-            <div className="spinner-border spinner-border-sm text-primary me-2" role="status" />
+            <LoadingSpinner size="sm" />
             Se încarcă...
           </div>
         )}
@@ -338,18 +340,17 @@ export const UserOverridesPage = () => {
 
             {/* Acțiuni */}
             <div className={styles.actions}>
-              <button
-                className="btn btn-primary btn-sm d-flex align-items-center gap-1"
+              <AppButton
+                variant="primary"
+                size="sm"
                 onClick={handleSave}
-                disabled={!isDirty || updateMutation.isPending}
+                disabled={!isDirty}
+                isLoading={updateMutation.isPending}
+                loadingText="Salvează override-uri"
               >
-                {updateMutation.isPending ? (
-                  <span className="spinner-border spinner-border-sm" />
-                ) : (
-                  <IconSave />
-                )}
+                <IconSave />
                 Salvează override-uri
-              </button>
+              </AppButton>
             </div>
           </>
         )}

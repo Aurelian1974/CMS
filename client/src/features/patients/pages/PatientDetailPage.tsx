@@ -6,6 +6,7 @@ import { useGenders, useBloodTypes, useAllergyTypes, useAllergySeverities } from
 import { PatientFormModal } from '../components/PatientFormModal/PatientFormModal'
 import type { PatientFormData } from '../schemas/patient.schema'
 import { formatDate, formatDateTime } from '@/utils/format'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import type { PatientDetailDto, PatientAllergyDto, PatientDoctorDto, PatientEmergencyContactDto } from '../types/patient.types'
 import styles from './PatientDetailPage.module.scss'
 
@@ -51,9 +52,7 @@ export const PatientDetailPage = () => {
     return (
       <div className={styles.page}>
         <div className="d-flex justify-content-center align-items-center" style={{ minHeight: 300 }}>
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Se încarcă...</span>
-          </div>
+          <LoadingSpinner />
         </div>
       </div>
     )

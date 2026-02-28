@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useRoles } from '@/features/users/hooks/useUsers'
+import { AppButton } from '@/components/ui/AppButton'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import {
   useModulesAndLevels,
   useRolePermissions,
@@ -155,7 +157,7 @@ export const RolePermissionsPage = () => {
 
         {isLoading && (
           <div className={styles.loading}>
-            <div className="spinner-border spinner-border-sm text-primary me-2" role="status" />
+            <LoadingSpinner size="sm" />
             Se încarcă...
           </div>
         )}
@@ -208,20 +210,18 @@ export const RolePermissionsPage = () => {
               </tbody>
             </table>
 
-            {/* Acțiuni */}
             <div className={styles.actions}>
-              <button
-                className="btn btn-primary btn-sm d-flex align-items-center gap-1"
+              <AppButton
+                variant="primary"
+                size="sm"
                 onClick={handleSave}
-                disabled={!isDirty || updateMutation.isPending}
+                disabled={!isDirty}
+                isLoading={updateMutation.isPending}
+                loadingText={`Salvează permisiuni ${selectedRole?.name ?? ''}`}
               >
-                {updateMutation.isPending ? (
-                  <span className="spinner-border spinner-border-sm" />
-                ) : (
-                  <IconSave />
-                )}
+                <IconSave />
                 Salvează permisiuni {selectedRole?.name ?? ''}
-              </button>
+              </AppButton>
             </div>
           </>
         )}

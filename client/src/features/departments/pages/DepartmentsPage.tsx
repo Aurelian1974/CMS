@@ -11,6 +11,8 @@ import { useClinicLocations } from '@/features/clinic/hooks/useClinic'
 import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
 import { useMedicalStaffLookup } from '@/features/medicalStaff/hooks/useMedicalStaff'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
+import { AppButton } from '@/components/ui/AppButton'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { IconPlus } from '@/components/ui/Icons'
 import { DoctorViewModal } from '@/features/doctors/components'
 import { MedicalStaffViewModal } from '@/features/medicalStaff/components'
@@ -224,9 +226,7 @@ const DepartmentsPage = () => {
       <div className={styles.page}>
         <PageHeader title="Departamente" subtitle="Gestionare departamente clinică" />
         <div className={styles.loadingWrap}>
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Se încarcă...</span>
-          </div>
+          <LoadingSpinner />
         </div>
       </div>
     )
@@ -259,9 +259,9 @@ const DepartmentsPage = () => {
             <IconDepartment />
             Departamente
           </h2>
-          <button className="btn btn-primary btn-sm" onClick={handleOpenCreate}>
+          <AppButton variant="primary" size="sm" onClick={handleOpenCreate}>
             <IconPlus /> Adaugă departament
-          </button>
+          </AppButton>
         </div>
 
         {departments.length === 0 ? (
@@ -465,20 +465,21 @@ const DepartmentsPage = () => {
               Această acțiune nu poate fi anulată.
             </p>
             <div className={styles.confirmActions}>
-              <button
-                className="btn btn-outline-secondary"
+              <AppButton
+                variant="outline-secondary"
                 onClick={() => setDeleteTarget(null)}
                 disabled={deleteDepartment.isPending}
               >
                 Anulează
-              </button>
-              <button
-                className="btn btn-danger"
+              </AppButton>
+              <AppButton
+                variant="danger"
                 onClick={handleConfirmDelete}
-                disabled={deleteDepartment.isPending}
+                isLoading={deleteDepartment.isPending}
+                loadingText="Se șterge..."
               >
-                {deleteDepartment.isPending ? 'Se șterge...' : 'Șterge'}
-              </button>
+                Șterge
+              </AppButton>
             </div>
           </div>
         </div>

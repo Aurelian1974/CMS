@@ -6,6 +6,9 @@ import type { DepartmentDto } from '../../types/department.types'
 import type { ClinicLocationDto } from '@/features/clinic/types/clinic.types'
 import type { DoctorLookupDto } from '@/features/doctors/types/doctor.types'
 import { AppModal } from '@/components/ui/AppModal'
+import { FormInput } from '@/components/forms/FormInput'
+import { FormSelect } from '@/components/forms/FormSelect'
+import { AppButton } from '@/components/ui/AppButton'
 import styles from './DepartmentFormModal.module.scss'
 
 interface DepartmentFormModalProps {
@@ -33,10 +36,10 @@ export const DepartmentFormModal = ({
   const isEdit = !!editData
 
   const {
+    control,
     register,
     handleSubmit,
     reset,
-    formState: { errors },
   } = useForm<DepartmentFormData>({
     resolver: zodResolver(departmentSchema),
     defaultValues: {
@@ -83,119 +86,87 @@ export const DepartmentFormModal = ({
       bodyClassName={styles.body}
       footer={
         <>
-          <button
-            type="button"
-            className="btn btn-outline-secondary"
+          <AppButton
+            variant="outline-secondary"
             onClick={onClose}
             disabled={isLoading}
           >
             Anulează
-          </button>
-          <button
+          </AppButton>
+          <AppButton
             type="submit"
-            className="btn btn-primary"
-            disabled={isLoading}
+            variant="primary"
+            isLoading={isLoading}
+            loadingText="Se salvează..."
           >
-            {isLoading ? 'Se salvează...' : isEdit ? 'Salvează' : 'Adaugă'}
-          </button>
+            {isEdit ? 'Salvează' : 'Adaugă'}
+          </AppButton>
         </>
       }
     >
-            {/* Denumire departament */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Denumire departament <span className={styles.required}>*</span>
-              </label>
-              <input
-                type="text"
-                className={`form-control${errors.name ? ' is-invalid' : ''}`}
-                placeholder="ex: Cardiologie"
-                {...register('name')}
-              />
-              {errors.name && <span className={styles.error}>{errors.name.message}</span>}
-            </div>
+      <FormInput<DepartmentFormData>
+        name="name"
+        control={control}
+        label="Denumire departament"
+        placeholder="ex: Cardiologie"
+        required
+      />
 
-            {/* Cod + Locație */}
-            <div className="row g-3">
-              <div className="col-md-6">
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>
-                    Cod <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className={`form-control${errors.code ? ' is-invalid' : ''}`}
-                    placeholder="ex: CARDIO"
-                    {...register('code')}
-                  />
-                  {errors.code && <span className={styles.error}>{errors.code.message}</span>}
-                </div>
-              </div>
-              <div className="col-md-6">
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>
-                    Locație <span className={styles.required}>*</span>
-                  </label>
-                  <select
-                    className={`form-select${errors.locationId ? ' is-invalid' : ''}`}
-                    {...register('locationId')}
-                  >
-                    <option value="">— Selectează locația —</option>
-                    {locations.map((loc) => (
-                      <option key={loc.id} value={loc.id}>
-                        {loc.name}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.locationId && <span className={styles.error}>{errors.locationId.message}</span>}
-                </div>
-              </div>
-            </div>
+      <div className="row g-3">
+        <div className="col-md-6">
+          <FormInput<DepartmentFormData>
+            name="code"
+            control={control}
+            label="Cod"
+            placeholder="ex: CARDIO"
+            required
+          />
+        </div>
+        <div className="col-md-6">
+          <FormSelect<DepartmentFormData>
+            name="locationId"
+            control={control}
+            label="Locație"
+            options={locations.map(loc => ({ value: loc.id, label: loc.name }))}
+            required
+          />
+        </div>
+      </div>
 
-            {/* Descriere */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Descriere</label>
-              <textarea
-                className={`form-control${errors.description ? ' is-invalid' : ''}`}
-                rows={3}
-                placeholder="Descriere opțională a departamentului"
-                {...register('description')}
-              />
-              {errors.description && <span className={styles.error}>{errors.description.message}</span>}
-            </div>
+      <FormInput<DepartmentFormData>
+        name="description"
+        control={control}
+        label="Descriere"
+        placeholder="Descriere opțională a departamentului"
+        multiline
+        rows={3}
+      />
 
-            {/* Șef departament */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Șef departament</label>
-              <select
-                className="form-select"
-                {...register('headDoctorId')}
-              >
-                <option value="">— Fără șef desemnat —</option>
-                {doctors.map((doc) => (
-                  <option key={doc.id} value={doc.id}>
-                    {doc.fullName}{doc.specialtyName ? ` (${doc.specialtyName})` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
+      <FormSelect<DepartmentFormData>
+        name="headDoctorId"
+        control={control}
+        label="Șef departament"
+        options={doctors.map(doc => ({ value: doc.id, label: `${doc.fullName}${doc.specialtyName ? ` (${doc.specialtyName})` : ''}` }))}
+        showClearButton
+        allowFiltering
+      />
 
-            {/* Status activ (doar la editare) */}
-            {isEdit && (
-              <div className={styles.formGroup}>
-                <div className="form-check form-switch">
-                  <input
-                    type="checkbox"
-                    className="form-check-input"
-                    id="deptIsActive"
-                    {...register('isActive')}
-                  />
-                  <label className="form-check-label" htmlFor="deptIsActive">
-                    Departament activ
-                  </label>
-                </div>
-              </div>
-            )}
+      {/* Status activ (doar la editare) */}
+      {isEdit && (
+        <div className={styles.formGroup}>
+          <div className="form-check form-switch">
+            <input
+              type="checkbox"
+              className="form-check-input"
+              id="deptIsActive"
+              {...register('isActive')}
+            />
+            <label className="form-check-label" htmlFor="deptIsActive">
+              Departament activ
+            </label>
+          </div>
+        </div>
+      )}
     </AppModal>
   )
 }

@@ -1,6 +1,8 @@
 import { useDoctorDetail } from '../../hooks/useDoctors'
 import { formatDate } from '@/utils/format'
 import { AppModal } from '@/components/ui/AppModal'
+import { AppButton } from '@/components/ui/AppButton'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import styles from './DoctorViewModal.module.scss'
 
 interface DoctorViewModalProps {
@@ -21,16 +23,14 @@ export const DoctorViewModal = ({ doctorId, onClose }: DoctorViewModalProps) => 
       maxWidth={580}
       title="Detalii Doctor"
       footer={
-        <button className="btn btn-outline-secondary" onClick={onClose}>
+        <AppButton variant="outline-secondary" onClick={onClose}>
           Închide
-        </button>
+        </AppButton>
       }
     >
       {isLoading ? (
         <div className={styles.loadingWrap}>
-          <div className="spinner-border spinner-border-sm text-primary" role="status">
-            <span className="visually-hidden">Se încarcă...</span>
-          </div>
+          <LoadingSpinner size="sm" />
         </div>
       ) : !doctor ? (
         <div className="alert alert-warning mb-0">Doctorul nu a fost găsit.</div>

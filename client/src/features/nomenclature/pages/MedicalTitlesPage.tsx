@@ -1,5 +1,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { PageHeader } from '@/components/layout/PageHeader'
+import { AppButton } from '@/components/ui/AppButton'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import {
   useMedicalTitles,
   useCreateMedicalTitle,
@@ -97,9 +99,9 @@ export const MedicalTitlesPage = () => {
         title="Titulaturi Medicale"
         subtitle={`${titles.length} titulaturi`}
         actions={
-          <button className="btn btn-primary d-flex align-items-center gap-2" onClick={handleOpenCreate}>
+          <AppButton variant="primary" onClick={handleOpenCreate}>
             <IconPlus /> Adaugă
-          </button>
+          </AppButton>
         }
       />
 
@@ -131,9 +133,7 @@ export const MedicalTitlesPage = () => {
         {/* Conținut tabel */}
         {isLoading && (
           <div className="d-flex justify-content-center py-5">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Se încarcă…</span>
-            </div>
+            <LoadingSpinner />
           </div>
         )}
 

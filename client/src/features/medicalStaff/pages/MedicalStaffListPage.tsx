@@ -14,6 +14,7 @@ import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
 import { MedicalStaffFormModal } from '../components/MedicalStaffFormModal/MedicalStaffFormModal'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { AppBadge } from '@/components/ui/AppBadge'
+import { AppButton } from '@/components/ui/AppButton'
 import { formatDate } from '@/utils/format'
 import styles from './MedicalStaffListPage.module.scss'
 
@@ -460,16 +461,18 @@ export const MedicalStaffListPage = () => {
               Sigur dorești să ștergi pe <strong>{deleteTarget.fullName}</strong>?
             </p>
             <div className={styles.confirmActions}>
-              <button className="btn btn-outline-secondary btn-sm" onClick={() => setDeleteTarget(null)}>
+              <AppButton variant="outline-secondary" size="sm" onClick={() => setDeleteTarget(null)}>
                 Anulează
-              </button>
-              <button
-                className="btn btn-danger btn-sm"
+              </AppButton>
+              <AppButton
+                variant="danger"
+                size="sm"
                 onClick={handleConfirmDelete}
-                disabled={deleteStaff.isPending}
+                isLoading={deleteStaff.isPending}
+                loadingText="Se șterge..."
               >
-                {deleteStaff.isPending ? 'Se șterge...' : 'Șterge'}
-              </button>
+                Șterge
+              </AppButton>
             </div>
           </div>
         </div>
