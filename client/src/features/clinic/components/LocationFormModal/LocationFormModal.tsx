@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { clinicLocationSchema, type ClinicLocationFormData } from '../../schemas/clinic.schema'
 import type { ClinicLocationDto } from '../../types/clinic.types'
+import { AppModal } from '@/components/ui/AppModal'
 import styles from './LocationFormModal.module.scss'
 
 interface LocationFormModalProps {
@@ -69,22 +70,35 @@ export const LocationFormModal = ({
     }
   }, [editData, reset])
 
-  if (!isOpen) return null
-
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h5 className={styles.modalTitle}>
-            {isEdit ? 'Editează Locație' : 'Locație Nouă'}
-          </h5>
-          <button className={styles.closeBtn} onClick={onClose} aria-label="Închide">
-            ×
+    <AppModal
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth={520}
+      title={isEdit ? 'Editează Locație' : 'Locație Nouă'}
+      as="form"
+      onSubmit={handleSubmit(onSubmit)}
+      bodyClassName={styles.body}
+      footer={
+        <>
+          <button
+            type="button"
+            className="btn btn-outline-secondary"
+            onClick={onClose}
+            disabled={isLoading}
+          >
+            Anulează
           </button>
-        </div>
-
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <div className={styles.modalBody}>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Se salvează...' : isEdit ? 'Salvează' : 'Adaugă locație'}
+          </button>
+        </>
+      }
+    >
             {/* Denumire locație */}
             <div className={styles.formGroup}>
               <label className={styles.label}>
@@ -197,27 +211,6 @@ export const LocationFormModal = ({
                 Locație principală (sediu social)
               </label>
             </div>
-          </div>
-
-          <div className={styles.modalFooter}>
-            <button
-              type="button"
-              className="btn btn-outline-secondary"
-              onClick={onClose}
-              disabled={isLoading}
-            >
-              Anulează
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Se salvează...' : isEdit ? 'Salvează' : 'Adaugă locație'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    </AppModal>
   )
 }

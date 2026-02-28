@@ -1,5 +1,6 @@
 import { useDoctorDetail } from '../../hooks/useDoctors'
 import { formatDate } from '@/utils/format'
+import { AppModal } from '@/components/ui/AppModal'
 import styles from './DoctorViewModal.module.scss'
 
 interface DoctorViewModalProps {
@@ -11,76 +12,67 @@ interface DoctorViewModalProps {
 export const DoctorViewModal = ({ doctorId, onClose }: DoctorViewModalProps) => {
   const { data: resp, isLoading } = useDoctorDetail(doctorId ?? '')
 
-  if (!doctorId) return null
-
   const doctor = resp?.data ?? null
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h5 className={styles.modalTitle}>Detalii Doctor</h5>
-          <button className={styles.closeBtn} onClick={onClose} aria-label="Închide">
-            ×
-          </button>
+    <AppModal
+      isOpen={!!doctorId}
+      onClose={onClose}
+      maxWidth={580}
+      title="Detalii Doctor"
+      footer={
+        <button className="btn btn-outline-secondary" onClick={onClose}>
+          Închide
+        </button>
+      }
+    >
+      {isLoading ? (
+        <div className={styles.loadingWrap}>
+          <div className="spinner-border spinner-border-sm text-primary" role="status">
+            <span className="visually-hidden">Se încarcă...</span>
+          </div>
         </div>
-
-        <div className={styles.modalBody}>
-          {isLoading ? (
-            <div className={styles.loadingWrap}>
-              <div className="spinner-border spinner-border-sm text-primary" role="status">
-                <span className="visually-hidden">Se încarcă...</span>
-              </div>
+      ) : !doctor ? (
+        <div className="alert alert-warning mb-0">Doctorul nu a fost găsit.</div>
+      ) : (
+        <>
+          {/* Nume + Status */}
+          <div className={styles.nameRow}>
+            <div>
+              <h4 className={styles.doctorName}>{doctor.fullName}</h4>
+              {doctor.specialtyName && (
+                <span className={styles.specialty}>{doctor.specialtyName}</span>
+              )}
+              {doctor.subspecialtyName && (
+                <span className={styles.subspecialty}> · {doctor.subspecialtyName}</span>
+              )}
             </div>
-          ) : !doctor ? (
-            <div className="alert alert-warning mb-0">Doctorul nu a fost găsit.</div>
-          ) : (
-            <>
-              {/* Nume + Status */}
-              <div className={styles.nameRow}>
-                <div>
-                  <h4 className={styles.doctorName}>{doctor.fullName}</h4>
-                  {doctor.specialtyName && (
-                    <span className={styles.specialty}>{doctor.specialtyName}</span>
-                  )}
-                  {doctor.subspecialtyName && (
-                    <span className={styles.subspecialty}> · {doctor.subspecialtyName}</span>
-                  )}
-                </div>
-                <span className={doctor.isActive ? styles.badgeActive : styles.badgeInactive}>
-                  {doctor.isActive ? 'Activ' : 'Inactiv'}
-                </span>
-              </div>
+            <span className={doctor.isActive ? styles.badgeActive : styles.badgeInactive}>
+              {doctor.isActive ? 'Activ' : 'Inactiv'}
+            </span>
+          </div>
 
-              {/* Grile info */}
-              <div className={styles.infoGrid}>
-                <InfoField label="Email" value={doctor.email} />
-                <InfoField label="Telefon" value={doctor.phoneNumber} />
-                <InfoField label="Titulatură" value={doctor.medicalTitleName} />
-                <InfoField label="Parafă medicală" value={doctor.medicalCode} />
-                <InfoField label="Nr. CMR" value={doctor.licenseNumber} />
-                <InfoField
-                  label="Aviz CMR expiră"
-                  value={doctor.licenseExpiresAt ? formatDate(doctor.licenseExpiresAt) : null}
-                />
-                <InfoField label="Departament" value={doctor.departmentName} />
-                <InfoField label="Șef ierarhic" value={doctor.supervisorName} />
-                <InfoField
-                  label="Data înregistrării"
-                  value={formatDate(doctor.createdAt)}
-                />
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className={styles.modalFooter}>
-          <button className="btn btn-outline-secondary" onClick={onClose}>
-            Închide
-          </button>
-        </div>
-      </div>
-    </div>
+          {/* Grile info */}
+          <div className={styles.infoGrid}>
+            <InfoField label="Email" value={doctor.email} />
+            <InfoField label="Telefon" value={doctor.phoneNumber} />
+            <InfoField label="Titulatură" value={doctor.medicalTitleName} />
+            <InfoField label="Parafă medicală" value={doctor.medicalCode} />
+            <InfoField label="Nr. CMR" value={doctor.licenseNumber} />
+            <InfoField
+              label="Aviz CMR expiră"
+              value={doctor.licenseExpiresAt ? formatDate(doctor.licenseExpiresAt) : null}
+            />
+            <InfoField label="Departament" value={doctor.departmentName} />
+            <InfoField label="Șef ierarhic" value={doctor.supervisorName} />
+            <InfoField
+              label="Data înregistrării"
+              value={formatDate(doctor.createdAt)}
+            />
+          </div>
+        </>
+      )}
+    </AppModal>
   )
 }
 

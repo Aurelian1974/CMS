@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { specialtySchema, type SpecialtyFormData } from '../../schemas/specialty.schema'
 import type { SpecialtyDto } from '../../types/specialty.types'
+import { AppModal } from '@/components/ui/AppModal'
 import styles from './SpecialtyFormModal.module.scss'
 
 // ===== Nivel → eticheta româna =====
@@ -91,22 +92,33 @@ export const SpecialtyFormModal = ({
     return false // categoriile nu au parent
   })
 
-  if (!isOpen) return null
-
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.modalHeader}>
-          <h5 className={styles.modalTitle}>
-            {isEdit ? 'Editează Specializare' : 'Specializare Nouă'}
-          </h5>
-          <button className={styles.closeBtn} onClick={onClose} aria-label="Închide">
-            ×
+    <AppModal
+      isOpen={isOpen}
+      onClose={onClose}
+      maxWidth={520}
+      title={isEdit ? 'Editează Specializare' : 'Specializare Nouă'}
+      as="form"
+      onSubmit={handleSubmit(onSubmit)}
+      bodyClassName={styles.body}
+      footer={
+        <>
+          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isLoading}>
+            Anulează
           </button>
-        </div>
-
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          <div className={styles.modalBody}>
+          <button type="submit" className="btn btn-primary" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
+                Se salvează…
+              </>
+            ) : (
+              isEdit ? 'Actualizează' : 'Creează'
+            )}
+          </button>
+        </>
+      }
+    >
             {/* Nivel */}
             <div className={styles.formGroup}>
               <label className={styles.label}>
@@ -194,25 +206,6 @@ export const SpecialtyFormModal = ({
               />
               {errors.displayOrder && <span className={styles.error}>{errors.displayOrder.message}</span>}
             </div>
-          </div>
-
-          <div className={styles.modalFooter}>
-            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isLoading}>
-              Anulează
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
-                  Se salvează…
-                </>
-              ) : (
-                isEdit ? 'Actualizează' : 'Creează'
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    </AppModal>
   )
 }
