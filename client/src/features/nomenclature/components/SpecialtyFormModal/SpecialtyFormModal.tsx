@@ -4,6 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { specialtySchema, type SpecialtyFormData } from '../../schemas/specialty.schema'
 import type { SpecialtyDto } from '../../types/specialty.types'
 import { AppModal } from '@/components/ui/AppModal'
+import { FormInput } from '@/components/forms/FormInput'
+import { FormSelect } from '@/components/forms/FormSelect'
+import { AppButton } from '@/components/ui/AppButton'
 import styles from './SpecialtyFormModal.module.scss'
 
 // ===== Nivel → eticheta româna =====
@@ -35,12 +38,12 @@ export const SpecialtyFormModal = ({
   const isEdit = !!editData
 
   const {
+    control,
     register,
     handleSubmit,
     reset,
     watch,
     setValue,
-    formState: { errors },
   } = useForm<SpecialtyFormData>({
     resolver: zodResolver(specialtySchema),
     defaultValues: {
@@ -103,19 +106,21 @@ export const SpecialtyFormModal = ({
       bodyClassName={styles.body}
       footer={
         <>
-          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isLoading}>
+          <AppButton
+            variant="secondary"
+            onClick={onClose}
+            disabled={isLoading}
+          >
             Anulează
-          </button>
-          <button type="submit" className="btn btn-primary" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
-                Se salvează…
-              </>
-            ) : (
-              isEdit ? 'Actualizează' : 'Creează'
-            )}
-          </button>
+          </AppButton>
+          <AppButton
+            type="submit"
+            variant="primary"
+            isLoading={isLoading}
+            loadingText="Se salvează…"
+          >
+            {isEdit ? 'Actualizează' : 'Creează'}
+          </AppButton>
         </>
       }
     >
@@ -125,87 +130,62 @@ export const SpecialtyFormModal = ({
                 Nivel <span className={styles.required}>*</span>
               </label>
               <select
-                className={`form-select${errors.level ? ' is-invalid' : ''}`}
+                className="form-select"
                 {...register('level', { valueAsNumber: true })}
               >
                 {LEVEL_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
                 ))}
               </select>
-              {errors.level && <span className={styles.error}>{errors.level.message}</span>}
             </div>
 
             {/* Parent — vizibil doar dacă level > 0 */}
             {currentLevel > 0 && (
-              <div className={styles.formGroup}>
-                <label className={styles.label}>
-                  {currentLevel === 1 ? 'Categorie părinte' : 'Specialitate părinte'}
-                  <span className={styles.required}> *</span>
-                </label>
-                <select
-                  className={`form-select${errors.parentId ? ' is-invalid' : ''}`}
-                  {...register('parentId')}
-                  defaultValue=""
-                >
-                  <option value="" disabled>— Selectează —</option>
-                  {filteredParents.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-                {errors.parentId && <span className={styles.error}>{errors.parentId.message}</span>}
-              </div>
+              <FormSelect<SpecialtyFormData>
+                name="parentId"
+                control={control}
+                label={currentLevel === 1 ? 'Categorie părinte' : 'Specialitate părinte'}
+                options={filteredParents.map(p => ({ value: p.id, label: p.name }))}
+                required
+                showClearButton
+              />
             )}
 
             {/* Denumire */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Denumire <span className={styles.required}>*</span>
-              </label>
-              <input
-                type="text"
-                className={`form-control${errors.name ? ' is-invalid' : ''}`}
-                placeholder="ex: Cardiologie"
-                {...register('name')}
-              />
-              {errors.name && <span className={styles.error}>{errors.name.message}</span>}
-            </div>
+            <FormInput<SpecialtyFormData>
+              name="name"
+              control={control}
+              label="Denumire"
+              placeholder="ex: Cardiologie"
+              required
+            />
 
             {/* Cod */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Cod <span className={styles.required}>*</span>
-              </label>
-              <input
-                type="text"
-                className={`form-control${errors.code ? ' is-invalid' : ''}`}
-                placeholder="ex: CARDIOLOGY"
-                {...register('code')}
-              />
-              {errors.code && <span className={styles.error}>{errors.code.message}</span>}
-            </div>
+            <FormInput<SpecialtyFormData>
+              name="code"
+              control={control}
+              label="Cod"
+              placeholder="ex: CARDIOLOGY"
+              required
+            />
 
             {/* Descriere */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Descriere</label>
-              <textarea
-                className={`form-control${errors.description ? ' is-invalid' : ''}`}
-                rows={2}
-                placeholder="Descriere opțională"
-                {...register('description')}
-              />
-              {errors.description && <span className={styles.error}>{errors.description.message}</span>}
-            </div>
+            <FormInput<SpecialtyFormData>
+              name="description"
+              control={control}
+              label="Descriere"
+              placeholder="Descriere opțională"
+              multiline
+              multilineRows={2}
+            />
 
             {/* Ordine afișare */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Ordine afișare</label>
-              <input
-                type="number"
-                className={`form-control${errors.displayOrder ? ' is-invalid' : ''}`}
-                {...register('displayOrder', { valueAsNumber: true })}
-              />
-              {errors.displayOrder && <span className={styles.error}>{errors.displayOrder.message}</span>}
-            </div>
+            <FormInput<SpecialtyFormData>
+              name="displayOrder"
+              control={control}
+              label="Ordine afișare"
+              type="number"
+            />
     </AppModal>
   )
 }

@@ -14,6 +14,7 @@ import { useDepartments } from '@/features/departments/hooks/useDepartments'
 import { DoctorFormModal } from '../components/DoctorFormModal/DoctorFormModal'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { AppBadge } from '@/components/ui/AppBadge'
+import { AppButton } from '@/components/ui/AppButton'
 import { formatDate, formatDateTime } from '@/utils/format'
 import styles from './DoctorsListPage.module.scss'
 
@@ -553,16 +554,18 @@ export const DoctorsListPage = () => {
               Sigur dorești să ștergi doctorul <strong>{deleteTarget.fullName}</strong>?
             </p>
             <div className={styles.confirmActions}>
-              <button className="btn btn-outline-secondary btn-sm" onClick={() => setDeleteTarget(null)}>
+              <AppButton variant="outline-secondary" size="sm" onClick={() => setDeleteTarget(null)}>
                 Anulează
-              </button>
-              <button
-                className="btn btn-danger btn-sm"
+              </AppButton>
+              <AppButton
+                variant="danger"
+                size="sm"
                 onClick={handleConfirmDelete}
-                disabled={deleteDoctor.isPending}
+                isLoading={deleteDoctor.isPending}
+                loadingText="Se șterge..."
               >
-                {deleteDoctor.isPending ? 'Se șterge...' : 'Șterge'}
-              </button>
+                Șterge
+              </AppButton>
             </div>
           </div>
         </div>

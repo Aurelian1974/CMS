@@ -7,6 +7,9 @@ import type { DoctorLookupDto } from '@/features/doctors/types/doctor.types'
 import type { MedicalTitleDto } from '@/features/nomenclature/types/medicalTitle.types'
 import type { DepartmentDto } from '@/features/departments/types/department.types'
 import { AppModal } from '@/components/ui/AppModal'
+import { FormInput } from '@/components/forms/FormInput'
+import { FormSelect } from '@/components/forms/FormSelect'
+import { AppButton } from '@/components/ui/AppButton'
 import styles from './MedicalStaffFormModal.module.scss'
 
 interface MedicalStaffFormModalProps {
@@ -40,10 +43,10 @@ export const MedicalStaffFormModal = ({
   const isEdit = !!editData
 
   const {
+    control,
     register,
     handleSubmit,
     reset,
-    formState: { errors },
   } = useForm<MedicalStaffFormData>({
     resolver: zodResolver(medicalStaffSchema),
     defaultValues: {
@@ -104,21 +107,21 @@ export const MedicalStaffFormModal = ({
       bodyClassName={styles.body}
       footer={
         <>
-          <button
-            type="button"
-            className="btn btn-outline-secondary"
+          <AppButton
+            variant="outline-secondary"
             onClick={onClose}
             disabled={isLoading}
           >
             Anulează
-          </button>
-          <button
+          </AppButton>
+          <AppButton
             type="submit"
-            className="btn btn-primary"
-            disabled={isLoading}
+            variant="primary"
+            isLoading={isLoading}
+            loadingText="Se salvează..."
           >
-            {isLoading ? 'Se salvează...' : isEdit ? 'Salvează' : 'Adaugă'}
-          </button>
+            {isEdit ? 'Salvează' : 'Adaugă'}
+          </AppButton>
         </>
       }
     >
@@ -133,113 +136,76 @@ export const MedicalStaffFormModal = ({
             {/* Nume + Prenume */}
             <div className="row g-3">
               <div className="col-md-6">
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>
-                    Nume <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className={`form-control${errors.lastName ? ' is-invalid' : ''}`}
-                    placeholder="ex: Popescu"
-                    {...register('lastName')}
-                  />
-                  {errors.lastName && <span className={styles.error}>{errors.lastName.message}</span>}
-                </div>
+                <FormInput<MedicalStaffFormData>
+                  name="lastName"
+                  control={control}
+                  label="Nume"
+                  placeholder="ex: Popescu"
+                  required
+                />
               </div>
               <div className="col-md-6">
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>
-                    Prenume <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className={`form-control${errors.firstName ? ' is-invalid' : ''}`}
-                    placeholder="ex: Maria"
-                    {...register('firstName')}
-                  />
-                  {errors.firstName && <span className={styles.error}>{errors.firstName.message}</span>}
-                </div>
+                <FormInput<MedicalStaffFormData>
+                  name="firstName"
+                  control={control}
+                  label="Prenume"
+                  placeholder="ex: Maria"
+                  required
+                />
               </div>
             </div>
 
             {/* Email + Telefon */}
             <div className="row g-3">
               <div className="col-md-6">
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>
-                    Email <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    type="email"
-                    className={`form-control${errors.email ? ' is-invalid' : ''}`}
-                    placeholder="ex: asistent@clinica.ro"
-                    {...register('email')}
-                  />
-                  {errors.email && <span className={styles.error}>{errors.email.message}</span>}
-                </div>
+                <FormInput<MedicalStaffFormData>
+                  name="email"
+                  control={control}
+                  label="Email"
+                  type="email"
+                  placeholder="ex: asistent@clinica.ro"
+                  required
+                />
               </div>
               <div className="col-md-6">
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Telefon</label>
-                  <input
-                    type="text"
-                    className={`form-control${errors.phoneNumber ? ' is-invalid' : ''}`}
-                    placeholder="ex: 0721 234 567"
-                    {...register('phoneNumber')}
-                  />
-                  {errors.phoneNumber && <span className={styles.error}>{errors.phoneNumber.message}</span>}
-                </div>
+                <FormInput<MedicalStaffFormData>
+                  name="phoneNumber"
+                  control={control}
+                  label="Telefon"
+                  placeholder="ex: 0721 234 567"
+                />
               </div>
             </div>
 
             {/* Titulatură + Departament + Supervisor */}
             <div className="row g-3">
               <div className="col-md-4">
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Titulatură</label>
-                  <select
-                    className={`form-select${errors.medicalTitleId ? ' is-invalid' : ''}`}
-                    {...register('medicalTitleId')}
-                  >
-                    <option value="">— Selectează titulatura —</option>
-                    {staffTitles.map(t => (
-                      <option key={t.id} value={t.id}>{t.name}</option>
-                    ))}
-                  </select>
-                  {errors.medicalTitleId && <span className={styles.error}>{errors.medicalTitleId.message}</span>}
-                </div>
+                <FormSelect<MedicalStaffFormData>
+                  name="medicalTitleId"
+                  control={control}
+                  label="Titulatură"
+                  options={staffTitles.map(t => ({ value: t.id, label: t.name }))}
+                  showClearButton
+                />
               </div>
               <div className="col-md-4">
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Departament</label>
-                  <select
-                    className={`form-select${errors.departmentId ? ' is-invalid' : ''}`}
-                    {...register('departmentId')}
-                  >
-                    <option value="">— Fără departament —</option>
-                    {departments.map(d => (
-                      <option key={d.id} value={d.id}>{d.name}</option>
-                    ))}
-                  </select>
-                  {errors.departmentId && <span className={styles.error}>{errors.departmentId.message}</span>}
-                </div>
+                <FormSelect<MedicalStaffFormData>
+                  name="departmentId"
+                  control={control}
+                  label="Departament"
+                  options={departments.map(d => ({ value: d.id, label: d.name }))}
+                  showClearButton
+                />
               </div>
               <div className="col-md-4">
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Doctor supervizor</label>
-                  <select
-                    className={`form-select${errors.supervisorDoctorId ? ' is-invalid' : ''}`}
-                    {...register('supervisorDoctorId')}
-                  >
-                    <option value="">— Fără supervizor —</option>
-                    {doctorLookup.map(d => (
-                      <option key={d.id} value={d.id}>
-                        {d.fullName}{d.medicalCode ? ` (${d.medicalCode})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.supervisorDoctorId && <span className={styles.error}>{errors.supervisorDoctorId.message}</span>}
-                </div>
+                <FormSelect<MedicalStaffFormData>
+                  name="supervisorDoctorId"
+                  control={control}
+                  label="Doctor supervizor"
+                  options={doctorLookup.map(d => ({ value: d.id, label: `${d.fullName}${d.medicalCode ? ` (${d.medicalCode})` : ''}` }))}
+                  showClearButton
+                  allowFiltering
+                />
               </div>
             </div>
 

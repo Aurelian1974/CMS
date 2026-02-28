@@ -17,7 +17,7 @@ export const medicalTitleSchema = z.object({
     .nullable()
     .transform((v) => v || null),
   displayOrder: z
-    .number({ invalid_type_error: 'Ordinea trebuie să fie un număr' })
+    .coerce.number({ invalid_type_error: 'Ordinea trebuie să fie un număr' })
     .int('Ordinea trebuie să fie un număr întreg')
     .min(0, 'Ordinea nu poate fi negativă'),
 })

@@ -4,6 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { clinicLocationSchema, type ClinicLocationFormData } from '../../schemas/clinic.schema'
 import type { ClinicLocationDto } from '../../types/clinic.types'
 import { AppModal } from '@/components/ui/AppModal'
+import { FormInput } from '@/components/forms/FormInput'
+import { AppButton } from '@/components/ui/AppButton'
 import styles from './LocationFormModal.module.scss'
 
 interface LocationFormModalProps {
@@ -25,10 +27,10 @@ export const LocationFormModal = ({
   const isEdit = !!editData
 
   const {
+    control,
     register,
     handleSubmit,
     reset,
-    formState: { errors },
   } = useForm<ClinicLocationFormData>({
     resolver: zodResolver(clinicLocationSchema),
     defaultValues: {
@@ -81,136 +83,100 @@ export const LocationFormModal = ({
       bodyClassName={styles.body}
       footer={
         <>
-          <button
-            type="button"
-            className="btn btn-outline-secondary"
+          <AppButton
+            variant="outline-secondary"
             onClick={onClose}
             disabled={isLoading}
           >
             Anulează
-          </button>
-          <button
+          </AppButton>
+          <AppButton
             type="submit"
-            className="btn btn-primary"
-            disabled={isLoading}
+            variant="primary"
+            isLoading={isLoading}
+            loadingText="Se salvează..."
           >
-            {isLoading ? 'Se salvează...' : isEdit ? 'Salvează' : 'Adaugă locație'}
-          </button>
+            {isEdit ? 'Salvează' : 'Adaugă locație'}
+          </AppButton>
         </>
       }
     >
-            {/* Denumire locație */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Denumire locație <span className={styles.required}>*</span>
-              </label>
-              <input
-                type="text"
-                className={`form-control${errors.name ? ' is-invalid' : ''}`}
-                placeholder="ex: Sediu Central"
-                {...register('name')}
-              />
-              {errors.name && <span className={styles.error}>{errors.name.message}</span>}
-            </div>
+      <FormInput<ClinicLocationFormData>
+        name="name"
+        control={control}
+        label="Denumire locație"
+        placeholder="ex: Sediu Central"
+        required
+      />
 
-            {/* Adresă */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Adresă <span className={styles.required}>*</span>
-              </label>
-              <input
-                type="text"
-                className={`form-control${errors.address ? ' is-invalid' : ''}`}
-                placeholder="ex: Str. Sănătății nr. 10"
-                {...register('address')}
-              />
-              {errors.address && <span className={styles.error}>{errors.address.message}</span>}
-            </div>
+      <FormInput<ClinicLocationFormData>
+        name="address"
+        control={control}
+        label="Adresă"
+        placeholder="ex: Str. Sănătății nr. 10"
+        required
+      />
 
-            {/* Oraș + Județ */}
-            <div className="row g-3">
-              <div className="col-md-6">
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>
-                    Oraș <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className={`form-control${errors.city ? ' is-invalid' : ''}`}
-                    placeholder="ex: București"
-                    {...register('city')}
-                  />
-                  {errors.city && <span className={styles.error}>{errors.city.message}</span>}
-                </div>
-              </div>
-              <div className="col-md-6">
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>
-                    Județ <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className={`form-control${errors.county ? ' is-invalid' : ''}`}
-                    placeholder="ex: București"
-                    {...register('county')}
-                  />
-                  {errors.county && <span className={styles.error}>{errors.county.message}</span>}
-                </div>
-              </div>
-            </div>
+      <div className="row g-3">
+        <div className="col-md-6">
+          <FormInput<ClinicLocationFormData>
+            name="city"
+            control={control}
+            label="Oraș"
+            placeholder="ex: București"
+            required
+          />
+        </div>
+        <div className="col-md-6">
+          <FormInput<ClinicLocationFormData>
+            name="county"
+            control={control}
+            label="Județ"
+            placeholder="ex: București"
+            required
+          />
+        </div>
+      </div>
 
-            {/* Cod poștal + Telefon */}
-            <div className="row g-3">
-              <div className="col-md-6">
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Cod poștal</label>
-                  <input
-                    type="text"
-                    className={`form-control${errors.postalCode ? ' is-invalid' : ''}`}
-                    placeholder="ex: 010100"
-                    {...register('postalCode')}
-                  />
-                  {errors.postalCode && <span className={styles.error}>{errors.postalCode.message}</span>}
-                </div>
-              </div>
-              <div className="col-md-6">
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Telefon</label>
-                  <input
-                    type="text"
-                    className={`form-control${errors.phoneNumber ? ' is-invalid' : ''}`}
-                    placeholder="ex: 021 123 4567"
-                    {...register('phoneNumber')}
-                  />
-                  {errors.phoneNumber && <span className={styles.error}>{errors.phoneNumber.message}</span>}
-                </div>
-              </div>
-            </div>
+      <div className="row g-3">
+        <div className="col-md-6">
+          <FormInput<ClinicLocationFormData>
+            name="postalCode"
+            control={control}
+            label="Cod poștal"
+            placeholder="ex: 010100"
+          />
+        </div>
+        <div className="col-md-6">
+          <FormInput<ClinicLocationFormData>
+            name="phoneNumber"
+            control={control}
+            label="Telefon"
+            placeholder="ex: 021 123 4567"
+          />
+        </div>
+      </div>
 
-            {/* Email */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Email</label>
-              <input
-                type="email"
-                className={`form-control${errors.email ? ' is-invalid' : ''}`}
-                placeholder="ex: locatie@clinica.ro"
-                {...register('email')}
-              />
-              {errors.email && <span className={styles.error}>{errors.email.message}</span>}
-            </div>
+      <FormInput<ClinicLocationFormData>
+        name="email"
+        control={control}
+        label="Email"
+        type="email"
+        placeholder="ex: locatie@clinica.ro"
+      />
 
-            {/* Locație principală */}
-            <div className={styles.checkGroup}>
-              <input
-                type="checkbox"
-                className="form-check-input"
-                id="isPrimary"
-                {...register('isPrimary')}
-              />
-              <label className={styles.label} htmlFor="isPrimary">
-                Locație principală (sediu social)
-              </label>
-            </div>
+      {/* Locație principală */}
+      <div className={styles.checkGroup}>
+        <input
+          type="checkbox"
+          className="form-check-input"
+          id="isPrimary"
+          {...register('isPrimary')}
+        />
+        <label className={styles.label} htmlFor="isPrimary">
+          Locație principală (sediu social)
+        </label>
+      </div>
     </AppModal>
   )
 }

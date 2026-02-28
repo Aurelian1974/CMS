@@ -15,6 +15,7 @@ import { UserFormModal } from '../components/UserFormModal/UserFormModal'
 import { ChangePasswordModal } from '../components/ChangePasswordModal/ChangePasswordModal'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { AppBadge, type BadgeVariant } from '@/components/ui/AppBadge'
+import { AppButton } from '@/components/ui/AppButton'
 import { formatDate } from '@/utils/format'
 import styles from './UsersListPage.module.scss'
 
@@ -525,16 +526,18 @@ export const UsersListPage = () => {
               Sigur dorești să ștergi utilizatorul <strong>{deleteTarget.lastName} {deleteTarget.firstName}</strong>?
             </p>
             <div className={styles.confirmActions}>
-              <button className="btn btn-outline-secondary btn-sm" onClick={() => setDeleteTarget(null)}>
+              <AppButton variant="outline-secondary" size="sm" onClick={() => setDeleteTarget(null)}>
                 Anulează
-              </button>
-              <button
-                className="btn btn-danger btn-sm"
+              </AppButton>
+              <AppButton
+                variant="danger"
+                size="sm"
                 onClick={handleConfirmDelete}
-                disabled={deleteUser.isPending}
+                isLoading={deleteUser.isPending}
+                loadingText="Se șterge..."
               >
-                {deleteUser.isPending ? 'Se șterge...' : 'Șterge'}
-              </button>
+                Șterge
+              </AppButton>
             </div>
           </div>
         </div>

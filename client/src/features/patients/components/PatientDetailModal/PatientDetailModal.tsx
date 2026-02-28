@@ -3,6 +3,8 @@ import { usePatientDetail } from '../../hooks/usePatients'
 import { formatDate, formatDateTime } from '@/utils/format'
 import type { PatientDetailDto, PatientAllergyDto, PatientDoctorDto, PatientEmergencyContactDto } from '../../types/patient.types'
 import { AppModal } from '@/components/ui/AppModal'
+import { AppButton } from '@/components/ui/AppButton'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import type { ModalTab } from '@/components/ui/AppModal'
 import styles from './PatientDetailModal.module.scss'
 
@@ -112,9 +114,9 @@ export const PatientDetailModal = ({ isOpen, onClose, patientId, onEdit }: Patie
   )
 
   const footerContent = (
-    <button type="button" className="btn btn-outline-secondary btn-sm" onClick={onClose}>
+    <AppButton variant="outline-secondary" size="sm" onClick={onClose}>
       Închide
-    </button>
+    </AppButton>
   )
 
   return (
@@ -131,7 +133,7 @@ export const PatientDetailModal = ({ isOpen, onClose, patientId, onEdit }: Patie
       {/* Loading */}
       {isLoading && (
         <div className={styles.bodyLoading}>
-          <div className="spinner-border spinner-border-sm text-primary" role="status" />
+          <LoadingSpinner size="sm" />
           <span>Se încarcă datele pacientului...</span>
         </div>
       )}

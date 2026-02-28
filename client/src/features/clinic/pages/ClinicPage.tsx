@@ -5,6 +5,9 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { LocationFormModal } from '../components/LocationFormModal'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { IconPlus } from '@/components/ui/Icons'
+import { FormInput } from '@/components/forms/FormInput'
+import { AppButton } from '@/components/ui/AppButton'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { clinicSchema, type ClinicFormData } from '../schemas/clinic.schema'
 import type { ClinicLocationDto, ClinicLocationFormData } from '../types/clinic.types'
 import {
@@ -94,10 +97,10 @@ const ClinicPage = () => {
 
   // Formular clinică
   const {
-    register,
+    control,
     handleSubmit,
     reset,
-    formState: { errors, isDirty },
+    formState: { isDirty },
   } = useForm<ClinicFormData>({
     resolver: zodResolver(clinicSchema),
   })
@@ -236,9 +239,7 @@ const ClinicPage = () => {
       <div className={styles.page}>
         <PageHeader title="Clinica" subtitle="Date societate comercială" />
         <div className={styles.loadingWrap}>
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Se încarcă...</span>
-          </div>
+          <LoadingSpinner />
         </div>
       </div>
     )
@@ -275,81 +276,13 @@ const ClinicPage = () => {
 
         <form onSubmit={handleSubmit(handleSaveClinic)} noValidate>
           <div className={styles.formGrid}>
-            {/* Denumire societate */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Denumire societate <span className={styles.required}>*</span>
-              </label>
-              <input
-                type="text"
-                className={`form-control${errors.name ? ' is-invalid' : ''}`}
-                placeholder="ex: S.C. Clinica Medicală S.R.L."
-                {...register('name')}
-              />
-              {errors.name && <span className={styles.error}>{errors.name.message}</span>}
-            </div>
-
-            {/* CUI/CIF */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>
-                CUI / CIF <span className={styles.required}>*</span>
-              </label>
-              <input
-                type="text"
-                className={`form-control${errors.fiscalCode ? ' is-invalid' : ''}`}
-                placeholder="ex: RO12345678"
-                {...register('fiscalCode')}
-              />
-              {errors.fiscalCode && <span className={styles.error}>{errors.fiscalCode.message}</span>}
-            </div>
-
-            {/* Nr. Reg. Comerțului */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Nr. Registrul Comerțului</label>
-              <input
-                type="text"
-                className={`form-control${errors.tradeRegisterNumber ? ' is-invalid' : ''}`}
-                placeholder="ex: J40/1234/2020"
-                {...register('tradeRegisterNumber')}
-              />
-              {errors.tradeRegisterNumber && <span className={styles.error}>{errors.tradeRegisterNumber.message}</span>}
-            </div>
-
-            {/* Cod CAEN */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Cod CAEN</label>
-              <input
-                type="text"
-                className={`form-control${errors.caenCode ? ' is-invalid' : ''}`}
-                placeholder="ex: 8621"
-                {...register('caenCode')}
-              />
-              {errors.caenCode && <span className={styles.error}>{errors.caenCode.message}</span>}
-            </div>
-
-            {/* Reprezentant legal */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Reprezentant legal</label>
-              <input
-                type="text"
-                className={`form-control${errors.legalRepresentative ? ' is-invalid' : ''}`}
-                placeholder="ex: Dr. Popescu Ion"
-                {...register('legalRepresentative')}
-              />
-              {errors.legalRepresentative && <span className={styles.error}>{errors.legalRepresentative.message}</span>}
-            </div>
-
-            {/* Contract CNAS */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Nr. contract CNAS</label>
-              <input
-                type="text"
-                className={`form-control${errors.contractCNAS ? ' is-invalid' : ''}`}
-                placeholder="ex: 12345/2024"
-                {...register('contractCNAS')}
-              />
-              {errors.contractCNAS && <span className={styles.error}>{errors.contractCNAS.message}</span>}
-            </div>
+            {/* Identificare firmă */}
+            <FormInput name="name" control={control} label="Denumire societate" placeholder="ex: S.C. Clinica Medicală S.R.L." required />
+            <FormInput name="fiscalCode" control={control} label="CUI / CIF" placeholder="ex: RO12345678" required />
+            <FormInput name="tradeRegisterNumber" control={control} label="Nr. Registrul Comerțului" placeholder="ex: J40/1234/2020" />
+            <FormInput name="caenCode" control={control} label="Cod CAEN" placeholder="ex: 8621" />
+            <FormInput name="legalRepresentative" control={control} label="Reprezentant legal" placeholder="ex: Dr. Popescu Ion" />
+            <FormInput name="contractCNAS" control={control} label="Nr. contract CNAS" placeholder="ex: 12345/2024" />
 
             {/* Separator vizual — Sediu social */}
             <div className={`${styles.formGroup} ${styles.fullWidth}`}>
@@ -359,59 +292,10 @@ const ClinicPage = () => {
               </label>
             </div>
 
-            {/* Adresă sediu social */}
-            <div className={`${styles.formGroup} ${styles.fullWidth}`}>
-              <label className={styles.label}>
-                Adresă <span className={styles.required}>*</span>
-              </label>
-              <input
-                type="text"
-                className={`form-control${errors.address ? ' is-invalid' : ''}`}
-                placeholder="ex: Str. Sănătății nr. 10, Sector 1"
-                {...register('address')}
-              />
-              {errors.address && <span className={styles.error}>{errors.address.message}</span>}
-            </div>
-
-            {/* Oraș */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Oraș <span className={styles.required}>*</span>
-              </label>
-              <input
-                type="text"
-                className={`form-control${errors.city ? ' is-invalid' : ''}`}
-                placeholder="ex: București"
-                {...register('city')}
-              />
-              {errors.city && <span className={styles.error}>{errors.city.message}</span>}
-            </div>
-
-            {/* Județ */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Județ <span className={styles.required}>*</span>
-              </label>
-              <input
-                type="text"
-                className={`form-control${errors.county ? ' is-invalid' : ''}`}
-                placeholder="ex: București"
-                {...register('county')}
-              />
-              {errors.county && <span className={styles.error}>{errors.county.message}</span>}
-            </div>
-
-            {/* Cod poștal */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Cod poștal</label>
-              <input
-                type="text"
-                className={`form-control${errors.postalCode ? ' is-invalid' : ''}`}
-                placeholder="ex: 010100"
-                {...register('postalCode')}
-              />
-              {errors.postalCode && <span className={styles.error}>{errors.postalCode.message}</span>}
-            </div>
+            <FormInput name="address" control={control} label="Adresă" placeholder="ex: Str. Sănătății nr. 10, Sector 1" required className={styles.fullWidth} />
+            <FormInput name="city" control={control} label="Oraș" placeholder="ex: București" required />
+            <FormInput name="county" control={control} label="Județ" placeholder="ex: București" required />
+            <FormInput name="postalCode" control={control} label="Cod poștal" placeholder="ex: 010100" />
 
             {/* Separator vizual — Date bancare */}
             <div className={`${styles.formGroup} ${styles.fullWidth}`}>
@@ -421,28 +305,9 @@ const ClinicPage = () => {
               </label>
             </div>
 
-            {/* Bancă */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Banca</label>
-              <input
-                type="text"
-                className={`form-control${errors.bankName ? ' is-invalid' : ''}`}
-                placeholder="ex: Banca Transilvania"
-                {...register('bankName')}
-              />
-              {errors.bankName && <span className={styles.error}>{errors.bankName.message}</span>}
-            </div>
-
-            {/* IBAN */}
-            <div className={`${styles.formGroup}`} style={{ gridColumn: 'span 2' }}>
-              <label className={styles.label}>Cont IBAN</label>
-              <input
-                type="text"
-                className={`form-control${errors.bankAccount ? ' is-invalid' : ''}`}
-                placeholder="ex: RO49AAAA1B31007593840000"
-                {...register('bankAccount')}
-              />
-              {errors.bankAccount && <span className={styles.error}>{errors.bankAccount.message}</span>}
+            <FormInput name="bankName" control={control} label="Banca" placeholder="ex: Banca Transilvania" />
+            <div style={{ gridColumn: 'span 2' }}>
+              <FormInput name="bankAccount" control={control} label="Cont IBAN" placeholder="ex: RO49AAAA1B31007593840000" />
             </div>
 
             {/* Separator vizual — Contact */}
@@ -453,52 +318,22 @@ const ClinicPage = () => {
               </label>
             </div>
 
-            {/* Email */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Email</label>
-              <input
-                type="email"
-                className={`form-control${errors.email ? ' is-invalid' : ''}`}
-                placeholder="ex: contact@clinica.ro"
-                {...register('email')}
-              />
-              {errors.email && <span className={styles.error}>{errors.email.message}</span>}
-            </div>
-
-            {/* Telefon */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Telefon</label>
-              <input
-                type="text"
-                className={`form-control${errors.phoneNumber ? ' is-invalid' : ''}`}
-                placeholder="ex: 021 123 4567"
-                {...register('phoneNumber')}
-              />
-              {errors.phoneNumber && <span className={styles.error}>{errors.phoneNumber.message}</span>}
-            </div>
-
-            {/* Website */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Website</label>
-              <input
-                type="text"
-                className={`form-control${errors.website ? ' is-invalid' : ''}`}
-                placeholder="ex: www.clinica.ro"
-                {...register('website')}
-              />
-              {errors.website && <span className={styles.error}>{errors.website.message}</span>}
-            </div>
+            <FormInput name="email" control={control} label="Email" type="email" placeholder="ex: contact@clinica.ro" />
+            <FormInput name="phoneNumber" control={control} label="Telefon" placeholder="ex: 021 123 4567" />
+            <FormInput name="website" control={control} label="Website" placeholder="ex: www.clinica.ro" />
           </div>
 
           {/* Buton salvare */}
           <div className={styles.formActions}>
-            <button
+            <AppButton
               type="submit"
-              className="btn btn-primary"
-              disabled={!isDirty || updateClinic.isPending}
+              variant="primary"
+              disabled={!isDirty}
+              isLoading={updateClinic.isPending}
+              loadingText="Se salvează..."
             >
-              {updateClinic.isPending ? 'Se salvează...' : 'Salvează modificările'}
-            </button>
+              Salvează modificările
+            </AppButton>
           </div>
         </form>
       </div>
@@ -510,9 +345,9 @@ const ClinicPage = () => {
             <IconLocation />
             Locații
           </h2>
-          <button className="btn btn-primary btn-sm" onClick={handleOpenCreateLocation}>
+          <AppButton variant="primary" size="sm" onClick={handleOpenCreateLocation}>
             <IconPlus /> Adaugă locație
-          </button>
+          </AppButton>
         </div>
 
         {locations.length === 0 ? (
@@ -658,20 +493,21 @@ const ClinicPage = () => {
               Această acțiune nu poate fi anulată.
             </p>
             <div className={styles.confirmActions}>
-              <button
-                className="btn btn-outline-secondary"
+              <AppButton
+                variant="outline-secondary"
                 onClick={() => setDeleteTarget(null)}
                 disabled={deleteLocation.isPending}
               >
                 Anulează
-              </button>
-              <button
-                className="btn btn-danger"
+              </AppButton>
+              <AppButton
+                variant="danger"
                 onClick={handleConfirmDelete}
-                disabled={deleteLocation.isPending}
+                isLoading={deleteLocation.isPending}
+                loadingText="Se șterge..."
               >
-                {deleteLocation.isPending ? 'Se șterge...' : 'Șterge'}
-              </button>
+                Șterge
+              </AppButton>
             </div>
           </div>
         </div>

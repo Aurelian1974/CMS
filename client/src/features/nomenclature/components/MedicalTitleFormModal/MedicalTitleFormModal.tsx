@@ -4,6 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { medicalTitleSchema, type MedicalTitleFormData } from '../../schemas/medicalTitle.schema'
 import type { MedicalTitleDto } from '../../types/medicalTitle.types'
 import { AppModal } from '@/components/ui/AppModal'
+import { FormInput } from '@/components/forms/FormInput'
+import { AppButton } from '@/components/ui/AppButton'
 import styles from './MedicalTitleFormModal.module.scss'
 
 interface MedicalTitleFormModalProps {
@@ -25,10 +27,9 @@ export const MedicalTitleFormModal = ({
   const isEdit = !!editData
 
   const {
-    register,
+    control,
     handleSubmit,
     reset,
-    formState: { errors },
   } = useForm<MedicalTitleFormData>({
     resolver: zodResolver(medicalTitleSchema),
     defaultValues: {
@@ -69,72 +70,51 @@ export const MedicalTitleFormModal = ({
       bodyClassName={styles.body}
       footer={
         <>
-          <button type="button" className="btn btn-secondary" onClick={onClose} disabled={isLoading}>
+          <AppButton variant="secondary" onClick={onClose} disabled={isLoading}>
             Anulează
-          </button>
-          <button type="submit" className="btn btn-primary" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true" />
-                Se salvează…
-              </>
-            ) : (
-              isEdit ? 'Actualizează' : 'Creează'
-            )}
-          </button>
+          </AppButton>
+          <AppButton
+            type="submit"
+            variant="primary"
+            isLoading={isLoading}
+            loadingText="Se salvează…"
+          >
+            {isEdit ? 'Actualizează' : 'Creează'}
+          </AppButton>
         </>
       }
     >
-            {/* Denumire */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Denumire <span className={styles.required}>*</span>
-              </label>
-              <input
-                type="text"
-                className={`form-control${errors.name ? ' is-invalid' : ''}`}
-                placeholder="ex: Medic specialist"
-                {...register('name')}
-              />
-              {errors.name && <span className={styles.error}>{errors.name.message}</span>}
-            </div>
+      <FormInput<MedicalTitleFormData>
+        name="name"
+        control={control}
+        label="Denumire"
+        placeholder="ex: Medic specialist"
+        required
+      />
 
-            {/* Cod */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>
-                Cod <span className={styles.required}>*</span>
-              </label>
-              <input
-                type="text"
-                className={`form-control${errors.code ? ' is-invalid' : ''}`}
-                placeholder="ex: MEDIC_SPECIALIST"
-                {...register('code')}
-              />
-              {errors.code && <span className={styles.error}>{errors.code.message}</span>}
-            </div>
+      <FormInput<MedicalTitleFormData>
+        name="code"
+        control={control}
+        label="Cod"
+        placeholder="ex: MEDIC_SPECIALIST"
+        required
+      />
 
-            {/* Descriere */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Descriere</label>
-              <textarea
-                className={`form-control${errors.description ? ' is-invalid' : ''}`}
-                rows={2}
-                placeholder="Descriere opțională"
-                {...register('description')}
-              />
-              {errors.description && <span className={styles.error}>{errors.description.message}</span>}
-            </div>
+      <FormInput<MedicalTitleFormData>
+        name="description"
+        control={control}
+        label="Descriere"
+        placeholder="Descriere opțională"
+        multiline
+        rows={2}
+      />
 
-            {/* Ordine afișare */}
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Ordine afișare</label>
-              <input
-                type="number"
-                className={`form-control${errors.displayOrder ? ' is-invalid' : ''}`}
-                {...register('displayOrder', { valueAsNumber: true })}
-              />
-              {errors.displayOrder && <span className={styles.error}>{errors.displayOrder.message}</span>}
-            </div>
+      <FormInput<MedicalTitleFormData>
+        name="displayOrder"
+        control={control}
+        label="Ordine afișare"
+        type="number"
+      />
     </AppModal>
   )
 }

@@ -6,6 +6,9 @@ import type { UserDto, RoleDto, UserAssociationType } from '../../types/user.typ
 import type { DoctorLookupDto } from '@/features/doctors/types/doctor.types'
 import type { MedicalStaffLookupDto } from '@/features/medicalStaff/types/medicalStaff.types'
 import { AppModal } from '@/components/ui/AppModal'
+import { FormInput } from '@/components/forms/FormInput'
+import { FormSelect } from '@/components/forms/FormSelect'
+import { AppButton } from '@/components/ui/AppButton'
 import styles from './UserFormModal.module.scss'
 
 interface UserFormModalProps {
@@ -40,12 +43,12 @@ export const UserFormModal = ({
 
   // Folosim schema corespunzătoare modului
   const {
+    control,
     register,
     handleSubmit,
     reset,
     watch,
     setValue,
-    formState: { errors },
   } = useForm<CreateUserFormData>({
     resolver: zodResolver(isEdit ? (updateUserSchema as typeof createUserSchema) : createUserSchema),
     defaultValues: {
@@ -145,21 +148,21 @@ export const UserFormModal = ({
       bodyClassName={styles.body}
       footer={
         <>
-          <button
-            type="button"
-            className="btn btn-outline-secondary"
+          <AppButton
+            variant="outline-secondary"
             onClick={onClose}
             disabled={isLoading}
           >
             Anulează
-          </button>
-          <button
+          </AppButton>
+          <AppButton
             type="submit"
-            className="btn btn-primary"
-            disabled={isLoading}
+            variant="primary"
+            isLoading={isLoading}
+            loadingText="Se salvează..."
           >
-            {isLoading ? 'Se salvează...' : isEdit ? 'Salvează' : 'Creează cont'}
-          </button>
+            {isEdit ? 'Salvează' : 'Creează cont'}
+          </AppButton>
         </>
       }
     >
@@ -174,64 +177,45 @@ export const UserFormModal = ({
             {/* Nume + Prenume */}
             <div className="row g-3">
               <div className="col-md-6">
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>
-                    Nume <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className={`form-control${errors.lastName ? ' is-invalid' : ''}`}
-                    placeholder="ex: Popescu"
-                    {...register('lastName')}
-                  />
-                  {errors.lastName && <span className={styles.error}>{errors.lastName.message}</span>}
-                </div>
+                <FormInput<CreateUserFormData>
+                  name="lastName"
+                  control={control}
+                  label="Nume"
+                  placeholder="ex: Popescu"
+                  required
+                />
               </div>
               <div className="col-md-6">
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>
-                    Prenume <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className={`form-control${errors.firstName ? ' is-invalid' : ''}`}
-                    placeholder="ex: Maria"
-                    {...register('firstName')}
-                  />
-                  {errors.firstName && <span className={styles.error}>{errors.firstName.message}</span>}
-                </div>
+                <FormInput<CreateUserFormData>
+                  name="firstName"
+                  control={control}
+                  label="Prenume"
+                  placeholder="ex: Maria"
+                  required
+                />
               </div>
             </div>
 
             {/* Username + Email */}
             <div className="row g-3">
               <div className="col-md-6">
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>
-                    Username <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className={`form-control${errors.username ? ' is-invalid' : ''}`}
-                    placeholder="ex: maria.popescu"
-                    {...register('username')}
-                  />
-                  {errors.username && <span className={styles.error}>{errors.username.message}</span>}
-                </div>
+                <FormInput<CreateUserFormData>
+                  name="username"
+                  control={control}
+                  label="Username"
+                  placeholder="ex: maria.popescu"
+                  required
+                />
               </div>
               <div className="col-md-6">
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>
-                    Email <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    type="email"
-                    className={`form-control${errors.email ? ' is-invalid' : ''}`}
-                    placeholder="ex: utilizator@clinica.ro"
-                    {...register('email')}
-                  />
-                  {errors.email && <span className={styles.error}>{errors.email.message}</span>}
-                </div>
+                <FormInput<CreateUserFormData>
+                  name="email"
+                  control={control}
+                  label="Email"
+                  type="email"
+                  placeholder="ex: utilizator@clinica.ro"
+                  required
+                />
               </div>
             </div>
 
@@ -239,32 +223,24 @@ export const UserFormModal = ({
             {!isEdit && (
               <div className="row g-3">
                 <div className="col-md-6">
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                      Parolă <span className={styles.required}>*</span>
-                    </label>
-                    <input
-                      type="password"
-                      className={`form-control${errors.password ? ' is-invalid' : ''}`}
-                      placeholder="Minim 6 caractere"
-                      {...register('password')}
-                    />
-                    {errors.password && <span className={styles.error}>{errors.password.message}</span>}
-                  </div>
+                  <FormInput<CreateUserFormData>
+                    name="password"
+                    control={control}
+                    label="Parolă"
+                    type="password"
+                    placeholder="Minim 6 caractere"
+                    required
+                  />
                 </div>
                 <div className="col-md-6">
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                      Confirmă parola <span className={styles.required}>*</span>
-                    </label>
-                    <input
-                      type="password"
-                      className={`form-control${errors.confirmPassword ? ' is-invalid' : ''}`}
-                      placeholder="Reintroduceți parola"
-                      {...register('confirmPassword')}
-                    />
-                    {errors.confirmPassword && <span className={styles.error}>{errors.confirmPassword.message}</span>}
-                  </div>
+                  <FormInput<CreateUserFormData>
+                    name="confirmPassword"
+                    control={control}
+                    label="Confirmă parola"
+                    type="password"
+                    placeholder="Reintroduceți parola"
+                    required
+                  />
                 </div>
               </div>
             )}
@@ -272,21 +248,13 @@ export const UserFormModal = ({
             {/* Rol */}
             <div className="row g-3">
               <div className="col-12">
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>
-                    Rol <span className={styles.required}>*</span>
-                  </label>
-                  <select
-                    className={`form-select${errors.roleId ? ' is-invalid' : ''}`}
-                    {...register('roleId')}
-                  >
-                    <option value="">— Selectează rolul —</option>
-                    {roles.map(r => (
-                      <option key={r.id} value={r.id}>{r.name}</option>
-                    ))}
-                  </select>
-                  {errors.roleId && <span className={styles.error}>{errors.roleId.message}</span>}
-                </div>
+                <FormSelect<CreateUserFormData>
+                  name="roleId"
+                  control={control}
+                  label="Rol"
+                  options={roles.map(r => ({ value: r.id, label: r.name }))}
+                  required
+                />
               </div>
             </div>
 
@@ -322,41 +290,25 @@ export const UserFormModal = ({
             <div className="row g-3">
               <div className="col-12">
                 {associationType === 'doctor' ? (
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                      Doctor asociat <span className={styles.required}>*</span>
-                    </label>
-                    <select
-                      className={`form-select${errors.doctorId ? ' is-invalid' : ''}`}
-                      {...register('doctorId')}
-                    >
-                      <option value="">— Selectează doctorul —</option>
-                      {doctorLookup.map(d => (
-                        <option key={d.id} value={d.id}>
-                          {d.fullName}{d.medicalCode ? ` (${d.medicalCode})` : ''}{d.specialtyName ? ` — ${d.specialtyName}` : ''}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.doctorId && <span className={styles.error}>{errors.doctorId.message}</span>}
-                  </div>
+                  <FormSelect<CreateUserFormData>
+                    name="doctorId"
+                    control={control}
+                    label="Doctor asociat"
+                    options={doctorLookup.map(d => ({ value: d.id, label: `${d.fullName}${d.medicalCode ? ` (${d.medicalCode})` : ''}${d.specialtyName ? ` — ${d.specialtyName}` : ''}` }))}
+                    required
+                    allowFiltering
+                    showClearButton
+                  />
                 ) : (
-                  <div className={styles.formGroup}>
-                    <label className={styles.label}>
-                      Personal medical asociat <span className={styles.required}>*</span>
-                    </label>
-                    <select
-                      className={`form-select${errors.medicalStaffId ? ' is-invalid' : ''}`}
-                      {...register('medicalStaffId')}
-                    >
-                      <option value="">— Selectează membrul —</option>
-                      {staffLookup.map(s => (
-                        <option key={s.id} value={s.id}>
-                          {s.fullName}{s.medicalTitleName ? ` — ${s.medicalTitleName}` : ''}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.medicalStaffId && <span className={styles.error}>{errors.medicalStaffId.message}</span>}
-                  </div>
+                  <FormSelect<CreateUserFormData>
+                    name="medicalStaffId"
+                    control={control}
+                    label="Personal medical asociat"
+                    options={staffLookup.map(s => ({ value: s.id, label: `${s.fullName}${s.medicalTitleName ? ` — ${s.medicalTitleName}` : ''}` }))}
+                    required
+                    allowFiltering
+                    showClearButton
+                  />
                 )}
               </div>
             </div>

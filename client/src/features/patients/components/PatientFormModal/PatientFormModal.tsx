@@ -7,6 +7,10 @@ import type { NomenclatureItem } from '@/types/common.types'
 import type { DoctorLookupDto } from '@/features/doctors/types/doctor.types'
 import { AppModal } from '@/components/ui/AppModal'
 import type { ModalTab } from '@/components/ui/AppModal'
+import { FormInput } from '@/components/forms/FormInput'
+import { FormSelect } from '@/components/forms/FormSelect'
+import { FormDatePicker } from '@/components/forms/FormDatePicker'
+import { AppButton } from '@/components/ui/AppButton'
 import styles from './PatientFormModal.module.scss'
 
 // ── Icoane inline ─────────────────────────────────────────────────────────────
@@ -141,12 +145,21 @@ export const PatientFormModal = ({
 
   const footerContent = (
     <>
-      <button type="button" className="btn btn-outline-secondary" onClick={onClose} disabled={isLoading}>
+      <AppButton
+        variant="outline-secondary"
+        onClick={onClose}
+        disabled={isLoading}
+      >
         Anulează
-      </button>
-      <button type="submit" className="btn btn-primary" disabled={isLoading}>
-        {isLoading ? 'Se salvează...' : isEdit ? 'Salvează' : 'Adaugă'}
-      </button>
+      </AppButton>
+      <AppButton
+        type="submit"
+        variant="primary"
+        isLoading={isLoading}
+        loadingText="Se salvează..."
+      >
+        {isEdit ? 'Salvează' : 'Adaugă'}
+      </AppButton>
     </>
   )
 
@@ -176,76 +189,63 @@ export const PatientFormModal = ({
               <>
                 <div className="row g-3">
                   <div className="col-md-6">
-                    <div className={styles.formGroup}>
-                      <label className={styles.label}>Nume <span className={styles.required}>*</span></label>
-                      <input
-                        type="text"
-                        className={`form-control${errors.lastName ? ' is-invalid' : ''}`}
-                        placeholder="ex: Popescu"
-                        {...register('lastName')}
-                      />
-                      {errors.lastName && <span className={styles.error}>{errors.lastName.message}</span>}
-                    </div>
+                    <FormInput<PatientFormData>
+                      name="lastName"
+                      control={control}
+                      label="Nume"
+                      placeholder="ex: Popescu"
+                      required
+                    />
                   </div>
                   <div className="col-md-6">
-                    <div className={styles.formGroup}>
-                      <label className={styles.label}>Prenume <span className={styles.required}>*</span></label>
-                      <input
-                        type="text"
-                        className={`form-control${errors.firstName ? ' is-invalid' : ''}`}
-                        placeholder="ex: Ion"
-                        {...register('firstName')}
-                      />
-                      {errors.firstName && <span className={styles.error}>{errors.firstName.message}</span>}
-                    </div>
+                    <FormInput<PatientFormData>
+                      name="firstName"
+                      control={control}
+                      label="Prenume"
+                      placeholder="ex: Ion"
+                      required
+                    />
                   </div>
                 </div>
 
                 <div className="row g-3">
                   <div className="col-md-4">
-                    <div className={styles.formGroup}>
-                      <label className={styles.label}>CNP <span className={styles.required}>*</span></label>
-                      <input
-                        type="text"
-                        className={`form-control${errors.cnp ? ' is-invalid' : ''}`}
-                        placeholder="13 cifre"
-                        maxLength={13}
-                        {...register('cnp')}
-                      />
-                      {errors.cnp && <span className={styles.error}>{errors.cnp.message}</span>}
-                    </div>
+                    <FormInput<PatientFormData>
+                      name="cnp"
+                      control={control}
+                      label="CNP"
+                      placeholder="13 cifre"
+                      maxLength={13}
+                      required
+                    />
                   </div>
                   <div className="col-md-4">
-                    <div className={styles.formGroup}>
-                      <label className={styles.label}>Data nașterii</label>
-                      <input
-                        type="date"
-                        className={`form-control${errors.birthDate ? ' is-invalid' : ''}`}
-                        {...register('birthDate')}
-                      />
-                      {errors.birthDate && <span className={styles.error}>{errors.birthDate.message}</span>}
-                    </div>
+                    <FormDatePicker<PatientFormData>
+                      name="birthDate"
+                      control={control}
+                      label="Data nașterii"
+                    />
                   </div>
                   <div className="col-md-4">
-                    <div className={styles.formGroup}>
-                      <label className={styles.label}>Gen</label>
-                      <select className="form-select" {...register('genderId')}>
-                        <option value="">— Selectează —</option>
-                        {genders.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-                      </select>
-                    </div>
+                    <FormSelect<PatientFormData>
+                      name="genderId"
+                      control={control}
+                      label="Gen"
+                      options={genders.map(g => ({ value: g.id, label: g.name }))}
+                      showClearButton
+                    />
                   </div>
                 </div>
 
                 <div className="row g-3">
                   <div className="col-md-4">
-                    <div className={styles.formGroup}>
-                      <label className={styles.label}>Grupă sanguină</label>
-                      <select className="form-select" {...register('bloodTypeId')}>
-                        <option value="">— Selectează —</option>
-                        {bloodTypes.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                      </select>
-                    </div>
+                    <FormSelect<PatientFormData>
+                      name="bloodTypeId"
+                      control={control}
+                      label="Grupă sanguină"
+                      options={bloodTypes.map(b => ({ value: b.id, label: b.name }))}
+                      showClearButton
+                    />
                   </div>
                 </div>
               </>
@@ -256,94 +256,67 @@ export const PatientFormModal = ({
               <>
                 <div className="row g-3">
                   <div className="col-md-4">
-                    <div className={styles.formGroup}>
-                      <label className={styles.label}>Telefon</label>
-                      <input
-                        type="text"
-                        className={`form-control${errors.phoneNumber ? ' is-invalid' : ''}`}
-                        placeholder="0721 234 567"
-                        {...register('phoneNumber')}
-                      />
-                      {errors.phoneNumber && <span className={styles.error}>{errors.phoneNumber.message}</span>}
-                    </div>
+                    <FormInput<PatientFormData>
+                      name="phoneNumber"
+                      control={control}
+                      label="Telefon"
+                      placeholder="0721 234 567"
+                    />
                   </div>
                   <div className="col-md-4">
-                    <div className={styles.formGroup}>
-                      <label className={styles.label}>Telefon secundar</label>
-                      <input
-                        type="text"
-                        className={`form-control${errors.secondaryPhone ? ' is-invalid' : ''}`}
-                        placeholder="0722 345 678"
-                        {...register('secondaryPhone')}
-                      />
-                      {errors.secondaryPhone && <span className={styles.error}>{errors.secondaryPhone.message}</span>}
-                    </div>
+                    <FormInput<PatientFormData>
+                      name="secondaryPhone"
+                      control={control}
+                      label="Telefon secundar"
+                      placeholder="0722 345 678"
+                    />
                   </div>
                   <div className="col-md-4">
-                    <div className={styles.formGroup}>
-                      <label className={styles.label}>Email</label>
-                      <input
-                        type="email"
-                        className={`form-control${errors.email ? ' is-invalid' : ''}`}
-                        placeholder="pacient@email.ro"
-                        {...register('email')}
-                      />
-                      {errors.email && <span className={styles.error}>{errors.email.message}</span>}
-                    </div>
+                    <FormInput<PatientFormData>
+                      name="email"
+                      control={control}
+                      label="Email"
+                      type="email"
+                      placeholder="pacient@email.ro"
+                    />
                   </div>
                 </div>
 
                 <div className="row g-3">
                   <div className="col-md-6">
-                    <div className={styles.formGroup}>
-                      <label className={styles.label}>Adresă</label>
-                      <input
-                        type="text"
-                        className={`form-control${errors.address ? ' is-invalid' : ''}`}
-                        placeholder="Str. Exemplu, Nr. 1"
-                        {...register('address')}
-                      />
-                      {errors.address && <span className={styles.error}>{errors.address.message}</span>}
-                    </div>
+                    <FormInput<PatientFormData>
+                      name="address"
+                      control={control}
+                      label="Adresă"
+                      placeholder="Str. Exemplu, Nr. 1"
+                    />
                   </div>
                   <div className="col-md-3">
-                    <div className={styles.formGroup}>
-                      <label className={styles.label}>Oraș</label>
-                      <input
-                        type="text"
-                        className={`form-control${errors.city ? ' is-invalid' : ''}`}
-                        placeholder="București"
-                        {...register('city')}
-                      />
-                      {errors.city && <span className={styles.error}>{errors.city.message}</span>}
-                    </div>
+                    <FormInput<PatientFormData>
+                      name="city"
+                      control={control}
+                      label="Oraș"
+                      placeholder="București"
+                    />
                   </div>
                   <div className="col-md-3">
-                    <div className={styles.formGroup}>
-                      <label className={styles.label}>Județ</label>
-                      <input
-                        type="text"
-                        className={`form-control${errors.county ? ' is-invalid' : ''}`}
-                        placeholder="Ilfov"
-                        {...register('county')}
-                      />
-                      {errors.county && <span className={styles.error}>{errors.county.message}</span>}
-                    </div>
+                    <FormInput<PatientFormData>
+                      name="county"
+                      control={control}
+                      label="Județ"
+                      placeholder="Ilfov"
+                    />
                   </div>
                 </div>
 
                 <div className="row g-3">
                   <div className="col-md-3">
-                    <div className={styles.formGroup}>
-                      <label className={styles.label}>Cod poștal</label>
-                      <input
-                        type="text"
-                        className={`form-control${errors.postalCode ? ' is-invalid' : ''}`}
-                        placeholder="010101"
-                        {...register('postalCode')}
-                      />
-                      {errors.postalCode && <span className={styles.error}>{errors.postalCode.message}</span>}
-                    </div>
+                    <FormInput<PatientFormData>
+                      name="postalCode"
+                      control={control}
+                      label="Cod poștal"
+                      placeholder="010101"
+                    />
                   </div>
                 </div>
               </>
@@ -357,30 +330,24 @@ export const PatientFormModal = ({
                   <h6 className={styles.sectionTitle}>Date medicale</h6>
                   <div className="row g-3">
                     <div className="col-md-6">
-                      <div className={styles.formGroup}>
-                        <label className={styles.label}>Medic de familie</label>
-                        <input
-                          type="text"
-                          className={`form-control${errors.familyDoctorName ? ' is-invalid' : ''}`}
-                          placeholder="Dr. Popescu Ion"
-                          {...register('familyDoctorName')}
-                        />
-                        {errors.familyDoctorName && <span className={styles.error}>{errors.familyDoctorName.message}</span>}
-                      </div>
+                      <FormInput<PatientFormData>
+                        name="familyDoctorName"
+                        control={control}
+                        label="Medic de familie"
+                        placeholder="Dr. Popescu Ion"
+                      />
                     </div>
                   </div>
                   <div className="row g-3">
                     <div className="col-md-12">
-                      <div className={styles.formGroup}>
-                        <label className={styles.label}>Boli cronice</label>
-                        <textarea
-                          className={`form-control${errors.chronicDiseases ? ' is-invalid' : ''}`}
-                          rows={2}
-                          placeholder="Diabet, hipertensiune arterială..."
-                          {...register('chronicDiseases')}
-                        />
-                        {errors.chronicDiseases && <span className={styles.error}>{errors.chronicDiseases.message}</span>}
-                      </div>
+                      <FormInput<PatientFormData>
+                        name="chronicDiseases"
+                        control={control}
+                        label="Boli cronice"
+                        placeholder="Diabet, hipertensiune arterială..."
+                        multiline
+                        multilineRows={2}
+                      />
                     </div>
                   </div>
                 </div>
@@ -390,26 +357,19 @@ export const PatientFormModal = ({
                   <h6 className={styles.sectionTitle}>Asigurare</h6>
                   <div className="row g-3">
                     <div className="col-md-4">
-                      <div className={styles.formGroup}>
-                        <label className={styles.label}>Nr. asigurare</label>
-                        <input
-                          type="text"
-                          className={`form-control${errors.insuranceNumber ? ' is-invalid' : ''}`}
-                          placeholder="Nr. asigurare"
-                          {...register('insuranceNumber')}
-                        />
-                        {errors.insuranceNumber && <span className={styles.error}>{errors.insuranceNumber.message}</span>}
-                      </div>
+                      <FormInput<PatientFormData>
+                        name="insuranceNumber"
+                        control={control}
+                        label="Nr. asigurare"
+                        placeholder="Nr. asigurare"
+                      />
                     </div>
                     <div className="col-md-4">
-                      <div className={styles.formGroup}>
-                        <label className={styles.label}>Asigurare expiră</label>
-                        <input
-                          type="date"
-                          className={`form-control${errors.insuranceExpiry ? ' is-invalid' : ''}`}
-                          {...register('insuranceExpiry')}
-                        />
-                      </div>
+                      <FormDatePicker<PatientFormData>
+                        name="insuranceExpiry"
+                        control={control}
+                        label="Asigurare expiră"
+                      />
                     </div>
                     <div className="col-md-4 d-flex align-items-end">
                       <div className={styles.formGroup}>
@@ -631,16 +591,14 @@ export const PatientFormModal = ({
             {/* ═══════════ TAB 5: Note & Status ═══════════ */}
             {activeTab === 'notes' && (
               <>
-                <div className={styles.formGroup}>
-                  <label className={styles.label}>Note</label>
-                  <textarea
-                    className={`form-control${errors.notes ? ' is-invalid' : ''}`}
-                    rows={4}
-                    placeholder="Observații generale (opțional)"
-                    {...register('notes')}
-                  />
-                  {errors.notes && <span className={styles.error}>{errors.notes.message}</span>}
-                </div>
+                <FormInput<PatientFormData>
+                  name="notes"
+                  control={control}
+                  label="Note"
+                  placeholder="Observații generale (opțional)"
+                  multiline
+                  multilineRows={4}
+                />
 
                 {isEdit && (
                   <div className={styles.formGroup}>
