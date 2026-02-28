@@ -1,0 +1,149 @@
+@import '@/styles/variables';
+
+// ===== Container câmp =====
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+// ===== Label =====
+.label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: $gray-600;
+  line-height: 1.4;
+}
+
+.required {
+  color: $danger;
+  margin-left: 0.15rem;
+}
+
+// ===== Eroare =====
+.error {
+  font-size: 0.78rem;
+  color: $danger;
+  margin-top: 0.1rem;
+}
+
+// ===== Override-uri Syncfusion DropDownList =====
+.formGroup :global {
+  // Container dropdown
+  .e-input-group,
+  .e-input-group.e-control-wrapper,
+  .e-ddl.e-input-group,
+  .e-ddl.e-input-group.e-control-wrapper {
+    border-radius: $border-radius-sm;
+    border-color: $gray-200;
+    background: $card-bg;
+    font-family: $font-family-base;
+    font-size: $font-size-base;
+    min-height: 36px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover:not(.e-disabled):not(.e-input-focus) {
+      border-color: $gray-300;
+    }
+
+    &.e-input-focus {
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba($primary, 0.12);
+    }
+
+    input.e-input {
+      color: $gray-700;
+      font-size: $font-size-base;
+      padding: 0.375rem 0.625rem;
+
+      &::placeholder {
+        color: $gray-400;
+      }
+    }
+
+    // Iconița săgeată dropdown
+    .e-input-group-icon.e-ddl-icon {
+      color: $gray-400;
+      min-width: 28px;
+      transition: color 0.15s ease;
+    }
+
+    &:hover .e-input-group-icon.e-ddl-icon {
+      color: $gray-500;
+    }
+
+    // Clear button
+    .e-clear-icon {
+      color: $gray-400;
+      &:hover { color: $gray-600; }
+    }
+  }
+
+  // Stare eroare
+  .e-ddl.e-input-group.e-error,
+  .e-input-group.e-error {
+    border-color: $danger;
+
+    &.e-input-focus {
+      box-shadow: 0 0 0 3px rgba($danger, 0.12);
+    }
+  }
+
+  // Stare disabled
+  .e-ddl.e-input-group.e-disabled,
+  .e-input-group.e-disabled {
+    opacity: 0.6;
+    background: $gray-50;
+    cursor: not-allowed;
+  }
+}
+
+// ===== Popup dropdown — global (portal) =====
+:global {
+  .e-popup.e-ddl {
+    border-radius: $border-radius-sm;
+    box-shadow: $box-shadow;
+    border: 1px solid $gray-200;
+    overflow: hidden;
+
+    .e-list-item {
+      font-family: $font-family-base;
+      font-size: $font-size-base;
+      color: $gray-600;
+      padding: 0.5rem 0.75rem;
+      transition: background-color 0.1s ease;
+
+      &:hover,
+      &.e-hover {
+        background-color: rgba($primary, 0.06);
+        color: $gray-700;
+      }
+
+      &.e-active {
+        background-color: rgba($primary, 0.12);
+        color: $primary-dark;
+        font-weight: 500;
+      }
+    }
+
+    // Search input în popup (allowFiltering)
+    .e-filter-parent .e-input-group {
+      border-color: $gray-200;
+
+      &.e-input-focus {
+        border-color: $primary;
+      }
+
+      input.e-input {
+        font-size: $font-size-base;
+      }
+    }
+
+    // Mesaj „nicio înregistrare" (noRecordsTemplate)
+    .e-nodata {
+      font-size: 0.8125rem;
+      color: $gray-400;
+      padding: 0.75rem;
+    }
+  }
+}

@@ -1,0 +1,164 @@
+@import '@/styles/variables';
+
+// ===== Container câmp =====
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+// ===== Label =====
+.label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: $gray-600;
+  line-height: 1.4;
+}
+
+.required {
+  color: $danger;
+  margin-left: 0.15rem;
+}
+
+// ===== Eroare =====
+.error {
+  font-size: 0.78rem;
+  color: $danger;
+  margin-top: 0.1rem;
+}
+
+// ===== Override-uri Syncfusion DatePicker =====
+.formGroup :global {
+  .e-input-group,
+  .e-input-group.e-control-wrapper,
+  .e-date-wrapper,
+  .e-date-wrapper.e-input-group {
+    border-radius: $border-radius-sm;
+    border-color: $gray-200;
+    background: $card-bg;
+    font-family: $font-family-base;
+    font-size: $font-size-base;
+    min-height: 36px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover:not(.e-disabled):not(.e-input-focus) {
+      border-color: $gray-300;
+    }
+
+    &.e-input-focus {
+      border-color: $primary;
+      box-shadow: 0 0 0 3px rgba($primary, 0.12);
+    }
+
+    input.e-input {
+      color: $gray-700;
+      font-size: $font-size-base;
+      padding: 0.375rem 0.625rem;
+
+      &::placeholder {
+        color: $gray-400;
+      }
+    }
+
+    // Iconița calendar
+    .e-input-group-icon.e-date-icon {
+      color: $gray-400;
+      min-width: 28px;
+      transition: color 0.15s ease;
+    }
+
+    &:hover .e-input-group-icon.e-date-icon {
+      color: $gray-500;
+    }
+
+    // Clear button
+    .e-clear-icon {
+      color: $gray-400;
+      &:hover { color: $gray-600; }
+    }
+  }
+
+  // Stare eroare
+  .e-date-wrapper.e-error,
+  .e-input-group.e-error {
+    border-color: $danger;
+
+    &.e-input-focus {
+      box-shadow: 0 0 0 3px rgba($danger, 0.12);
+    }
+  }
+
+  // Stare disabled
+  .e-date-wrapper.e-disabled,
+  .e-input-group.e-disabled {
+    opacity: 0.6;
+    background: $gray-50;
+    cursor: not-allowed;
+  }
+}
+
+// ===== Calendar popup — global (portal) =====
+:global {
+  .e-calendar,
+  .e-datepicker.e-popup-wrapper {
+    border-radius: $border-radius-sm;
+    box-shadow: $box-shadow;
+    border: 1px solid $gray-200;
+    font-family: $font-family-base;
+
+    .e-header .e-title {
+      font-weight: 600;
+      color: $gray-700;
+    }
+
+    .e-header .e-icon-container .e-prev,
+    .e-header .e-icon-container .e-next {
+      color: $gray-500;
+
+      &:hover {
+        color: $primary;
+        background: rgba($primary, 0.06);
+        border-radius: 50%;
+      }
+    }
+
+    // Celulă dată normală
+    td.e-cell span.e-day {
+      color: $gray-600;
+      border-radius: 50%;
+      transition: all 0.1s ease;
+
+      &:hover {
+        background: rgba($primary, 0.08);
+        color: $primary-dark;
+      }
+    }
+
+    // Data selectată
+    td.e-selected span.e-day {
+      background: $primary !important;
+      color: #fff !important;
+    }
+
+    // Data de azi
+    td.e-today span.e-day {
+      border-color: $primary;
+      color: $primary;
+    }
+
+    // Buton „Azi"
+    .e-footer-container .e-btn.e-today {
+      color: $primary;
+      font-weight: 500;
+
+      &:hover {
+        background: rgba($primary, 0.06);
+      }
+    }
+
+    // Celule disabled
+    td.e-disabled span.e-day {
+      color: $gray-300;
+    }
+  }
+}
