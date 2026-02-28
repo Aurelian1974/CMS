@@ -25,11 +25,11 @@ export const usePatients = (params: GetPatientsParams) =>
   })
 
 // ── Detaliu pacient cu sub-colecții ───────────────────────────────────────────
-export const usePatientDetail = (id: string) =>
+export const usePatientDetail = (id: string, enabled = true) =>
   useQuery({
     queryKey: patientKeys.detail(id),
     queryFn: () => patientsApi.getById(id),
-    enabled: !!id,
+    enabled: !!id && enabled,
   })
 
 // ── Creare pacient ────────────────────────────────────────────────────────────

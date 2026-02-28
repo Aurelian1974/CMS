@@ -11,11 +11,27 @@
   box-shadow: 0 1px 3px rgba(42, 63, 82, 0.08);
 
   .e-headercell {
-    background-color: #2A5578 !important;
-    color: #fff !important;
+    letter-spacing: normal !important;
   }
 
   .e-row:hover td {
+    background-color: rgba(#A8C8E0, 0.3) !important;
+  }
+
+  // Frozen right column — fundal solid să nu fie transparent la scroll
+  td.e-rowcell.e-rightfreeze.e-freezerightborder {
+    background-color: #fff !important;
+  }
+
+  .e-row:hover td.e-rowcell.e-rightfreeze.e-freezerightborder {
+    background-color: rgba(#A8C8E0, 0.3) !important;
+  }
+
+  .e-altrow td.e-rowcell.e-rightfreeze.e-freezerightborder {
+    background-color: #f8f9fa !important;
+  }
+
+  .e-altrow:hover td.e-rowcell.e-rightfreeze.e-freezerightborder {
     background-color: rgba(#A8C8E0, 0.3) !important;
   }
 }

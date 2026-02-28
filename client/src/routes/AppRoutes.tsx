@@ -7,7 +7,6 @@ const LoginPage      = lazy(() => import('../features/auth/pages/LoginPage'))
 const MainLayout     = lazy(() => import('../components/layout/MainLayout'))
 const DashboardPage  = lazy(() => import('../features/dashboard/pages/DashboardPage'))
 const PatientsListPage   = lazy(() => import('../features/patients/pages/PatientsListPage'))
-const PatientDetailPage  = lazy(() => import('../features/patients/pages/PatientDetailPage'))
 const PatientFormPage    = lazy(() => import('../features/patients/pages/PatientFormPage'))
 const AppointmentsPage   = lazy(() => import('../features/appointments/pages/AppointmentsListPage'))
 const ConsultationsPage  = lazy(() => import('../features/consultations/pages/ConsultationsListPage'))
@@ -44,7 +43,6 @@ export const AppRoutes = () => (
           <Route path="/dashboard"       element={<DashboardPage />} />
           <Route path="/patients"        element={<PatientsListPage />} />
           <Route path="/patients/new"    element={<PatientFormPage />} />
-          <Route path="/patients/:id"    element={<PatientDetailPage />} />
           <Route path="/patients/:id/edit" element={<PatientFormPage />} />
           <Route path="/appointments"    element={<AppointmentsPage />} />
           <Route path="/consultations"   element={<ConsultationsPage />} />

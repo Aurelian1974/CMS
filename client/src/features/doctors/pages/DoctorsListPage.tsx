@@ -1,25 +1,10 @@
 import { useState, useRef, useCallback, useMemo } from 'react'
 import {
-  GridComponent,
+  type GridComponent,
   ColumnsDirective,
   ColumnDirective,
-  Inject,
-  Page,
-  Sort,
-  Filter,
-  Group,
-  Reorder,
-  Resize,
-  ExcelExport,
-  PdfExport,
-  ColumnChooser,
-  type FilterSettingsModel,
-  type GroupSettingsModel,
-  type PageSettingsModel,
-  type SortSettingsModel,
-  type ExcelExportProperties,
-  type PdfExportProperties,
 } from '@syncfusion/ej2-react-grids'
+import { AppDataGrid, useGridExport } from '@/components/data-display/AppDataGrid'
 import type { DoctorDto, DoctorStatusFilter } from '../types/doctor.types'
 import type { DoctorFormData } from '../schemas/doctor.schema'
 import { useDoctors, useCreateDoctor, useUpdateDoctor, useDeleteDoctor, useDoctorLookup } from '../hooks/useDoctors'
@@ -28,6 +13,7 @@ import { useMedicalTitles } from '@/features/nomenclature/hooks/useMedicalTitles
 import { useDepartments } from '@/features/departments/hooks/useDepartments'
 import { DoctorFormModal } from '../components/DoctorFormModal/DoctorFormModal'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
+import { AppBadge } from '@/components/ui/AppBadge'
 import { formatDate, formatDateTime } from '@/utils/format'
 import styles from './DoctorsListPage.module.scss'
 
@@ -35,7 +21,7 @@ import styles from './DoctorsListPage.module.scss'
 const IconPlus    = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
 const IconExcel   = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>;
 const IconPdf     = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M10 12.5c0-.8.7-1.5 1.5-1.5s1.5.7 1.5 1.5-.7 1.5-1.5 1.5H10v2"/></svg>;
-const IconColumns = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="18"/><rect x="14" y="3" width="7" height="18"/></svg>;
+
 const IconSearch  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
 const IconLock    = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
 const IconMedic   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4.5 2h-1A1.5 1.5 0 002 3.5v5A6.5 6.5 0 008.5 15h1A6.5 6.5 0 0016 8.5v-5A1.5 1.5 0 0014.5 2h-1"/><path d="M16 9a4 4 0 014 4 4 4 0 01-4 4m0 0v3"/><circle cx="16" cy="20" r="1"/></svg>;
@@ -53,20 +39,7 @@ const getLicenseClass = (expiresAt: string | null): string => {
 };
 
 // ── Configurare grid ──────────────────────────────────────────────────────────
-const filterSettings: FilterSettingsModel = { type: 'Menu', showFilterBarStatus: true };
-
-const groupSettings: GroupSettingsModel = {
-  showDropArea: true,
-  showGroupedColumn: false,
-  showToggleButton: true,
-  showUngroupButton: true,
-};
-
-const pageSettings: PageSettingsModel = { pageSize: 10, pageSizes: [5, 10, 20, 50] };
-
-const sortSettings: SortSettingsModel = {
-  columns: [{ field: 'fullName', direction: 'Ascending' }],
-};
+const SORT_SETTINGS = { columns: [{ field: 'fullName' as const, direction: 'Ascending' as const }] }
 
 // ── Componenta principală ─────────────────────────────────────────────────────
 export const DoctorsListPage = () => {
@@ -237,109 +210,30 @@ export const DoctorsListPage = () => {
     }))
   , [filteredData])
 
-  // ── Export handlers ────────────────────────────────────────────────────────
-  const handleExcelExport = useCallback(() => {
-    const grid = gridRef.current;
-    if (!grid) return;
-
-    // Salvăm template-urile JSX și le ștergem temporar pentru export curat
-    const columns = grid.getColumns() as Array<Record<string, unknown>>;
-    const saved = new Map<string, unknown>();
-    columns.forEach(col => {
-      if (col.template) {
-        saved.set(col.field as string, col.template);
-        col.template = null;
-      }
-    });
-
-    const props: ExcelExportProperties = {
-      fileName: `doctori_${new Date().toISOString().slice(0, 10)}.xlsx`,
-      dataSource: buildExportData(),
-    };
-
-    const restore = () => {
-      columns.forEach(col => {
-        const key = col.field as string;
-        if (saved.has(key)) col.template = saved.get(key);
-      });
-      grid.refreshColumns();
-    };
-
-    const result = grid.excelExport(props) as unknown as Promise<unknown>;
-    result?.then?.(restore).catch((err: unknown) => {
-      console.error('Excel export error:', err);
-      restore();
-    });
-  }, [buildExportData]);
-
-  const handlePdfExport = useCallback(() => {
-    const grid = gridRef.current;
-    if (!grid) return;
-
-    // Salvăm template-urile JSX și le ștergem temporar — Syncfusion nu poate serializa React elements în PDF
-    const columns = grid.getColumns() as Array<Record<string, unknown>>;
-    const saved = new Map<string, unknown>();
-    columns.forEach(col => {
-      if (col.template) {
-        saved.set(col.field as string, col.template);
-        col.template = null;
-      }
-    });
-
-    const props: PdfExportProperties = {
-      fileName: `doctori_${new Date().toISOString().slice(0, 10)}.pdf`,
-      pageOrientation: 'Landscape',
-      dataSource: buildExportData(),
-      theme: {
-        header: {
-          bold: true,
-          fontColor: '#ffffff',
-          fontName: 'Helvetica',
-          fontSize: 10,
-        },
-        record: {
-          fontName: 'Helvetica',
-          fontSize: 9,
-        },
-      },
-    };
-
-    // Restaurează template-urile după export (succes sau eroare)
-    const restore = () => {
-      columns.forEach(col => {
-        const key = col.field as string;
-        if (saved.has(key)) col.template = saved.get(key);
-      });
-      grid.refreshColumns();
-    };
-
-    const result = grid.pdfExport(props) as unknown as Promise<unknown>;
-    result?.then?.(restore).catch((err: unknown) => {
-      console.error('PDF export error:', err);
-      restore();
-    });
-  }, [buildExportData]);
+  // ── Export handlers (hook reutilizabil) ─────────────────────────────────────
+  const { handleExcelExport } = useGridExport(gridRef, {
+    fileNamePrefix: 'doctori',
+    buildExportData,
+  })
 
   // ── Cell templates ─────────────────────────────────────────────────────────
+  const avatarTemplate = useCallback((row: DoctorDto) => (
+    <div className={styles.avatar}>{getInitials(row.firstName, row.lastName)}</div>
+  ), []);
+
   const nameTemplate = useCallback((row: DoctorDto) => (
-    <div className={styles.avatarCell}>
-      <div className={styles.avatar}>{getInitials(row.firstName, row.lastName)}</div>
-      <div>
-        <div className={styles.doctorName}>{row.fullName}</div>
-        <div className={styles.doctorEmail}>{row.email}</div>
-      </div>
-    </div>
+    <span className={styles.doctorName}>{row.fullName}</span>
   ), []);
 
   const specialtyTemplate = useCallback((row: DoctorDto) =>
     row.specialtyName
-      ? <span className={styles.specialtyBadge}>{row.specialtyName}</span>
+      ? <AppBadge variant="primary">{row.specialtyName}</AppBadge>
       : <span style={{ color: '#C9D3DC', fontSize: '0.78rem' }}>—</span>
   , [])
 
   const subspecialtyTemplate = useCallback((row: DoctorDto) =>
     row.subspecialtyName
-      ? <span className={styles.specialtyBadge}>{row.subspecialtyName}</span>
+      ? <AppBadge variant="primary">{row.subspecialtyName}</AppBadge>
       : <span style={{ color: '#C9D3DC', fontSize: '0.78rem' }}>—</span>
   , [])
 
@@ -351,7 +245,7 @@ export const DoctorsListPage = () => {
 
   const medicalCodeTemplate = useCallback((row: DoctorDto) =>
     row.medicalCode
-      ? <span className={styles.medicalCode}>{row.medicalCode}</span>
+      ? <AppBadge variant="primary" mono>{row.medicalCode}</AppBadge>
       : <span style={{ color: '#C9D3DC', fontSize: '0.78rem' }}>—</span>
   , []);
 
@@ -365,9 +259,9 @@ export const DoctorsListPage = () => {
   }, []);
 
   const statusTemplate = useCallback((row: DoctorDto) => (
-    <span className={`${styles.statusBadge} ${styles[row.isActive ? 'statusBadge--active' : 'statusBadge--inactive']}`}>
+    <AppBadge variant={row.isActive ? 'success' : 'neutral'} withDot>
       {row.isActive ? 'Activ' : 'Inactiv'}
-    </span>
+    </AppBadge>
   ), [])
 
   const actionsTemplate = useCallback((row: DoctorDto) => (
@@ -487,54 +381,43 @@ export const DoctorsListPage = () => {
           ))}
         </div>
 
-        <div className={styles.toolbarRight}>
-          <button
-            className={styles.btnSecondary}
-            onClick={() => gridRef.current?.openColumnChooser()}
-          >
-            <IconColumns /> Coloane
-          </button>
-        </div>
+
       </div>
 
       {/* Grid */}
-      <div className={styles.gridContainer}>
-        <GridComponent
-          ref={gridRef}
-          dataSource={filteredData}
-          allowSorting
-          allowFiltering
-          allowGrouping
-          allowReordering
-          allowResizing
-          allowPaging
-          allowExcelExport
-          allowPdfExport
-          showColumnChooser
-          enableStickyHeader
-          enableHover
-          filterSettings={filterSettings}
-          groupSettings={groupSettings}
-          pageSettings={pageSettings}
-          sortSettings={sortSettings}
-          height="auto"
-          gridLines="Horizontal"
-          rowHeight={52}
-        >
-          <ColumnsDirective>
+      <AppDataGrid
+        gridRef={gridRef}
+        dataSource={filteredData}
+        sortSettings={SORT_SETTINGS}
+      >
+        <ColumnsDirective>
+
+            <ColumnDirective
+              headerText=""
+              width="55"
+              minWidth="55"
+              maxWidth="55"
+              template={avatarTemplate}
+              allowSorting={false}
+              allowFiltering={false}
+              allowGrouping={false}
+              allowReordering={false}
+              allowResizing={false}
+              textAlign="Center"
+            />
 
             <ColumnDirective
               field="fullName"
-              headerText="DOCTOR"
-              width="230"
-              minWidth="180"
+              headerText="Doctor"
+              width="170"
+              minWidth="130"
               template={nameTemplate}
               allowGrouping={false}
             />
 
             <ColumnDirective
               field="specialtyName"
-              headerText="SPECIALITATE"
+              headerText="Specialitate"
               width="150"
               minWidth="120"
               template={specialtyTemplate}
@@ -542,7 +425,7 @@ export const DoctorsListPage = () => {
 
             <ColumnDirective
               field="subspecialtyName"
-              headerText="SUBSPECIALIZARE"
+              headerText="Subspecializare"
               width="150"
               minWidth="120"
               template={subspecialtyTemplate}
@@ -551,7 +434,7 @@ export const DoctorsListPage = () => {
 
             <ColumnDirective
               field="departmentName"
-              headerText="DEPARTAMENT"
+              headerText="Departament"
               width="140"
               minWidth="110"
               template={departmentTemplate}
@@ -559,7 +442,7 @@ export const DoctorsListPage = () => {
 
             <ColumnDirective
               field="medicalCode"
-              headerText="PARAFĂ"
+              headerText="Parafă"
               width="110"
               minWidth="90"
               template={medicalCodeTemplate}
@@ -567,31 +450,44 @@ export const DoctorsListPage = () => {
 
             <ColumnDirective
               field="licenseNumber"
-              headerText="NR. CMR"
+              headerText="Nr. CMR"
               width="120"
               minWidth="100"
               defaultValue="—"
+              clipMode="EllipsisWithTooltip"
+              visible={false}
             />
 
             <ColumnDirective
               field="licenseExpiresAt"
-              headerText="AVIZ EXPIRĂ"
+              headerText="Aviz expiră"
               width="130"
               minWidth="110"
               template={licenseTemplate}
+              visible={false}
             />
 
             <ColumnDirective
               field="phoneNumber"
-              headerText="TELEFON"
+              headerText="Telefon"
               width="130"
               minWidth="100"
               defaultValue="—"
+              clipMode="EllipsisWithTooltip"
+            />
+
+            <ColumnDirective
+              field="email"
+              headerText="Email"
+              width="180"
+              minWidth="140"
+              defaultValue="—"
+              clipMode="EllipsisWithTooltip"
             />
 
             <ColumnDirective
               field="isActive"
-              headerText="STATUS"
+              headerText="Status"
               width="110"
               minWidth="90"
               template={statusTemplate}
@@ -599,11 +495,13 @@ export const DoctorsListPage = () => {
 
             <ColumnDirective
               field="createdAt"
-              headerText="ÎNREGISTRAT"
+              headerText="Înregistrat"
               width="120"
               minWidth="100"
               format="dd.MM.yyyy"
               type="date"
+              clipMode="EllipsisWithTooltip"
+              visible={false}
             />
 
             <ColumnDirective
@@ -622,14 +520,7 @@ export const DoctorsListPage = () => {
             />
 
           </ColumnsDirective>
-
-          <Inject services={[
-            Page, Sort, Filter, Group,
-            Reorder, Resize,
-            ExcelExport, PdfExport, ColumnChooser,
-          ]} />
-        </GridComponent>
-      </div>
+      </AppDataGrid>
 
       {/* Mesaj succes */}
       {successMsg && (

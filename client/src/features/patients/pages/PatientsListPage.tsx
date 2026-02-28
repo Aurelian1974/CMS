@@ -1,39 +1,26 @@
 import { useState, useRef, useCallback, useMemo } from 'react'
 import {
-  GridComponent,
+  type GridComponent,
   ColumnsDirective,
   ColumnDirective,
-  Inject,
-  Page,
-  Sort,
-  Filter,
-  Group,
-  Reorder,
-  Resize,
-  ExcelExport,
-  PdfExport,
-  ColumnChooser,
-  type FilterSettingsModel,
-  type GroupSettingsModel,
-  type PageSettingsModel,
-  type SortSettingsModel,
-  type ExcelExportProperties,
-  type PdfExportProperties,
 } from '@syncfusion/ej2-react-grids'
+import { AppDataGrid, useGridExport } from '@/components/data-display/AppDataGrid'
 import type { PatientDto, PatientStatusFilter } from '../types/patient.types'
 import type { PatientFormData } from '../schemas/patient.schema'
 import { usePatients, useCreatePatient, useUpdatePatient, useDeletePatient } from '../hooks/usePatients'
 import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
 import { useGenders, useBloodTypes, useAllergyTypes, useAllergySeverities } from '@/features/nomenclature/hooks/useNomenclatureLookups'
 import { PatientFormModal } from '../components/PatientFormModal/PatientFormModal'
+import { PatientDetailModal } from '../components/PatientDetailModal/PatientDetailModal'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
+import { AppBadge, type BadgeVariant } from '@/components/ui/AppBadge'
 import { formatDate } from '@/utils/format'
 import styles from './PatientsListPage.module.scss'
 
 // ── Icoane SVG inline ─────────────────────────────────────────────────────────
 const IconPlus    = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 const IconExcel   = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-const IconColumns = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="18"/><rect x="14" y="3" width="7" height="18"/></svg>
+
 const IconSearch  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 const IconUsers   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
 const IconAlert   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -42,15 +29,15 @@ const IconAlert   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="
 const getInitials = (first?: string | null, last?: string | null) =>
   `${(first ?? '').charAt(0)}${(last ?? '').charAt(0)}`.toUpperCase() || '?'
 
-/** Clase CSS pentru badge severitate alergie */
-const getSeverityClass = (code: string | null): string => {
-  if (!code) return ''
+/** Mapare cod severitate → variantă AppBadge */
+const getSeverityVariant = (code: string | null): BadgeVariant => {
+  if (!code) return 'neutral'
   switch (code.toUpperCase()) {
-    case 'ANAPHYLAXIS': return styles['severity--anaphylaxis']
-    case 'SEVERE':      return styles['severity--severe']
-    case 'MODERATE':    return styles['severity--moderate']
-    case 'MILD':        return styles['severity--mild']
-    default:            return ''
+    case 'ANAPHYLAXIS': return 'critical'
+    case 'SEVERE':      return 'danger'
+    case 'MODERATE':    return 'warning'
+    case 'MILD':        return 'success'
+    default:            return 'neutral'
   }
 }
 
@@ -67,10 +54,7 @@ const getSeverityLabel = (code: string | null): string => {
 }
 
 // ── Configurare grid ──────────────────────────────────────────────────────────
-const filterSettings: FilterSettingsModel = { type: 'Menu', showFilterBarStatus: true }
-const groupSettings: GroupSettingsModel = { showDropArea: true, showGroupedColumn: false, showToggleButton: true, showUngroupButton: true }
-const pageSettings: PageSettingsModel = { pageSize: 10, pageSizes: [5, 10, 20, 50] }
-const sortSettings: SortSettingsModel = { columns: [{ field: 'fullName', direction: 'Ascending' }] }
+const SORT_SETTINGS = { columns: [{ field: 'fullName' as const, direction: 'Ascending' as const }] }
 
 // ── Componenta principală ─────────────────────────────────────────────────────
 export const PatientsListPage = () => {
@@ -84,6 +68,9 @@ export const PatientsListPage = () => {
   // Modal formular
   const [modalOpen, setModalOpen] = useState(false)
   const [editingPatient, setEditingPatient] = useState<PatientDto | null>(null)
+
+  // Modal detalii pacient (read-only)
+  const [detailPatientId, setDetailPatientId] = useState<string | null>(null)
 
   // Confirmare ștergere
   const [deleteTarget, setDeleteTarget] = useState<PatientDto | null>(null)
@@ -281,94 +268,46 @@ export const PatientsListPage = () => {
     }))
   , [filteredData])
 
-  // ── Export handlers ────────────────────────────────────────────────────────
-  const handleExcelExport = useCallback(() => {
-    const grid = gridRef.current
-    if (!grid) return
-
-    const columns = grid.getColumns() as Array<Record<string, unknown>>
-    const saved = new Map<string, unknown>()
-    columns.forEach(col => {
-      if (col.template) { saved.set(col.field as string, col.template); col.template = null }
-    })
-
-    const props: ExcelExportProperties = {
-      fileName: `pacienti_${new Date().toISOString().slice(0, 10)}.xlsx`,
-      dataSource: buildExportData(),
-    }
-
-    const restore = () => {
-      columns.forEach(col => { const key = col.field as string; if (saved.has(key)) col.template = saved.get(key) })
-      grid.refreshColumns()
-    }
-
-    const result = grid.excelExport(props) as unknown as Promise<unknown>
-    result?.then?.(restore).catch((err: unknown) => { console.error('Excel export error:', err); restore() })
-  }, [buildExportData])
-
-  const handlePdfExport = useCallback(() => {
-    const grid = gridRef.current
-    if (!grid) return
-
-    const columns = grid.getColumns() as Array<Record<string, unknown>>
-    const saved = new Map<string, unknown>()
-    columns.forEach(col => {
-      if (col.template) { saved.set(col.field as string, col.template); col.template = null }
-    })
-
-    const props: PdfExportProperties = {
-      fileName: `pacienti_${new Date().toISOString().slice(0, 10)}.pdf`,
-      pageOrientation: 'Landscape',
-      dataSource: buildExportData(),
-      theme: {
-        header: { bold: true, fontColor: '#ffffff', fontName: 'Helvetica', fontSize: 10 },
-        record: { fontName: 'Helvetica', fontSize: 9 },
-      },
-    }
-
-    const restore = () => {
-      columns.forEach(col => { const key = col.field as string; if (saved.has(key)) col.template = saved.get(key) })
-      grid.refreshColumns()
-    }
-
-    const result = grid.pdfExport(props) as unknown as Promise<unknown>
-    result?.then?.(restore).catch((err: unknown) => { console.error('PDF export error:', err); restore() })
-  }, [buildExportData])
+  // ── Export handlers (hook reutilizabil) ─────────────────────────────────────
+  const { handleExcelExport, handlePdfExport } = useGridExport(gridRef, {
+    fileNamePrefix: 'pacienti',
+    buildExportData,
+  })
 
   // ── Cell templates ─────────────────────────────────────────────────────────
+  const avatarTemplate = useCallback((row: PatientDto) => (
+    <div className={styles.avatar}>{getInitials(row.firstName, row.lastName)}</div>
+  ), [])
+
   const nameTemplate = useCallback((row: PatientDto) => (
-    <div className={styles.avatarCell}>
-      <div className={styles.avatar}>{getInitials(row.firstName, row.lastName)}</div>
-      <div>
-        <div className={styles.patientName}>{row.fullName}</div>
-        <div className={styles.patientMeta}>
-          {row.age != null ? `${row.age} ani` : ''}
-          {row.age != null && row.genderName ? ' · ' : ''}
-          {row.genderName ?? ''}
-        </div>
-      </div>
-    </div>
+    <span className={styles.patientName}>{row.fullName}</span>
+  ), [])
+
+  const ageGenderTemplate = useCallback((row: PatientDto) => (
+    <span className={styles.patientMeta}>
+      {row.age != null ? `${row.age} ani` : ''}
+      {row.age != null && row.genderName ? ' · ' : ''}
+      {row.genderName ?? ''}
+    </span>
   ), [])
 
   const cnpTemplate = useCallback((row: PatientDto) => (
-    <span className={styles.cnpCode}>{row.cnp}</span>
+    <AppBadge variant="primary" mono>{row.cnp}</AppBadge>
   ), [])
 
   const bloodTypeTemplate = useCallback((row: PatientDto) =>
     row.bloodTypeName
-      ? <span className={styles.bloodTypeBadge}>{row.bloodTypeName}</span>
+      ? <AppBadge variant="danger">{row.bloodTypeName}</AppBadge>
       : <span style={{ color: '#C9D3DC', fontSize: '0.78rem' }}>—</span>
   , [])
 
   const allergyTemplate = useCallback((row: PatientDto) => {
     if (row.allergyCount === 0) return <span style={{ color: '#C9D3DC', fontSize: '0.78rem' }}>—</span>
+    const severityText = getSeverityLabel(row.maxAllergySeverityCode)
     return (
-      <div className={styles.allergyCell}>
-        <span className={`${styles.severityBadge} ${getSeverityClass(row.maxAllergySeverityCode)}`}>
-          {row.allergyCount} {row.allergyCount === 1 ? 'alergie' : 'alergii'}
-        </span>
-        <span className={styles.severityLabel}>{getSeverityLabel(row.maxAllergySeverityCode)}</span>
-      </div>
+      <AppBadge variant={getSeverityVariant(row.maxAllergySeverityCode)}>
+        {row.allergyCount} {row.allergyCount === 1 ? 'alergie' : 'alergii'}{severityText ? ` · ${severityText}` : ''}
+      </AppBadge>
     )
   }, [])
 
@@ -379,13 +318,14 @@ export const PatientsListPage = () => {
   , [])
 
   const statusTemplate = useCallback((row: PatientDto) => (
-    <span className={`${styles.statusBadge} ${styles[row.isActive ? 'statusBadge--active' : 'statusBadge--inactive']}`}>
+    <AppBadge variant={row.isActive ? 'success' : 'neutral'} withDot>
       {row.isActive ? 'Activ' : 'Inactiv'}
-    </span>
+    </AppBadge>
   ), [])
 
   const actionsTemplate = useCallback((row: PatientDto) => (
     <ActionButtons
+      onView={() => setDetailPatientId(row.id)}
       onEdit={() => handleOpenEdit(row)}
       onDelete={() => setDeleteTarget(row)}
     />
@@ -498,49 +438,46 @@ export const PatientsListPage = () => {
           ))}
         </div>
 
-        <div className={styles.toolbarRight}>
-          <button
-            className={styles.btnSecondary}
-            onClick={() => gridRef.current?.openColumnChooser()}
-          >
-            <IconColumns /> Coloane
-          </button>
-        </div>
+
       </div>
 
       {/* Grid */}
-      <div className={styles.gridContainer}>
-        <GridComponent
-          ref={gridRef}
-          dataSource={filteredData}
-          allowSorting
-          allowFiltering
-          allowGrouping
-          allowReordering
-          allowResizing
-          allowPaging
-          allowExcelExport
-          allowPdfExport
-          showColumnChooser
-          enableStickyHeader
-          enableHover
-          filterSettings={filterSettings}
-          groupSettings={groupSettings}
-          pageSettings={pageSettings}
-          sortSettings={sortSettings}
-          height="auto"
-          gridLines="Horizontal"
-          rowHeight={52}
-        >
-          <ColumnsDirective>
+      <AppDataGrid
+        gridRef={gridRef}
+        dataSource={filteredData}
+        sortSettings={SORT_SETTINGS}
+      >
+        <ColumnsDirective>
+
+            <ColumnDirective
+              headerText=""
+              width="55"
+              minWidth="55"
+              maxWidth="55"
+              template={avatarTemplate}
+              allowSorting={false}
+              allowFiltering={false}
+              allowGrouping={false}
+              allowReordering={false}
+              allowResizing={false}
+              textAlign="Center"
+            />
 
             <ColumnDirective
               field="fullName"
-              headerText="PACIENT"
-              width="220"
-              minWidth="180"
+              headerText="Pacient"
+              width="190"
+              minWidth="150"
               template={nameTemplate}
               allowGrouping={false}
+            />
+
+            <ColumnDirective
+              field="genderName"
+              headerText="Vârstă / Sex"
+              width="130"
+              minWidth="100"
+              template={ageGenderTemplate}
             />
 
             <ColumnDirective
@@ -553,7 +490,7 @@ export const PatientsListPage = () => {
 
             <ColumnDirective
               field="bloodTypeName"
-              headerText="GRUPĂ SANGUINĂ"
+              headerText="Grupă sanguină"
               width="130"
               minWidth="110"
               template={bloodTypeTemplate}
@@ -561,7 +498,7 @@ export const PatientsListPage = () => {
 
             <ColumnDirective
               field="allergyCount"
-              headerText="ALERGII"
+              headerText="Alergii"
               width="150"
               minWidth="120"
               template={allergyTemplate}
@@ -569,7 +506,7 @@ export const PatientsListPage = () => {
 
             <ColumnDirective
               field="primaryDoctorName"
-              headerText="MEDIC PRIMAR"
+              headerText="Medic primar"
               width="160"
               minWidth="130"
               template={doctorTemplate}
@@ -577,24 +514,26 @@ export const PatientsListPage = () => {
 
             <ColumnDirective
               field="phoneNumber"
-              headerText="TELEFON"
+              headerText="Telefon"
               width="130"
               minWidth="100"
               defaultValue="—"
+              clipMode="EllipsisWithTooltip"
             />
 
             <ColumnDirective
               field="email"
-              headerText="EMAIL"
+              headerText="Email"
               width="180"
               minWidth="140"
               defaultValue="—"
               visible={false}
+              clipMode="EllipsisWithTooltip"
             />
 
             <ColumnDirective
               field="isActive"
-              headerText="STATUS"
+              headerText="Status"
               width="110"
               minWidth="90"
               template={statusTemplate}
@@ -602,11 +541,13 @@ export const PatientsListPage = () => {
 
             <ColumnDirective
               field="createdAt"
-              headerText="ÎNREGISTRAT"
+              headerText="Înregistrat"
               width="120"
               minWidth="100"
               format="dd.MM.yyyy"
               type="date"
+              clipMode="EllipsisWithTooltip"
+              visible={false}
             />
 
             <ColumnDirective
@@ -625,14 +566,7 @@ export const PatientsListPage = () => {
             />
 
           </ColumnsDirective>
-
-          <Inject services={[
-            Page, Sort, Filter, Group,
-            Reorder, Resize,
-            ExcelExport, PdfExport, ColumnChooser,
-          ]} />
-        </GridComponent>
-      </div>
+      </AppDataGrid>
 
       {/* Mesaj succes */}
       {successMsg && (
@@ -655,6 +589,22 @@ export const PatientsListPage = () => {
         allergySeverities={allergySeverities}
         doctorLookup={doctorLookup}
         serverError={modalOpen ? errorMsg : null}
+      />
+
+      {/* Modal detalii pacient (read-only) */}
+      <PatientDetailModal
+        isOpen={!!detailPatientId}
+        onClose={() => setDetailPatientId(null)}
+        patientId={detailPatientId}
+        onEdit={() => {
+          if (detailPatientId) {
+            const patient = patients.find(p => p.id === detailPatientId)
+            if (patient) {
+              setDetailPatientId(null)
+              handleOpenEdit(patient)
+            }
+          }
+        }}
       />
 
       {/* Dialog confirmare ștergere */}

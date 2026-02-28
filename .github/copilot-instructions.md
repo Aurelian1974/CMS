@@ -445,6 +445,24 @@ $box-shadow-lg: 0 8px 24px rgba(42, 63, 82, 0.12);
   .e-row:hover {
     background-color: rgba($primary-lighter, 0.3);
   }
+
+  // Frozen right column — fundal solid (altfel e transparent la scroll)
+  // Clasele Syncfusion pe celulele frozen right: e-rowcell e-templatecell e-rightfreeze e-freezerightborder
+  td.e-rowcell.e-rightfreeze.e-freezerightborder {
+    background-color: $card-bg !important;
+  }
+
+  .e-row:hover td.e-rowcell.e-rightfreeze.e-freezerightborder {
+    background-color: rgba($primary-lighter, 0.3) !important;
+  }
+
+  .e-altrow td.e-rowcell.e-rightfreeze.e-freezerightborder {
+    background-color: #f8f9fa !important;
+  }
+
+  .e-altrow:hover td.e-rowcell.e-rightfreeze.e-freezerightborder {
+    background-color: rgba($primary-lighter, 0.3) !important;
+  }
 }
 
 .e-btn.e-primary {
@@ -1140,45 +1158,113 @@ export const FormInput = <T extends FieldValues>({
     </div>
   );
 };
-
-// components/data-display/AppDataGrid/AppDataGrid.tsx
-import {
-  GridComponent, ColumnsDirective, ColumnDirective,
-  Inject, Page, Sort, Filter, Toolbar
-} from '@syncfusion/ej2-react-grids';
-import type { ColumnModel } from '@syncfusion/ej2-react-grids';
-
-interface AppDataGridProps<T> {
-  data: T[];
-  columns: ColumnModel[];
-  pageSize?: number;
-  height?: string;
-  allowExcelExport?: boolean;
-  onRowSelected?: (data: T) => void;
-  isLoading?: boolean;
-}
-
-export const AppDataGrid = <T extends object>({
-  data, columns, pageSize = 20, height = '500px',
-  onRowSelected, isLoading
-}: AppDataGridProps<T>) => (
-  <GridComponent
-    dataSource={data}
-    height={height}
-    allowSorting
-    allowFiltering
-    allowPaging
-    enableStickyHeader
-    pageSettings={{ pageSize }}
-    rowSelected={(args) => onRowSelected?.(args.data as T)}
-  >
-    <ColumnsDirective>
-      {columns.map(col => <ColumnDirective key={col.field} {...col} />)}
-    </ColumnsDirective>
-    <Inject services={[Page, Sort, Filter, Toolbar]} />
-  </GridComponent>
-);
 ```
+
+#### AppDataGrid — Grid reutilizabil (componenta reală)
+
+`AppDataGrid` centralizează TOATE configurările comune ale Syncfusion GridComponent.
+Fiecare pagină de tip listă folosește `<AppDataGrid>` — **niciodată** `<GridComponent>` direct.
+
+**Fișiere componente:**
+```
+components/data-display/AppDataGrid/
+├── AppDataGrid.tsx           # Wrapper — include sort/filter/group/page/export/columnChooser
+├── AppDataGrid.types.ts      # Props: dataSource, children, sortSettings, gridRef, height, rowHeight
+├── AppDataGrid.module.scss   # Stiluri container + override-uri Syncfusion (:global)
+├── useGridExport.ts          # Hook reutilizabil pentru Excel/PDF export cu template save/restore
+└── index.ts                  # Barrel export
+```
+
+**Reguli stricte AppDataGrid:**
+- **Column Chooser nativ** — `toolbar={['ColumnChooser']}` + serviciul `Toolbar` injectat. Syncfusion gestionează butonul și poziționarea dialogului. **Niciodată** butoane custom pentru Column Chooser
+- **13 servicii injectate**: Page, Sort, Filter, Group, Reorder, Resize, Freeze, ExcelExport, PdfExport, ColumnChooser, Toolbar
+- **Setări baked-in**: filterSettings (Menu), groupSettings (showDropArea), pageSettings (10 rows, pageSizes [5,10,20,50])
+- **Sort settings** — override per pagină prin prop `sortSettings`; default: `fullName` Ascending
+- **Coloane ca children** — `<ColumnsDirective>` + `<ColumnDirective>` se pasează ca `children`
+- **Export** — prin `useGridExport(gridRef, config)` hook; gestionează save/restore template-uri JSX
+
+```tsx
+// Folosire în pagini — exemplu complet:
+import { useRef } from 'react'
+import type { GridComponent, ColumnsDirective, ColumnDirective } from '@syncfusion/ej2-react-grids'
+import { AppDataGrid, useGridExport } from '@/components/data-display/AppDataGrid'
+
+const SORT_SETTINGS = { columns: [{ field: 'fullName', direction: 'Ascending' as const }] }
+
+export const PatientsListPage = () => {
+  const gridRef = useRef<GridComponent>(null)
+
+  const { handleExcelExport, handlePdfExport } = useGridExport(gridRef, {
+    fileNamePrefix: 'pacienti',
+    buildExportData: () => filteredData.map(p => ({ /* plain object fără JSX */ })),
+  })
+
+  return (
+    <AppDataGrid gridRef={gridRef} dataSource={filteredData} sortSettings={SORT_SETTINGS}>
+      <ColumnsDirective>
+        <ColumnDirective field="fullName" headerText="Pacient" width="230" />
+        <ColumnDirective field="cnp" headerText="CNP" width="150" />
+        {/* ... alte coloane ... */}
+      </ColumnsDirective>
+    </AppDataGrid>
+  )
+}
+```
+
+**useGridExport — Template save/restore pattern:**
+Syncfusion nu poate serializa template-uri JSX la export Excel/PDF. Hook-ul:
+1. Salvează template-urile JSX de pe coloane într-un `Map`
+2. Le setează pe `null` temporar
+3. Apelează `grid.excelExport()` / `grid.pdfExport()` cu `dataSource` plain-object
+4. Restaurează template-urile JSX după export
+5. Returnează `{ handleExcelExport, handlePdfExport }`
+
+### 6.3.1 Documentație Syncfusion — Resurse & Reguli Obligatorii
+
+**REGULĂ STRICTĂ**: Înainte de a crea, modifica sau stiliza orice componentă Syncfusion, **consultă obligatoriu documentația oficială** pentru a folosi API-ul corect, clasele CSS actualizate și pattern-urile recomandate. Nu presupune nume de clase sau proprietăți — verifică documentația.
+
+#### Resurse documentare — linkuri de referință
+
+| Categorie | URL | Folosire |
+|-----------|-----|----------|
+| **Grid — General** | https://ej2.syncfusion.com/react/documentation/grid/getting-started | Setup, proprietăți, evenimente |
+| **Grid — Column Chooser** | https://ej2.syncfusion.com/react/documentation/grid/columns/column-chooser | `showColumnChooser`, dialog CSS (`.e-ccdlg`), search, template |
+| **Grid — Toolbar Items** | https://ej2.syncfusion.com/react/documentation/grid/tool-bar/tool-bar-items | Built-in items, custom items, `ItemModel`, `align`, `toolbarClick` |
+| **Grid — Toolbar Styling** | https://ej2.syncfusion.com/react/documentation/grid/tool-bar/tool-bar-styling | CSS classes toolbar, ascundere text (`.e-tbar-btn-text`) |
+| **Grid — Excel/PDF Export** | https://ej2.syncfusion.com/react/documentation/grid/excel-export/excel-exporting | Export configurare, custom data source |
+| **Grid — Filtering** | https://ej2.syncfusion.com/react/documentation/grid/filtering/filtering | FilterSettings, Menu/CheckBox/Excel filter |
+| **Grid — Paging** | https://ej2.syncfusion.com/react/documentation/grid/paging | PageSettings, pageSizes |
+| **Grid — Sorting** | https://ej2.syncfusion.com/react/documentation/grid/sorting | SortSettings, multi-sort |
+| **Grid — Grouping** | https://ej2.syncfusion.com/react/documentation/grid/grouping/grouping | GroupSettings, collapse/expand |
+| **Grid — Frozen Columns** | https://ej2.syncfusion.com/react/documentation/grid/scrolling/frozen-column | freeze, isFrozen, freeze direction |
+| **Theme Studio** | https://ej2.syncfusion.com/themestudio/?theme=bootstrap5 | Customizare teme vizuală |
+| **Appearance — Theme** | https://ej2.syncfusion.com/react/documentation/appearance/theme | Variabile SCSS comune per temă |
+| **Appearance — CSS Overrides** | https://ej2.syncfusion.com/react/documentation/common/how-to/customize-the-component-style | Pattern-uri override CSS cu `:global` |
+| **API Reference — Grid** | https://ej2.syncfusion.com/react/documentation/api/grid | Toate proprietățile, metodele, evenimentele Grid |
+| **Scheduler** | https://ej2.syncfusion.com/react/documentation/schedule/getting-started | Calendar programări |
+| **DatePicker** | https://ej2.syncfusion.com/react/documentation/datepicker/getting-started | Date input |
+| **NumericTextBox** | https://ej2.syncfusion.com/react/documentation/numerictextbox/getting-started | Numeric input |
+| **Dialog** | https://ej2.syncfusion.com/react/documentation/dialog/getting-started | Modal dialogs |
+
+#### Reguli de customizare CSS Syncfusion
+
+1. **Verifică clasele din documentație** — nu presupune numele claselor CSS. Syncfusion le poate schimba între versiuni
+2. **Folosește `:global` în CSS Modules** — clasele Syncfusion nu sunt module-scoped, trebuie `:global { .e-grid { ... } }`
+3. **`!important` e necesar** — stilurile Syncfusion au specificitate mare; override-urile necesită `!important`
+4. **Ascundere text toolbar** — `display: none !important` pe `.e-tbar-btn-text` (documentat oficial)
+5. **Resetare containere wrapper** — `.e-toolbar-item` și `.e-tbar-btn` au stiluri proprii care pot crea efecte vizuale nedorite (background, border, shadow) — resetează-le explicit
+6. **Dialog Column Chooser** — clasa corectă e `.e-dialog.e-ccdlg` sau `.e-ccdlg`; dialog size custom prin CSS (documentat oficial)
+7. **Nu adăuga `::after` / `::before`** pe elemente Syncfusion fără verificare — unele componente le folosesc intern
+
+#### Lecții învățate (din experiența proiectului)
+
+| Problemă | Cauză | Soluție |
+|----------|-------|---------|
+| Column Chooser dialog apare în poziție greșită | Buton custom **în afara** grid-ului — Syncfusion nu poate calcula poziția | Folosește `toolbar={['ColumnChooser']}` nativ, nu buton extern |
+| Text "Columns" apare lângă textul custom | `.e-tbar-btn-text` nu era ascuns | `.e-tbar-btn-text { display: none !important }` la nivel de toolbar |
+| Buton invizibil sub header grid | Toolbar cu `background: transparent` și `border: none` | Toolbar cu `background: $card-bg` și `min-height: 44px` |
+| Efect de "dublare" buton (shadow/border dublu) | `.e-toolbar-item` și `.e-tbar-btn` au stiluri proprii Syncfusion | Resetează: `background: transparent`, `border: none`, `box-shadow: none` pe ambele |
+| Export Excel corupe template-uri JSX | Syncfusion nu serializează JSX la export | Pattern save/restore: salvează template → null → export → restaurează |
 
 ### 6.4 React Hook Form + Zod — Pattern standard
 
@@ -1408,6 +1494,24 @@ export const useUiStore = create<UiState>()((set) => ({
 | Directory feature | camelCase | `patients/` |
 | Prefix componente UI | App + PascalCase | `AppButton`, `AppDataGrid` |
 | Event handler | handle + Action | `handleRowSelected` |
+
+### 6.8 Reguli headerText în DataGrid
+
+**Textele coloanelor (`headerText`) se scriu cu prima literă mare și restul litere mici** — nu UPPERCASE.
+
+| ❌ Greșit (UPPERCASE) | ✅ Corect (Normal case) |
+|----------------------|------------------------|
+| `headerText="PACIENT"` | `headerText="Pacient"` |
+| `headerText="GRUPĂ SANGUINĂ"` | `headerText="Grupă sanguină"` |
+| `headerText="MEDIC PRIMAR"` | `headerText="Medic primar"` |
+| `headerText="ULTIMA AUTENTIFICARE"` | `headerText="Ultima autentificare"` |
+
+**Excepții — UPPERCASE permis doar pentru acronime și abrevieri consacrate:**
+- `CNP` — acronim standard
+- `Nr. CMR` — abreviere Colegiul Medicilor
+- `CUI` — cod unic de identificare
+
+**Nu se folosește `text-transform: uppercase` pe headerele grid-ului.**
 
 ---
 

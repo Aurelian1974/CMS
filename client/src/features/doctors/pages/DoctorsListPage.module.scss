@@ -232,89 +232,7 @@
   &:hover:not(.active) { color: $gray-700; }
 }
 
-// ── Grid container ─────────────────────────────────────────────────────────────
-.gridContainer {
-  background: $card-bg;
-  border: 1px solid rgba($primary, 0.1);
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 0 1px 4px rgba($primary-dark, 0.05);
-
-  :global {
-    .e-grid {
-      border: none !important;
-      border-radius: 0 !important;
-    }
-
-    .e-gridheader {
-      border-top: none !important;
-    }
-
-    .e-headercell {
-      background-color: rgba($primary-lighter, 0.25) !important;
-      color: $gray-600 !important;
-      font-size: 0.72rem !important;
-      font-weight: 600 !important;
-      text-transform: uppercase !important;
-      letter-spacing: 0.06em !important;
-      border-color: rgba($primary, 0.1) !important;
-    }
-
-    .e-rowcell {
-      font-size: 0.855rem !important;
-      color: $gray-700 !important;
-      border-color: rgba($primary, 0.06) !important;
-      padding: 10px 14px !important;
-    }
-
-    .e-row:hover .e-rowcell {
-      background-color: rgba($primary-lighter, 0.15) !important;
-    }
-
-    .e-row.e-altrow .e-rowcell {
-      background-color: rgba($primary-lighter, 0.06) !important;
-    }
-
-    .e-pager {
-      background: rgba($body-bg, 0.6) !important;
-      border-top: 1px solid rgba($primary, 0.08) !important;
-      padding: 8px 16px !important;
-      font-size: 0.8rem !important;
-    }
-
-    .e-pagercontainer .e-numericitem.e-currentitem {
-      background: $primary !important;
-      border-color: $primary !important;
-      color: #fff !important;
-    }
-
-    .e-toolbar {
-      background: rgba($primary-lighter, 0.12) !important;
-      border-bottom: 1px solid rgba($primary, 0.1) !important;
-    }
-
-    .e-filterbar .e-filterbarcell input {
-      border-color: rgba($primary, 0.2) !important;
-      border-radius: 6px !important;
-      font-size: 0.8rem !important;
-    }
-
-    .e-groupdroparea {
-      background: rgba($primary-lighter, 0.2) !important;
-      border-bottom: 1px solid rgba($primary, 0.1) !important;
-      color: $gray-500 !important;
-      font-size: 0.8rem !important;
-    }
-  }
-}
-
 // ── Custom cell renders ───────────────────────────────────────────────────────
-.avatarCell {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 .avatar {
   width: 32px;
   height: 32px;
@@ -329,61 +247,10 @@
   color: $primary-dark;
   flex-shrink: 0;
   text-transform: uppercase;
+  margin: 0 auto;
 }
 
 .doctorName  { font-weight: 500; color: $gray-700; }
-.doctorEmail { font-size: 0.75rem; color: $gray-400; margin-top: 1px; }
-
-.specialtyBadge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 9px;
-  border-radius: 20px;
-  font-size: 0.72rem;
-  font-weight: 500;
-  white-space: nowrap;
-  background: rgba($primary, 0.08);
-  color: $primary-dark;
-}
-
-.statusBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 9px;
-  border-radius: 20px;
-  font-size: 0.72rem;
-  font-weight: 500;
-
-  &::before {
-    content: '';
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-  }
-
-  &--active {
-    background: rgba($success, 0.12);
-    color: darken($success, 25%);
-    &::before { background: darken($success, 10%); }
-  }
-
-  &--inactive {
-    background: rgba($gray-300, 0.3);
-    color: $gray-500;
-    &::before { background: $gray-400; }
-  }
-}
-
-.medicalCode {
-  font-family: 'Courier New', monospace;
-  font-size: 0.8rem;
-  color: $primary-dark;
-  background: rgba($primary, 0.07);
-  padding: 2px 7px;
-  border-radius: 5px;
-  letter-spacing: 0.05em;
-}
 
 .licenseExpiry {
   font-size: 0.8rem;
