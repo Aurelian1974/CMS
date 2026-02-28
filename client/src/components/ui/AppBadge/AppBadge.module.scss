@@ -1,0 +1,86 @@
+@import '@/styles/variables';
+
+// ── Badge base ────────────────────────────────────────────────────────────────
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+// ── Dot indicator (●) pentru status badges ────────────────────────────────────
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 5px;
+  flex-shrink: 0;
+}
+
+// ── Monospace (CNP, parafe) ───────────────────────────────────────────────────
+.mono {
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  border-radius: 5px;
+}
+
+// ── Variante de culoare ───────────────────────────────────────────────────────
+.primary {
+  background: rgba($primary, 0.08);
+  color: $primary-dark;
+  .dot { background: $primary; }
+}
+
+.success {
+  background: rgba($success, 0.12);
+  color: darken($success, 25%);
+  .dot { background: darken($success, 10%); }
+}
+
+.danger {
+  background: rgba($danger, 0.08);
+  color: darken($danger, 20%);
+  font-weight: 600;
+  .dot { background: darken($danger, 10%); }
+}
+
+.warning {
+  background: rgba($warning, 0.14);
+  color: darken($warning, 32%);
+  .dot { background: darken($warning, 10%); }
+}
+
+.info {
+  background: rgba($info, 0.12);
+  color: darken($info, 25%);
+  .dot { background: darken($info, 10%); }
+}
+
+.neutral {
+  background: rgba($gray-300, 0.3);
+  color: $gray-500;
+  .dot { background: $gray-400; }
+}
+
+.accent {
+  background: rgba($accent, 0.12);
+  color: darken($accent, 20%);
+  .dot { background: darken($accent, 10%); }
+}
+
+.purple {
+  background: rgba(#9B59B6, 0.12);
+  color: #7D3C98;
+  .dot { background: #9B59B6; }
+}
+
+.critical {
+  background: rgba(#c0392b, 0.12);
+  color: #c0392b;
+  .dot { background: #c0392b; }
+}

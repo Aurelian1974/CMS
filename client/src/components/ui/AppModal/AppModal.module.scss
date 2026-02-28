@@ -1,0 +1,171 @@
+@import '@/styles/variables';
+
+// ===== Overlay =====
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  padding: 1rem;
+  animation: fadeIn 0.15s ease;
+}
+
+// ===== Modal container =====
+.modal {
+  background: $card-bg;
+  border-radius: $border-radius-lg;
+  box-shadow: $box-shadow-lg;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  animation: slideUp 0.2s ease;
+  overflow: hidden;
+}
+
+// ===== Header standard (titlu + close) =====
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid $gray-200;
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: $gray-700;
+  margin: 0;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: $gray-400;
+  cursor: pointer;
+  padding: 0;
+  &:hover { color: $gray-600; }
+}
+
+// ===== Content wrapper (form / div) =====
+.content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  flex: 1;
+}
+
+// ===== Tabs =====
+.tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 1.25rem;
+  border-bottom: 2px solid $gray-200;
+  flex-shrink: 0;
+  overflow-x: auto;
+
+  &::-webkit-scrollbar { height: 0; }
+}
+
+.tab {
+  padding: 0.625rem 1rem;
+  border: none;
+  background: none;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: $gray-500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+
+  &:hover { color: $primary; }
+}
+
+.tabActive {
+  color: $primary;
+  border-bottom-color: $primary;
+  font-weight: 600;
+}
+
+// ===== Body =====
+.body {
+  padding: 1.25rem;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+// Varianta cu container queries (pentru formulare responsive)
+.bodyContainer {
+  container-type: inline-size;
+  container-name: modalBody;
+}
+
+// ===== Footer =====
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid $gray-200;
+  flex-shrink: 0;
+}
+
+// ===== Responsive =====
+@container modalBody (max-width: 600px) {
+  :global {
+    .row > [class*="col-md-"] {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+  }
+}
+
+@supports not (container-type: inline-size) {
+  @media (max-width: 768px) {
+    .modal {
+      max-width: 100%;
+    }
+
+    .body :global {
+      .row > [class*="col-md-"] {
+        flex: 0 0 100%;
+        max-width: 100%;
+      }
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .modal {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .overlay {
+    padding: 0;
+  }
+}
+
+// ===== Animații =====
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}

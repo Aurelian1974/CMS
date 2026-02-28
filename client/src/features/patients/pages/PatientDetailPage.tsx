@@ -1,6 +1,10 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { usePatientDetail } from '../hooks/usePatients'
+import { usePatientDetail, useUpdatePatient } from '../hooks/usePatients'
+import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
+import { useGenders, useBloodTypes, useAllergyTypes, useAllergySeverities } from '@/features/nomenclature/hooks/useNomenclatureLookups'
+import { PatientFormModal } from '../components/PatientFormModal/PatientFormModal'
+import type { PatientFormData } from '../schemas/patient.schema'
 import { formatDate, formatDateTime } from '@/utils/format'
 import type { PatientDetailDto, PatientAllergyDto, PatientDoctorDto, PatientEmergencyContactDto } from '../types/patient.types'
 import styles from './PatientDetailPage.module.scss'
@@ -32,6 +36,16 @@ export const PatientDetailPage = () => {
   const navigate = useNavigate()
   const { data: resp, isLoading, isError } = usePatientDetail(id ?? '')
   const [activeTab, setActiveTab] = useState<Tab>('personal')
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
+
+  // Nomenclatoare pentru modal
+  const { data: gendersResp } = useGenders(true)
+  const { data: bloodTypesResp } = useBloodTypes(true)
+  const { data: allergyTypesResp } = useAllergyTypes(true)
+  const { data: allergySeveritiesResp } = useAllergySeverities(true)
+  const { data: doctorLookupResp } = useDoctorLookup()
+  const updatePatient = useUpdatePatient()
 
   if (isLoading) {
     return (
@@ -54,6 +68,63 @@ export const PatientDetailPage = () => {
   }
 
   const { patient, allergies, doctors, emergencyContacts } = resp.data
+  const genders = gendersResp?.data ?? []
+  const bloodTypes = bloodTypesResp?.data ?? []
+  const allergyTypes = allergyTypesResp?.data ?? []
+  const allergySeverities = allergySeveritiesResp?.data ?? []
+  const doctorLookup = doctorLookupResp?.data ?? []
+
+  const toNull = (v: string | undefined) => v || null
+
+  const handleEditSubmit = (formData: PatientFormData) => {
+    updatePatient.mutate(
+      {
+        id: patient.id,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        cnp: formData.cnp,
+        birthDate: toNull(formData.birthDate),
+        genderId: toNull(formData.genderId),
+        bloodTypeId: toNull(formData.bloodTypeId),
+        phoneNumber: toNull(formData.phoneNumber),
+        secondaryPhone: toNull(formData.secondaryPhone),
+        email: toNull(formData.email),
+        address: toNull(formData.address),
+        city: toNull(formData.city),
+        county: toNull(formData.county),
+        postalCode: toNull(formData.postalCode),
+        insuranceNumber: toNull(formData.insuranceNumber),
+        insuranceExpiry: toNull(formData.insuranceExpiry),
+        isInsured: formData.isInsured,
+        chronicDiseases: toNull(formData.chronicDiseases),
+        familyDoctorName: toNull(formData.familyDoctorName),
+        notes: toNull(formData.notes),
+        isActive: formData.isActive,
+        allergies: formData.allergies?.map(a => ({
+          allergyTypeId: a.allergyTypeId,
+          allergySeverityId: a.allergySeverityId,
+          allergenName: a.allergenName,
+          notes: toNull(a.notes),
+        })),
+        doctors: formData.doctors,
+        emergencyContacts: formData.emergencyContacts?.map(ec => ({
+          fullName: ec.fullName,
+          relationship: toNull(ec.relationship),
+          phoneNumber: ec.phoneNumber,
+          isDefault: ec.isDefault,
+        })),
+      },
+      {
+        onSuccess: () => {
+          setIsEditOpen(false)
+          setEditError(null)
+        },
+        onError: (err) => {
+          setEditError(err instanceof Error ? err.message : 'A apărut o eroare neașteptată.')
+        },
+      },
+    )
+  }
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'personal',  label: 'Date Personale' },
@@ -78,7 +149,7 @@ export const PatientDetailPage = () => {
             <span className={`${styles.statusBadge} ${styles[patient.isActive ? 'statusBadge--active' : 'statusBadge--inactive']}`}>
               {patient.isActive ? 'Activ' : 'Inactiv'}
             </span>
-            <button className={styles.btnPrimary} onClick={() => navigate(`/patients`)}>
+            <button className={styles.btnPrimary} onClick={() => { setEditError(null); setIsEditOpen(true) }}>
               <IconEdit /> Editează
             </button>
           </div>
@@ -126,6 +197,21 @@ export const PatientDetailPage = () => {
         {activeTab === 'doctors'   && <DoctorsTab doctors={doctors} />}
         {activeTab === 'audit'     && <AuditTab patient={patient} />}
       </div>
+
+      {/* Modal editare pacient */}
+      <PatientFormModal
+        isOpen={isEditOpen}
+        onClose={() => { setIsEditOpen(false); setEditError(null) }}
+        onSubmit={handleEditSubmit}
+        isLoading={updatePatient.isPending}
+        editData={patient}
+        genders={genders}
+        bloodTypes={bloodTypes}
+        allergyTypes={allergyTypes}
+        allergySeverities={allergySeverities}
+        doctorLookup={doctorLookup}
+        serverError={editError}
+      />
     </div>
   )
 }

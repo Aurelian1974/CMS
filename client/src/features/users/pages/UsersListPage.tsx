@@ -1,24 +1,10 @@
 import { useState, useRef, useCallback, useMemo } from 'react'
 import {
-  GridComponent,
+  type GridComponent,
   ColumnsDirective,
   ColumnDirective,
-  Inject,
-  Page,
-  Sort,
-  Filter,
-  Group,
-  Reorder,
-  Resize,
-  ExcelExport,
-  PdfExport,
-  ColumnChooser,
-  type FilterSettingsModel,
-  type GroupSettingsModel,
-  type PageSettingsModel,
-  type SortSettingsModel,
-  type ExcelExportProperties,
 } from '@syncfusion/ej2-react-grids'
+import { AppDataGrid, useGridExport } from '@/components/data-display/AppDataGrid'
 import type { UserDto } from '../types/user.types'
 import type { CreateUserFormData } from '../schemas/user.schema'
 import type { ChangePasswordFormData } from '../schemas/user.schema'
@@ -28,13 +14,14 @@ import { useMedicalStaffLookup } from '@/features/medicalStaff/hooks/useMedicalS
 import { UserFormModal } from '../components/UserFormModal/UserFormModal'
 import { ChangePasswordModal } from '../components/ChangePasswordModal/ChangePasswordModal'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
+import { AppBadge, type BadgeVariant } from '@/components/ui/AppBadge'
 import { formatDate } from '@/utils/format'
 import styles from './UsersListPage.module.scss'
 
 // ── Icoane SVG inline ─────────────────────────────────────────────────────────
 const IconPlus    = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
 const IconExcel   = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-const IconColumns = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="18"/><rect x="14" y="3" width="7" height="18"/></svg>
+
 const IconSearch  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 const IconUsers   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
 const IconKey     = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 010-7.778zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
@@ -46,29 +33,16 @@ const getInitials = (first?: string | null, last?: string | null) =>
 type StatusFilter = 'all' | 'active' | 'inactive'
 
 // Mapare culoare per rol
-const roleColorMap: Record<string, string> = {
-  admin:          'roleBadge--admin',
-  doctor:         'roleBadge--doctor',
-  nurse:          'roleBadge--nurse',
-  receptionist:   'roleBadge--receptionist',
-  clinic_manager: 'roleBadge--manager',
+const roleVariantMap: Record<string, BadgeVariant> = {
+  admin:          'critical',
+  doctor:         'primary',
+  nurse:          'success',
+  receptionist:   'accent',
+  clinic_manager: 'purple',
 }
 
 // ── Configurare grid ──────────────────────────────────────────────────────────
-const filterSettings: FilterSettingsModel = { type: 'Menu', showFilterBarStatus: true }
-
-const groupSettings: GroupSettingsModel = {
-  showDropArea: true,
-  showGroupedColumn: false,
-  showToggleButton: true,
-  showUngroupButton: true,
-}
-
-const pageSettings: PageSettingsModel = { pageSize: 10, pageSizes: [5, 10, 20, 50] }
-
-const sortSettings: SortSettingsModel = {
-  columns: [{ field: 'lastName', direction: 'Ascending' }],
-}
+const SORT_SETTINGS = { columns: [{ field: 'lastName' as const, direction: 'Ascending' as const }] }
 
 // ── Componenta principală ─────────────────────────────────────────────────────
 export const UsersListPage = () => {
@@ -256,39 +230,11 @@ export const UsersListPage = () => {
     }))
   , [filteredData])
 
-  // ── Export handlers ────────────────────────────────────────────────────────
-  const handleExcelExport = useCallback(() => {
-    const grid = gridRef.current
-    if (!grid) return
-
-    const columns = grid.getColumns() as Array<Record<string, unknown>>
-    const saved = new Map<string, unknown>()
-    columns.forEach(col => {
-      if (col.template) {
-        saved.set(col.field as string, col.template)
-        col.template = null
-      }
-    })
-
-    const props: ExcelExportProperties = {
-      fileName: `utilizatori_${new Date().toISOString().slice(0, 10)}.xlsx`,
-      dataSource: buildExportData(),
-    }
-
-    const restore = () => {
-      columns.forEach(col => {
-        const key = col.field as string
-        if (saved.has(key)) col.template = saved.get(key)
-      })
-      grid.refreshColumns()
-    }
-
-    const result = grid.excelExport(props) as unknown as Promise<unknown>
-    result?.then?.(restore).catch((err: unknown) => {
-      console.error('Excel export error:', err)
-      restore()
-    })
-  }, [buildExportData])
+  // ── Export handlers (hook reutilizabil) ─────────────────────────────────────
+  const { handleExcelExport } = useGridExport(gridRef, {
+    fileNamePrefix: 'utilizatori',
+    buildExportData,
+  })
 
   // ── Cell templates ─────────────────────────────────────────────────────────
   const nameTemplate = useCallback((row: UserDto) => (
@@ -302,9 +248,9 @@ export const UsersListPage = () => {
   ), [])
 
   const roleTemplate = useCallback((row: UserDto) => (
-    <span className={`${styles.roleBadge} ${styles[roleColorMap[row.roleCode] ?? 'roleBadge--default']}`}>
+    <AppBadge variant={roleVariantMap[row.roleCode] ?? 'neutral'}>
       {row.roleName}
-    </span>
+    </AppBadge>
   ), [])
 
   const associationTemplate = useCallback((row: UserDto) => {
@@ -328,9 +274,9 @@ export const UsersListPage = () => {
   }, [])
 
   const statusTemplate = useCallback((row: UserDto) => (
-    <span className={`${styles.statusBadge} ${styles[row.isActive ? 'statusBadge--active' : 'statusBadge--inactive']}`}>
+    <AppBadge variant={row.isActive ? 'success' : 'neutral'} withDot>
       {row.isActive ? 'Activ' : 'Inactiv'}
-    </span>
+    </AppBadge>
   ), [])
 
   const lastLoginTemplate = useCallback((row: UserDto) =>
@@ -460,45 +406,20 @@ export const UsersListPage = () => {
           ))}
         </div>
 
-        <div className={styles.toolbarRight}>
-          <button
-            className={styles.btnSecondary}
-            onClick={() => gridRef.current?.openColumnChooser()}
-          >
-            <IconColumns /> Coloane
-          </button>
-        </div>
+
       </div>
 
       {/* Grid */}
-      <div className={styles.gridContainer}>
-        <GridComponent
-          ref={gridRef}
-          dataSource={filteredData}
-          allowSorting
-          allowFiltering
-          allowGrouping
-          allowReordering
-          allowResizing
-          allowPaging
-          allowExcelExport
-          allowPdfExport
-          showColumnChooser
-          enableStickyHeader
-          enableHover
-          filterSettings={filterSettings}
-          groupSettings={groupSettings}
-          pageSettings={pageSettings}
-          sortSettings={sortSettings}
-          height="auto"
-          gridLines="Horizontal"
-          rowHeight={52}
-        >
-          <ColumnsDirective>
+      <AppDataGrid
+        gridRef={gridRef}
+        dataSource={filteredData}
+        sortSettings={SORT_SETTINGS}
+      >
+        <ColumnsDirective>
 
             <ColumnDirective
               field="lastName"
-              headerText="UTILIZATOR"
+              headerText="Utilizator"
               width="230"
               minWidth="180"
               template={nameTemplate}
@@ -507,7 +428,7 @@ export const UsersListPage = () => {
 
             <ColumnDirective
               field="roleName"
-              headerText="ROL"
+              headerText="Rol"
               width="150"
               minWidth="110"
               template={roleTemplate}
@@ -515,7 +436,7 @@ export const UsersListPage = () => {
 
             <ColumnDirective
               field="doctorName"
-              headerText="ASOCIERE"
+              headerText="Asociere"
               width="200"
               minWidth="150"
               template={associationTemplate}
@@ -523,7 +444,7 @@ export const UsersListPage = () => {
 
             <ColumnDirective
               field="isActive"
-              headerText="STATUS"
+              headerText="Status"
               width="110"
               minWidth="90"
               template={statusTemplate}
@@ -531,7 +452,7 @@ export const UsersListPage = () => {
 
             <ColumnDirective
               field="lastLoginAt"
-              headerText="ULTIMA AUTENTIFICARE"
+              headerText="Ultima autentificare"
               width="160"
               minWidth="130"
               template={lastLoginTemplate}
@@ -539,7 +460,7 @@ export const UsersListPage = () => {
 
             <ColumnDirective
               field="createdAt"
-              headerText="ÎNREGISTRAT"
+              headerText="Înregistrat"
               width="120"
               minWidth="100"
               format="dd.MM.yyyy"
@@ -562,14 +483,7 @@ export const UsersListPage = () => {
             />
 
           </ColumnsDirective>
-
-          <Inject services={[
-            Page, Sort, Filter, Group,
-            Reorder, Resize,
-            ExcelExport, PdfExport, ColumnChooser,
-          ]} />
-        </GridComponent>
-      </div>
+      </AppDataGrid>
 
       {/* Mesaj succes */}
       {successMsg && (
