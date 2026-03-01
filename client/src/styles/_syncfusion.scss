@@ -63,6 +63,147 @@
   border-radius: 0.5rem;
 }
 
+// ===== Calendar popup (DatePicker) — portal renderizat la body =====
+.e-datepicker.e-popup-wrapper,
+.e-datepicker.e-popup {
+  min-width: 280px !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 8px 24px rgba(42, 63, 82, 0.12) !important;
+  border: 1px solid #E2E8ED !important;
+  background: #fff !important;
+}
+
+.e-calendar {
+  min-width: 280px;
+  max-width: 320px;
+  background: #fff !important;
+
+  // Header — titlu
+  .e-header .e-title {
+    font-weight: 600;
+    color: #2D3E4A;
+
+    &:hover {
+      color: #5B8DB8;
+    }
+  }
+
+  // Tabelul zilelor
+  .e-content {
+    padding: 0 0.25rem 0.25rem;
+
+    table {
+      width: 100%;
+    }
+
+    th {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #9EADB9;
+      text-transform: uppercase;
+      padding: 0.375rem 0;
+      text-align: center;
+      letter-spacing: 0.03em;
+    }
+
+    td {
+      padding: 2px;
+
+      span.e-day {
+        width: 32px;
+        height: 32px;
+        line-height: 32px;
+        font-size: 0.8125rem;
+        color: #4A5E6D;
+        border-radius: 50%;
+        transition: all 0.12s ease;
+        display: inline-block;
+        text-align: center;
+
+        &:hover {
+          background: rgba(#5B8DB8, 0.1) !important;
+          color: #3A6F99 !important;
+        }
+      }
+    }
+
+    td.e-other-month span.e-day {
+      color: #C9D3DC;
+    }
+
+    td.e-selected span.e-day {
+      background: #5B8DB8 !important;
+      color: #fff !important;
+      font-weight: 600;
+      box-shadow: 0 2px 6px rgba(#5B8DB8, 0.3);
+    }
+
+    td.e-today span.e-day {
+      border: 2px solid #5B8DB8 !important;
+      color: #5B8DB8 !important;
+      font-weight: 600;
+      line-height: 28px;
+    }
+
+    td.e-today.e-selected span.e-day {
+      background: #5B8DB8 !important;
+      color: #fff !important;
+      border-color: #5B8DB8 !important;
+    }
+
+    td.e-disabled span.e-day {
+      color: #C9D3DC !important;
+      cursor: not-allowed;
+    }
+
+    td.e-focused-date span.e-day {
+      background: rgba(#5B8DB8, 0.06);
+    }
+  }
+
+  // Buton „Azi" (footer)
+  .e-footer-container {
+    padding: 0.375rem 0.5rem;
+    border-top: 1px solid #F0F4F7;
+
+    .e-btn.e-today,
+    button.e-today {
+      color: #5B8DB8 !important;
+      font-weight: 600;
+      font-size: 0.8125rem;
+      text-transform: none;
+      padding: 0.25rem 0.75rem;
+      border-radius: 0.375rem;
+      transition: background 0.15s ease;
+
+      &:hover {
+        background: rgba(#5B8DB8, 0.08) !important;
+      }
+    }
+  }
+
+  // Year / Decade view
+  .e-content.e-year,
+  .e-content.e-decade {
+    td span {
+      border-radius: 0.375rem !important;
+      padding: 0.375rem 0 !important;
+      font-size: 0.8125rem;
+      color: #4A5E6D;
+
+      &:hover {
+        background: rgba(#5B8DB8, 0.1) !important;
+        color: #3A6F99 !important;
+      }
+    }
+
+    td.e-selected span {
+      background: #5B8DB8 !important;
+      color: #fff !important;
+    }
+  }
+}
+
 // DropdownList
 .e-dropdownlist {
   border-radius: 0.5rem;
