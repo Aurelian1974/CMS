@@ -121,7 +121,7 @@ const ClinicPage = () => {
           level: cc.level,
           isActive: true,
         })),
-        legalRepresentative: clinic.legalRepresentative ?? '',,
+        legalRepresentative: clinic.legalRepresentative ?? '',
         contractCNAS: clinic.contractCNAS ?? '',
         address: clinic.address,
         city: clinic.city,
