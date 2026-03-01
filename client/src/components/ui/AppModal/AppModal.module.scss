@@ -86,15 +86,26 @@
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
   white-space: nowrap;
-  transition: color 0.15s, border-color 0.15s;
+  border-radius: $border-radius-sm $border-radius-sm 0 0;
+  outline: none;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
 
-  &:hover { color: $primary; }
+  &:hover {
+    color: $primary;
+    background: rgba($primary, 0.05);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgba($primary, 0.4);
+    outline-offset: -2px;
+  }
 }
 
 .tabActive {
   color: $primary;
   border-bottom-color: $primary;
   font-weight: 600;
+  background: rgba($primary, 0.08);
 }
 
 // ===== Body =====

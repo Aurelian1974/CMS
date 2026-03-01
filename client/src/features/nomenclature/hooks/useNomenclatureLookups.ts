@@ -43,3 +43,22 @@ export const useAllergySeverities = (isActive?: boolean) =>
     queryFn: () => nomenclatureApi.getAllergySeverities(isActive),
     staleTime: 10 * 60 * 1000,
   })
+
+// ── Județe ───────────────────────────────────────────────────────────────────
+/// Lista completă de județe — se schimbă extrem de rar, cache infinit.
+export const useCounties = () =>
+  useQuery({
+    queryKey: ['nomenclature', 'counties'] as const,
+    queryFn: () => nomenclatureApi.getCounties(),
+    staleTime: Infinity,
+  })
+
+// ── Localități per județ ──────────────────────────────────────────────────────
+/// Localitățile unui județ, filtrate server-side. Activat doar când countyId e valid.
+export const useLocalities = (countyId: string) =>
+  useQuery({
+    queryKey: ['nomenclature', 'localities', countyId] as const,
+    queryFn: () => nomenclatureApi.getLocalities(countyId),
+    enabled: !!countyId,
+    staleTime: 30 * 60 * 1000, // 30 min
+  })

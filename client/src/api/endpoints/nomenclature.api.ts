@@ -14,6 +14,7 @@ import type {
   ToggleMedicalTitlePayload,
 } from '@/features/nomenclature/types/medicalTitle.types'
 import type { NomenclatureItem } from '@/types/common.types'
+import type { CountyDto, LocalityDto } from '@/features/nomenclature/types/geography.types'
 
 export const nomenclatureApi = {
   // ===== Specializări =====
@@ -63,4 +64,12 @@ export const nomenclatureApi = {
 
   getAllergySeverities: (isActive?: boolean): Promise<ApiResponse<NomenclatureItem[]>> =>
     api.get('/api/nomenclature/allergy-severities', { params: { isActive } }),
+
+  // ===== Geografie (Județe & Localități) =====
+
+  getCounties: (): Promise<ApiResponse<CountyDto[]>> =>
+    api.get('/api/nomenclature/counties'),
+
+  getLocalities: (countyId: string): Promise<ApiResponse<LocalityDto[]>> =>
+    api.get('/api/nomenclature/localities', { params: { countyId } }),
 }

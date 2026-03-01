@@ -9,6 +9,8 @@ using ValyanClinic.Application.Features.Nomenclature.Commands.ToggleSpecialty;
 using ValyanClinic.Application.Features.Nomenclature.Commands.UpdateMedicalTitle;
 using ValyanClinic.Application.Features.Nomenclature.Commands.UpdateSpecialty;
 using ValyanClinic.Application.Features.Nomenclature.Queries.GetMedicalTitles;
+using ValyanClinic.Application.Features.Nomenclature.Queries.GetCounties;
+using ValyanClinic.Application.Features.Nomenclature.Queries.GetLocalities;
 using ValyanClinic.Application.Features.Nomenclature.Queries.GetNomenclatureLookup;
 using ValyanClinic.Application.Features.Nomenclature.Queries.GetSpecialties;
 using ValyanClinic.Application.Features.Nomenclature.Queries.GetSpecialtyTree;
@@ -133,6 +135,24 @@ public class NomenclatureController : BaseApiController
     {
         var result = await Mediator.Send(
             new GetNomenclatureLookupQuery(NomenclatureLookupType.AllergyTypes, isActive), ct);
+        return HandleResult(result);
+    }
+
+    /// <summary>Returnează toate județele active (pentru dropdown-uri geografice).</summary>
+    [HttpGet("counties")]
+    [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
+    public async Task<IActionResult> GetCounties(CancellationToken ct)
+    {
+        var result = await Mediator.Send(new GetCountiesQuery(), ct);
+        return HandleResult(result);
+    }
+
+    /// <summary>Returnează localitățile unui județ (dependent dropdown).</summary>
+    [HttpGet("localities")]
+    [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
+    public async Task<IActionResult> GetLocalities([FromQuery] Guid countyId, CancellationToken ct)
+    {
+        var result = await Mediator.Send(new GetLocalitiesQuery(countyId), ct);
         return HandleResult(result);
     }
 

@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 import type { AppModalProps } from './AppModal.types'
 import styles from './AppModal.module.scss'
 
@@ -19,6 +19,8 @@ export const AppModal = ({
   bodyClassName,
   containerQuery = false,
 }: AppModalProps) => {
+  const tabListRef = useRef<HTMLDivElement>(null)
+
   // Închide cu ESC
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -38,11 +40,33 @@ export const AppModal = ({
     }
   }, [isOpen, handleKeyDown])
 
-  if (!isOpen) return null
+  // Navigare cu ← → între tab-uri
+  const handleTabListKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!tabs || !onTabChange) return
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
 
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) onClose()
-  }
+      e.preventDefault()
+      const currentIndex = tabs.findIndex((t) => t.key === activeTab)
+      if (currentIndex === -1) return
+
+      const nextIndex =
+        e.key === 'ArrowRight'
+          ? (currentIndex + 1) % tabs.length
+          : (currentIndex - 1 + tabs.length) % tabs.length
+
+      onTabChange(tabs[nextIndex].key)
+
+      // Focus după re-render — setTimeout(0) așteaptă ca React să actualizeze DOM-ul
+      setTimeout(() => {
+        const buttons = tabListRef.current?.querySelectorAll<HTMLButtonElement>('button')
+        buttons?.[nextIndex]?.focus()
+      }, 0)
+    },
+    [tabs, activeTab, onTabChange],
+  )
+
+  if (!isOpen) return null
 
   // Stilul inline pentru max-width configurabil
   const modalStyle: React.CSSProperties = {
@@ -60,14 +84,23 @@ export const AppModal = ({
   const contentInner = (
     <>
       {tabs && tabs.length > 0 && (
-        <div className={styles.tabs}>
+        <div
+          ref={tabListRef}
+          className={styles.tabs}
+          role="tablist"
+          onKeyDown={handleTabListKeyDown}
+        >
           {tabs.map((tab) => {
             const label = typeof tab.label === 'function' ? tab.label(tab.key) : tab.label
+            const isActive = activeTab === tab.key
             return (
               <button
                 key={tab.key}
                 type="button"
-                className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''}`}
+                role="tab"
+                aria-selected={isActive}
+                tabIndex={isActive ? 0 : -1}
+                className={`${styles.tab} ${isActive ? styles.tabActive : ''}`}
                 onClick={() => onTabChange?.(tab.key)}
               >
                 {label}
@@ -84,7 +117,7 @@ export const AppModal = ({
   )
 
   return (
-    <div className={styles.overlay} onClick={handleOverlayClick}>
+    <div className={styles.overlay}>
       <div
         className={`${styles.modal} ${className ?? ''}`}
         style={modalStyle}
