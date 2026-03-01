@@ -15,6 +15,7 @@ import type {
 } from '@/features/nomenclature/types/medicalTitle.types'
 import type { NomenclatureItem } from '@/types/common.types'
 import type { CountyDto, LocalityDto } from '@/features/nomenclature/types/geography.types'
+import type { CaenCodeDto, CaenCodeSearchParams } from '@/features/nomenclature/types/caenCode.types'
 
 export const nomenclatureApi = {
   // ===== Specializări =====
@@ -72,4 +73,9 @@ export const nomenclatureApi = {
 
   getLocalities: (countyId: string): Promise<ApiResponse<LocalityDto[]>> =>
     api.get('/api/nomenclature/localities', { params: { countyId } }),
+
+  // ===== Coduri CAEN =====
+
+  searchCaenCodes: (params?: CaenCodeSearchParams): Promise<ApiResponse<CaenCodeDto[]>> =>
+    api.get('/api/nomenclature/caen-codes', { params }),
 }
