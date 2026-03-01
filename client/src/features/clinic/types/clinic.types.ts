@@ -1,12 +1,22 @@
 /// Tipuri pentru clinici — sincronizate cu DTO-urile backend
 
+/// Cod CAEN asociat clinicii (din ClinicCaenCodes + CaenCodes)
+export interface ClinicCaenCodeDto {
+  id: string          // ClinicCaenCodes.Id (junction table)
+  caenCodeId: string  // CaenCodes.Id
+  code: string
+  name: string
+  level: number
+  isPrimary: boolean
+}
+
 /// Date clinică (societate comercială)
 export interface ClinicDto {
   id: string
   name: string
   fiscalCode: string
   tradeRegisterNumber: string | null
-  caenCode: string | null
+  caenCodes: ClinicCaenCodeDto[]   // listă coduri CAEN (poate fi goală)
   legalRepresentative: string | null
   contractCNAS: string | null
   address: string
@@ -46,7 +56,7 @@ export interface UpdateClinicPayload {
   name: string
   fiscalCode: string
   tradeRegisterNumber: string | null
-  caenCode: string | null
+  caenCodeIds: string[]   // ID-urile UUID ale codurilor CAEN (CaenCodes.Id)
   legalRepresentative: string | null
   contractCNAS: string | null
   address: string

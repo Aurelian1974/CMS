@@ -15,12 +15,17 @@ export const clinicSchema = z.object({
     .max(30, 'Nr. Registrul Comerțului nu poate depăși 30 de caractere')
     .optional()
     .transform(v => v || null),
-  caenCode: z
-    .string()
-    .regex(/^\d{4}$/, 'Codul CAEN trebuie să conțină exact 4 cifre')
-    .optional()
-    .or(z.literal(''))
-    .transform(v => v || null),
+  caenCodes: z
+    .array(
+      z.object({
+        id: z.string(),
+        code: z.string(),
+        name: z.string(),
+        level: z.number().int(),
+        isActive: z.boolean(),
+      }),
+    )
+    .default([]),
   legalRepresentative: z
     .string()
     .max(200, 'Numele reprezentantului legal nu poate depăși 200 de caractere')

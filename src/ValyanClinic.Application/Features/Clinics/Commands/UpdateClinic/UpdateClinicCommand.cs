@@ -3,12 +3,12 @@ using ValyanClinic.Application.Common.Models;
 
 namespace ValyanClinic.Application.Features.Clinics.Commands.UpdateClinic;
 
-/// <summary>Actualizare date clinică (societate comercială).</summary>
+/// <summary>Actualizare date clinică (societate comercială) + sincronizare coduri CAEN.</summary>
 public sealed record UpdateClinicCommand(
     string Name,
     string FiscalCode,
     string? TradeRegisterNumber,
-    string? CaenCode,
+    IEnumerable<Guid> CaenCodeIds,
     string? LegalRepresentative,
     string? ContractCNAS,
     string Address,
