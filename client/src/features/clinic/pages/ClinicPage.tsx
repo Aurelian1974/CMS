@@ -6,10 +6,11 @@ import { LocationFormModal } from '../components/LocationFormModal'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { IconPlus } from '@/components/ui/Icons'
 import { FormInput } from '@/components/forms/FormInput'
+import { CaenCodeMultiSelect } from '@/components/forms/CaenCodeMultiSelect'
 import { AppButton } from '@/components/ui/AppButton'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { clinicSchema, type ClinicFormData } from '../schemas/clinic.schema'
-import type { ClinicLocationDto, ClinicLocationFormData } from '../types/clinic.types'
+import type { ClinicLocationDto, ClinicLocationFormData, UpdateClinicPayload } from '../types/clinic.types'
 import {
   useCurrentClinic,
   useClinicLocations,
@@ -113,8 +114,14 @@ const ClinicPage = () => {
         name: clinic.name,
         fiscalCode: clinic.fiscalCode,
         tradeRegisterNumber: clinic.tradeRegisterNumber ?? '',
-        caenCode: clinic.caenCode ?? '',
-        legalRepresentative: clinic.legalRepresentative ?? '',
+        caenCodes: (clinic.caenCodes ?? []).map((cc) => ({
+          id: cc.caenCodeId,
+          code: cc.code,
+          name: cc.name,
+          level: cc.level,
+          isActive: true,
+        })),
+        legalRepresentative: clinic.legalRepresentative ?? '',,
         contractCNAS: clinic.contractCNAS ?? '',
         address: clinic.address,
         city: clinic.city,
@@ -175,7 +182,24 @@ const ClinicPage = () => {
   // ===== Handlers =====
 
   const handleSaveClinic = (data: ClinicFormData) => {
-    updateClinic.mutate(data, {
+    const payload: UpdateClinicPayload = {
+      name: data.name,
+      fiscalCode: data.fiscalCode,
+      tradeRegisterNumber: data.tradeRegisterNumber ?? null,
+      caenCodeIds: data.caenCodes.map((c) => c.id),
+      legalRepresentative: data.legalRepresentative ?? null,
+      contractCNAS: data.contractCNAS ?? null,
+      address: data.address,
+      city: data.city,
+      county: data.county,
+      postalCode: data.postalCode ?? null,
+      bankName: data.bankName ?? null,
+      bankAccount: data.bankAccount ?? null,
+      email: data.email ?? null,
+      phoneNumber: data.phoneNumber ?? null,
+      website: data.website ?? null,
+    }
+    updateClinic.mutate(payload, {
       onSuccess: () => showSuccess('Datele clinicii au fost actualizate cu succes.'),
       onError: (err) => showError(err),
     })
@@ -280,7 +304,9 @@ const ClinicPage = () => {
             <FormInput name="name" control={control} label="Denumire societate" placeholder="ex: S.C. Clinica Medicală S.R.L." required />
             <FormInput name="fiscalCode" control={control} label="CUI / CIF" placeholder="ex: RO12345678" required />
             <FormInput name="tradeRegisterNumber" control={control} label="Nr. Registrul Comerțului" placeholder="ex: J40/1234/2020" />
-            <FormInput name="caenCode" control={control} label="Cod CAEN" placeholder="ex: 8621" />
+            <div className={styles.fullWidth}>
+              <CaenCodeMultiSelect name="caenCodes" control={control} label="Coduri CAEN" />
+            </div>
             <FormInput name="legalRepresentative" control={control} label="Reprezentant legal" placeholder="ex: Dr. Popescu Ion" />
             <FormInput name="contractCNAS" control={control} label="Nr. contract CNAS" placeholder="ex: 12345/2024" />
 

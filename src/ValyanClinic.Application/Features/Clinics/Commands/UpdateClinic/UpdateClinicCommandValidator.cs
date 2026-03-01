@@ -17,10 +17,8 @@ public sealed class UpdateClinicCommandValidator : AbstractValidator<UpdateClini
         RuleFor(x => x.TradeRegisterNumber)
             .MaximumLength(30).WithMessage("Nr. Registrul Comerțului nu poate depăși 30 de caractere.");
 
-        RuleFor(x => x.CaenCode)
-            .MaximumLength(10).WithMessage("Codul CAEN nu poate depăși 10 caractere.")
-            .Matches(@"^\d{4}$").When(x => !string.IsNullOrEmpty(x.CaenCode))
-            .WithMessage("Codul CAEN trebuie să conțină exact 4 cifre.");
+        RuleFor(x => x.CaenCodeIds)
+            .NotNull().WithMessage("Lista codurilor CAEN nu poate fi null.");
 
         RuleFor(x => x.LegalRepresentative)
             .MaximumLength(200).WithMessage("Numele reprezentantului legal nu poate depăși 200 de caractere.");

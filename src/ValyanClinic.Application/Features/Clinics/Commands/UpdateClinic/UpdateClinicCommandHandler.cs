@@ -8,6 +8,7 @@ namespace ValyanClinic.Application.Features.Clinics.Commands.UpdateClinic;
 
 public sealed class UpdateClinicCommandHandler(
     IClinicRepository repository,
+    IClinicCaenCodeRepository caenCodeRepository,
     ICurrentUser currentUser)
     : IRequestHandler<UpdateClinicCommand, Result<bool>>
 {
@@ -16,12 +17,12 @@ public sealed class UpdateClinicCommandHandler(
     {
         try
         {
+            // Actualizare date societate comercială
             await repository.UpdateAsync(
                 currentUser.ClinicId,
                 request.Name,
                 request.FiscalCode,
                 request.TradeRegisterNumber,
-                request.CaenCode,
                 request.LegalRepresentative,
                 request.ContractCNAS,
                 request.Address,
@@ -33,6 +34,12 @@ public sealed class UpdateClinicCommandHandler(
                 request.Email,
                 request.PhoneNumber,
                 request.Website,
+                cancellationToken);
+
+            // Sincronizare coduri CAEN (înlocuiește lista complet)
+            await caenCodeRepository.SyncAsync(
+                currentUser.ClinicId,
+                request.CaenCodeIds,
                 cancellationToken);
 
             return Result<bool>.Success(true);

@@ -10,7 +10,6 @@ CREATE OR ALTER PROCEDURE dbo.Clinic_Create
     @Name                  NVARCHAR(200),
     @FiscalCode            NVARCHAR(20),
     @TradeRegisterNumber   NVARCHAR(30)  = NULL,
-    @CaenCode              NVARCHAR(10)  = NULL,
     @LegalRepresentative   NVARCHAR(200) = NULL,
     @ContractCNAS          NVARCHAR(50)  = NULL,
     @Address               NVARCHAR(500),
@@ -37,13 +36,13 @@ BEGIN
 
         DECLARE @OutputIds TABLE (Id UNIQUEIDENTIFIER);
 
-        INSERT INTO Clinics (Name, FiscalCode, TradeRegisterNumber, CaenCode,
+        INSERT INTO Clinics (Name, FiscalCode, TradeRegisterNumber,
                              LegalRepresentative, ContractCNAS,
                              Address, City, County, PostalCode,
                              BankName, BankAccount,
                              Email, PhoneNumber, Website)
         OUTPUT INSERTED.Id INTO @OutputIds(Id)
-        VALUES (@Name, @FiscalCode, @TradeRegisterNumber, @CaenCode,
+        VALUES (@Name, @FiscalCode, @TradeRegisterNumber,
                 @LegalRepresentative, @ContractCNAS,
                 @Address, @City, @County, @PostalCode,
                 @BankName, @BankAccount,

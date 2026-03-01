@@ -12,12 +12,21 @@ public sealed class ClinicRepository(DapperContext context) : IClinicRepository
     public async Task<ClinicDto?> GetByIdAsync(Guid id, CancellationToken ct)
     {
         using var connection = context.CreateConnection();
-        return await connection.QueryFirstOrDefaultAsync<ClinicDto>(
+        using var multi = await connection.QueryMultipleAsync(
             new CommandDefinition(
                 ClinicProcedures.GetById,
                 new { Id = id },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct));
+
+        var clinic = await multi.ReadFirstOrDefaultAsync<ClinicDto>();
+        if (clinic is not null)
+        {
+            var caenCodes = (await multi.ReadAsync<ClinicCaenCodeDto>()).ToList();
+            clinic.CaenCodes = caenCodes;
+        }
+
+        return clinic;
     }
 
     public async Task<IEnumerable<ClinicDto>> GetAllAsync(bool? isActive, CancellationToken ct)
@@ -33,7 +42,7 @@ public sealed class ClinicRepository(DapperContext context) : IClinicRepository
 
     public async Task<Guid> CreateAsync(
         string name, string fiscalCode, string? tradeRegisterNumber,
-        string? caenCode, string? legalRepresentative, string? contractCnas,
+        string? legalRepresentative, string? contractCnas,
         string address, string city, string county, string? postalCode,
         string? bankName, string? bankAccount,
         string? email, string? phoneNumber, string? website,
@@ -48,7 +57,6 @@ public sealed class ClinicRepository(DapperContext context) : IClinicRepository
                     Name = name,
                     FiscalCode = fiscalCode,
                     TradeRegisterNumber = tradeRegisterNumber,
-                    CaenCode = caenCode,
                     LegalRepresentative = legalRepresentative,
                     ContractCNAS = contractCnas,
                     Address = address,
@@ -67,7 +75,7 @@ public sealed class ClinicRepository(DapperContext context) : IClinicRepository
 
     public async Task UpdateAsync(
         Guid id, string name, string fiscalCode, string? tradeRegisterNumber,
-        string? caenCode, string? legalRepresentative, string? contractCnas,
+        string? legalRepresentative, string? contractCnas,
         string address, string city, string county, string? postalCode,
         string? bankName, string? bankAccount,
         string? email, string? phoneNumber, string? website,
@@ -83,7 +91,6 @@ public sealed class ClinicRepository(DapperContext context) : IClinicRepository
                     Name = name,
                     FiscalCode = fiscalCode,
                     TradeRegisterNumber = tradeRegisterNumber,
-                    CaenCode = caenCode,
                     LegalRepresentative = legalRepresentative,
                     ContractCNAS = contractCnas,
                     Address = address,
