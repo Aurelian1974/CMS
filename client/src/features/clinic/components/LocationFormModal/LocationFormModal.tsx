@@ -5,6 +5,7 @@ import { clinicLocationSchema, type ClinicLocationFormData } from '../../schemas
 import type { ClinicLocationDto } from '../../types/clinic.types'
 import { AppModal } from '@/components/ui/AppModal'
 import { FormInput } from '@/components/forms/FormInput'
+import { AddressFields } from '@/components/forms/AddressFields'
 import { AppButton } from '@/components/ui/AppButton'
 import styles from './LocationFormModal.module.scss'
 
@@ -31,6 +32,7 @@ export const LocationFormModal = ({
     register,
     handleSubmit,
     reset,
+    setValue,
   } = useForm<ClinicLocationFormData>({
     resolver: zodResolver(clinicLocationSchema),
     defaultValues: {
@@ -109,44 +111,12 @@ export const LocationFormModal = ({
         required
       />
 
-      <FormInput<ClinicLocationFormData>
-        name="address"
+      <AddressFields<ClinicLocationFormData>
         control={control}
-        label="Adresă"
-        placeholder="ex: Str. Sănătății nr. 10"
-        required
+        setValue={setValue}
       />
 
-      <div className="row g-3">
-        <div className="col-md-6">
-          <FormInput<ClinicLocationFormData>
-            name="city"
-            control={control}
-            label="Oraș"
-            placeholder="ex: București"
-            required
-          />
-        </div>
-        <div className="col-md-6">
-          <FormInput<ClinicLocationFormData>
-            name="county"
-            control={control}
-            label="Județ"
-            placeholder="ex: București"
-            required
-          />
-        </div>
-      </div>
-
-      <div className="row g-3">
-        <div className="col-md-6">
-          <FormInput<ClinicLocationFormData>
-            name="postalCode"
-            control={control}
-            label="Cod poștal"
-            placeholder="ex: 010100"
-          />
-        </div>
+      <div className="row g-3 mt-0">
         <div className="col-md-6">
           <FormInput<ClinicLocationFormData>
             name="phoneNumber"
@@ -155,15 +125,16 @@ export const LocationFormModal = ({
             placeholder="ex: 021 123 4567"
           />
         </div>
+        <div className="col-md-6">
+          <FormInput<ClinicLocationFormData>
+            name="email"
+            control={control}
+            label="Email"
+            type="email"
+            placeholder="ex: locatie@clinica.ro"
+          />
+        </div>
       </div>
-
-      <FormInput<ClinicLocationFormData>
-        name="email"
-        control={control}
-        label="Email"
-        type="email"
-        placeholder="ex: locatie@clinica.ro"
-      />
 
       {/* Locație principală */}
       <div className={styles.checkGroup}>

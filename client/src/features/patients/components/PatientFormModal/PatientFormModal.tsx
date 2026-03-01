@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { patientSchema, type PatientFormData } from '../../schemas/patient.schema'
@@ -11,9 +11,7 @@ import { FormInput } from '@/components/forms/FormInput'
 import { FormSelect } from '@/components/forms/FormSelect'
 import { FormDatePicker } from '@/components/forms/FormDatePicker'
 import { AppButton } from '@/components/ui/AppButton'
-import { useCounties, useLocalities } from '@/features/nomenclature/hooks/useNomenclatureLookups'
-import { AddressAutocomplete } from '../AddressAutocomplete'
-import type { AddressSuggestion } from '../AddressAutocomplete'
+import { AddressFields } from '@/components/forms/AddressFields'
 import styles from './PatientFormModal.module.scss'
 
 // ── Icoane inline ─────────────────────────────────────────────────────────────
@@ -93,47 +91,6 @@ export const PatientFormModal = ({
     control, name: 'doctors',
   })
 
-  // ── Geografie ─────────────────────────────────────────────────────────────
-  const [selectedCountyId, setSelectedCountyId] = useState<string>('')
-  const { data: countiesResp } = useCounties()
-  const { data: localitiesResp } = useLocalities(selectedCountyId)
-
-  const counties = useMemo(() => countiesResp?.data ?? [], [countiesResp])
-  const localities = useMemo(() => localitiesResp?.data ?? [], [localitiesResp])
-
-  const countyOptions = useMemo(
-    () => counties.map(c => ({ value: c.name, label: c.name })),
-    [counties]
-  )
-  const localityOptions = useMemo(
-    () => localities.map(l => ({ value: l.name, label: l.name })),
-    [localities]
-  )
-
-  // Autocomplete adresă — la selectarea sugestiei completează județ, localitate, cod poștal
-  const handleAddressSelect = useCallback(
-    (suggestion: Omit<AddressSuggestion, 'displayText' | 'detailText'>) => {
-      if (suggestion.postcode) setValue('postalCode', suggestion.postcode)
-
-      if (suggestion.county) {
-        // Normalizare diacritice pentru matching flexibil (ex: "Cluj" vs "Cluj")
-        const normalize = (s: string) =>
-          s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
-        const target = normalize(suggestion.county)
-        const matched = counties.find((c) => normalize(c.name) === target)
-        if (matched) {
-          setValue('county', matched.name)
-          setSelectedCountyId(matched.id)
-        }
-      }
-
-      if (suggestion.city) {
-        setValue('city', suggestion.city)
-      }
-    },
-    [setValue, counties, setSelectedCountyId],
-  )
-
   const { fields: contactFields, append: addContact, remove: removeContact } = useFieldArray({
     control, name: 'emergencyContacts',
   })
@@ -169,7 +126,6 @@ export const PatientFormModal = ({
         doctors:            [],
         emergencyContacts:  [],
       })
-      setSelectedCountyId('')
     } else {
       reset({
         firstName: '', lastName: '', cnp: '',
@@ -184,16 +140,8 @@ export const PatientFormModal = ({
         doctors: [],
         emergencyContacts: [],
       })
-      setSelectedCountyId('')
     }
   }, [isOpen, editData, reset])
-
-  // Inițializare selectedCountyId din editData după ce se încarcă județele
-  useEffect(() => {
-    if (!editData?.county || counties.length === 0) return
-    const county = counties.find(c => c.name === editData.county)
-    if (county) setSelectedCountyId(county.id)
-  }, [editData?.county, counties])
 
   if (!isOpen) return null
 
@@ -336,56 +284,10 @@ export const PatientFormModal = ({
                   </div>
                 </div>
 
-                <div className="row g-3">
-                  <div className="col-md-6">
-                    <AddressAutocomplete<PatientFormData>
-                      name="address"
-                      control={control}
-                      label="Adresă"
-                      placeholder="Str. Exemplu, Nr. 1"
-                      onSuggestionSelect={handleAddressSelect}
-                    />
-                  </div>
-                  <div className="col-md-3">
-                    <FormSelect<PatientFormData>
-                      name="county"
-                      control={control}
-                      label="Județ"
-                      options={countyOptions}
-                      placeholder="Selectează județul..."
-                      allowFiltering={true}
-                      showClearButton={true}
-                      onValueChange={(countyName) => {
-                        const county = counties.find(c => c.name === countyName)
-                        setSelectedCountyId(county?.id ?? '')
-                        setValue('city', '')
-                      }}
-                    />
-                  </div>
-                  <div className="col-md-3">
-                    <FormSelect<PatientFormData>
-                      name="city"
-                      control={control}
-                      label="Localitate"
-                      options={localityOptions}
-                      placeholder={selectedCountyId ? 'Selectează localitatea...' : 'Selectați mai întâi județul'}
-                      allowFiltering={true}
-                      showClearButton={true}
-                      disabled={!selectedCountyId}
-                    />
-                  </div>
-                </div>
-
-                <div className="row g-3">
-                  <div className="col-md-3">
-                    <FormInput<PatientFormData>
-                      name="postalCode"
-                      control={control}
-                      label="Cod poștal"
-                      placeholder="010101"
-                    />
-                  </div>
-                </div>
+                <AddressFields<PatientFormData>
+                  control={control}
+                  setValue={setValue}
+                />
               </>
             )}
 
