@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { patientSchema, type PatientFormData } from '../../schemas/patient.schema'
@@ -11,6 +11,7 @@ import { FormInput } from '@/components/forms/FormInput'
 import { FormSelect } from '@/components/forms/FormSelect'
 import { FormDatePicker } from '@/components/forms/FormDatePicker'
 import { AppButton } from '@/components/ui/AppButton'
+import { useCounties, useLocalities } from '@/features/nomenclature/hooks/useNomenclatureLookups'
 import styles from './PatientFormModal.module.scss'
 
 // ── Icoane inline ─────────────────────────────────────────────────────────────
@@ -62,6 +63,7 @@ export const PatientFormModal = ({
     handleSubmit,
     reset,
     control,
+    setValue,
     formState: { errors },
   } = useForm<PatientFormData>({
     resolver: zodResolver(patientSchema),
@@ -89,6 +91,26 @@ export const PatientFormModal = ({
     control, name: 'doctors',
   })
 
+  // ── Geografie ─────────────────────────────────────────────────────────────
+  const [selectedCountyId, setSelectedCountyId] = useState<string>('')
+  const { data: countiesResp } = useCounties()
+  const { data: localitiesResp } = useLocalities(selectedCountyId)
+
+  const counties = useMemo(() => countiesResp?.data ?? [], [countiesResp])
+  const localities = useMemo(() => localitiesResp?.data ?? [], [localitiesResp])
+
+  const countyOptions = useMemo(
+    () => counties.map(c => ({ value: c.name, label: c.name })),
+    [counties]
+  )
+  const localityOptions = useMemo(
+    () => localities.map(l => ({
+      value: l.name,
+      label: l.locationTypeName ? `${l.locationTypeName} ${l.name}` : l.name,
+    })),
+    [localities]
+  )
+
   const { fields: contactFields, append: addContact, remove: removeContact } = useFieldArray({
     control, name: 'emergencyContacts',
   })
@@ -110,8 +132,8 @@ export const PatientFormModal = ({
         secondaryPhone:     '',
         email:              editData.email ?? '',
         address:            editData.address ?? '',
-        city:               '',
-        county:             '',
+        city:               editData.city ?? '',
+        county:             editData.county ?? '',
         postalCode:         '',
         insuranceNumber:    editData.insuranceNumber ?? '',
         insuranceExpiry:    editData.insuranceExpiry?.slice(0, 10) ?? '',
@@ -124,6 +146,7 @@ export const PatientFormModal = ({
         doctors:            [],
         emergencyContacts:  [],
       })
+      setSelectedCountyId('')
     } else {
       reset({
         firstName: '', lastName: '', cnp: '',
@@ -138,8 +161,16 @@ export const PatientFormModal = ({
         doctors: [],
         emergencyContacts: [],
       })
+      setSelectedCountyId('')
     }
   }, [isOpen, editData, reset])
+
+  // Inițializare selectedCountyId din editData după ce se încarcă județele
+  useEffect(() => {
+    if (!editData?.county || counties.length === 0) return
+    const county = counties.find(c => c.name === editData.county)
+    if (county) setSelectedCountyId(county.id)
+  }, [editData?.county, counties])
 
   if (!isOpen) return null
 
@@ -292,19 +323,31 @@ export const PatientFormModal = ({
                     />
                   </div>
                   <div className="col-md-3">
-                    <FormInput<PatientFormData>
-                      name="city"
-                      control={control}
-                      label="Oraș"
-                      placeholder="București"
-                    />
-                  </div>
-                  <div className="col-md-3">
-                    <FormInput<PatientFormData>
+                    <FormSelect<PatientFormData>
                       name="county"
                       control={control}
                       label="Județ"
-                      placeholder="Ilfov"
+                      options={countyOptions}
+                      placeholder="Selectează județul..."
+                      allowFiltering={true}
+                      showClearButton={true}
+                      onValueChange={(countyName) => {
+                        const county = counties.find(c => c.name === countyName)
+                        setSelectedCountyId(county?.id ?? '')
+                        setValue('city', '')
+                      }}
+                    />
+                  </div>
+                  <div className="col-md-3">
+                    <FormSelect<PatientFormData>
+                      name="city"
+                      control={control}
+                      label="Localitate"
+                      options={localityOptions}
+                      placeholder={selectedCountyId ? 'Selectează localitatea...' : 'Selectați mai întâi județul'}
+                      allowFiltering={true}
+                      showClearButton={true}
+                      disabled={!selectedCountyId}
                     />
                   </div>
                 </div>
