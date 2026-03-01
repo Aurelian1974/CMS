@@ -9,6 +9,7 @@ using ValyanClinic.Application.Features.Nomenclature.Commands.ToggleSpecialty;
 using ValyanClinic.Application.Features.Nomenclature.Commands.UpdateMedicalTitle;
 using ValyanClinic.Application.Features.Nomenclature.Commands.UpdateSpecialty;
 using ValyanClinic.Application.Features.Nomenclature.Queries.GetMedicalTitles;
+using ValyanClinic.Application.Features.Nomenclature.Queries.GetCaenCodes;
 using ValyanClinic.Application.Features.Nomenclature.Queries.GetCounties;
 using ValyanClinic.Application.Features.Nomenclature.Queries.GetLocalities;
 using ValyanClinic.Application.Features.Nomenclature.Queries.GetNomenclatureLookup;
@@ -198,6 +199,25 @@ public class NomenclatureController : BaseApiController
         Guid id, [FromBody] ToggleMedicalTitleRequest request, CancellationToken ct)
     {
         var result = await Mediator.Send(new ToggleMedicalTitleCommand(id, request.IsActive), ct);
+        return HandleResult(result);
+    }
+
+    // ==================== CODURI CAEN ====================
+
+    /// <summary>
+    /// Cauta coduri CAEN dupa text liber (cod sau denumire).
+    /// Parametri optionali: ?search=text, ?classesOnly=true, ?topN=50
+    /// </summary>
+    [HttpGet("caen-codes")]
+    [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
+    public async Task<IActionResult> GetCaenCodes(
+        [FromQuery] string? search,
+        [FromQuery] bool classesOnly = false,
+        [FromQuery] int topN = 50,
+        CancellationToken ct = default)
+    {
+        var result = await Mediator.Send(
+            new GetCaenCodesQuery(search, classesOnly, topN), ct);
         return HandleResult(result);
     }
 }
