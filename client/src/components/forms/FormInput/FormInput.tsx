@@ -1,3 +1,4 @@
+import type React from 'react'
 import { TextBoxComponent } from '@syncfusion/ej2-react-inputs'
 import { useController, type FieldValues } from 'react-hook-form'
 import type { FormInputProps } from './FormInput.types'
@@ -23,6 +24,7 @@ export const FormInput = <T extends FieldValues>({
   multiline = false,
   rows,
   onValueChange,
+  labelSuffix,
 }: FormInputProps<T>) => {
   const {
     field: { value, onChange, onBlur, ref },
@@ -40,6 +42,7 @@ export const FormInput = <T extends FieldValues>({
       <label className={styles.label}>
         {label}
         {required && <span className={styles.required}>*</span>}
+        {labelSuffix}
       </label>
 
       <TextBoxComponent

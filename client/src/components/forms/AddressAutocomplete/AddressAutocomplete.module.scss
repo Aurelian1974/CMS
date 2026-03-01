@@ -1,0 +1,168 @@
+@import '@/styles/variables';
+
+// ===== Container câmp =====
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+// ===== Label =====
+.label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: $gray-600;
+  line-height: 1.4;
+}
+
+.required {
+  color: $danger;
+  margin-left: 0.15rem;
+}
+
+// ===== Eroare =====
+.error {
+  font-size: 0.78rem;
+  color: $danger;
+  margin-top: 0.1rem;
+}
+
+// ===== Input wrapper (poziționare relativă pentru spinner) =====
+.inputWrapper {
+  position: relative;
+
+  // ── Override-uri Syncfusion TextBox ──────────────────────────────────────
+  :global {
+    .e-input-group,
+    .e-input-group.e-control-wrapper {
+      border-radius: $border-radius-sm;
+      border-color: $gray-200;
+      background: $card-bg;
+      font-family: $font-family-base;
+      font-size: $font-size-base;
+      min-height: 36px;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+      &:hover:not(.e-disabled):not(.e-input-focus) {
+        border-color: $gray-300;
+      }
+
+      &.e-input-focus {
+        border-color: $primary;
+        box-shadow: 0 0 0 3px rgba($primary, 0.12);
+      }
+
+      input.e-input {
+        color: $gray-700;
+        font-size: $font-size-base;
+        padding: 0.375rem 2rem 0.375rem 0.625rem; // padding-right pentru spinner
+
+        &::placeholder {
+          color: $gray-400;
+        }
+      }
+    }
+
+    .e-input-group.e-error,
+    .e-input-group.e-control-wrapper.e-error {
+      border-color: $danger;
+
+      &.e-input-focus {
+        box-shadow: 0 0 0 3px rgba($danger, 0.12);
+      }
+    }
+
+    .e-input-group.e-disabled {
+      opacity: 0.6;
+      background: $gray-50;
+      cursor: not-allowed;
+
+      input.e-input {
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+// ===== Spinner de încărcare =====
+.spinner {
+  position: absolute;
+  right: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  border: 2px solid $gray-200;
+  border-top-color: $primary;
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes spin {
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
+}
+
+// ===== Dropdown (portaled la document.body → position: fixed) =====
+.dropdown {
+  position: fixed;
+  z-index: 99999;
+  background: $card-bg;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius;
+  box-shadow: $box-shadow-lg;
+  max-height: 260px;
+  overflow-y: auto;
+  margin-top: 0;
+
+  // Scrollbar discret
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: $gray-200;
+    border-radius: 2px;
+  }
+}
+
+// ===== Item sugestie =====
+.item {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  border-bottom: 1px solid $gray-100;
+  transition: background 0.1s ease;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.itemActive {
+  background: rgba($primary, 0.07);
+}
+
+.item:hover {
+  background: rgba($primary, 0.07);
+}
+
+// Text principal (stradă, localitate)
+.itemMain {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: $gray-700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+// Text secundar (cod poștal, județ, România)
+.itemSub {
+  font-size: 0.775rem;
+  color: $gray-400;
+}

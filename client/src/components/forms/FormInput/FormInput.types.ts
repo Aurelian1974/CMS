@@ -29,4 +29,6 @@ export interface FormInputProps<T extends FieldValues> {
   rows?: number
   /** Funcție apelată la schimbarea valorii (pe lângă RHF onChange) */
   onValueChange?: (value: string) => void
+  /** Conținut afișat după textul label-ului (ex: iconiță info cu tooltip) */
+  labelSuffix?: React.ReactNode
 }

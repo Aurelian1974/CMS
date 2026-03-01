@@ -13,7 +13,7 @@ export interface AddressSuggestion {
   address: string
   /** Text afișat în dropdown: stradă, localitate */
   displayText: string
-  /** Text secundar în dropdown: județ, România */
+  /** Text secundar în dropdown: cod poștal, județ, România */
   detailText: string
   city: string | null
   county: string | null
@@ -58,8 +58,8 @@ async function searchPhoton(query: string, locationHint?: string): Promise<Addre
     })
     .map((f) => {
       const p = f.properties
-      // Pentru tip "street" → numele strazii e în p.name
-      // Pentru tip "house" → strada e în p.street, numărul în p.housenumber
+      // Pentru tip "street" → numele străzii e în p.name
+      // Pentru tip "house"  → strada e în p.street, numărul în p.housenumber
       const streetPart = p.street
         ? [p.street, p.housenumber].filter(Boolean).join(' ')
         : p.name ?? ''
@@ -67,7 +67,7 @@ async function searchPhoton(query: string, locationHint?: string): Promise<Addre
       const city = p.city || p.town || p.village || null
       const postcode = p.postcode ?? null
       const displayText = [address, city].filter(Boolean).join(', ')
-      // Codul poștal apare pe linia secundară pentru a putea distinge segmentele aceleiași stăzi
+      // Codul poștal apare pe linia secundară pentru a distinge segmentele aceleiași stăzi
       const detailText = [postcode, p.county, p.country].filter(Boolean).join(', ')
       return {
         address,
@@ -101,14 +101,14 @@ export const AddressAutocomplete = <T extends FieldValues>({
     fieldState: { error },
   } = useController({ name, control })
 
-  const [inputValue, setInputValue]         = useState<string>(String(value ?? ''))
-  const [suggestions, setSuggestions]       = useState<AddressSuggestion[]>([])
-  const [isOpen, setIsOpen]                 = useState(false)
-  const [isLoading, setIsLoading]           = useState(false)
-  const [activeIndex, setActiveIndex]       = useState(-1)
-  const [dropdownPos, setDropdownPos]       = useState({ top: 0, left: 0, width: 0 })
+  const [inputValue, setInputValue]   = useState<string>(String(value ?? ''))
+  const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([])
+  const [isOpen, setIsOpen]           = useState(false)
+  const [isLoading, setIsLoading]     = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 })
 
-  const containerRef = useRef<HTMLDivElement>(null)
+  const containerRef  = useRef<HTMLDivElement>(null)
   const debouncedValue = useDebounce(inputValue, 400)
 
   // Sincronizare valoare form → input (ex: reset la deschidere modal)
@@ -179,9 +179,9 @@ export const AddressAutocomplete = <T extends FieldValues>({
     setIsOpen(false)
     setSuggestions([])
     onSuggestionSelect?.({
-      address: suggestion.address,
-      city: suggestion.city,
-      county: suggestion.county,
+      address:  suggestion.address,
+      city:     suggestion.city,
+      county:   suggestion.county,
       postcode: suggestion.postcode,
     })
   }, [onChange, onSuggestionSelect])
