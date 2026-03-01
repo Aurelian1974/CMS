@@ -39,25 +39,30 @@ const RO_BBOX = '20.26,43.62,29.76,48.27'
 
 async function searchPhoton(query: string): Promise<AddressSuggestion[]> {
   const { data } = await photon.get('/api', {
-    params: { q: query, limit: 8, lang: 'ro', bbox: RO_BBOX },
+    params: { q: query, limit: 10, bbox: RO_BBOX },
   })
 
   return (data.features as any[])
     .filter((f) => {
       const p = f.properties
+      // Filtrare după countrycode (robust față de diacritice în "România")
       return (
-        p.country === 'Romania' &&
+        p.countrycode === 'RO' &&
         (p.street || p.name) &&
         p.city
       )
     })
     .map((f) => {
       const p = f.properties
-      const streetPart = [p.street, p.housenumber].filter(Boolean).join(' ')
-      const address = streetPart || p.name || ''
+      // Pentru tip "street" → numele strazii e în p.name
+      // Pentru tip "house" → strada e în p.street, numărul în p.housenumber
+      const streetPart = p.street
+        ? [p.street, p.housenumber].filter(Boolean).join(' ')
+        : p.name ?? ''
+      const address = streetPart
       const city = p.city || p.town || p.village || null
       const displayText = [address, city].filter(Boolean).join(', ')
-      const detailText = [p.county, 'România'].filter(Boolean).join(', ')
+      const detailText = [p.county, p.country].filter(Boolean).join(', ')
       return {
         address,
         displayText,
