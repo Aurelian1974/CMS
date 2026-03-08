@@ -233,12 +233,6 @@
 }
 
 // ── Custom cell renders ───────────────────────────────────────────────────────
-.avatarCell {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
 .avatar {
   width: 32px;
   height: 32px;
@@ -255,8 +249,9 @@
   text-transform: uppercase;
 }
 
-.staffName  { font-weight: 500; color: $gray-700; }
-.staffEmail { font-size: 0.75rem; color: $gray-400; margin-top: 1px; }
+.staffInfo  { min-width: 0; white-space: normal; }
+.staffName  { font-weight: 500; color: $gray-700; line-height: 1.3; }
+.staffEmail { font-size: 0.75rem; color: $gray-400; margin-top: 1px; line-height: 1.3; }
 
 // ── Butoane ───────────────────────────────────────────────────────────────────
 .btnPrimary {

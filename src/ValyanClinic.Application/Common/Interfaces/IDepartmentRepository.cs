@@ -12,7 +12,7 @@ public interface IDepartmentRepository
     Task<DepartmentDto?> GetByIdAsync(Guid id, Guid clinicId, CancellationToken ct);
     Task<Guid> CreateAsync(
         Guid clinicId, Guid locationId, string name, string code, string? description,
-        CancellationToken ct);
+        Guid? headDoctorId, CancellationToken ct);
     Task UpdateAsync(
         Guid id, Guid clinicId, Guid locationId, string name, string code,
         string? description, Guid? headDoctorId, bool isActive, CancellationToken ct);

@@ -3,11 +3,12 @@ SET ANSI_NULLS ON;
 GO
 
 CREATE OR ALTER PROCEDURE dbo.Department_Create
-    @ClinicId    UNIQUEIDENTIFIER,
-    @LocationId  UNIQUEIDENTIFIER,
-    @Name        NVARCHAR(200),
-    @Code        NVARCHAR(20),
-    @Description NVARCHAR(500) = NULL
+    @ClinicId     UNIQUEIDENTIFIER,
+    @LocationId   UNIQUEIDENTIFIER,
+    @Name         NVARCHAR(200),
+    @Code         NVARCHAR(20),
+    @Description  NVARCHAR(500)    = NULL,
+    @HeadDoctorId UNIQUEIDENTIFIER = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -28,13 +29,20 @@ BEGIN
             ;THROW 50221, 'Un departament cu acest cod există deja.', 1;
         END;
 
+        -- Validare: șeful de departament trebuie să fie un doctor valid din aceeași clinică
+        IF @HeadDoctorId IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM Doctors WHERE Id = @HeadDoctorId AND ClinicId = @ClinicId AND IsDeleted = 0)
+        BEGIN
+            ;THROW 50223, 'Doctorul selectat ca șef de departament nu există.', 1;
+        END;
+
         DECLARE @OutputIds TABLE (Id UNIQUEIDENTIFIER);
 
         INSERT INTO Departments (ClinicId, LocationId, Name, Code, Description,
-                                 IsActive, IsDeleted, CreatedAt)
+                                 HeadDoctorId, IsActive, IsDeleted, CreatedAt)
         OUTPUT INSERTED.Id INTO @OutputIds(Id)
         VALUES (@ClinicId, @LocationId, @Name, @Code, @Description,
-                1, 0, GETDATE());
+                @HeadDoctorId, 1, 0, GETDATE());
 
         COMMIT TRANSACTION;
         SELECT Id FROM @OutputIds;

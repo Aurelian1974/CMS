@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, Fragment } from 'react'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { DepartmentFormModal } from '../components/DepartmentFormModal'
 import {
@@ -195,6 +195,7 @@ const DepartmentsPage = () => {
         name: data.name,
         code: data.code,
         description: data.description || null,
+        headDoctorId: data.headDoctorId || null,
       }
       createDepartment.mutate(payload, {
         onSuccess: () => {
@@ -291,17 +292,27 @@ const DepartmentsPage = () => {
                   const isExpanded = expandedDepts.has(dept.id)
                   const deptDoctors = doctorsByDept.get(dept.id) ?? []
                   const deptStaff = staffByDept.get(dept.id) ?? []
-                  const hasMembers = deptDoctors.length > 0 || deptStaff.length > 0
+
+                  // Dacă șeful de departament nu e în lista de medici asignați, îl adăugăm
+                  const headInList = !dept.headDoctorId || deptDoctors.some(d => d.id === dept.headDoctorId)
+                  const deptDoctorsWithHead = headInList
+                    ? deptDoctors
+                    : [
+                        ...doctors.filter(d => d.id === dept.headDoctorId),
+                        ...deptDoctors,
+                      ]
+
+                  const hasMembers = deptDoctorsWithHead.length > 0 || deptStaff.length > 0
                   // Sortare: șeful departamentului primul
-                  const sortedDoctors = [...deptDoctors].sort((a, b) => {
+                  const sortedDoctors = [...deptDoctorsWithHead].sort((a, b) => {
                     if (a.id === dept.headDoctorId) return -1
                     if (b.id === dept.headDoctorId) return 1
                     return a.fullName.localeCompare(b.fullName)
                   })
 
                   return (
-                    <>
-                      <tr key={dept.id} className={isExpanded ? styles.rowExpanded : ''}>
+                    <Fragment key={dept.id}>
+                      <tr className={isExpanded ? styles.rowExpanded : ''}>
                         <td className={styles.expandCell}>
                           {hasMembers && (
                             <button
@@ -423,7 +434,7 @@ const DepartmentsPage = () => {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   )
                 })}
               </tbody>

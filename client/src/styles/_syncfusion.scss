@@ -57,6 +57,11 @@
   }
 }
 
+// Ascunde input-ul intern Syncfusion în modul multiline (TextBox cu textarea)
+.e-multi-line-input input.e-control {
+  display: none !important;
+}
+
 // DatePicker / TimePicker
 .e-datepicker,
 .e-timepicker {

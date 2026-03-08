@@ -194,13 +194,14 @@ export const MedicalStaffListPage = () => {
   })
 
   // ── Cell templates ─────────────────────────────────────────────────────────
+  const avatarTemplate = useCallback((row: MedicalStaffDto) => (
+    <div className={styles.avatar}>{getInitials(row.firstName, row.lastName)}</div>
+  ), []);
+
   const nameTemplate = useCallback((row: MedicalStaffDto) => (
-    <div className={styles.avatarCell}>
-      <div className={styles.avatar}>{getInitials(row.firstName, row.lastName)}</div>
-      <div>
-        <div className={styles.staffName}>{row.fullName}</div>
-        <div className={styles.staffEmail}>{row.email}</div>
-      </div>
+    <div className={styles.staffInfo}>
+      <div className={styles.staffName}>{row.fullName}</div>
+      <div className={styles.staffEmail}>{row.email}</div>
     </div>
   ), []);
 
@@ -356,10 +357,24 @@ export const MedicalStaffListPage = () => {
         <ColumnsDirective>
 
             <ColumnDirective
+              headerText=""
+              width="50"
+              minWidth="50"
+              maxWidth="50"
+              template={avatarTemplate}
+              allowSorting={false}
+              allowFiltering={false}
+              allowGrouping={false}
+              allowReordering={false}
+              allowResizing={false}
+              textAlign="Center"
+            />
+
+            <ColumnDirective
               field="fullName"
               headerText="Angajat"
-              width="230"
-              minWidth="180"
+              width="200"
+              minWidth="150"
               template={nameTemplate}
               allowGrouping={false}
             />

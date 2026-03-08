@@ -52,8 +52,9 @@ export const DepartmentFormModal = ({
     },
   })
 
-  // Populare formular la editare
+  // Populare formular la editare / resetare la creare
   useEffect(() => {
+    if (!isOpen) return
     if (editData) {
       reset({
         locationId: editData.locationId,
@@ -73,7 +74,7 @@ export const DepartmentFormModal = ({
         isActive: true,
       })
     }
-  }, [editData, reset])
+  }, [isOpen, editData, reset])
 
   return (
     <AppModal

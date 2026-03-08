@@ -24,6 +24,7 @@ export interface CreateDepartmentPayload {
   name: string
   code: string
   description: string | null
+  headDoctorId?: string | null
 }
 
 /// Payload actualizare departament

@@ -22,17 +22,22 @@ public sealed class CreateDepartmentCommandHandler(
                 request.Name,
                 request.Code,
                 request.Description,
+                request.HeadDoctorId,
                 cancellationToken);
 
             return Result<Guid>.Created(id);
         }
-        catch (SqlException ex) when (ex.Number == 50221)
+        catch (SqlException ex) when (ex.Number == 50221 || ex.Number == 2627)
         {
             return Result<Guid>.Conflict(ErrorMessages.Department.CodeDuplicate);
         }
         catch (SqlException ex) when (ex.Number == 50222)
         {
             return Result<Guid>.Failure(ErrorMessages.Department.InvalidLocation);
+        }
+        catch (SqlException ex) when (ex.Number == 50223)
+        {
+            return Result<Guid>.Failure(ErrorMessages.Department.InvalidHeadDoctor);
         }
         catch (SqlException ex) when (ex.Number >= 50000 && ex.Number < 60000)
         {

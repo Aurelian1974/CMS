@@ -238,13 +238,14 @@ export const UsersListPage = () => {
   })
 
   // ── Cell templates ─────────────────────────────────────────────────────────
+  const avatarTemplate = useCallback((row: UserDto) => (
+    <div className={styles.avatar}>{getInitials(row.firstName, row.lastName)}</div>
+  ), [])
+
   const nameTemplate = useCallback((row: UserDto) => (
-    <div className={styles.avatarCell}>
-      <div className={styles.avatar}>{getInitials(row.firstName, row.lastName)}</div>
-      <div>
-        <div className={styles.userName}>{row.lastName} {row.firstName}</div>
-        <div className={styles.userEmail}>{row.username} • {row.email}</div>
-      </div>
+    <div className={styles.userInfo}>
+      <div className={styles.userName}>{row.lastName} {row.firstName}</div>
+      <div className={styles.userEmail}>{row.username} • {row.email}</div>
     </div>
   ), [])
 
@@ -419,10 +420,24 @@ export const UsersListPage = () => {
         <ColumnsDirective>
 
             <ColumnDirective
+              headerText=""
+              width="50"
+              minWidth="50"
+              maxWidth="50"
+              template={avatarTemplate}
+              allowSorting={false}
+              allowFiltering={false}
+              allowGrouping={false}
+              allowReordering={false}
+              allowResizing={false}
+              textAlign="Center"
+            />
+
+            <ColumnDirective
               field="lastName"
               headerText="Utilizator"
-              width="230"
-              minWidth="180"
+              width="200"
+              minWidth="150"
               template={nameTemplate}
               allowGrouping={false}
             />

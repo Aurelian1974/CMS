@@ -8,5 +8,6 @@ public sealed record CreateDepartmentCommand(
     Guid LocationId,
     string Name,
     string Code,
-    string? Description
+    string? Description,
+    Guid? HeadDoctorId
 ) : IRequest<Result<Guid>>;

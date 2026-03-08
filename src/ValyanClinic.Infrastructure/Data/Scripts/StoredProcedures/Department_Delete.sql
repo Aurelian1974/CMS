@@ -20,6 +20,7 @@ BEGIN
 
         UPDATE Departments
         SET IsDeleted = 1,
+            IsActive  = 0,
             UpdatedAt = GETDATE()
         WHERE Id = @Id AND ClinicId = @ClinicId AND IsDeleted = 0;
 

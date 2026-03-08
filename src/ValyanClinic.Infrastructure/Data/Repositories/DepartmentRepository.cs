@@ -34,7 +34,7 @@ public sealed class DepartmentRepository(DapperContext context) : IDepartmentRep
 
     public async Task<Guid> CreateAsync(
         Guid clinicId, Guid locationId, string name, string code, string? description,
-        CancellationToken ct)
+        Guid? headDoctorId, CancellationToken ct)
     {
         using var connection = context.CreateConnection();
         return await connection.ExecuteScalarAsync<Guid>(
@@ -46,7 +46,8 @@ public sealed class DepartmentRepository(DapperContext context) : IDepartmentRep
                     LocationId = locationId,
                     Name = name,
                     Code = code,
-                    Description = description
+                    Description = description,
+                    HeadDoctorId = headDoctorId
                 },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct));
