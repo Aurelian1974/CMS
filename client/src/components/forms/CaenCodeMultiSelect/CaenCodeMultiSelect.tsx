@@ -4,30 +4,28 @@ import { useCaenCodes } from '@/features/nomenclature/hooks/useCaenCodes'
 import type { CaenCodeDto } from '@/features/nomenclature/types/caenCode.types'
 import styles from './CaenCodeMultiSelect.module.scss'
 
-interface CaenCodeMultiSelectProps<T extends FieldValues> {
-  name: Path<T>
-  control: Control<T>
+// ===== Componentă de bază (fără RHF) =====
+
+interface CaenCodeMultiSelectBaseProps {
+  value: CaenCodeDto[]
+  onChange: (items: CaenCodeDto[]) => void
   label: string
+  error?: string
   required?: boolean
   disabled?: boolean
 }
 
-export const CaenCodeMultiSelect = <T extends FieldValues>({
-  name,
-  control,
+export const CaenCodeMultiSelectBase = ({
+  value: selectedItems,
+  onChange,
   label,
+  error,
   required,
   disabled,
-}: CaenCodeMultiSelectProps<T>) => {
-  const {
-    field,
-    fieldState: { error },
-  } = useController({ name, control })
-
+}: CaenCodeMultiSelectBaseProps) => {
   const [search, setSearch] = useState('')
   const [dropdownOpen, setDropdownOpen] = useState(false)
 
-  // Caută coduri CAEN — doar clasele (nivel 4) pentru că acestea se folosesc în CAEN firmă
   const { data: caenResp, isLoading } = useCaenCodes({
     search,
     classesOnly: true,
@@ -35,21 +33,18 @@ export const CaenCodeMultiSelect = <T extends FieldValues>({
   })
 
   const searchResults: CaenCodeDto[] = caenResp?.data ?? []
-  const selectedItems: CaenCodeDto[] = field.value ?? []
-
-  // Filtrează din rezultate codurile deja selectate
   const availableResults = searchResults.filter(
     (cc) => !selectedItems.some((s) => s.id === cc.id),
   )
 
   const handleSelect = (item: CaenCodeDto) => {
-    field.onChange([...selectedItems, item])
+    onChange([...selectedItems, item])
     setSearch('')
     setDropdownOpen(false)
   }
 
   const handleRemove = (id: string) => {
-    field.onChange(selectedItems.filter((s) => s.id !== id))
+    onChange(selectedItems.filter((s) => s.id !== id))
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,7 +56,6 @@ export const CaenCodeMultiSelect = <T extends FieldValues>({
     if (search.length >= 1) setDropdownOpen(true)
   }
 
-  // Delay la închidere pentru a permite click pe opțiunile din dropdown
   const handleInputBlur = () => {
     setTimeout(() => setDropdownOpen(false), 150)
   }
@@ -78,7 +72,6 @@ export const CaenCodeMultiSelect = <T extends FieldValues>({
         {required && <span className={styles.required}>*</span>}
       </label>
 
-      {/* Chips — coduri CAEN selectate */}
       {selectedItems.length > 0 && (
         <div className={styles.chips}>
           {selectedItems.map((item, idx) => (
@@ -104,7 +97,6 @@ export const CaenCodeMultiSelect = <T extends FieldValues>({
         </div>
       )}
 
-      {/* Input căutare + dropdown */}
       {!disabled && (
         <div className={styles.inputWrap}>
           <input
@@ -137,7 +129,7 @@ export const CaenCodeMultiSelect = <T extends FieldValues>({
                     key={cc.id}
                     type="button"
                     className={styles.dropdownItem}
-                    onMouseDown={(e) => e.preventDefault()} // previne blur înainte de click
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => handleSelect(cc)}
                   >
                     <span className={styles.dropdownCode}>{cc.code}</span>
@@ -149,7 +141,41 @@ export const CaenCodeMultiSelect = <T extends FieldValues>({
         </div>
       )}
 
-      {error && <span className={styles.errorMsg}>{error.message}</span>}
+      {error && <span className={styles.errorMsg}>{error}</span>}
     </div>
+  )
+}
+
+// ===== Wrapper RHF =====
+
+interface CaenCodeMultiSelectProps<T extends FieldValues> {
+  name: Path<T>
+  control: Control<T>
+  label: string
+  required?: boolean
+  disabled?: boolean
+}
+
+export const CaenCodeMultiSelect = <T extends FieldValues>({
+  name,
+  control,
+  label,
+  required,
+  disabled,
+}: CaenCodeMultiSelectProps<T>) => {
+  const {
+    field,
+    fieldState: { error },
+  } = useController({ name, control })
+
+  return (
+    <CaenCodeMultiSelectBase
+      value={field.value ?? []}
+      onChange={field.onChange}
+      label={label}
+      error={error?.message}
+      required={required}
+      disabled={disabled}
+    />
   )
 }

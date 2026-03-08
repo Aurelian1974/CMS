@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -10,7 +10,7 @@ import { ContactPersonFormModal } from '../components/ContactPersonFormModal'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { IconPlus } from '@/components/ui/Icons'
 import { FormInput } from '@/components/forms/FormInput'
-import { CaenCodeMultiSelect } from '@/components/forms/CaenCodeMultiSelect'
+import { CaenCodeMultiSelectBase } from '@/components/forms/CaenCodeMultiSelect'
 import { AppButton } from '@/components/ui/AppButton'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { clinicSchema, type ClinicFormData } from '../schemas/clinic.schema'
@@ -26,11 +26,13 @@ import type {
   ClinicContactDto,
   ClinicContactPersonDto,
   UpdateClinicPayload,
+  SyncClinicCaenCodesPayload,
 } from '../types/clinic.types'
 import {
   useCurrentClinic,
   useClinicLocations,
   useUpdateClinic,
+  useSyncClinicCaenCodes,
   useCreateClinicLocation,
   useUpdateClinicLocation,
   useDeleteClinicLocation,
@@ -90,6 +92,15 @@ const IconContact = () => (
   </svg>
 )
 
+const IconCaen = () => (
+  <svg className={styles.sectionIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="3" width="7" height="7" rx="1" />
+    <rect x="3" y="14" width="7" height="7" rx="1" />
+    <rect x="14" y="14" width="7" height="7" rx="1" />
+  </svg>
+)
+
 const IconChevron = ({ expanded }: { expanded: boolean }) => (
   <svg
     className={`${styles.chevronIcon} ${expanded ? styles.chevronExpanded : ''}`}
@@ -133,6 +144,7 @@ const ClinicPage = () => {
 
   // Mutații — general
   const updateClinic = useUpdateClinic()
+  const syncCaenCodes = useSyncClinicCaenCodes()
 
   // Mutații — conturi bancare
   const createBankAccount = useCreateBankAccount()
@@ -180,8 +192,11 @@ const ClinicPage = () => {
   const [editingLocation, setEditingLocation] = useState<ClinicLocationDto | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ClinicLocationDto | null>(null)
 
+  // State coduri CAEN (tab separat)
+  const [caenSelection, setCaenSelection] = useState<{ id: string; code: string; name: string; level: number; isActive: boolean }[]>([])
+
   // Tab activ
-  const [activeTab, setActiveTab] = useState<'general' | 'addresses' | 'bank' | 'contacts' | 'persons'>('general')
+  const [activeTab, setActiveTab] = useState<'general' | 'caen' | 'addresses' | 'bank' | 'contacts' | 'persons'>('general')
 
   // State expandare locații
   const [expandedLocs, setExpandedLocs] = useState<Set<string>>(new Set())
@@ -203,16 +218,17 @@ const ClinicPage = () => {
         name: clinic.name,
         fiscalCode: clinic.fiscalCode,
         tradeRegisterNumber: clinic.tradeRegisterNumber ?? '',
-        caenCodes: (clinic.caenCodes ?? []).map((cc) => ({
-          id: cc.caenCodeId,
-          code: cc.code,
-          name: cc.name,
-          level: cc.level,
-          isActive: true,
-        })),
+        caenCodes: [],
         legalRepresentative: clinic.legalRepresentative ?? '',
         contractCNAS: clinic.contractCNAS ?? '',
       })
+      setCaenSelection((clinic.caenCodes ?? []).map((cc) => ({
+        id: cc.caenCodeId,
+        code: cc.code,
+        name: cc.name,
+        level: cc.level,
+        isActive: true,
+      })))
     }
   }, [clinic, reset])
 
@@ -257,12 +273,22 @@ const ClinicPage = () => {
       name: data.name,
       fiscalCode: data.fiscalCode,
       tradeRegisterNumber: data.tradeRegisterNumber ?? null,
-      caenCodeIds: data.caenCodes.map((c) => c.id),
+      caenCodeIds: caenSelection.map((c) => c.id),
       legalRepresentative: data.legalRepresentative ?? null,
       contractCNAS: data.contractCNAS ?? null,
     }
     updateClinic.mutate(payload, {
       onSuccess: () => showSuccess('Datele clinicii au fost actualizate cu succes.'),
+      onError: (err) => showError(err),
+    })
+  }
+
+  const handleSaveCaenCodes = () => {
+    const payload: SyncClinicCaenCodesPayload = {
+      caenCodeIds: caenSelection.map((c) => c.id),
+    }
+    syncCaenCodes.mutate(payload, {
+      onSuccess: () => showSuccess('Codurile CAEN au fost actualizate cu succes.'),
       onError: (err) => showError(err),
     })
   }
@@ -285,7 +311,8 @@ const ClinicPage = () => {
 
   // ===== Handlers adrese =====
   const handleAddrSubmit = (data: AddressFormData) => {
-    const payload = { ...data, postalCode: data.postalCode || null }
+    const { address, ...rest } = data
+    const payload = { ...rest, street: address, postalCode: data.postalCode || null }
     if (editingAddr) {
       updateAddress.mutate({ id: editingAddr.id, ...payload }, {
         onSuccess: () => { setAddrModal(false); setEditingAddr(null); showSuccess('Adresa a fost actualizată.') },
@@ -368,6 +395,7 @@ const ClinicPage = () => {
 
   const tabs = [
     { key: 'general',   label: 'Date generale',        icon: <IconCompany /> },
+    { key: 'caen',      label: 'Coduri CAEN',           icon: <IconCaen />,    count: caenSelection.length },
     { key: 'addresses', label: 'Adrese',                icon: <IconAddress />, count: addresses.length },
     { key: 'bank',      label: 'Conturi bancare',       icon: <IconBank />,    count: bankAccounts.length },
     { key: 'contacts',  label: 'Date de contact',       icon: <IconContact />, count: contacts.length },
@@ -419,9 +447,6 @@ const ClinicPage = () => {
                 <FormInput name="name" control={control} label="Denumire societate" placeholder="ex: S.C. Clinica Medicală S.R.L." required />
                 <FormInput name="fiscalCode" control={control} label="CUI / CIF" placeholder="ex: RO12345678" required />
                 <FormInput name="tradeRegisterNumber" control={control} label="Nr. Registrul Comerțului" placeholder="ex: J40/1234/2020" />
-                <div className={styles.fullWidth}>
-                  <CaenCodeMultiSelect name="caenCodes" control={control} label="Coduri CAEN" />
-                </div>
                 <FormInput name="legalRepresentative" control={control} label="Reprezentant legal" placeholder="ex: Dr. Popescu Ion" />
                 <FormInput name="contractCNAS" control={control} label="Nr. contract CNAS" placeholder="ex: 12345/2024" />
               </div>
@@ -431,6 +456,51 @@ const ClinicPage = () => {
                 </AppButton>
               </div>
             </form>
+          )}
+
+          {/* ======= TAB: Coduri CAEN ======= */}
+          {activeTab === 'caen' && (
+            <>
+              <div className={styles.fullWidth} style={{ marginBottom: '1rem' }}>
+                <CaenCodeMultiSelectBase
+                  label="Coduri CAEN asociate clinicii"
+                  value={caenSelection}
+                  onChange={setCaenSelection}
+                />
+              </div>
+              {caenSelection.length > 0 && (
+                <div className="table-responsive" style={{ marginBottom: '1rem' }}>
+                  <table className={styles.subTable}>
+                    <thead>
+                      <tr>
+                        <th>Cod</th>
+                        <th>Denumire activitate</th>
+                        <th>Principal</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {caenSelection.map((cc, idx) => (
+                        <tr key={cc.id}>
+                          <td><strong>{cc.code}</strong></td>
+                          <td>{cc.name}</td>
+                          <td>{idx === 0 && <MainBadge />}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <div className={styles.formActions}>
+                <AppButton
+                  variant="primary"
+                  onClick={handleSaveCaenCodes}
+                  isLoading={syncCaenCodes.isPending}
+                  loadingText="Se salvează..."
+                >
+                  Salvează coduri CAEN
+                </AppButton>
+              </div>
+            </>
           )}
 
           {/* ======= TAB: Adrese ======= */}
@@ -673,8 +743,8 @@ const ClinicPage = () => {
                         const isExpanded = expandedLocs.has(loc.id)
                         const locDepts = deptsByLocation.get(loc.id) ?? []
                         return (
-                          <>
-                            <tr key={loc.id} className={isExpanded ? styles.rowExpanded : ''}>
+                          <React.Fragment key={loc.id}>
+                            <tr className={isExpanded ? styles.rowExpanded : ''}>
                               <td className={styles.expandCell}>
                                 {locDepts.length > 0 && (
                                   <button className={styles.expandBtn} onClick={() => toggleExpandLoc(loc.id)} aria-label={isExpanded ? 'Restrânge' : 'Expandează'}>
@@ -735,14 +805,13 @@ const ClinicPage = () => {
                                 </td>
                               </tr>
                             )}
-                          </>
+                          </React.Fragment>
                         )
                       })}
                     </tbody>
                   </table>
                 </div>
               )}
-        )}
       </div>
 
       {/* ===== Modals ===== */}

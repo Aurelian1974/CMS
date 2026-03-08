@@ -63,6 +63,11 @@ export interface ClinicContactPersonDto {
   updatedAt: string | null
 }
 
+/// Payload sincronizare coduri CAEN
+export interface SyncClinicCaenCodesPayload {
+  caenCodeIds: string[]
+}
+
 /// Date clinică (societate comercială)
 export interface ClinicDto {
   id: string

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { clinicApi } from '@/api/endpoints/clinic.api'
 import type {
   UpdateClinicPayload,
+  SyncClinicCaenCodesPayload,
   CreateClinicLocationPayload,
   UpdateClinicLocationPayload,
   CreateClinicBankAccountPayload,
@@ -43,6 +44,18 @@ export const useUpdateClinic = () => {
   return useMutation({
     mutationFn: (payload: UpdateClinicPayload) =>
       clinicApi.updateCurrentClinic(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: clinicKeys.current() })
+    },
+  })
+}
+
+/// Sincronizare coduri CAEN
+export const useSyncClinicCaenCodes = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: SyncClinicCaenCodesPayload) =>
+      clinicApi.syncCaenCodes(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: clinicKeys.current() })
     },

@@ -63,7 +63,7 @@ export type BankAccountFormData = z.infer<typeof bankAccountSchema>
 /// Schema validare adresă
 export const addressSchema = z.object({
   addressType: z.string().min(1, 'Tipul adresei este obligatoriu'),
-  street: z
+  address: z
     .string()
     .min(1, 'Strada este obligatorie')
     .max(500, 'Adresa nu poate depăși 500 de caractere'),

@@ -4,6 +4,7 @@ import type {
   ClinicDto,
   ClinicLocationDto,
   UpdateClinicPayload,
+  SyncClinicCaenCodesPayload,
   CreateClinicLocationPayload,
   UpdateClinicLocationPayload,
   CreateClinicBankAccountPayload,
@@ -24,6 +25,9 @@ export const clinicApi = {
 
   updateCurrentClinic: (payload: UpdateClinicPayload): Promise<ApiResponse<boolean>> =>
     api.put('/api/clinics/current', payload),
+
+  syncCaenCodes: (payload: SyncClinicCaenCodesPayload): Promise<ApiResponse<boolean>> =>
+    api.put('/api/clinics/current/caen-codes', payload),
 
   // ===== Conturi bancare =====
 

@@ -1,1 +1,1 @@
-export { CaenCodeMultiSelect } from './CaenCodeMultiSelect'
+export { CaenCodeMultiSelect, CaenCodeMultiSelectBase } from './CaenCodeMultiSelect'

@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { addressSchema, type AddressFormData } from '../../schemas/clinic.schema'
 import type { ClinicAddressDto } from '../../types/clinic.types'
 import { AppModal } from '@/components/ui/AppModal'
+import { AddressFields } from '@/components/forms/AddressFields'
 import { FormInput } from '@/components/forms/FormInput'
 import { AppButton } from '@/components/ui/AppButton'
 
@@ -26,14 +27,14 @@ export const AddressFormModal = ({
 }: AddressFormModalProps) => {
   const isEdit = !!editData
 
-  const { control, handleSubmit, reset, register } = useForm<AddressFormData>({
+  const { control, handleSubmit, reset, setValue, register } = useForm<AddressFormData>({
     resolver: zodResolver(addressSchema),
     defaultValues: {
       addressType: 'Sediu Social',
-      street: '',
+      address: '',
       city: '',
       county: '',
-      postalCode: undefined,
+      postalCode: '',
       country: 'România',
       isMain: false,
     },
@@ -43,7 +44,7 @@ export const AddressFormModal = ({
     if (editData) {
       reset({
         addressType: editData.addressType,
-        street: editData.street,
+        address: editData.street,
         city: editData.city,
         county: editData.county,
         postalCode: editData.postalCode ?? '',
@@ -53,7 +54,7 @@ export const AddressFormModal = ({
     } else {
       reset({
         addressType: 'Sediu Social',
-        street: '',
+        address: '',
         city: '',
         county: '',
         postalCode: '',
@@ -67,7 +68,7 @@ export const AddressFormModal = ({
     <AppModal
       isOpen={isOpen}
       onClose={onClose}
-      maxWidth={520}
+      maxWidth={640}
       title={isEdit ? 'Editează Adresă' : 'Adresă Nouă'}
       as="form"
       onSubmit={handleSubmit(onSubmit)}
@@ -100,44 +101,12 @@ export const AddressFormModal = ({
           />
         </div>
 
-        <FormInput<AddressFormData>
-          name="street"
+        <AddressFields<AddressFormData>
           control={control}
-          label="Stradă / Adresă"
-          placeholder="ex: Str. Sănătății nr. 10, Sector 1"
-          required
+          setValue={(name, value) => setValue(name as keyof AddressFormData, value)}
         />
 
         <div className="row g-2">
-          <div className="col-md-6">
-            <FormInput<AddressFormData>
-              name="city"
-              control={control}
-              label="Oraș"
-              placeholder="ex: București"
-              required
-            />
-          </div>
-          <div className="col-md-6">
-            <FormInput<AddressFormData>
-              name="county"
-              control={control}
-              label="Județ"
-              placeholder="ex: Ilfov"
-              required
-            />
-          </div>
-        </div>
-
-        <div className="row g-2">
-          <div className="col-md-6">
-            <FormInput<AddressFormData>
-              name="postalCode"
-              control={control}
-              label="Cod poștal"
-              placeholder="ex: 010100"
-            />
-          </div>
           <div className="col-md-6">
             <FormInput<AddressFormData>
               name="country"

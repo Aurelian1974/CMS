@@ -5,6 +5,7 @@ using ValyanClinic.Infrastructure.Authentication;
 using ValyanClinic.Application.Features.Clinics.Commands.CreateClinicLocation;
 using ValyanClinic.Application.Features.Clinics.Commands.DeleteClinicLocation;
 using ValyanClinic.Application.Features.Clinics.Commands.UpdateClinic;
+using ValyanClinic.Application.Features.Clinics.Commands.SyncClinicCaenCodes;
 using ValyanClinic.Application.Features.Clinics.Commands.UpdateClinicLocation;
 using ValyanClinic.Application.Features.Clinics.Commands.CreateClinicBankAccount;
 using ValyanClinic.Application.Features.Clinics.Commands.UpdateClinicBankAccount;
@@ -43,6 +44,15 @@ public class ClinicsController : BaseApiController
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
     public async Task<IActionResult> UpdateCurrentClinic(
         [FromBody] UpdateClinicCommand command, CancellationToken ct)
+    {
+        var result = await Mediator.Send(command, ct);
+        return HandleResult(result);
+    }
+
+    [HttpPut("current/caen-codes")]
+    [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
+    public async Task<IActionResult> SyncCaenCodes(
+        [FromBody] SyncClinicCaenCodesCommand command, CancellationToken ct)
     {
         var result = await Mediator.Send(command, ct);
         return HandleResult(result);
