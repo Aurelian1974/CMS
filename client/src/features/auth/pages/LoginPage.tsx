@@ -277,7 +277,7 @@ export const LoginPage = () => {
             {/* Footer card */}
             <div className={styles.cardFooter}>
               <span className={styles.copyright}>© 2025 ValyanClinic</span>
-              <span className={styles.version}>v1.0.0</span>
+              <span className={styles.version}>v{__APP_VERSION__}</span>
             </div>
 
           </div>

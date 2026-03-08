@@ -242,6 +242,9 @@ export const Sidebar = () => {
         ))}
       </nav>
 
+      {/* Versiune aplicație */}
+      <div className={styles.versionBadge}>v{__APP_VERSION__}</div>
+
       {/* Bloc utilizator */}
       <div className={styles.userBlock}>
         <div className={styles.avatar}>

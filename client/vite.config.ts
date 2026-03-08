@@ -4,6 +4,9 @@ import { resolve } from 'path'
 import http from 'node:http'
 import https from 'node:https'
 import type { ProxyOptions } from 'vite'
+import { readFileSync } from 'node:fs'
+
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')) as { version: string }
 
 // HTTP primul (mereu disponibil cu `dotnet run`), HTTPS ca fallback
 const apiTargets = ['http://localhost:5008', 'https://localhost:7051']
@@ -74,6 +77,9 @@ function createApiProxy(): ProxyOptions {
 
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(version),
+  },
   plugins: [react()],
   resolve: {
     alias: {

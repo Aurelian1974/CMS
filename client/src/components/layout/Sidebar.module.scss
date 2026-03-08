@@ -210,6 +210,21 @@ $icon-size: 18px;
   text-overflow: ellipsis;
 }
 
+// ===== Badge versiune =====
+.versionBadge {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.2);
+  text-align: center;
+  padding: 0.25rem 0;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+
+  .sidebar.collapsed & {
+    display: none;
+  }
+}
+
 .logoutBtn {
   display: flex;
   align-items: center;
