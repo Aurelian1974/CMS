@@ -3199,3 +3199,44 @@ Când utilizatorul spune **"hai să facem EOD"**, **"punem pe GitHub"**, **"term
 7. **Confirmă** versiunea publicată și URL-ul tag-ului pe GitHub
 
 > **NOTĂ IMPORTANTĂ**: Anterior s-a întâmplat că `git add -A` s-a rulat fără un commit anterior, iar scriptul EOD a văzut fișierele staged și le-a pus în release commit fără descriere proprie. Scriptul a fost actualizat să detecteze și să committeze automat fișierele staged — dar e mai curat să faci commit-urile logice **înainte** de a chema EOD.
+
+### 25.7 Documentație — README, CHANGELOG per feature
+
+Fiecare pagină/feature are un director de documentație în:
+```
+src/ValyanClinic.Shared/Documentation/Pages/[Feature]/
+├── README.md              # Hub index cu linkuri la ghiduri
+├── README.USER.md         # Ghid utilizator (doctor, asistentă, recepționistă)
+├── README.ADMIN.md        # Ghid administrator (IT, manager clinică)
+├── README.DEVELOPER.md    # Ghid developer (implementare, arhitectură)
+├── CHANGELOG.md           # Istoricul modificărilor feature-ului
+├── FAQ.md                 # Întrebări frecvente
+├── TROUBLESHOOTING.md     # Probleme comune + soluții
+└── API-ENDPOINTS.md       # Documentație endpoints API
+```
+
+**Reguli documentație la EOD:**
+
+| Situație | Ce trebuie actualizat |
+|----------|-----------------------|
+| Feature nou adăugat | Creare director nou + toate fișierele de bază |
+| Funcționalitate modificată | `CHANGELOG.md` + secția relevantă din `README.USER.md` / `README.DEVELOPER.md` |
+| Bug fix vizibil utilizatorului | `CHANGELOG.md` + `TROUBLESHOOTING.md` (dacă e o problemă frecventă) |
+| API endpoint nou/modificat | `API-ENDPOINTS.md` |
+| Comportament intern schimbat | `README.DEVELOPER.md` |
+
+**CHANGELOG.md — format obligatoriu:**
+```markdown
+## [X.Y.Z] - YYYY-MM-DD
+
+### Added
+- Descriere funcționalitate nouă
+
+### Changed
+- Descriere modificare existentă
+
+### Fixed
+- Descriere bug fix
+```
+
+**Prioritate la EOD**: Documentația nu blochează commit-ul — dacă nu e timp, se commitează codul și se adaugă `docs: update [Feature] documentation` ca task pentru a doua zi. **Nu lăsa niciodată documentația să întârzie push-ul pe GitHub.**
