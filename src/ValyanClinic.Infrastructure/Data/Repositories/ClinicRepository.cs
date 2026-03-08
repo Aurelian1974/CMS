@@ -22,10 +22,11 @@ public sealed class ClinicRepository(DapperContext context) : IClinicRepository
         var clinic = await multi.ReadFirstOrDefaultAsync<ClinicDto>();
         if (clinic is not null)
         {
-            clinic.CaenCodes    = (await multi.ReadAsync<ClinicCaenCodeDto>()).ToList();
-            clinic.BankAccounts = (await multi.ReadAsync<ClinicBankAccountDto>()).ToList();
-            clinic.Addresses    = (await multi.ReadAsync<ClinicAddressDto>()).ToList();
-            clinic.Contacts     = (await multi.ReadAsync<ClinicContactDto>()).ToList();
+            clinic.CaenCodes       = (await multi.ReadAsync<ClinicCaenCodeDto>()).ToList();
+            clinic.BankAccounts    = (await multi.ReadAsync<ClinicBankAccountDto>()).ToList();
+            clinic.Addresses       = (await multi.ReadAsync<ClinicAddressDto>()).ToList();
+            clinic.Contacts        = (await multi.ReadAsync<ClinicContactDto>()).ToList();
+            clinic.ContactPersons  = (await multi.ReadAsync<ClinicContactPersonDto>()).ToList();
         }
 
         return clinic;
@@ -209,6 +210,45 @@ public sealed class ClinicRepository(DapperContext context) : IClinicRepository
         await connection.ExecuteAsync(
             new CommandDefinition(
                 ClinicProcedures.ContactDelete,
+                new { Id = id, ClinicId = clinicId },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+    }
+
+    // ── Persoane de contact ──────────────────────────────────────────────────
+
+    public async Task<Guid> CreateContactPersonAsync(
+        Guid clinicId, string name, string? function,
+        string? phoneNumber, string? email, bool isMain, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        return await connection.ExecuteScalarAsync<Guid>(
+            new CommandDefinition(
+                ClinicProcedures.ContactPersonCreate,
+                new { ClinicId = clinicId, Name = name, Function = function, PhoneNumber = phoneNumber, Email = email, IsMain = isMain },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+    }
+
+    public async Task UpdateContactPersonAsync(
+        Guid id, Guid clinicId, string name, string? function,
+        string? phoneNumber, string? email, bool isMain, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                ClinicProcedures.ContactPersonUpdate,
+                new { Id = id, ClinicId = clinicId, Name = name, Function = function, PhoneNumber = phoneNumber, Email = email, IsMain = isMain },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+    }
+
+    public async Task DeleteContactPersonAsync(Guid id, Guid clinicId, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                ClinicProcedures.ContactPersonDelete,
                 new { Id = id, ClinicId = clinicId },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct));

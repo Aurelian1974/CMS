@@ -15,6 +15,9 @@ using ValyanClinic.Application.Features.Clinics.Commands.DeleteClinicAddress;
 using ValyanClinic.Application.Features.Clinics.Commands.CreateClinicContact;
 using ValyanClinic.Application.Features.Clinics.Commands.UpdateClinicContact;
 using ValyanClinic.Application.Features.Clinics.Commands.DeleteClinicContact;
+using ValyanClinic.Application.Features.Clinics.Commands.CreateClinicContactPerson;
+using ValyanClinic.Application.Features.Clinics.Commands.UpdateClinicContactPerson;
+using ValyanClinic.Application.Features.Clinics.Commands.DeleteClinicContactPerson;
 using ValyanClinic.Application.Features.Clinics.Queries.GetClinicLocations;
 using ValyanClinic.Application.Features.Clinics.Queries.GetCurrentClinic;
 
@@ -176,6 +179,36 @@ public class ClinicsController : BaseApiController
         var result = await Mediator.Send(new DeleteClinicContactCommand(id), ct);
         return HandleResult(result);
     }
+
+    // ==================== PERSOANE DE CONTACT ====================
+
+    [HttpPost("current/contact-persons")]
+    [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
+    public async Task<IActionResult> CreateContactPerson(
+        [FromBody] CreateClinicContactPersonCommand command, CancellationToken ct)
+    {
+        var result = await Mediator.Send(command, ct);
+        return HandleResult(result);
+    }
+
+    [HttpPut("current/contact-persons/{id:guid}")]
+    [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
+    public async Task<IActionResult> UpdateContactPerson(
+        Guid id, [FromBody] UpdateClinicContactPersonRequest request, CancellationToken ct)
+    {
+        var command = new UpdateClinicContactPersonCommand(
+            id, request.Name, request.Function, request.PhoneNumber, request.Email, request.IsMain);
+        var result = await Mediator.Send(command, ct);
+        return HandleResult(result);
+    }
+
+    [HttpDelete("current/contact-persons/{id:guid}")]
+    [HasAccess(ModuleCodes.Clinic, AccessLevel.Full)]
+    public async Task<IActionResult> DeleteContactPerson(Guid id, CancellationToken ct)
+    {
+        var result = await Mediator.Send(new DeleteClinicContactPersonCommand(id), ct);
+        return HandleResult(result);
+    }
 }
 
 // ===== Request models =====
@@ -193,4 +226,7 @@ public sealed record UpdateClinicAddressRequest(
 
 public sealed record UpdateClinicContactRequest(
     string ContactType, string Value, string? Label, bool IsMain);
+
+public sealed record UpdateClinicContactPersonRequest(
+    string Name, string? Function, string? PhoneNumber, string? Email, bool IsMain);
 

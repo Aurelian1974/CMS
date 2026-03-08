@@ -50,6 +50,19 @@ export interface ClinicContactDto {
   updatedAt: string | null
 }
 
+/// Persoană de contact a clinicii
+export interface ClinicContactPersonDto {
+  id: string
+  clinicId: string
+  name: string
+  function: string | null
+  phoneNumber: string | null
+  email: string | null
+  isMain: boolean
+  createdAt: string
+  updatedAt: string | null
+}
+
 /// Date clinică (societate comercială)
 export interface ClinicDto {
   id: string
@@ -66,6 +79,7 @@ export interface ClinicDto {
   bankAccounts: ClinicBankAccountDto[]
   addresses: ClinicAddressDto[]
   contacts: ClinicContactDto[]
+  contactPersons: ClinicContactPersonDto[]
 }
 
 /// Locație fizică a clinicii
@@ -135,6 +149,20 @@ export interface CreateClinicContactPayload {
 
 /// Payload actualizare contact
 export interface UpdateClinicContactPayload extends CreateClinicContactPayload {
+  id: string
+}
+
+/// Payload creare persoană de contact
+export interface CreateClinicContactPersonPayload {
+  name: string
+  function: string | null
+  phoneNumber: string | null
+  email: string | null
+  isMain: boolean
+}
+
+/// Payload actualizare persoană de contact
+export interface UpdateClinicContactPersonPayload extends CreateClinicContactPersonPayload {
   id: string
 }
 

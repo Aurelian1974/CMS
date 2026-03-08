@@ -1,0 +1,1 @@
+export { ContactPersonFormModal } from './ContactPersonFormModal'

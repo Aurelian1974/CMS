@@ -47,4 +47,11 @@ public interface IClinicRepository
         Guid id, Guid clinicId, string contactType, string value,
         string? label, bool isMain, CancellationToken ct);
     Task DeleteContactAsync(Guid id, Guid clinicId, CancellationToken ct);
-}
+    // ── Persoane de contact ────────────────────────────────────────
+    Task<Guid> CreateContactPersonAsync(
+        Guid clinicId, string name, string? function,
+        string? phoneNumber, string? email, bool isMain, CancellationToken ct);
+    Task UpdateContactPersonAsync(
+        Guid id, Guid clinicId, string name, string? function,
+        string? phoneNumber, string? email, bool isMain, CancellationToken ct);
+    Task DeleteContactPersonAsync(Guid id, Guid clinicId, CancellationToken ct);}

@@ -25,4 +25,8 @@ public static class ClinicProcedures
     public const string ContactCreate      = "dbo.ClinicContact_Create";
     public const string ContactUpdate      = "dbo.ClinicContact_Update";
     public const string ContactDelete      = "dbo.ClinicContact_Delete";
-}
+    // ── Persoane de contact ────────────────────────────────────────
+    public const string ContactPersonGetByClinic = "dbo.ClinicContactPerson_GetByClinic";
+    public const string ContactPersonCreate      = "dbo.ClinicContactPerson_Create";
+    public const string ContactPersonUpdate      = "dbo.ClinicContactPerson_Update";
+    public const string ContactPersonDelete      = "dbo.ClinicContactPerson_Delete";}

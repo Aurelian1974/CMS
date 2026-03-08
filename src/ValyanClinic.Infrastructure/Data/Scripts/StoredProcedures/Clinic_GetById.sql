@@ -49,5 +49,11 @@ BEGIN
     FROM dbo.ClinicContacts
     WHERE ClinicId = @Id AND IsDeleted = 0
     ORDER BY ContactType, IsMain DESC;
+
+    -- Result set 6: persoane de contact
+    SELECT Id, ClinicId, Name, [Function], PhoneNumber, Email, IsMain, CreatedAt, UpdatedAt
+    FROM dbo.ClinicContactPersons
+    WHERE ClinicId = @Id AND IsDeleted = 0
+    ORDER BY IsMain DESC, Name;
 END;
 GO

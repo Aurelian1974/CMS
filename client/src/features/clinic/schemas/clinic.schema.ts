@@ -105,6 +105,30 @@ export const contactSchema = z.object({
 
 export type ContactFormData = z.infer<typeof contactSchema>
 
+/// Schema validare formular persoană de contact
+export const contactPersonSchema = z.object({
+  name: z
+    .string()
+    .min(1, 'Numele este obligatoriu')
+    .max(200, 'Numele nu poate depăși 200 de caractere'),
+  function: z
+    .string()
+    .max(100, 'Funcția nu poate depăși 100 de caractere')
+    .optional(),
+  phoneNumber: z
+    .string()
+    .max(50, 'Numărul de telefon nu poate depăși 50 de caractere')
+    .optional(),
+  email: z
+    .string()
+    .email('Adresa de email nu este validă')
+    .or(z.literal(''))
+    .optional(),
+  isMain: z.boolean(),
+})
+
+export type ContactPersonFormData = z.infer<typeof contactPersonSchema>
+
 /// Schema validare formular locație
 export const clinicLocationSchema = z.object({
   name: z

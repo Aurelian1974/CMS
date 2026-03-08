@@ -29,4 +29,7 @@ public sealed class ClinicDto
 
     /// <summary>Date de contact — setat după result set 5.</summary>
     public IReadOnlyList<ClinicContactDto> Contacts { get; set; } = [];
+
+    /// <summary>Persoane de contact — setat după result set 6.</summary>
+    public IReadOnlyList<ClinicContactPersonDto> ContactPersons { get; set; } = [];
 }

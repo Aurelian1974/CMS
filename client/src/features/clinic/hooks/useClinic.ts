@@ -10,6 +10,8 @@ import type {
   UpdateClinicAddressPayload,
   CreateClinicContactPayload,
   UpdateClinicContactPayload,
+  CreateClinicContactPersonPayload,
+  UpdateClinicContactPersonPayload,
 } from '@/features/clinic/types/clinic.types'
 
 // ===== Query keys ierarhice =====
@@ -127,6 +129,34 @@ export const useDeleteContact = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => clinicApi.deleteContact(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: clinicKeys.current() }),
+  })
+}
+
+// ===== Persoane de contact =====
+
+export const useCreateContactPerson = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: CreateClinicContactPersonPayload) =>
+      clinicApi.createContactPerson(payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: clinicKeys.current() }),
+  })
+}
+
+export const useUpdateContactPerson = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (payload: UpdateClinicContactPersonPayload) =>
+      clinicApi.updateContactPerson(payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: clinicKeys.current() }),
+  })
+}
+
+export const useDeleteContactPerson = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => clinicApi.deleteContactPerson(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: clinicKeys.current() }),
   })
 }

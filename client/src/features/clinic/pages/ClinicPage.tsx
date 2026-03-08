@@ -6,6 +6,7 @@ import { LocationFormModal } from '../components/LocationFormModal'
 import { BankAccountFormModal } from '../components/BankAccountFormModal'
 import { AddressFormModal } from '../components/AddressFormModal'
 import { ContactFormModal } from '../components/ContactFormModal'
+import { ContactPersonFormModal } from '../components/ContactPersonFormModal'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { IconPlus } from '@/components/ui/Icons'
 import { FormInput } from '@/components/forms/FormInput'
@@ -16,12 +17,14 @@ import { clinicSchema, type ClinicFormData } from '../schemas/clinic.schema'
 import type { BankAccountFormData } from '../schemas/clinic.schema'
 import type { AddressFormData } from '../schemas/clinic.schema'
 import type { ContactFormData } from '../schemas/clinic.schema'
+import type { ContactPersonFormData } from '../schemas/clinic.schema'
 import type { ClinicLocationFormData } from '../schemas/clinic.schema'
 import type {
   ClinicLocationDto,
   ClinicBankAccountDto,
   ClinicAddressDto,
   ClinicContactDto,
+  ClinicContactPersonDto,
   UpdateClinicPayload,
 } from '../types/clinic.types'
 import {
@@ -40,6 +43,9 @@ import {
   useCreateContact,
   useUpdateContact,
   useDeleteContact,
+  useCreateContactPerson,
+  useUpdateContactPerson,
+  useDeleteContactPerson,
 } from '../hooks/useClinic'
 import { useDepartments } from '@/features/departments/hooks/useDepartments'
 import styles from './ClinicPage.module.scss'
@@ -143,6 +149,11 @@ const ClinicPage = () => {
   const updateContact = useUpdateContact()
   const deleteContact = useDeleteContact()
 
+  // Mutații — persoane de contact
+  const createContactPerson = useCreateContactPerson()
+  const updateContactPerson = useUpdateContactPerson()
+  const deleteContactPerson = useDeleteContactPerson()
+
   // Mutații — locații
   const createLocation = useCreateClinicLocation()
   const updateLocation = useUpdateClinicLocation()
@@ -161,12 +172,16 @@ const ClinicPage = () => {
   const [editingContact, setEditingContact] = useState<ClinicContactDto | null>(null)
   const [deleteContact2, setDeleteContact2] = useState<ClinicContactDto | null>(null)
 
+  const [personModal, setPersonModal] = useState(false)
+  const [editingPerson, setEditingPerson] = useState<ClinicContactPersonDto | null>(null)
+  const [deletePerson, setDeletePerson] = useState<ClinicContactPersonDto | null>(null)
+
   const [locationModal, setLocationModal] = useState(false)
   const [editingLocation, setEditingLocation] = useState<ClinicLocationDto | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ClinicLocationDto | null>(null)
 
   // Tab activ
-  const [activeTab, setActiveTab] = useState<'general' | 'addresses' | 'bank' | 'contacts' | 'locations'>('general')
+  const [activeTab, setActiveTab] = useState<'general' | 'addresses' | 'bank' | 'contacts' | 'persons'>('general')
 
   // State expandare locații
   const [expandedLocs, setExpandedLocs] = useState<Set<string>>(new Set())
@@ -300,6 +315,28 @@ const ClinicPage = () => {
     }
   }
 
+  // ===== Handlers persoane de contact =====
+  const handlePersonSubmit = (data: ContactPersonFormData) => {
+    const payload = {
+      name: data.name,
+      function: data.function ?? null,
+      phoneNumber: data.phoneNumber ?? null,
+      email: data.email ?? null,
+      isMain: data.isMain,
+    }
+    if (editingPerson) {
+      updateContactPerson.mutate({ id: editingPerson.id, ...payload }, {
+        onSuccess: () => { setPersonModal(false); setEditingPerson(null); showSuccess('Persoana de contact a fost actualizată.') },
+        onError: showError,
+      })
+    } else {
+      createContactPerson.mutate(payload, {
+        onSuccess: () => { setPersonModal(false); showSuccess('Persoana de contact a fost adăugată.') },
+        onError: showError,
+      })
+    }
+  }
+
   // ===== Handlers locații =====
   const handleLocationSubmit = (data: ClinicLocationFormData) => {
     if (editingLocation) {
@@ -327,13 +364,14 @@ const ClinicPage = () => {
   const bankAccounts = clinic?.bankAccounts ?? []
   const addresses = clinic?.addresses ?? []
   const contacts = clinic?.contacts ?? []
+  const contactPersons = clinic?.contactPersons ?? []
 
   const tabs = [
-    { key: 'general',   label: 'Date generale',     icon: <IconCompany /> },
-    { key: 'addresses', label: 'Adrese',             icon: <IconAddress />, count: addresses.length },
-    { key: 'bank',      label: 'Conturi bancare',    icon: <IconBank />,    count: bankAccounts.length },
-    { key: 'contacts',  label: 'Date de contact',    icon: <IconContact />, count: contacts.length },
-    { key: 'locations', label: 'Locații',            icon: <IconLocation />, count: locations.length },
+    { key: 'general',   label: 'Date generale',        icon: <IconCompany /> },
+    { key: 'addresses', label: 'Adrese',                icon: <IconAddress />, count: addresses.length },
+    { key: 'bank',      label: 'Conturi bancare',       icon: <IconBank />,    count: bankAccounts.length },
+    { key: 'contacts',  label: 'Date de contact',       icon: <IconContact />, count: contacts.length },
+    { key: 'persons',   label: 'Persoane de contact',   icon: <IconContact />, count: contactPersons.length },
   ] as const
 
   return (
@@ -544,20 +582,78 @@ const ClinicPage = () => {
             </>
           )}
 
-          {/* ======= TAB: Locații ======= */}
-          {activeTab === 'locations' && (
+          {/* ======= TAB: Persoane de contact ======= */}
+          {activeTab === 'persons' && (
             <>
               <div className={styles.tabToolbar}>
-                <AppButton variant="primary" size="sm" onClick={() => { setEditingLocation(null); setLocationModal(true) }}>
-                  <IconPlus /> Adaugă locație
+                <AppButton variant="primary" size="sm" onClick={() => { setEditingPerson(null); setPersonModal(true) }}>
+                  <IconPlus /> Adaugă persoană de contact
                 </AppButton>
               </div>
-              {locations.length === 0 ? (
+              {contactPersons.length === 0 ? (
                 <div className={styles.emptyState}>
-                  <IconLocation />
-                  <p>Nu există locații definite. Adaugă prima locație.</p>
+                  <IconContact />
+                  <p>Nu există persoane de contact definite. Adaugă prima persoană.</p>
                 </div>
               ) : (
+                <div className="table-responsive">
+                  <table className={styles.subTable}>
+                    <thead>
+                      <tr>
+                        <th>Nume</th>
+                        <th>Funcție</th>
+                        <th>Telefon</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th style={{ width: '80px' }}>Acțiuni</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {contactPersons.map((p) => (
+                        <tr key={p.id}>
+                          <td>{p.name}</td>
+                          <td>{p.function ?? '—'}</td>
+                          <td>{p.phoneNumber ?? '—'}</td>
+                          <td>{p.email ?? '—'}</td>
+                          <td>{p.isMain && <MainBadge />}</td>
+                          <td>
+                            <ActionButtons
+                              onEdit={() => { setEditingPerson(p); setPersonModal(true) }}
+                              onDelete={() => setDeletePerson(p)}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+        </div>
+      </div>
+
+      {/* ======= LOCAȚII (secțiune separată) ======= */}
+      <div className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <div className={styles.sectionTitle}>
+            <IconLocation />
+            <div>
+              <h3>Locații</h3>
+              <p>Puncte de lucru ale clinicii</p>
+            </div>
+          </div>
+          <AppButton variant="primary" size="sm" onClick={() => { setEditingLocation(null); setLocationModal(true) }}>
+            <IconPlus /> Adaugă locație
+          </AppButton>
+        </div>
+        {locations.length === 0 ? (
+          <div className={styles.emptyState}>
+            <IconLocation />
+            <p>Nu există locații definite. Adaugă prima locație.</p>
+          </div>
+        ) : (
                 <div className="table-responsive">
                   <table className={styles.locationsTable}>
                     <thead>
@@ -646,10 +742,7 @@ const ClinicPage = () => {
                   </table>
                 </div>
               )}
-            </>
-          )}
-
-        </div>
+        )}
       </div>
 
       {/* ===== Modals ===== */}
@@ -675,6 +768,14 @@ const ClinicPage = () => {
         onSubmit={handleContactSubmit}
         isLoading={createContact.isPending || updateContact.isPending}
         editData={editingContact}
+      />
+
+      <ContactPersonFormModal
+        isOpen={personModal}
+        onClose={() => { setPersonModal(false); setEditingPerson(null) }}
+        onSubmit={handlePersonSubmit}
+        isLoading={createContactPerson.isPending || updateContactPerson.isPending}
+        editData={editingPerson}
       />
 
       <LocationFormModal
@@ -729,6 +830,23 @@ const ClinicPage = () => {
               <AppButton variant="outline-secondary" onClick={() => setDeleteContact2(null)} disabled={deleteContact.isPending}>Anulează</AppButton>
               <AppButton variant="danger" isLoading={deleteContact.isPending} loadingText="Se șterge..."
                 onClick={() => deleteContact.mutate(deleteContact2.id, { onSuccess: () => { setDeleteContact2(null); showSuccess('Contactul a fost sters.') }, onError: (e) => { setDeleteContact2(null); showError(e) } })}>
+                Șterge
+              </AppButton>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== Confirm delete — persoană de contact ===== */}
+      {deletePerson && (
+        <div className={styles.confirmOverlay} onClick={() => setDeletePerson(null)}>
+          <div className={styles.confirmDialog} onClick={(e) => e.stopPropagation()}>
+            <h5>Confirmare ștergere</h5>
+            <p>Ștergi persoana de contact <strong>{deletePerson.name}</strong>?</p>
+            <div className={styles.confirmActions}>
+              <AppButton variant="outline-secondary" onClick={() => setDeletePerson(null)} disabled={deleteContactPerson.isPending}>Anulează</AppButton>
+              <AppButton variant="danger" isLoading={deleteContactPerson.isPending} loadingText="Se șterge..."
+                onClick={() => deleteContactPerson.mutate(deletePerson.id, { onSuccess: () => { setDeletePerson(null); showSuccess('Persoana de contact a fost ștearsă.') }, onError: (e) => { setDeletePerson(null); showError(e) } })}>
                 Șterge
               </AppButton>
             </div>

@@ -12,6 +12,8 @@ import type {
   UpdateClinicAddressPayload,
   CreateClinicContactPayload,
   UpdateClinicContactPayload,
+  CreateClinicContactPersonPayload,
+  UpdateClinicContactPersonPayload,
 } from '@/features/clinic/types/clinic.types'
 
 export const clinicApi = {
@@ -55,6 +57,17 @@ export const clinicApi = {
 
   deleteContact: (id: string): Promise<ApiResponse<boolean>> =>
     api.delete(`/api/clinics/current/contacts/${id}`),
+
+  // ===== Persoane de contact =====
+
+  createContactPerson: (payload: CreateClinicContactPersonPayload): Promise<ApiResponse<string>> =>
+    api.post('/api/clinics/current/contact-persons', payload),
+
+  updateContactPerson: ({ id, ...data }: UpdateClinicContactPersonPayload): Promise<ApiResponse<boolean>> =>
+    api.put(`/api/clinics/current/contact-persons/${id}`, data),
+
+  deleteContactPerson: (id: string): Promise<ApiResponse<boolean>> =>
+    api.delete(`/api/clinics/current/contact-persons/${id}`),
 
   // ===== Locații =====
 

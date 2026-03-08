@@ -106,6 +106,11 @@ public static class ErrorMessages
         public const string NotFound = "Contactul nu a fost găsit.";
     }
 
+    public static class ClinicContactPerson
+    {
+        public const string NotFound = "Persoana de contact nu a fost găsită.";
+    }
+
     public static class Department
     {
         public const string NotFound          = "Departamentul nu a fost găsit.";
