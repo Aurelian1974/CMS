@@ -147,7 +147,7 @@ function Save-ToSql {
         $cmdRelease.CommandText = @"
 INSERT INTO dbo.VersionReleases (Version, ReleasedAt, Notes)
 OUTPUT INSERTED.Id
-VALUES (@v, SYSUTCDATETIME(), @notes)
+VALUES (@v, SYSDATETIME(), @notes)
 "@
         $cmdRelease.Parameters.AddWithValue("@v", $Version) | Out-Null
         $notes = "$($Commits.Count) commit(uri) — $(Get-Date -Format 'dd.MM.yyyy')"
@@ -164,7 +164,7 @@ VALUES (@rid, @hash, @msg, @date)
             $cmdCommit.Parameters.AddWithValue("@rid",  $releaseId)         | Out-Null
             $cmdCommit.Parameters.AddWithValue("@hash", $c.Hash)            | Out-Null
             $cmdCommit.Parameters.AddWithValue("@msg",  $c.Message)         | Out-Null
-            $cmdCommit.Parameters.AddWithValue("@date", $c.Date.ToUniversalTime()) | Out-Null
+            $cmdCommit.Parameters.AddWithValue("@date", $c.Date) | Out-Null
             $cmdCommit.ExecuteNonQuery() | Out-Null
         }
 
