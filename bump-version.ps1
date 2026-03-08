@@ -198,6 +198,20 @@ if ($Eod) {
     Write-Host ""
     Write-Host "  [ End-of-Day Release ]" -ForegroundColor Magenta
 
+    # Auto-commit orice fișiere staged care nu sunt încă commise
+    Push-Location $Root
+    $staged = git diff --cached --name-only 2>$null
+    if ($staged) {
+        $stagedList = ($staged -split "`n" | Where-Object { $_ -ne "" }) -join ", "
+        $autoMsg = "feat: session work $(Get-Date -Format 'yyyy-MM-dd') — $($staged.Count) fisiere modificate"
+        Write-Host "  ⚠ Există fișiere staged necommise — le commit automat:" -ForegroundColor Yellow
+        $staged -split "`n" | Where-Object { $_ -ne "" } | ForEach-Object { Write-Host "      $_" -ForegroundColor DarkGray }
+        git commit -m $autoMsg | Out-Null
+        Write-Host "  ✓ Committed: $autoMsg" -ForegroundColor Green
+        Write-Host ""
+    }
+    Pop-Location
+
     $commits = Get-CommitsSinceLastTag
 
     if ($commits.Count -eq 0) {
@@ -206,7 +220,7 @@ if ($Eod) {
     }
 
     Write-Host ""
-    Write-Host "  Commit-uri incluse în v$newVersion:" -ForegroundColor White
+    Write-Host "  Commit-uri incluse in v${newVersion}:" -ForegroundColor White
     $commits | ForEach-Object { Write-Host "    · $($_.Message)  ($($_.Date.ToString('HH:mm')))" -ForegroundColor DarkGray }
     Write-Host ""
 
