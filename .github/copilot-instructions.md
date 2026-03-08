@@ -38,6 +38,7 @@
 22. [Configurare Aplicație — appsettings.json](#22-configurare-aplicație)
 23. [Biblioteca de Referință — Fișiere Model](#23-biblioteca-de-referință)
 24. [Consistență UI — Reguli Obligatorii](#24-consistență-ui)
+25. [Rutina de Final de Zi — EOD & GitHub](#25-rutina-de-final-de-zi)
 
 ---
 
@@ -3066,3 +3067,135 @@ Fișiere de referință cu pattern-uri complete, folosite de Claude ca inspiraț
 4. **Verifică consistența** — aceeași clasă CSS module, aceeași ordine elemente, același pattern de hooks
 5. **NU adăuga elemente extra** — dacă ListPage existentă nu are filtru avansat, noul ListPage nu adaugă filtru avansat (doar la cerere explicită)
 6. **NU schimba layout-ul** — dacă paginile existente au search bar deasupra grid-ului, noua pagină nu mută search bar-ul în altă parte
+
+---
+
+## 25. RUTINA DE FINAL DE ZI — EOD & GitHub
+
+La finalul fiecărei zile de lucru se execută obligatoriu rutina de versionare și push pe GitHub. Aceasta asigură că tot codul e salvat, versiunea e incrementată și changelog-ul SQL e actualizat.
+
+### 25.1 Pași obligatorii EOD
+
+**Pasul 1 — Commit tot ce e neterminat (dacă există fișiere unstaged)**
+```powershell
+git add -A
+# Verifică ce s-a adăugat:
+git status --short
+```
+> **IMPORTANT**: `bump-version.ps1 -Eod` detectează automat fișierele staged (dar necommise) și le commitează înainte de a colecta commit-urile pentru SQL. TOTUȘI, cel mai bun flux e să faci commit-urile logice manual înainte de a rula EOD.
+
+**Pasul 2 — Rulează scriptul EOD**
+```powershell
+Set-Location "d:\Lucru\CMS\CMS"
+.\bump-version.ps1 -Eod
+```
+
+Scriptul face automat:
+- Bumpează versiunea **patch** (`0.1.1 → 0.1.2`)
+- Actualizează `Directory.Build.props` și `client/package.json`
+- Dacă există fișiere staged necommise → le commitează automat ca `feat: session work YYYY-MM-DD`
+- Colectează toate commit-urile de la ultimul tag până la HEAD
+- Salvează în SQL: tabelele `dbo.VersionReleases` + `dbo.VersionCommits`
+- Creează commit Git: `chore: release vX.Y.Z`
+- Creează tag Git: `vX.Y.Z`
+- Afișează comanda de push
+
+**Pasul 3 — Push pe GitHub**
+```powershell
+git push && git push --tags
+```
+
+### 25.2 Flux complet recomandat
+
+```powershell
+# 1. Oprire servere (opțional)
+Stop-Process -Name "ValyanClinic.API" -Force -ErrorAction SilentlyContinue
+Stop-Process -Name "node" -Force -ErrorAction SilentlyContinue
+
+# 2. Verificare stare git
+Set-Location "d:\Lucru\CMS\CMS"
+git status --short
+git log --oneline -5
+
+# 3. Commit orice cod neterminat (dacă există)
+git add -A
+git commit -m "feat: [descriere scurtă a ce s-a lucrat azi]"
+
+# 4. Rulare EOD
+.\bump-version.ps1 -Eod
+
+# 5. Push
+git push && git push --tags
+```
+
+### 25.3 Alte moduri de versioning
+
+| Comandă | Când se folosește |
+|---------|-------------------|
+| `.\bump-version.ps1 -Eod` | **Daily** — final de zi, bump patch automat |
+| `.\bump-version.ps1 -Part minor -Tag` | Feature major livrat — bump minor (0.1.x → 0.2.0) |
+| `.\bump-version.ps1 -Part major -Tag` | Lansare nouă — bump major (0.x.y → 1.0.0) |
+| `.\bump-version.ps1 -Part patch` | Bump fișiere fără commit/tag (rar) |
+
+### 25.4 Structura SQL — Changelog versiuni
+
+```sql
+-- dbo.VersionReleases — câte un rând per versiune
+Id          UNIQUEIDENTIFIER PK
+Version     NVARCHAR(20)      -- '0.1.2'
+ReleasedAt  DATETIME2         -- data release-ului (UTC)
+Notes       NVARCHAR(500)     -- descriere automată: 'N commit(uri) — dd.MM.yyyy'
+
+-- dbo.VersionCommits — commit-urile incluse în fiecare release
+Id            UNIQUEIDENTIFIER PK
+ReleaseId     UNIQUEIDENTIFIER FK→VersionReleases
+CommitHash    NVARCHAR(40)      -- SHA complet
+CommitMessage NVARCHAR(500)     -- mesajul de commit
+CommitDate    DATETIME2         -- data commit-ului (UTC)
+```
+
+**Verificare SQL după EOD:**
+```sql
+SELECT r.Version, r.ReleasedAt, r.Notes,
+       c.CommitHash, c.CommitMessage, c.CommitDate
+FROM dbo.VersionReleases r
+JOIN dbo.VersionCommits c ON c.ReleaseId = r.Id
+ORDER BY r.ReleasedAt DESC, c.CommitDate DESC;
+```
+
+### 25.5 Reguli pentru mesajele de commit
+
+Convenție **Conventional Commits** — obligatorie:
+
+| Prefix | Când | Exemple |
+|--------|------|---------|
+| `feat:` | Feature nou | `feat: add FormPhoneInput component` |
+| `fix:` | Bug fix | `fix: phone border not removed on input` |
+| `feat(scope):` | Feature în modul specific | `feat(patients): add emergency contact tab` |
+| `fix(scope):` | Bug în modul specific | `fix(auth): refresh token not rotating` |
+| `chore:` | Task tehnic, config | `chore: update dependencies` |
+| `refactor:` | Refactoring fără feature | `refactor: extract PhoneCell component` |
+| `docs:` | Documentație | `docs: update copilot instructions EOD` |
+| `style:` | CSS/SCSS, fără logică | `style: fix sidebar active indicator` |
+| `perf:` | Îmbunătățire performanță | `perf: add index on Appointments.DoctorId` |
+
+**Reguli:**
+- Mesaj în **engleză**
+- Fără punct la final
+- Imperativ prezent: `add`, `fix`, `update` — nu `added`, `fixed`, `updated`
+- Max 72 caractere pe prima linie
+- Dacă sunt mai multe modificări logice → **commit-uri separate**, nu un singur commit mare
+
+### 25.6 Ce face Claude la cererea de EOD
+
+Când utilizatorul spune **"hai să facem EOD"**, **"punem pe GitHub"**, **"terminăm ziua"** sau similar, Claude:
+
+1. **Verifică starea git**: `git status --short` și `git log --oneline -5`
+2. **Verifică versiunea curentă**: din `Directory.Build.props`
+3. **Dacă există fișiere unstaged sau staged necommise** → face `git add -A` și un commit descriptiv
+4. **Rulează** `.\bump-version.ps1 -Eod` din directorul `d:\Lucru\CMS\CMS`
+5. **Verifică output-ul** — numărul de commit-uri colectate, versiunea nouă
+6. **Rulează** `git push && git push --tags`
+7. **Confirmă** versiunea publicată și URL-ul tag-ului pe GitHub
+
+> **NOTĂ IMPORTANTĂ**: Anterior s-a întâmplat că `git add -A` s-a rulat fără un commit anterior, iar scriptul EOD a văzut fișierele staged și le-a pus în release commit fără descriere proprie. Scriptul a fost actualizat să detecteze și să committeze automat fișierele staged — dar e mai curat să faci commit-urile logice **înainte** de a chema EOD.
