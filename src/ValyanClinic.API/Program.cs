@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Reflection;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Serilog;
