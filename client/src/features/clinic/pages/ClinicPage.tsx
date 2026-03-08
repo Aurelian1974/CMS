@@ -165,6 +165,9 @@ const ClinicPage = () => {
   const [editingLocation, setEditingLocation] = useState<ClinicLocationDto | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ClinicLocationDto | null>(null)
 
+  // Tab activ
+  const [activeTab, setActiveTab] = useState<'general' | 'addresses' | 'bank' | 'contacts' | 'locations'>('general')
+
   // State expandare locații
   const [expandedLocs, setExpandedLocs] = useState<Set<string>>(new Set())
 
@@ -325,6 +328,14 @@ const ClinicPage = () => {
   const addresses = clinic?.addresses ?? []
   const contacts = clinic?.contacts ?? []
 
+  const tabs = [
+    { key: 'general',   label: 'Date generale',     icon: <IconCompany /> },
+    { key: 'addresses', label: 'Adrese',             icon: <IconAddress />, count: addresses.length },
+    { key: 'bank',      label: 'Conturi bancare',    icon: <IconBank />,    count: bankAccounts.length },
+    { key: 'contacts',  label: 'Date de contact',    icon: <IconContact />, count: contacts.length },
+    { key: 'locations', label: 'Locații',            icon: <IconLocation />, count: locations.length },
+  ] as const
+
   return (
     <div className={styles.page}>
       <PageHeader title="Clinica" subtitle="Date societate comercială" />
@@ -342,279 +353,303 @@ const ClinicPage = () => {
         </div>
       )}
 
-      {/* ======= SECȚIUNE: Date generale ======= */}
-      <div className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}><IconCompany />Date societate comercială</h2>
-        </div>
-        <form onSubmit={handleSubmit(handleSaveClinic)} noValidate>
-          <div className={styles.formGrid}>
-            <FormInput name="name" control={control} label="Denumire societate" placeholder="ex: S.C. Clinica Medicală S.R.L." required />
-            <FormInput name="fiscalCode" control={control} label="CUI / CIF" placeholder="ex: RO12345678" required />
-            <FormInput name="tradeRegisterNumber" control={control} label="Nr. Registrul Comerțului" placeholder="ex: J40/1234/2020" />
-            <div className={styles.fullWidth}>
-              <CaenCodeMultiSelect name="caenCodes" control={control} label="Coduri CAEN" />
-            </div>
-            <FormInput name="legalRepresentative" control={control} label="Reprezentant legal" placeholder="ex: Dr. Popescu Ion" />
-            <FormInput name="contractCNAS" control={control} label="Nr. contract CNAS" placeholder="ex: 12345/2024" />
-          </div>
-          <div className={styles.formActions}>
-            <AppButton type="submit" variant="primary" disabled={!isDirty} isLoading={updateClinic.isPending} loadingText="Se salvează...">
-              Salvează modificările
-            </AppButton>
-          </div>
-        </form>
-      </div>
+      {/* ======= TAB NAV ======= */}
+      <div className={styles.tabsCard}>
+        <nav className={styles.tabNav}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              className={`${styles.tabBtn} ${activeTab === tab.key ? styles.tabBtnActive : ''}`}
+              onClick={() => setActiveTab(tab.key)}
+              type="button"
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
+              {'count' in tab && tab.count > 0 && (
+                <span className={styles.tabCount}>{tab.count}</span>
+              )}
+            </button>
+          ))}
+        </nav>
 
-      {/* ======= SECȚIUNE: Adrese ======= */}
-      <div className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}><IconAddress />Adrese</h2>
-          <AppButton variant="primary" size="sm" onClick={() => { setEditingAddr(null); setAddrModal(true) }}>
-            <IconPlus /> Adaugă adresă
-          </AppButton>
-        </div>
-        {addresses.length === 0 ? (
-          <div className={styles.emptyState}>
-            <IconAddress />
-            <p>Nu există adrese definite. Adaugă prima adresă.</p>
-          </div>
-        ) : (
-          <div className="table-responsive">
-            <table className={styles.subTable}>
-              <thead>
-                <tr>
-                  <th>Tip</th>
-                  <th>Stradă</th>
-                  <th>Oraș</th>
-                  <th>Județ</th>
-                  <th>Cod poștal</th>
-                  <th>Țară</th>
-                  <th>Status</th>
-                  <th style={{ width: '80px' }}>Acțiuni</th>
-                </tr>
-              </thead>
-              <tbody>
-                {addresses.map((a) => (
-                  <tr key={a.id}>
-                    <td><span className={styles.typeBadge}>{a.addressType}</span></td>
-                    <td>{a.street}</td>
-                    <td>{a.city}</td>
-                    <td>{a.county}</td>
-                    <td>{a.postalCode ?? '—'}</td>
-                    <td>{a.country}</td>
-                    <td>{a.isMain && <MainBadge />}</td>
-                    <td>
-                      <ActionButtons
-                        onEdit={() => { setEditingAddr(a); setAddrModal(true) }}
-                        onDelete={() => setDeleteAddr(a)}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+        <div className={styles.tabContent}>
 
-      {/* ======= SECȚIUNE: Conturi bancare ======= */}
-      <div className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}><IconBank />Conturi bancare</h2>
-          <AppButton variant="primary" size="sm" onClick={() => { setEditingBank(null); setBankModal(true) }}>
-            <IconPlus /> Adaugă cont
-          </AppButton>
-        </div>
-        {bankAccounts.length === 0 ? (
-          <div className={styles.emptyState}>
-            <IconBank />
-            <p>Nu există conturi bancare definite. Adaugă primul cont.</p>
-          </div>
-        ) : (
-          <div className="table-responsive">
-            <table className={styles.subTable}>
-              <thead>
-                <tr>
-                  <th>Bancă</th>
-                  <th>IBAN</th>
-                  <th>Monedă</th>
-                  <th>Observații</th>
-                  <th>Status</th>
-                  <th style={{ width: '80px' }}>Acțiuni</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bankAccounts.map((b) => (
-                  <tr key={b.id}>
-                    <td>{b.bankName}</td>
-                    <td><span className={styles.ibanCode}>{b.iban}</span></td>
-                    <td>{b.currency}</td>
-                    <td>{b.notes ?? '—'}</td>
-                    <td>{b.isMain && <MainBadge />}</td>
-                    <td>
-                      <ActionButtons
-                        onEdit={() => { setEditingBank(b); setBankModal(true) }}
-                        onDelete={() => setDeleteBank(b)}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+          {/* ======= TAB: Date generale ======= */}
+          {activeTab === 'general' && (
+            <form onSubmit={handleSubmit(handleSaveClinic)} noValidate>
+              <div className={styles.formGrid}>
+                <FormInput name="name" control={control} label="Denumire societate" placeholder="ex: S.C. Clinica Medicală S.R.L." required />
+                <FormInput name="fiscalCode" control={control} label="CUI / CIF" placeholder="ex: RO12345678" required />
+                <FormInput name="tradeRegisterNumber" control={control} label="Nr. Registrul Comerțului" placeholder="ex: J40/1234/2020" />
+                <div className={styles.fullWidth}>
+                  <CaenCodeMultiSelect name="caenCodes" control={control} label="Coduri CAEN" />
+                </div>
+                <FormInput name="legalRepresentative" control={control} label="Reprezentant legal" placeholder="ex: Dr. Popescu Ion" />
+                <FormInput name="contractCNAS" control={control} label="Nr. contract CNAS" placeholder="ex: 12345/2024" />
+              </div>
+              <div className={styles.formActions}>
+                <AppButton type="submit" variant="primary" disabled={!isDirty} isLoading={updateClinic.isPending} loadingText="Se salvează...">
+                  Salvează modificările
+                </AppButton>
+              </div>
+            </form>
+          )}
 
-      {/* ======= SECȚIUNE: Date de contact ======= */}
-      <div className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}><IconContact />Date de contact</h2>
-          <AppButton variant="primary" size="sm" onClick={() => { setEditingContact(null); setContactModal(true) }}>
-            <IconPlus /> Adaugă contact
-          </AppButton>
-        </div>
-        {contacts.length === 0 ? (
-          <div className={styles.emptyState}>
-            <IconContact />
-            <p>Nu există date de contact definite. Adaugă primul contact.</p>
-          </div>
-        ) : (
-          <div className="table-responsive">
-            <table className={styles.subTable}>
-              <thead>
-                <tr>
-                  <th>Tip</th>
-                  <th>Valoare</th>
-                  <th>Etichetă</th>
-                  <th>Status</th>
-                  <th style={{ width: '80px' }}>Acțiuni</th>
-                </tr>
-              </thead>
-              <tbody>
-                {contacts.map((c) => (
-                  <tr key={c.id}>
-                    <td><span className={styles.typeBadge}>{c.contactType}</span></td>
-                    <td>{c.value}</td>
-                    <td>{c.label ?? '—'}</td>
-                    <td>{c.isMain && <MainBadge />}</td>
-                    <td>
-                      <ActionButtons
-                        onEdit={() => { setEditingContact(c); setContactModal(true) }}
-                        onDelete={() => setDeleteContact2(c)}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* ======= SECȚIUNE: Locații ======= */}
-      <div className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}><IconLocation />Locații</h2>
-          <AppButton variant="primary" size="sm" onClick={() => { setEditingLocation(null); setLocationModal(true) }}>
-            <IconPlus /> Adaugă locație
-          </AppButton>
-        </div>
-
-        {locations.length === 0 ? (
-          <div className={styles.emptyState}>
-            <IconLocation />
-            <p>Nu există locații definite. Adaugă prima locație.</p>
-          </div>
-        ) : (
-          <div className="table-responsive">
-            <table className={styles.locationsTable}>
-              <thead>
-                <tr>
-                  <th style={{ width: '36px' }}></th>
-                  <th>Denumire</th>
-                  <th>Adresă</th>
-                  <th>Oraș</th>
-                  <th>Telefon</th>
-                  <th>Tip</th>
-                  <th>Status</th>
-                  <th style={{ width: '80px' }}>Acțiuni</th>
-                </tr>
-              </thead>
-              <tbody>
-                {locations.map((loc) => {
-                  const isExpanded = expandedLocs.has(loc.id)
-                  const locDepts = deptsByLocation.get(loc.id) ?? []
-                  return (
-                    <>
-                      <tr key={loc.id} className={isExpanded ? styles.rowExpanded : ''}>
-                        <td className={styles.expandCell}>
-                          {locDepts.length > 0 && (
-                            <button className={styles.expandBtn} onClick={() => toggleExpandLoc(loc.id)} aria-label={isExpanded ? 'Restrânge' : 'Expandează'}>
-                              <IconChevron expanded={isExpanded} />
-                            </button>
-                          )}
-                        </td>
-                        <td>
-                          <span className={locDepts.length > 0 ? styles.clickableName : ''} onClick={() => locDepts.length > 0 && toggleExpandLoc(loc.id)}>
-                            {loc.name}
-                          </span>
-                        </td>
-                        <td>{loc.address}</td>
-                        <td>{loc.city}, {loc.county}</td>
-                        <td>{loc.phoneNumber ?? '—'}</td>
-                        <td>{loc.isPrimary && <span className={styles.badgePrimary}>Sediu principal</span>}</td>
-                        <td>
-                          <span className={loc.isActive ? styles.badgeActive : styles.badgeInactive}>
-                            {loc.isActive ? 'Activă' : 'Inactivă'}
-                          </span>
-                        </td>
-                        <td>
-                          <ActionButtons
-                            onEdit={() => { setEditingLocation(loc); setLocationModal(true) }}
-                            onDelete={() => setDeleteTarget(loc)}
-                          />
-                        </td>
+          {/* ======= TAB: Adrese ======= */}
+          {activeTab === 'addresses' && (
+            <>
+              <div className={styles.tabToolbar}>
+                <AppButton variant="primary" size="sm" onClick={() => { setEditingAddr(null); setAddrModal(true) }}>
+                  <IconPlus /> Adaugă adresă
+                </AppButton>
+              </div>
+              {addresses.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <IconAddress />
+                  <p>Nu există adrese definite. Adaugă prima adresă.</p>
+                </div>
+              ) : (
+                <div className="table-responsive">
+                  <table className={styles.subTable}>
+                    <thead>
+                      <tr>
+                        <th>Tip</th>
+                        <th>Stradă</th>
+                        <th>Oraș</th>
+                        <th>Județ</th>
+                        <th>Cod poștal</th>
+                        <th>Țară</th>
+                        <th>Status</th>
+                        <th style={{ width: '80px' }}>Acțiuni</th>
                       </tr>
-                      {isExpanded && (
-                        <tr key={`${loc.id}-detail`} className={styles.detailRow}>
-                          <td colSpan={8} className={styles.detailCell}>
-                            <div className={styles.detailContent}>
-                              <div className={styles.detailHeader}>
-                                <IconDepartment />
-                                <span>Departamente în <strong>{loc.name}</strong></span>
-                              </div>
-                              {locDepts.length === 0 ? (
-                                <p className={styles.detailEmpty}>Niciun departament asignat.</p>
-                              ) : (
-                                <div className={styles.deptList}>
-                                  {locDepts.map((dept) => (
-                                    <div key={dept.id} className={styles.deptCard}>
-                                      <div className={styles.deptCardHeader}>
-                                        <span className={styles.deptName}>{dept.name}</span>
-                                        <span className={styles.deptCode}>{dept.code}</span>
-                                      </div>
-                                      {dept.headDoctorName && (
-                                        <div className={styles.deptMeta}><IconStar /><span>Șef: {dept.headDoctorName}</span></div>
-                                      )}
-                                      <div className={styles.deptMeta}><IconDoctor /><span>{dept.doctorCount} {dept.doctorCount === 1 ? 'medic' : 'medici'}</span></div>
-                                      <div className={styles.deptMeta}><IconDoctor /><span>{dept.medicalStaffCount} personal medical</span></div>
-                                      <span className={dept.isActive ? styles.badgeActive : styles.badgeInactive}>{dept.isActive ? 'Activ' : 'Inactiv'}</span>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
+                    </thead>
+                    <tbody>
+                      {addresses.map((a) => (
+                        <tr key={a.id}>
+                          <td><span className={styles.typeBadge}>{a.addressType}</span></td>
+                          <td>{a.street}</td>
+                          <td>{a.city}</td>
+                          <td>{a.county}</td>
+                          <td>{a.postalCode ?? '—'}</td>
+                          <td>{a.country}</td>
+                          <td>{a.isMain && <MainBadge />}</td>
+                          <td>
+                            <ActionButtons
+                              onEdit={() => { setEditingAddr(a); setAddrModal(true) }}
+                              onDelete={() => setDeleteAddr(a)}
+                            />
                           </td>
                         </tr>
-                      )}
-                    </>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ======= TAB: Conturi bancare ======= */}
+          {activeTab === 'bank' && (
+            <>
+              <div className={styles.tabToolbar}>
+                <AppButton variant="primary" size="sm" onClick={() => { setEditingBank(null); setBankModal(true) }}>
+                  <IconPlus /> Adaugă cont
+                </AppButton>
+              </div>
+              {bankAccounts.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <IconBank />
+                  <p>Nu există conturi bancare definite. Adaugă primul cont.</p>
+                </div>
+              ) : (
+                <div className="table-responsive">
+                  <table className={styles.subTable}>
+                    <thead>
+                      <tr>
+                        <th>Bancă</th>
+                        <th>IBAN</th>
+                        <th>Monedă</th>
+                        <th>Observații</th>
+                        <th>Status</th>
+                        <th style={{ width: '80px' }}>Acțiuni</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bankAccounts.map((b) => (
+                        <tr key={b.id}>
+                          <td>{b.bankName}</td>
+                          <td><span className={styles.ibanCode}>{b.iban}</span></td>
+                          <td>{b.currency}</td>
+                          <td>{b.notes ?? '—'}</td>
+                          <td>{b.isMain && <MainBadge />}</td>
+                          <td>
+                            <ActionButtons
+                              onEdit={() => { setEditingBank(b); setBankModal(true) }}
+                              onDelete={() => setDeleteBank(b)}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ======= TAB: Date de contact ======= */}
+          {activeTab === 'contacts' && (
+            <>
+              <div className={styles.tabToolbar}>
+                <AppButton variant="primary" size="sm" onClick={() => { setEditingContact(null); setContactModal(true) }}>
+                  <IconPlus /> Adaugă contact
+                </AppButton>
+              </div>
+              {contacts.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <IconContact />
+                  <p>Nu există date de contact definite. Adaugă primul contact.</p>
+                </div>
+              ) : (
+                <div className="table-responsive">
+                  <table className={styles.subTable}>
+                    <thead>
+                      <tr>
+                        <th>Tip</th>
+                        <th>Valoare</th>
+                        <th>Etichetă</th>
+                        <th>Status</th>
+                        <th style={{ width: '80px' }}>Acțiuni</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {contacts.map((c) => (
+                        <tr key={c.id}>
+                          <td><span className={styles.typeBadge}>{c.contactType}</span></td>
+                          <td>{c.value}</td>
+                          <td>{c.label ?? '—'}</td>
+                          <td>{c.isMain && <MainBadge />}</td>
+                          <td>
+                            <ActionButtons
+                              onEdit={() => { setEditingContact(c); setContactModal(true) }}
+                              onDelete={() => setDeleteContact2(c)}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ======= TAB: Locații ======= */}
+          {activeTab === 'locations' && (
+            <>
+              <div className={styles.tabToolbar}>
+                <AppButton variant="primary" size="sm" onClick={() => { setEditingLocation(null); setLocationModal(true) }}>
+                  <IconPlus /> Adaugă locație
+                </AppButton>
+              </div>
+              {locations.length === 0 ? (
+                <div className={styles.emptyState}>
+                  <IconLocation />
+                  <p>Nu există locații definite. Adaugă prima locație.</p>
+                </div>
+              ) : (
+                <div className="table-responsive">
+                  <table className={styles.locationsTable}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: '36px' }}></th>
+                        <th>Denumire</th>
+                        <th>Adresă</th>
+                        <th>Oraș</th>
+                        <th>Telefon</th>
+                        <th>Tip</th>
+                        <th>Status</th>
+                        <th style={{ width: '80px' }}>Acțiuni</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {locations.map((loc) => {
+                        const isExpanded = expandedLocs.has(loc.id)
+                        const locDepts = deptsByLocation.get(loc.id) ?? []
+                        return (
+                          <>
+                            <tr key={loc.id} className={isExpanded ? styles.rowExpanded : ''}>
+                              <td className={styles.expandCell}>
+                                {locDepts.length > 0 && (
+                                  <button className={styles.expandBtn} onClick={() => toggleExpandLoc(loc.id)} aria-label={isExpanded ? 'Restrânge' : 'Expandează'}>
+                                    <IconChevron expanded={isExpanded} />
+                                  </button>
+                                )}
+                              </td>
+                              <td>
+                                <span className={locDepts.length > 0 ? styles.clickableName : ''} onClick={() => locDepts.length > 0 && toggleExpandLoc(loc.id)}>
+                                  {loc.name}
+                                </span>
+                              </td>
+                              <td>{loc.address}</td>
+                              <td>{loc.city}, {loc.county}</td>
+                              <td>{loc.phoneNumber ?? '—'}</td>
+                              <td>{loc.isPrimary && <span className={styles.badgePrimary}>Sediu principal</span>}</td>
+                              <td>
+                                <span className={loc.isActive ? styles.badgeActive : styles.badgeInactive}>
+                                  {loc.isActive ? 'Activă' : 'Inactivă'}
+                                </span>
+                              </td>
+                              <td>
+                                <ActionButtons
+                                  onEdit={() => { setEditingLocation(loc); setLocationModal(true) }}
+                                  onDelete={() => setDeleteTarget(loc)}
+                                />
+                              </td>
+                            </tr>
+                            {isExpanded && (
+                              <tr key={`${loc.id}-detail`} className={styles.detailRow}>
+                                <td colSpan={8} className={styles.detailCell}>
+                                  <div className={styles.detailContent}>
+                                    <div className={styles.detailHeader}>
+                                      <IconDepartment />
+                                      <span>Departamente în <strong>{loc.name}</strong></span>
+                                    </div>
+                                    {locDepts.length === 0 ? (
+                                      <p className={styles.detailEmpty}>Niciun departament asignat.</p>
+                                    ) : (
+                                      <div className={styles.deptList}>
+                                        {locDepts.map((dept) => (
+                                          <div key={dept.id} className={styles.deptCard}>
+                                            <div className={styles.deptCardHeader}>
+                                              <span className={styles.deptName}>{dept.name}</span>
+                                              <span className={styles.deptCode}>{dept.code}</span>
+                                            </div>
+                                            {dept.headDoctorName && (
+                                              <div className={styles.deptMeta}><IconStar /><span>Șef: {dept.headDoctorName}</span></div>
+                                            )}
+                                            <div className={styles.deptMeta}><IconDoctor /><span>{dept.doctorCount} {dept.doctorCount === 1 ? 'medic' : 'medici'}</span></div>
+                                            <div className={styles.deptMeta}><IconDoctor /><span>{dept.medicalStaffCount} personal medical</span></div>
+                                            <span className={dept.isActive ? styles.badgeActive : styles.badgeInactive}>{dept.isActive ? 'Activ' : 'Inactiv'}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+
+        </div>
       </div>
 
       {/* ===== Modals ===== */}

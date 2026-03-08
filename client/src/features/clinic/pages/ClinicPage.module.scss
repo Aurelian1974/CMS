@@ -7,6 +7,85 @@
   gap: 1.5rem;
 }
 
+// ===== Card cu tab-uri =====
+.tabsCard {
+  background: $card-bg;
+  border-radius: $border-radius-lg;
+  box-shadow: $box-shadow-sm;
+  overflow: hidden;
+}
+
+.tabNav {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid $gray-200;
+  background: $gray-50;
+  overflow-x: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+.tabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.75rem 1.1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: $gray-600;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+
+  svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  &:hover {
+    color: $primary;
+    background-color: rgba($primary, 0.04);
+  }
+}
+
+.tabBtnActive {
+  color: $primary;
+  border-bottom-color: $primary;
+  background-color: rgba($primary, 0.06);
+  font-weight: 600;
+}
+
+.tabCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.3rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: rgba($primary, 0.12);
+  color: $primary-dark;
+  line-height: 1;
+}
+
+.tabBtnActive .tabCount {
+  background: $primary;
+  color: #fff;
+}
+
+.tabContent {
+  padding: 1.5rem;
+}
+
+.tabToolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
 // ===== Secțiuni card =====
 .section {
   background: $card-bg;
