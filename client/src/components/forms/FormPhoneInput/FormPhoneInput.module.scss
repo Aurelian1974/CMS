@@ -1,0 +1,182 @@
+@import '@/styles/variables';
+
+// ===== Container câmp =====
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+// ===== Label =====
+.label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: $gray-600;
+  line-height: 1.4;
+}
+
+.required {
+  color: $danger;
+  margin-left: 0.15rem;
+}
+
+// ===== Eroare =====
+.error {
+  font-size: 0.78rem;
+  color: $danger;
+  margin-top: 0.1rem;
+}
+
+// ===== Wrapper input (border + focus state) =====
+.inputWrapper {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-sm;
+  background: $card-bg;
+  min-height: 36px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  overflow: hidden;
+
+  &:hover {
+    border-color: $gray-300;
+  }
+
+  &:focus-within {
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.12);
+  }
+
+  &.hasError {
+    border-color: $danger;
+
+    &:focus-within {
+      box-shadow: 0 0 0 3px rgba($danger, 0.12);
+    }
+  }
+
+  // Reset complet stiluri implicite react-phone-number-input
+  :global(.PhoneInput) {
+    display: contents; // lasă copiii să fie direct în flex container
+  }
+
+  :global(.PhoneInputCountry) {
+    display: none; // ascundem selectorul implicit — îl înlocuim cu CountrySelect custom
+  }
+
+  // Reset agresiv pe orice input din interior (anulează Bootstrap + browser defaults)
+  input {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+}
+
+// ===== Input număr de telefon =====
+.phoneInput {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent;
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  color: $gray-700;
+  padding: 0 0.625rem;
+
+  &::placeholder {
+    color: $gray-400;
+  }
+
+  &:disabled {
+    color: $gray-400;
+    cursor: not-allowed;
+  }
+}
+
+// ===== Selector țară (custom) =====
+.countryWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  border-right: 1px solid $gray-200;
+  background: $gray-50;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.12s ease;
+
+  &:hover {
+    background: $gray-100;
+  }
+}
+
+// Overlay vizual: steag SVG + prefix + săgeată — overlay peste select-ul invizibil
+.flagDisplay {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0 0.45rem 0 0.55rem;
+  pointer-events: none; // click-urile trec prin la select
+  white-space: nowrap;
+  height: 100%;
+}
+
+// Container steag SVG — dimensionat explicit
+.flagIcon {
+  display: flex;
+  align-items: center;
+  width: 20px;
+  height: 15px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 2px;
+
+  // SVG-ul steagului din pachet
+  svg,
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.flagPlaceholder {
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.callingCode {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: $gray-600;
+  letter-spacing: 0.01em;
+}
+
+.chevron {
+  width: 11px;
+  height: 11px;
+  color: $gray-400;
+  flex-shrink: 0;
+  margin-left: 0.1rem;
+}
+
+// Select-ul real — invizibil dar funcțional, acoperă toată zona .countryWrapper
+.countrySelect {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}

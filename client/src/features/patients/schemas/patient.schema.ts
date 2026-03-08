@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { isValidPhoneNumber } from 'react-phone-number-input'
 
 /// Regex CNP — 13 cifre, prima cifră 1-9
 const cnpRegex = /^[1-9]\d{12}$/
@@ -24,7 +25,7 @@ export const patientDoctorSchema = z.object({
 export const emergencyContactSchema = z.object({
   fullName:     z.string().min(1, 'Numele este obligatoriu').max(200, 'Maxim 200 caractere'),
   relationship: z.string().max(100, 'Maxim 100 caractere').optional().or(z.literal('')),
-  phoneNumber:  z.string().min(1, 'Telefonul este obligatoriu').max(20, 'Maxim 20 caractere'),
+  phoneNumber:  z.string().refine(v => !v || isValidPhoneNumber(v), 'Număr de telefon invalid').optional().or(z.literal('')),
   isDefault:    z.boolean(),
   notes:        z.string().max(500, 'Maxim 500 caractere').optional().or(z.literal('')),
 })
@@ -38,8 +39,8 @@ export const patientSchema = z.object({
   birthDate:          z.string().optional().or(z.literal('')),
   genderId:           z.string().optional().or(z.literal('')),
   bloodTypeId:        z.string().optional().or(z.literal('')),
-  phoneNumber:        z.string().max(20, 'Maxim 20 caractere').optional().or(z.literal('')),
-  secondaryPhone:     z.string().max(20, 'Maxim 20 caractere').optional().or(z.literal('')),
+  phoneNumber:        z.string().refine(v => !v || isValidPhoneNumber(v), 'Număr de telefon invalid').optional().or(z.literal('')),
+  secondaryPhone:     z.string().refine(v => !v || isValidPhoneNumber(v), 'Număr de telefon invalid').optional().or(z.literal('')),
   email:              z.string().email('Email invalid').optional().or(z.literal('')),
   address:            z.string().max(500, 'Maxim 500 caractere').optional().or(z.literal('')),
   city:               z.string().max(100, 'Maxim 100 caractere').optional().or(z.literal('')),

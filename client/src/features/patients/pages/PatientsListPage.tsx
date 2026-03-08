@@ -17,6 +17,7 @@ import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { AppBadge, type BadgeVariant } from '@/components/ui/AppBadge'
 import { AppButton } from '@/components/ui/AppButton'
 import { formatDate } from '@/utils/format'
+import { phoneCellTemplate } from '@/components/data-display/PhoneCell'
 import styles from './PatientsListPage.module.scss'
 
 // ── Icoane SVG inline ─────────────────────────────────────────────────────────
@@ -198,7 +199,7 @@ export const PatientsListPage = () => {
           emergencyContacts: formData.emergencyContacts?.map(ec => ({
             fullName: ec.fullName,
             relationship: toNull(ec.relationship),
-            phoneNumber: ec.phoneNumber,
+            phoneNumber: ec.phoneNumber ?? '',
             isDefault: ec.isDefault,
             notes: toNull(ec.notes),
           })),
@@ -242,7 +243,7 @@ export const PatientsListPage = () => {
           emergencyContacts: formData.emergencyContacts?.map(ec => ({
             fullName: ec.fullName,
             relationship: toNull(ec.relationship),
-            phoneNumber: ec.phoneNumber,
+            phoneNumber: ec.phoneNumber ?? '',
             isDefault: ec.isDefault,
             notes: toNull(ec.notes),
           })),
@@ -561,10 +562,9 @@ export const PatientsListPage = () => {
             <ColumnDirective
               field="phoneNumber"
               headerText="Telefon"
-              width="130"
-              minWidth="100"
-              defaultValue="—"
-              clipMode="EllipsisWithTooltip"
+              width="160"
+              minWidth="130"
+              template={phoneCellTemplate}
             />
 
             <ColumnDirective

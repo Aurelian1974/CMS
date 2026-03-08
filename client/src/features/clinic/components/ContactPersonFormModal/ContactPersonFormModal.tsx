@@ -5,6 +5,7 @@ import { contactPersonSchema, type ContactPersonFormData } from '../../schemas/c
 import type { ClinicContactPersonDto } from '../../types/clinic.types'
 import { AppModal } from '@/components/ui/AppModal'
 import { FormInput } from '@/components/forms/FormInput'
+import { FormPhoneInput } from '@/components/forms/FormPhoneInput'
 import { AppButton } from '@/components/ui/AppButton'
 
 interface ContactPersonFormModalProps {
@@ -84,11 +85,10 @@ export const ContactPersonFormModal = ({
           placeholder="ex: Director, Manager"
         />
 
-        <FormInput<ContactPersonFormData>
+        <FormPhoneInput<ContactPersonFormData>
           name="phoneNumber"
           control={control}
           label="Telefon (opțional)"
-          placeholder="ex: 0700 000 000"
         />
 
         <FormInput<ContactPersonFormData>

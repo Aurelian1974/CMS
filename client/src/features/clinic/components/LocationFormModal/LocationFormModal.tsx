@@ -5,6 +5,7 @@ import { clinicLocationSchema, type ClinicLocationFormData } from '../../schemas
 import type { ClinicLocationDto } from '../../types/clinic.types'
 import { AppModal } from '@/components/ui/AppModal'
 import { FormInput } from '@/components/forms/FormInput'
+import { FormPhoneInput } from '@/components/forms/FormPhoneInput'
 import { AddressFields } from '@/components/forms/AddressFields'
 import { AppButton } from '@/components/ui/AppButton'
 import styles from './LocationFormModal.module.scss'
@@ -118,11 +119,10 @@ export const LocationFormModal = ({
 
       <div className="row g-3 mt-0">
         <div className="col-md-6">
-          <FormInput<ClinicLocationFormData>
+          <FormPhoneInput<ClinicLocationFormData>
             name="phoneNumber"
             control={control}
             label="Telefon"
-            placeholder="ex: 021 123 4567"
           />
         </div>
         <div className="col-md-6">

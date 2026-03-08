@@ -8,6 +8,7 @@ import { AddressFormModal } from '../components/AddressFormModal'
 import { ContactFormModal } from '../components/ContactFormModal'
 import { ContactPersonFormModal } from '../components/ContactPersonFormModal'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
+import { PhoneCell } from '@/components/data-display/PhoneCell'
 import { IconPlus } from '@/components/ui/Icons'
 import { FormInput } from '@/components/forms/FormInput'
 import { CaenCodeMultiSelectBase } from '@/components/forms/CaenCodeMultiSelect'
@@ -683,7 +684,7 @@ const ClinicPage = () => {
                         <tr key={p.id}>
                           <td>{p.name}</td>
                           <td>{p.function ?? '—'}</td>
-                          <td>{p.phoneNumber ?? '—'}</td>
+                          <td><PhoneCell value={p.phoneNumber} /></td>
                           <td>{p.email ?? '—'}</td>
                           <td>{p.isMain && <MainBadge />}</td>
                           <td>
@@ -759,7 +760,7 @@ const ClinicPage = () => {
                               </td>
                               <td>{loc.address}</td>
                               <td>{loc.city}, {loc.county}</td>
-                              <td>{loc.phoneNumber ?? '—'}</td>
+                              <td><PhoneCell value={loc.phoneNumber} /></td>
                               <td>{loc.isPrimary && <span className={styles.badgePrimary}>Sediu principal</span>}</td>
                               <td>
                                 <span className={loc.isActive ? styles.badgeActive : styles.badgeInactive}>

@@ -16,6 +16,7 @@ import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { AppBadge } from '@/components/ui/AppBadge'
 import { AppButton } from '@/components/ui/AppButton'
 import { formatDate } from '@/utils/format'
+import { phoneCellTemplate } from '@/components/data-display/PhoneCell'
 import styles from './MedicalStaffListPage.module.scss'
 
 // ── Icoane SVG inline ─────────────────────────────────────────────────────────
@@ -406,9 +407,9 @@ export const MedicalStaffListPage = () => {
             <ColumnDirective
               field="phoneNumber"
               headerText="Telefon"
-              width="130"
-              minWidth="100"
-              defaultValue="—"
+              width="160"
+              minWidth="130"
+              template={phoneCellTemplate}
             />
 
             <ColumnDirective

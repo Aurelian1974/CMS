@@ -8,6 +8,7 @@ import type { MedicalTitleDto } from '@/features/nomenclature/types/medicalTitle
 import type { DepartmentDto } from '@/features/departments/types/department.types'
 import { AppModal } from '@/components/ui/AppModal'
 import { FormInput } from '@/components/forms/FormInput'
+import { FormPhoneInput } from '@/components/forms/FormPhoneInput'
 import { FormSelect } from '@/components/forms/FormSelect'
 import { AppButton } from '@/components/ui/AppButton'
 import styles from './MedicalStaffFormModal.module.scss'
@@ -168,11 +169,10 @@ export const MedicalStaffFormModal = ({
                 />
               </div>
               <div className="col-md-6">
-                <FormInput<MedicalStaffFormData>
+                <FormPhoneInput<MedicalStaffFormData>
                   name="phoneNumber"
                   control={control}
                   label="Telefon"
-                  placeholder="ex: 0721 234 567"
                 />
               </div>
             </div>

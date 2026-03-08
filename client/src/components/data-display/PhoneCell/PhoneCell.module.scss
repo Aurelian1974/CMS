@@ -1,0 +1,38 @@
+.phoneCell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.flagIcon {
+  display: flex;
+  align-items: center;
+  width: 18px;
+  height: 13px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 2px;
+
+  svg,
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.number {
+  font-size: 0.875rem;
+  color: inherit;
+}
+
+.plain {
+  font-size: 0.875rem;
+  color: inherit;
+}
+
+.empty {
+  color: #9EADB9;
+}

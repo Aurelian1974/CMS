@@ -11,6 +11,10 @@
   z-index: 1050;
   padding: 1rem;
   animation: fadeIn 0.15s ease;
+  // Permite pointer events pe modal chiar dacă e pozitionat fix
+  pointer-events: none;
+
+  > * { pointer-events: auto; }
 }
 
 // ===== Modal container =====
@@ -24,6 +28,44 @@
   max-height: 90vh;
   animation: slideUp 0.2s ease;
   overflow: hidden;
+  position: relative; // necesar pentru resize handle absolut
+  user-select: none;  // previne selecție text la drag
+}
+
+// ===== Header drag wrapper =====
+// Wrappează header-ul (standard sau custom) și permite drag
+.headerDrag {
+  cursor: grab;
+  flex-shrink: 0;
+
+  &:active { cursor: grabbing; }
+
+  // Butoanele din header nu declanșează drag
+  button { cursor: pointer; }
+}
+
+// ===== Resize handle — colț dreapta-jos =====
+.resizeHandle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  cursor: se-resize;
+  touch-action: none;
+
+  // Indicator vizual discret (linii diagonale)
+  &::after {
+    content: '';
+    position: absolute;
+    right: 3px;
+    bottom: 3px;
+    width: 10px;
+    height: 10px;
+    border-right: 2px solid rgba(0, 0, 0, 0.2);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.2);
+    border-bottom-right-radius: 2px;
+  }
 }
 
 // ===== Header standard (titlu + close) =====

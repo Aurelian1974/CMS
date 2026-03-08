@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { isValidPhoneNumber } from 'react-phone-number-input'
 
 /// Schema validare formular clinică (date generale societate)
 export const clinicSchema = z.object({
@@ -117,7 +118,7 @@ export const contactPersonSchema = z.object({
     .optional(),
   phoneNumber: z
     .string()
-    .max(50, 'Numărul de telefon nu poate depăși 50 de caractere')
+    .refine(v => !v || isValidPhoneNumber(v), 'Număr de telefon invalid')
     .optional(),
   email: z
     .string()
@@ -155,7 +156,7 @@ export const clinicLocationSchema = z.object({
     .transform(v => v || null),
   phoneNumber: z
     .string()
-    .max(20, 'Numărul de telefon nu poate depăși 20 de caractere')
+    .refine(v => !v || isValidPhoneNumber(v), 'Număr de telefon invalid')
     .optional()
     .transform(v => v || null),
   email: z

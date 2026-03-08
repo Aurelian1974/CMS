@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useForm, useFieldArray } from 'react-hook-form'
+import type { Path } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { patientSchema, type PatientFormData } from '../../schemas/patient.schema'
 import type { PatientDto } from '../../types/patient.types'
@@ -8,6 +9,7 @@ import type { DoctorLookupDto } from '@/features/doctors/types/doctor.types'
 import { AppModal } from '@/components/ui/AppModal'
 import type { ModalTab } from '@/components/ui/AppModal'
 import { FormInput } from '@/components/forms/FormInput'
+import { FormPhoneInput } from '@/components/forms/FormPhoneInput'
 import { FormSelect } from '@/components/forms/FormSelect'
 import { FormDatePicker } from '@/components/forms/FormDatePicker'
 import { AppButton } from '@/components/ui/AppButton'
@@ -258,19 +260,17 @@ export const PatientFormModal = ({
               <>
                 <div className="row g-3">
                   <div className="col-md-4">
-                    <FormInput<PatientFormData>
+                    <FormPhoneInput<PatientFormData>
                       name="phoneNumber"
                       control={control}
                       label="Telefon"
-                      placeholder="0721 234 567"
                     />
                   </div>
                   <div className="col-md-4">
-                    <FormInput<PatientFormData>
+                    <FormPhoneInput<PatientFormData>
                       name="secondaryPhone"
                       control={control}
                       label="Telefon secundar"
-                      placeholder="0722 345 678"
                     />
                   </div>
                   <div className="col-md-4">
@@ -549,11 +549,9 @@ export const PatientFormModal = ({
                           />
                         </div>
                         <div className="col-md-3">
-                          <input
-                            type="text"
-                            className={`form-control form-control-sm${errors.emergencyContacts?.[idx]?.phoneNumber ? ' is-invalid' : ''}`}
-                            placeholder="Telefon"
-                            {...register(`emergencyContacts.${idx}.phoneNumber`)}
+                          <FormPhoneInput<PatientFormData>
+                            name={`emergencyContacts.${idx}.phoneNumber` as Path<PatientFormData>}
+                            control={control}
                           />
                         </div>
                         <div className="col-md-2 d-flex align-items-center">

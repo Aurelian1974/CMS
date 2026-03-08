@@ -1,6 +1,7 @@
 // Stiluri pentru Sidebar-ul aplicației
-$nav-item-height: 42px;
+$nav-item-height: 40px;
 $icon-size: 18px;
+$active-accent: #7DA8CC;   // culoarea indicatorului lateral activ
 
 // ===== Container sidebar =====
 .sidebar {
@@ -117,29 +118,52 @@ $icon-size: 18px;
   align-items: center;
   gap: 0.75rem;
   height: $nav-item-height;
-  padding: 0 1.125rem;
-  margin: 0 0.5rem;
+  padding: 0 1rem 0 1.375rem;
+  margin: 0 0.5rem 1px;
   border-radius: $border-radius;
-  color: rgba(255, 255, 255, 0.58);
+  color: rgba(255, 255, 255, 0.5);
   text-decoration: none;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 400;
   transition: background 0.15s ease, color 0.15s ease;
   white-space: nowrap;
   overflow: hidden;
+  position: relative;
+
+  // Indicator lateral — ascuns de baza
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 20%;
+    height: 60%;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: $active-accent;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
 
   &:hover {
-    background: rgba(255, 255, 255, 0.07);
-    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.82);
+
+    .navIcon {
+      color: rgba(255, 255, 255, 0.72);
+    }
   }
 
   &.active {
-    background: rgba($primary, 0.25);
+    background: rgba($primary-light, 0.14);
     color: #fff;
     font-weight: 500;
 
+    &::before {
+      opacity: 1;
+    }
+
     .navIcon {
-      color: $primary-lighter;
+      color: $active-accent;
     }
   }
 }
@@ -148,8 +172,11 @@ $icon-size: 18px;
   width: $icon-size;
   height: $icon-size;
   flex-shrink: 0;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.32);
   transition: color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .navLabel {
