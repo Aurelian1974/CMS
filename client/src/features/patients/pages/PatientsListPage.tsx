@@ -190,6 +190,8 @@ export const PatientsListPage = () => {
             allergyTypeId: a.allergyTypeId,
             allergySeverityId: a.allergySeverityId,
             allergenName: a.allergenName,
+            reaction: toNull(a.reaction),
+            onsetDate: toNull(a.onsetDate),
             notes: toNull(a.notes),
           })),
           doctors: formData.doctors,
@@ -198,6 +200,7 @@ export const PatientsListPage = () => {
             relationship: toNull(ec.relationship),
             phoneNumber: ec.phoneNumber,
             isDefault: ec.isDefault,
+            notes: toNull(ec.notes),
           })),
         },
         {
@@ -231,6 +234,8 @@ export const PatientsListPage = () => {
             allergyTypeId: a.allergyTypeId,
             allergySeverityId: a.allergySeverityId,
             allergenName: a.allergenName,
+            reaction: toNull(a.reaction),
+            onsetDate: toNull(a.onsetDate),
             notes: toNull(a.notes),
           })),
           doctors: formData.doctors,
@@ -239,6 +244,7 @@ export const PatientsListPage = () => {
             relationship: toNull(ec.relationship),
             phoneNumber: ec.phoneNumber,
             isDefault: ec.isDefault,
+            notes: toNull(ec.notes),
           })),
         },
         {

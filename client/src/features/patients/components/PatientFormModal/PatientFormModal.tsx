@@ -363,7 +363,7 @@ export const PatientFormModal = ({
                     <button
                       type="button"
                       className={styles.addBtn}
-                      onClick={() => addAllergy({ allergyTypeId: '', allergySeverityId: '', allergenName: '', notes: '' })}
+                      onClick={() => addAllergy({ allergyTypeId: '', allergySeverityId: '', allergenName: '', reaction: '', onsetDate: '', notes: '' })}
                     >
                       <IconPlus /> Adaugă alergie
                     </button>
@@ -416,6 +416,22 @@ export const PatientFormModal = ({
                             {...register(`allergies.${idx}.notes`)}
                           />
                         </div>
+                        <div className="col-md-6">
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            placeholder="Reacție (opțional)"
+                            {...register(`allergies.${idx}.reaction`)}
+                          />
+                        </div>
+                        <div className="col-md-6">
+                          <input
+                            type="date"
+                            className="form-control form-control-sm"
+                            placeholder="Data debut (opțional)"
+                            {...register(`allergies.${idx}.onsetDate`)}
+                          />
+                        </div>
                       </div>
                       <button type="button" className={styles.removeBtn} onClick={() => removeAllergy(idx)}>
                         <IconTrash />
@@ -436,7 +452,7 @@ export const PatientFormModal = ({
                     <button
                       type="button"
                       className={styles.addBtn}
-                      onClick={() => addDoctor({ doctorId: '', isPrimary: false })}
+                      onClick={() => addDoctor({ doctorId: '', isPrimary: false, notes: '' })}
                     >
                       <IconPlus /> Adaugă medic
                     </button>
@@ -480,6 +496,14 @@ export const PatientFormModal = ({
                             </label>
                           </div>
                         </div>
+                        <div className="col-12">
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            placeholder="Note (opțional)"
+                            {...register(`doctors.${idx}.notes`)}
+                          />
+                        </div>
                       </div>
                       <button type="button" className={styles.removeBtn} onClick={() => removeDoctor(idx)}>
                         <IconTrash />
@@ -495,7 +519,7 @@ export const PatientFormModal = ({
                     <button
                       type="button"
                       className={styles.addBtn}
-                      onClick={() => addContact({ fullName: '', relationship: '', phoneNumber: '', isDefault: false })}
+                      onClick={() => addContact({ fullName: '', relationship: '', phoneNumber: '', isDefault: false, notes: '' })}
                     >
                       <IconPlus /> Adaugă contact
                     </button>
@@ -546,6 +570,14 @@ export const PatientFormModal = ({
                               Principal
                             </label>
                           </div>
+                        </div>
+                        <div className="col-12">
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            placeholder="Note (opțional)"
+                            {...register(`emergencyContacts.${idx}.notes`)}
+                          />
                         </div>
                       </div>
                       <button type="button" className={styles.removeBtn} onClick={() => removeContact(idx)}>

@@ -8,6 +8,8 @@ export const allergySchema = z.object({
   allergyTypeId:     z.string().min(1, 'Tipul alergiei este obligatoriu'),
   allergySeverityId: z.string().min(1, 'Severitatea este obligatorie'),
   allergenName:      z.string().min(1, 'Alergenul este obligatoriu').max(200, 'Maxim 200 caractere'),
+  reaction:          z.string().max(500, 'Maxim 500 caractere').optional().or(z.literal('')),
+  onsetDate:         z.string().optional().or(z.literal('')),
   notes:             z.string().max(500, 'Maxim 500 caractere').optional().or(z.literal('')),
 })
 
@@ -15,6 +17,7 @@ export const allergySchema = z.object({
 export const patientDoctorSchema = z.object({
   doctorId:  z.string().min(1, 'Doctorul este obligatoriu'),
   isPrimary: z.boolean(),
+  notes:     z.string().max(500, 'Maxim 500 caractere').optional().or(z.literal('')),
 })
 
 /// Schema contact urgență
@@ -23,6 +26,7 @@ export const emergencyContactSchema = z.object({
   relationship: z.string().max(100, 'Maxim 100 caractere').optional().or(z.literal('')),
   phoneNumber:  z.string().min(1, 'Telefonul este obligatoriu').max(20, 'Maxim 20 caractere'),
   isDefault:    z.boolean(),
+  notes:        z.string().max(500, 'Maxim 500 caractere').optional().or(z.literal('')),
 })
 
 /// Schema principală pacient

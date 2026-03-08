@@ -135,6 +135,8 @@ export interface SyncAllergyPayload {
   allergyTypeId: string
   allergySeverityId: string
   allergenName: string
+  reaction?: string | null
+  onsetDate?: string | null
   notes?: string | null
 }
 
@@ -142,6 +144,7 @@ export interface SyncAllergyPayload {
 export interface SyncDoctorPayload {
   doctorId: string
   isPrimary: boolean
+  notes?: string | null
 }
 
 /// Payload sync contact urgență (sub-colecție)
@@ -150,6 +153,7 @@ export interface SyncEmergencyContactPayload {
   relationship?: string | null
   phoneNumber: string
   isDefault: boolean
+  notes?: string | null
 }
 
 /// Payload creare pacient
