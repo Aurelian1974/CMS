@@ -129,6 +129,15 @@ try
         Predicate = _ => false
     });
 
+    // ===== Version Endpoint =====
+    app.MapGet("/api/version", (IHostEnvironment env) =>
+    {
+        var version = typeof(Program).Assembly
+            .GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion ?? "unknown";
+        return Results.Ok(new { version, environment = env.EnvironmentName });
+    }).AllowAnonymous();
+
     app.Run();
 }
 catch (Exception ex)
