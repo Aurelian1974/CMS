@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback, useMemo } from 'react'
+import { useState, useRef, useCallback } from 'react'
+import type { GridServerState } from '@/components/data-display/AppDataGrid'
 import {
   type GridComponent,
   ColumnsDirective,
@@ -62,9 +63,20 @@ export const PatientsListPage = () => {
   const gridRef = useRef<GridComponent>(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<PatientStatusFilter>('all')
-  const [genderFilter, setGenderFilter] = useState('')
-  const [page, setPage] = useState(1)
-  const [pageSize] = useState(20)
+  const [genderId, setGenderId] = useState<string | undefined>(undefined)
+  const [bloodTypeId, setBloodTypeId] = useState<string | undefined>(undefined)
+  const [hasAllergies, setHasAllergies] = useState<boolean | undefined>(undefined)
+
+  // Starea grid-ului server-side (pagina, sortare)
+  // Actualizată automat de AppDataGrid prin onDataStateChange
+  const [gridState, setGridState] = useState<GridServerState>({ skip: 0, take: 20 })
+
+  // Extragere pagina și sortare din gridState
+  const page     = Math.floor(gridState.skip / gridState.take) + 1
+  const pageSize = gridState.take
+  const sortCol  = gridState.sorted?.[0]
+  const sortBy   = sortCol?.name ?? sortCol?.field ?? 'fullName'
+  const sortDir  = (sortCol?.direction?.toLowerCase() === 'descending' ? 'desc' : 'asc') as 'asc' | 'desc'
 
   // Modal formular
   const [modalOpen, setModalOpen] = useState(false)
@@ -80,14 +92,17 @@ export const PatientsListPage = () => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  // Date reale din API
-  const { data: patientsResp, isLoading, isError } = usePatients({
+  // Date reale din API — paginare + sortare + filtrare complet server-side
+  const { data: patientsResp, isError } = usePatients({
     page,
     pageSize,
-    search: search || undefined,
+    search:      search || undefined,
+    genderId,
+    bloodTypeId,
+    hasAllergies,
     isActive: statusFilter === 'all' ? undefined : statusFilter === 'active',
-    sortBy: 'fullName',
-    sortDir: 'asc',
+    sortBy,
+    sortDir,
   })
 
   // Date auxiliare pentru modal
@@ -102,25 +117,15 @@ export const PatientsListPage = () => {
   const updatePatient = useUpdatePatient()
   const deletePatient = useDeletePatient()
 
-  const patients = patientsResp?.data?.pagedResult?.items ?? []
+  const patients  = patientsResp?.data?.pagedResult?.items ?? []
   const totalCount = patientsResp?.data?.pagedResult?.totalCount ?? 0
-  const stats = patientsResp?.data?.stats
-  const genders = gendersResp?.data ?? []
-  const bloodTypes = bloodTypesResp?.data ?? []
-  const allergyTypes = allergyTypesResp?.data ?? []
+  const stats      = patientsResp?.data?.stats
+
+  const genders          = gendersResp?.data ?? []
+  const bloodTypes       = bloodTypesResp?.data ?? []
+  const allergyTypes     = allergyTypesResp?.data ?? []
   const allergySeverities = allergySeveritiesResp?.data ?? []
-  const doctorLookup = doctorLookupResp?.data ?? []
-
-  // Filtrare locală pentru gender (restul se face server-side)
-  const filteredData = genderFilter
-    ? patients.filter(p => p.genderName === genderFilter)
-    : patients
-
-  // Genuri disponibile din datele curente
-  const genderNames = useMemo(
-    () => [...new Set(patients.map(p => p.genderName).filter(Boolean))].sort() as string[],
-    [patients],
-  )
+  const doctorLookup     = doctorLookupResp?.data ?? []
 
   // Funcții helper — mesaje feedback
   const showSuccess = (msg: string) => {
@@ -255,7 +260,7 @@ export const PatientsListPage = () => {
 
   // Date transformate pentru export — plain objects, fără template JSX
   const buildExportData = useCallback(() =>
-    filteredData.map(p => ({
+    patients.map(p => ({
       fullName:              p.fullName,
       cnp:                   p.cnp,
       genderName:            p.genderName ?? '—',
@@ -267,10 +272,10 @@ export const PatientsListPage = () => {
       isActive:              p.isActive ? 'Activ' : 'Inactiv',
       createdAt:             p.createdAt ? formatDate(p.createdAt) : '—',
     }))
-  , [filteredData])
+  , [patients])
 
   // ── Export handlers (hook reutilizabil) ─────────────────────────────────────
-  const { handleExcelExport, handlePdfExport } = useGridExport(gridRef, {
+  const { handleExcelExport } = useGridExport(gridRef, {
     fileNamePrefix: 'pacienti',
     buildExportData,
   })
@@ -407,7 +412,7 @@ export const PatientsListPage = () => {
             className={styles.searchInput}
             placeholder="Caută după nume, CNP, telefon, email..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e => { setSearch(e.target.value); setGridState((s: GridServerState) => ({ ...s, skip: 0 })) }}
           />
         </div>
 
@@ -415,13 +420,44 @@ export const PatientsListPage = () => {
           <span className={styles.filterLabel}>Gen:</span>
           <select
             className={styles.filterSelect}
-            value={genderFilter}
-            onChange={e => setGenderFilter(e.target.value)}
+            value={genderId ?? ''}
+            onChange={e => { setGenderId(e.target.value || undefined); setGridState((s: GridServerState) => ({ ...s, skip: 0 })) }}
           >
             <option value="">Toate</option>
-            {genderNames.map(g => (
-              <option key={g} value={g}>{g}</option>
+            {genders.map(g => (
+              <option key={g.id} value={g.id}>{g.name}</option>
             ))}
+          </select>
+        </div>
+
+        <div className={styles.filterGroup}>
+          <span className={styles.filterLabel}>Grupă sang.:</span>
+          <select
+            className={styles.filterSelect}
+            value={bloodTypeId ?? ''}
+            onChange={e => { setBloodTypeId(e.target.value || undefined); setGridState((s: GridServerState) => ({ ...s, skip: 0 })) }}
+          >
+            <option value="">Toate</option>
+            {bloodTypes.map(bt => (
+              <option key={bt.id} value={bt.id}>{bt.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className={styles.filterGroup}>
+          <span className={styles.filterLabel}>Alergii:</span>
+          <select
+            className={styles.filterSelect}
+            value={hasAllergies === undefined ? '' : hasAllergies ? '1' : '0'}
+            onChange={e => {
+              const v = e.target.value
+              setHasAllergies(v === '' ? undefined : v === '1')
+              setGridState((s: GridServerState) => ({ ...s, skip: 0 }))
+            }}
+          >
+            <option value="">Toate</option>
+            <option value="1">Cu alergii</option>
+            <option value="0">Fără alergii</option>
           </select>
         </div>
 
@@ -432,7 +468,7 @@ export const PatientsListPage = () => {
             <button
               key={s}
               className={`${styles.pill} ${statusFilter === s ? styles.active : ''}`}
-              onClick={() => setStatusFilter(s)}
+              onClick={() => { setStatusFilter(s); setGridState((gs: GridServerState) => ({ ...gs, skip: 0 })) }}
             >
               {s === 'all' ? 'Toți' : s === 'active' ? 'Activi' : 'Inactivi'}
             </button>
@@ -442,11 +478,14 @@ export const PatientsListPage = () => {
 
       </div>
 
-      {/* Grid */}
+      {/* Grid — mod server-side: paginare + sortare + filtrare la API */}
       <AppDataGrid
         gridRef={gridRef}
-        dataSource={filteredData}
+        dataSource={patients}
         sortSettings={SORT_SETTINGS}
+        serverSideCount={totalCount}
+        initialPageSize={20}
+        onDataStateChange={setGridState}
       >
         <ColumnsDirective>
 
@@ -562,7 +601,6 @@ export const PatientsListPage = () => {
               allowGrouping={false}
               allowReordering={false}
               allowResizing={false}
-              allowExporting={false}
               freeze="Right"
             />
 

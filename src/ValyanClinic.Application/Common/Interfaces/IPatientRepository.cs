@@ -9,7 +9,7 @@ namespace ValyanClinic.Application.Common.Interfaces;
 public interface IPatientRepository
 {
     Task<PagedResult<PatientListDto>> GetPagedAsync(
-        Guid clinicId, string? search, Guid? genderId, Guid? doctorId,
+        Guid clinicId, string? search, Guid? genderId, Guid? bloodTypeId, Guid? doctorId,
         bool? hasAllergies, bool? isActive,
         int page, int pageSize, string sortBy, string sortDir,
         CancellationToken ct);

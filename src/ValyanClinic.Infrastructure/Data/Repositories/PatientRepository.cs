@@ -11,7 +11,7 @@ namespace ValyanClinic.Infrastructure.Data.Repositories;
 public sealed class PatientRepository(DapperContext context) : IPatientRepository
 {
     public async Task<PagedResult<PatientListDto>> GetPagedAsync(
-        Guid clinicId, string? search, Guid? genderId, Guid? doctorId,
+        Guid clinicId, string? search, Guid? genderId, Guid? bloodTypeId, Guid? doctorId,
         bool? hasAllergies, bool? isActive,
         int page, int pageSize, string sortBy, string sortDir,
         CancellationToken ct)
@@ -25,6 +25,7 @@ public sealed class PatientRepository(DapperContext context) : IPatientRepositor
                     ClinicId = clinicId,
                     Search = search,
                     GenderId = genderId,
+                    BloodTypeId = bloodTypeId,
                     DoctorId = doctorId,
                     HasAllergies = hasAllergies,
                     IsActive = isActive,

@@ -1,0 +1,154 @@
+// CustomPager.module.scss — Pager 100% custom, fără dependință de Syncfusion
+@import '@/styles/variables';
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba($body-bg, 0.6);
+  border-top: 1px solid rgba($primary, 0.08);
+  min-height: 52px;
+}
+
+// ── Navigare ────────────────────────────────────────────
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.navBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: $gray-500;
+  cursor: pointer;
+  transition: $transition-fast;
+  line-height: 1;
+
+  svg {
+    display: block;
+    flex-shrink: 0;
+    pointer-events: none;
+  }
+
+  &:hover:not(:disabled) {
+    background: rgba($primary-lighter, 0.2);
+    border-color: rgba($primary, 0.15);
+    color: $primary-dark;
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+}
+
+.pageBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: $gray-600;
+  font-size: 0.8rem;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: $transition-fast;
+  line-height: 1;
+
+  &:hover:not(.active) {
+    background: rgba($primary-lighter, 0.2);
+    border-color: rgba($primary, 0.15);
+    color: $primary-dark;
+  }
+
+  &.active {
+    background: $primary;
+    border-color: $primary;
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba($primary-dark, 0.2);
+    cursor: default;
+  }
+}
+
+.ellipsis {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 32px;
+  color: $gray-400;
+  font-size: 0.85rem;
+  user-select: none;
+  pointer-events: none;
+}
+
+// ── Dreapta: dimensiune + info ───────────────────────────
+.right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sizeSelect {
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid rgba($primary, 0.2);
+  border-radius: 6px;
+  background: $card-bg;
+  color: $gray-600;
+  font-size: 0.8rem;
+  font-family: inherit;
+  cursor: pointer;
+  line-height: 32px;
+  appearance: auto;
+
+  &:hover {
+    border-color: rgba($primary, 0.4);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 2px rgba($primary, 0.12);
+  }
+}
+
+.label {
+  color: $gray-500;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.divider {
+  display: block;
+  width: 1px;
+  height: 18px;
+  background: rgba($primary, 0.12);
+  margin: 0 2px;
+}
+
+.info {
+  color: $gray-400;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  line-height: 1;
+}

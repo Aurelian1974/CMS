@@ -122,6 +122,7 @@ export interface GetPatientsParams {
   pageSize: number
   search?: string
   genderId?: string
+  bloodTypeId?: string
   doctorId?: string
   hasAllergies?: boolean
   isActive?: boolean

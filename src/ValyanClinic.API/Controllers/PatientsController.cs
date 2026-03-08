@@ -22,6 +22,7 @@ public class PatientsController : BaseApiController
     public async Task<IActionResult> GetAll(
         [FromQuery] string? search,
         [FromQuery] Guid? genderId,
+        [FromQuery] Guid? bloodTypeId,
         [FromQuery] Guid? doctorId,
         [FromQuery] bool? hasAllergies,
         [FromQuery] bool? isActive,
@@ -32,7 +33,7 @@ public class PatientsController : BaseApiController
         CancellationToken ct = default)
     {
         var query = new GetPatientsQuery(
-            search, genderId, doctorId, hasAllergies, isActive,
+            search, genderId, bloodTypeId, doctorId, hasAllergies, isActive,
             page, pageSize, sortBy, sortDir);
         var result = await Mediator.Send(query, ct);
         return HandleResult(result);

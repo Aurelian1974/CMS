@@ -12,6 +12,7 @@ CREATE OR ALTER PROCEDURE dbo.Patient_GetPaged
     @GenderId    UNIQUEIDENTIFIER = NULL,
     @DoctorId    UNIQUEIDENTIFIER = NULL,
     @HasAllergies BIT             = NULL,
+    @BloodTypeId  UNIQUEIDENTIFIER = NULL,
     @IsActive    BIT              = NULL,
     @Page        INT              = 1,
     @PageSize    INT              = 20,
@@ -86,6 +87,7 @@ BEGIN
           (@HasAllergies = 1 AND EXISTS (SELECT 1 FROM PatientAllergies pa WHERE pa.PatientId = p.Id AND pa.IsActive = 1)) OR
           (@HasAllergies = 0 AND NOT EXISTS (SELECT 1 FROM PatientAllergies pa WHERE pa.PatientId = p.Id AND pa.IsActive = 1))
       )
+      AND (@BloodTypeId IS NULL OR p.BloodTypeId = @BloodTypeId)
       AND (@Search IS NULL OR @Search = '' OR
            p.FirstName    LIKE @SearchTerm OR
            p.LastName     LIKE @SearchTerm OR
@@ -132,6 +134,7 @@ BEGIN
           (@HasAllergies = 1 AND EXISTS (SELECT 1 FROM PatientAllergies pa WHERE pa.PatientId = p.Id AND pa.IsActive = 1)) OR
           (@HasAllergies = 0 AND NOT EXISTS (SELECT 1 FROM PatientAllergies pa WHERE pa.PatientId = p.Id AND pa.IsActive = 1))
       )
+      AND (@BloodTypeId IS NULL OR p.BloodTypeId = @BloodTypeId)
       AND (@Search IS NULL OR @Search = '' OR
            p.FirstName    LIKE @SearchTerm OR
            p.LastName     LIKE @SearchTerm OR

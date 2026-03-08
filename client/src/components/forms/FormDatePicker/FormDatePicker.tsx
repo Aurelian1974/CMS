@@ -32,7 +32,9 @@ export const FormDatePicker = <T extends FieldValues>({
 
   const handleChange = (args: { value?: Date | null }) => {
     const newValue = args.value ?? null
-    onChange(newValue)
+    // Convertim Date → string YYYY-MM-DD pentru a respecta schema Zod (z.string())
+    const stringValue = newValue ? newValue.toISOString().slice(0, 10) : ''
+    onChange(stringValue)
     onValueChange?.(newValue)
   }
 

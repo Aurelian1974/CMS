@@ -8,6 +8,7 @@ namespace ValyanClinic.Application.Features.Patients.Queries.GetPatients;
 public sealed record GetPatientsQuery(
     string? Search = null,
     Guid? GenderId = null,
+    Guid? BloodTypeId = null,
     Guid? DoctorId = null,
     bool? HasAllergies = null,
     bool? IsActive = null,

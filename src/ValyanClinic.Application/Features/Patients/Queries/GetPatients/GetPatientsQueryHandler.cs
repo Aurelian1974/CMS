@@ -17,6 +17,7 @@ public sealed class GetPatientsQueryHandler(
             currentUser.ClinicId,
             request.Search,
             request.GenderId,
+            request.BloodTypeId,
             request.DoctorId,
             request.HasAllergies,
             request.IsActive,
