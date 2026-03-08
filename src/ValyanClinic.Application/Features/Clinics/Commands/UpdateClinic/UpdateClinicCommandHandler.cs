@@ -17,7 +17,7 @@ public sealed class UpdateClinicCommandHandler(
     {
         try
         {
-            // Actualizare date societate comercială
+            // Actualizare date generale societate comercială
             await repository.UpdateAsync(
                 currentUser.ClinicId,
                 request.Name,
@@ -25,15 +25,6 @@ public sealed class UpdateClinicCommandHandler(
                 request.TradeRegisterNumber,
                 request.LegalRepresentative,
                 request.ContractCNAS,
-                request.Address,
-                request.City,
-                request.County,
-                request.PostalCode,
-                request.BankName,
-                request.BankAccount,
-                request.Email,
-                request.PhoneNumber,
-                request.Website,
                 cancellationToken);
 
             // Sincronizare coduri CAEN (înlocuiește lista complet)

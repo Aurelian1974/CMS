@@ -6,6 +6,12 @@ import type {
   UpdateClinicPayload,
   CreateClinicLocationPayload,
   UpdateClinicLocationPayload,
+  CreateClinicBankAccountPayload,
+  UpdateClinicBankAccountPayload,
+  CreateClinicAddressPayload,
+  UpdateClinicAddressPayload,
+  CreateClinicContactPayload,
+  UpdateClinicContactPayload,
 } from '@/features/clinic/types/clinic.types'
 
 export const clinicApi = {
@@ -16,6 +22,39 @@ export const clinicApi = {
 
   updateCurrentClinic: (payload: UpdateClinicPayload): Promise<ApiResponse<boolean>> =>
     api.put('/api/clinics/current', payload),
+
+  // ===== Conturi bancare =====
+
+  createBankAccount: (payload: CreateClinicBankAccountPayload): Promise<ApiResponse<string>> =>
+    api.post('/api/clinics/current/bank-accounts', payload),
+
+  updateBankAccount: ({ id, ...data }: UpdateClinicBankAccountPayload): Promise<ApiResponse<boolean>> =>
+    api.put(`/api/clinics/current/bank-accounts/${id}`, data),
+
+  deleteBankAccount: (id: string): Promise<ApiResponse<boolean>> =>
+    api.delete(`/api/clinics/current/bank-accounts/${id}`),
+
+  // ===== Adrese =====
+
+  createAddress: (payload: CreateClinicAddressPayload): Promise<ApiResponse<string>> =>
+    api.post('/api/clinics/current/addresses', payload),
+
+  updateAddress: ({ id, ...data }: UpdateClinicAddressPayload): Promise<ApiResponse<boolean>> =>
+    api.put(`/api/clinics/current/addresses/${id}`, data),
+
+  deleteAddress: (id: string): Promise<ApiResponse<boolean>> =>
+    api.delete(`/api/clinics/current/addresses/${id}`),
+
+  // ===== Date de contact =====
+
+  createContact: (payload: CreateClinicContactPayload): Promise<ApiResponse<string>> =>
+    api.post('/api/clinics/current/contacts', payload),
+
+  updateContact: ({ id, ...data }: UpdateClinicContactPayload): Promise<ApiResponse<boolean>> =>
+    api.put(`/api/clinics/current/contacts/${id}`, data),
+
+  deleteContact: (id: string): Promise<ApiResponse<boolean>> =>
+    api.delete(`/api/clinics/current/contacts/${id}`),
 
   // ===== Locații =====
 
@@ -31,3 +70,4 @@ export const clinicApi = {
   deleteLocation: (id: string): Promise<ApiResponse<boolean>> =>
     api.delete(`/api/clinics/current/locations/${id}`),
 }
+

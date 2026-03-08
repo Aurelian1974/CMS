@@ -12,16 +12,7 @@ CREATE OR ALTER PROCEDURE dbo.Clinic_Update
     @FiscalCode            NVARCHAR(20),
     @TradeRegisterNumber   NVARCHAR(30)  = NULL,
     @LegalRepresentative   NVARCHAR(200) = NULL,
-    @ContractCNAS          NVARCHAR(50)  = NULL,
-    @Address               NVARCHAR(500),
-    @City                  NVARCHAR(100),
-    @County                NVARCHAR(100),
-    @PostalCode            NVARCHAR(10)  = NULL,
-    @BankName              NVARCHAR(100) = NULL,
-    @BankAccount           NVARCHAR(34)  = NULL,
-    @Email                 NVARCHAR(200) = NULL,
-    @PhoneNumber           NVARCHAR(20)  = NULL,
-    @Website               NVARCHAR(200) = NULL
+    @ContractCNAS          NVARCHAR(50)  = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -46,15 +37,6 @@ BEGIN
             TradeRegisterNumber = @TradeRegisterNumber,
             LegalRepresentative = @LegalRepresentative,
             ContractCNAS        = @ContractCNAS,
-            Address             = @Address,
-            City                = @City,
-            County              = @County,
-            PostalCode          = @PostalCode,
-            BankName            = @BankName,
-            BankAccount         = @BankAccount,
-            Email               = @Email,
-            PhoneNumber         = @PhoneNumber,
-            Website             = @Website,
             UpdatedAt           = GETDATE()
         WHERE Id = @Id;
 

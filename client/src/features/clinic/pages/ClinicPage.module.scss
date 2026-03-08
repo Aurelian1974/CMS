@@ -90,6 +90,61 @@
   margin-top: 0.5rem;
 }
 
+// ===== Tabel sub-entități (adrese, conturi, contacte) =====
+.subTable {
+  width: 100%;
+  border-collapse: collapse;
+
+  th, td {
+    padding: 0.575rem 0.75rem;
+    text-align: left;
+    font-size: 0.875rem;
+    border-bottom: 1px solid $gray-200;
+  }
+
+  th {
+    font-weight: 600;
+    color: $gray-600;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover td {
+    background-color: rgba($primary-lighter, 0.15);
+  }
+}
+
+.typeBadge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: rgba($primary, 0.08);
+  color: $primary-dark;
+}
+
+.ibanCode {
+  font-family: 'Consolas', 'Fira Code', monospace;
+  font-size: 0.825rem;
+  letter-spacing: 0.5px;
+}
+
+.badgeMain {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: rgba($success, 0.15);
+  color: darken($success, 20%);
+}
+
 // ===== Tabel locații =====
 .locationsTable {
   width: 100%;

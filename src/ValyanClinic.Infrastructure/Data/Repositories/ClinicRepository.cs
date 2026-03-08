@@ -22,8 +22,10 @@ public sealed class ClinicRepository(DapperContext context) : IClinicRepository
         var clinic = await multi.ReadFirstOrDefaultAsync<ClinicDto>();
         if (clinic is not null)
         {
-            var caenCodes = (await multi.ReadAsync<ClinicCaenCodeDto>()).ToList();
-            clinic.CaenCodes = caenCodes;
+            clinic.CaenCodes    = (await multi.ReadAsync<ClinicCaenCodeDto>()).ToList();
+            clinic.BankAccounts = (await multi.ReadAsync<ClinicBankAccountDto>()).ToList();
+            clinic.Addresses    = (await multi.ReadAsync<ClinicAddressDto>()).ToList();
+            clinic.Contacts     = (await multi.ReadAsync<ClinicContactDto>()).ToList();
         }
 
         return clinic;
@@ -76,9 +78,6 @@ public sealed class ClinicRepository(DapperContext context) : IClinicRepository
     public async Task UpdateAsync(
         Guid id, string name, string fiscalCode, string? tradeRegisterNumber,
         string? legalRepresentative, string? contractCnas,
-        string address, string city, string county, string? postalCode,
-        string? bankName, string? bankAccount,
-        string? email, string? phoneNumber, string? website,
         CancellationToken ct)
     {
         using var connection = context.CreateConnection();
@@ -92,17 +91,125 @@ public sealed class ClinicRepository(DapperContext context) : IClinicRepository
                     FiscalCode = fiscalCode,
                     TradeRegisterNumber = tradeRegisterNumber,
                     LegalRepresentative = legalRepresentative,
-                    ContractCNAS = contractCnas,
-                    Address = address,
-                    City = city,
-                    County = county,
-                    PostalCode = postalCode,
-                    BankName = bankName,
-                    BankAccount = bankAccount,
-                    Email = email,
-                    PhoneNumber = phoneNumber,
-                    Website = website
+                    ContractCNAS = contractCnas
                 },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+    }
+
+    // ── Conturi bancare ──────────────────────────────────────────────────────
+
+    public async Task<Guid> CreateBankAccountAsync(
+        Guid clinicId, string bankName, string iban, string currency,
+        bool isMain, string? notes, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        return await connection.ExecuteScalarAsync<Guid>(
+            new CommandDefinition(
+                ClinicProcedures.BankAccountCreate,
+                new { ClinicId = clinicId, BankName = bankName, Iban = iban, Currency = currency, IsMain = isMain, Notes = notes },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+    }
+
+    public async Task UpdateBankAccountAsync(
+        Guid id, Guid clinicId, string bankName, string iban, string currency,
+        bool isMain, string? notes, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                ClinicProcedures.BankAccountUpdate,
+                new { Id = id, ClinicId = clinicId, BankName = bankName, Iban = iban, Currency = currency, IsMain = isMain, Notes = notes },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+    }
+
+    public async Task DeleteBankAccountAsync(Guid id, Guid clinicId, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                ClinicProcedures.BankAccountDelete,
+                new { Id = id, ClinicId = clinicId },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+    }
+
+    // ── Adrese ───────────────────────────────────────────────────────────────
+
+    public async Task<Guid> CreateAddressAsync(
+        Guid clinicId, string addressType, string street, string city, string county,
+        string? postalCode, string country, bool isMain, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        return await connection.ExecuteScalarAsync<Guid>(
+            new CommandDefinition(
+                ClinicProcedures.AddressCreate,
+                new { ClinicId = clinicId, AddressType = addressType, Street = street, City = city, County = county, PostalCode = postalCode, Country = country, IsMain = isMain },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+    }
+
+    public async Task UpdateAddressAsync(
+        Guid id, Guid clinicId, string addressType, string street, string city,
+        string county, string? postalCode, string country, bool isMain, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                ClinicProcedures.AddressUpdate,
+                new { Id = id, ClinicId = clinicId, AddressType = addressType, Street = street, City = city, County = county, PostalCode = postalCode, Country = country, IsMain = isMain },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+    }
+
+    public async Task DeleteAddressAsync(Guid id, Guid clinicId, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                ClinicProcedures.AddressDelete,
+                new { Id = id, ClinicId = clinicId },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+    }
+
+    // ── Date de contact ──────────────────────────────────────────────────────
+
+    public async Task<Guid> CreateContactAsync(
+        Guid clinicId, string contactType, string value, string? label,
+        bool isMain, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        return await connection.ExecuteScalarAsync<Guid>(
+            new CommandDefinition(
+                ClinicProcedures.ContactCreate,
+                new { ClinicId = clinicId, ContactType = contactType, Value = value, Label = label, IsMain = isMain },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+    }
+
+    public async Task UpdateContactAsync(
+        Guid id, Guid clinicId, string contactType, string value,
+        string? label, bool isMain, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                ClinicProcedures.ContactUpdate,
+                new { Id = id, ClinicId = clinicId, ContactType = contactType, Value = value, Label = label, IsMain = isMain },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+    }
+
+    public async Task DeleteContactAsync(Guid id, Guid clinicId, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                ClinicProcedures.ContactDelete,
+                new { Id = id, ClinicId = clinicId },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct));
     }

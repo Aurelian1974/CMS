@@ -91,6 +91,21 @@ public static class ErrorMessages
         public const string NotFound = "Locația nu a fost găsită.";
     }
 
+    public static class ClinicBankAccount
+    {
+        public const string NotFound = "Contul bancar nu a fost găsit.";
+    }
+
+    public static class ClinicAddress
+    {
+        public const string NotFound = "Adresa nu a fost găsită.";
+    }
+
+    public static class ClinicContact
+    {
+        public const string NotFound = "Contactul nu a fost găsit.";
+    }
+
     public static class Department
     {
         public const string NotFound          = "Departamentul nu a fost găsit.";
