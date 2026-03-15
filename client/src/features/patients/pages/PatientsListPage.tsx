@@ -1,11 +1,6 @@
-import { useState, useRef, useCallback } from 'react'
-import type { GridServerState } from '@/components/data-display/AppDataGrid'
-import {
-  type GridComponent,
-  ColumnsDirective,
-  ColumnDirective,
-} from '@syncfusion/ej2-react-grids'
-import { AppDataGrid, useGridExport } from '@/components/data-display/AppDataGrid'
+import { useState, useRef, useCallback, useMemo } from 'react'
+import { AppDataGrid } from '@/components/data-display/AppDataGrid'
+import type { ColDef, GridApi, PaginationChangedEvent, SortChangedEvent } from '@/components/data-display/AppDataGrid'
 import type { PatientDto, PatientStatusFilter } from '../types/patient.types'
 import type { PatientFormData } from '../schemas/patient.schema'
 import { usePatients, useCreatePatient, useUpdatePatient, useDeletePatient } from '../hooks/usePatients'
@@ -56,12 +51,9 @@ const getSeverityLabel = (code: string | null): string => {
   }
 }
 
-// ── Configurare grid ──────────────────────────────────────────────────────────
-const SORT_SETTINGS = { columns: [{ field: 'fullName' as const, direction: 'Ascending' as const }] }
-
 // ── Componenta principală ─────────────────────────────────────────────────────
 export const PatientsListPage = () => {
-  const gridRef = useRef<GridComponent>(null)
+  const gridRef = useRef<GridApi<PatientDto>>(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<PatientStatusFilter>('all')
   const [genderId, setGenderId] = useState<string | undefined>(undefined)
@@ -69,15 +61,10 @@ export const PatientsListPage = () => {
   const [hasAllergies, setHasAllergies] = useState<boolean | undefined>(undefined)
 
   // Starea grid-ului server-side (pagina, sortare)
-  // Actualizată automat de AppDataGrid prin onDataStateChange
-  const [gridState, setGridState] = useState<GridServerState>({ skip: 0, take: 20 })
-
-  // Extragere pagina și sortare din gridState
-  const page     = Math.floor(gridState.skip / gridState.take) + 1
-  const pageSize = gridState.take
-  const sortCol  = gridState.sorted?.[0]
-  const sortBy   = sortCol?.name ?? sortCol?.field ?? 'fullName'
-  const sortDir  = (sortCol?.direction?.toLowerCase() === 'descending' ? 'desc' : 'asc') as 'asc' | 'desc'
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
+  const [sortBy, setSortBy] = useState('fullName')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
 
   // Modal formular
   const [modalOpen, setModalOpen] = useState(false)
@@ -281,11 +268,30 @@ export const PatientsListPage = () => {
     }))
   , [patients])
 
-  // ── Export handlers (hook reutilizabil) ─────────────────────────────────────
-  const { handleExcelExport } = useGridExport(gridRef, {
-    fileNamePrefix: 'pacienti',
-    buildExportData,
-  })
+  // ── Export handler ──────────────────────────────────────────────────────────
+  const handleExcelExport = useCallback(() => {
+    gridRef.current?.exportExcel({
+      fileName: 'pacienti',
+      customData: buildExportData(),
+    })
+  }, [buildExportData])
+
+  // ── Grid server-side callbacks ─────────────────────────────────────────────
+  const handlePaginationChanged = useCallback((e: PaginationChangedEvent) => {
+    setPage(e.page)
+    setPageSize(e.pageSize)
+  }, [])
+
+  const handleSortChanged = useCallback((e: SortChangedEvent) => {
+    if (e.sort.length > 0) {
+      setSortBy(e.sort[0].field)
+      setSortDir(e.sort[0].direction)
+    } else {
+      setSortBy('fullName')
+      setSortDir('asc')
+    }
+    setPage(1)
+  }, [])
 
   // ── Cell templates ─────────────────────────────────────────────────────────
   const avatarTemplate = useCallback((row: PatientDto) => (
@@ -343,6 +349,33 @@ export const PatientsListPage = () => {
       onDelete={() => setDeleteTarget(row)}
     />
   ), [])
+
+  // ── Column definitions ─────────────────────────────────────────────────────
+  const columnDefs = useMemo<ColDef<PatientDto>[]>(() => [
+    {
+      headerName: '',
+      field: 'firstName' as keyof PatientDto & string,
+      width: 55, minWidth: 55, maxWidth: 55,
+      sortable: false, filterable: false, reorderable: false, resizable: false,
+      cellRenderer: ({ data }) => data ? avatarTemplate(data) : null,
+    },
+    { field: 'fullName', headerName: 'Pacient', width: 190, minWidth: 150, cellRenderer: ({ data }) => data ? nameTemplate(data) : null },
+    { field: 'genderName', headerName: 'Vârstă / Sex', width: 130, minWidth: 100, cellRenderer: ({ data }) => data ? ageGenderTemplate(data) : null },
+    { field: 'cnp', headerName: 'CNP', width: 140, minWidth: 130, cellRenderer: ({ data }) => data ? cnpTemplate(data) : null },
+    { field: 'bloodTypeName', headerName: 'Grupă sanguină', width: 130, minWidth: 110, cellRenderer: ({ data }) => data ? bloodTypeTemplate(data) : null },
+    { field: 'allergyCount' as keyof PatientDto & string, headerName: 'Alergii', width: 150, minWidth: 120, cellRenderer: ({ data }) => data ? allergyTemplate(data) : null },
+    { field: 'primaryDoctorName', headerName: 'Medic primar', width: 160, minWidth: 130, cellRenderer: ({ data }) => data ? doctorTemplate(data) : null },
+    { field: 'phoneNumber', headerName: 'Telefon', width: 160, minWidth: 130, cellRenderer: ({ data }) => phoneCellTemplate(data as unknown as Record<string, unknown>) },
+    { field: 'email', headerName: 'Email', width: 180, minWidth: 140, hide: true, ellipsis: true },
+    { field: 'isActive' as keyof PatientDto & string, headerName: 'Status', width: 110, minWidth: 90, cellRenderer: ({ data }) => data ? statusTemplate(data) : null },
+    { field: 'createdAt', headerName: 'Înregistrat', width: 120, minWidth: 100, hide: true, ellipsis: true, valueFormatter: ({ value }) => value ? formatDate(value as string) : '—' },
+    {
+      field: 'id', headerName: '', width: 80, minWidth: 70,
+      sortable: false, filterable: false, reorderable: false, resizable: false,
+      pinned: 'right',
+      cellRenderer: ({ data }) => data ? actionsTemplate(data) : null,
+    },
+  ], [avatarTemplate, nameTemplate, ageGenderTemplate, cnpTemplate, bloodTypeTemplate, allergyTemplate, doctorTemplate, statusTemplate, actionsTemplate])
 
   // ── Render ─────────────────────────────────────────────────────────────────
   if (isError) {
@@ -419,7 +452,7 @@ export const PatientsListPage = () => {
             className={styles.searchInput}
             placeholder="Caută după nume, CNP, telefon, email..."
             value={search}
-            onChange={e => { setSearch(e.target.value); setGridState((s: GridServerState) => ({ ...s, skip: 0 })) }}
+            onChange={e => { setSearch(e.target.value); setPage(1) }}
           />
         </div>
 
@@ -428,7 +461,7 @@ export const PatientsListPage = () => {
           <select
             className={styles.filterSelect}
             value={genderId ?? ''}
-            onChange={e => { setGenderId(e.target.value || undefined); setGridState((s: GridServerState) => ({ ...s, skip: 0 })) }}
+            onChange={e => { setGenderId(e.target.value || undefined); setPage(1) }}
           >
             <option value="">Toate</option>
             {genders.map(g => (
@@ -442,7 +475,7 @@ export const PatientsListPage = () => {
           <select
             className={styles.filterSelect}
             value={bloodTypeId ?? ''}
-            onChange={e => { setBloodTypeId(e.target.value || undefined); setGridState((s: GridServerState) => ({ ...s, skip: 0 })) }}
+            onChange={e => { setBloodTypeId(e.target.value || undefined); setPage(1) }}
           >
             <option value="">Toate</option>
             {bloodTypes.map(bt => (
@@ -459,7 +492,7 @@ export const PatientsListPage = () => {
             onChange={e => {
               const v = e.target.value
               setHasAllergies(v === '' ? undefined : v === '1')
-              setGridState((s: GridServerState) => ({ ...s, skip: 0 }))
+              setPage(1)
             }}
           >
             <option value="">Toate</option>
@@ -475,7 +508,7 @@ export const PatientsListPage = () => {
             <button
               key={s}
               className={`${styles.pill} ${statusFilter === s ? styles.active : ''}`}
-              onClick={() => { setStatusFilter(s); setGridState((gs: GridServerState) => ({ ...gs, skip: 0 })) }}
+              onClick={() => { setStatusFilter(s); setPage(1) }}
             >
               {s === 'all' ? 'Toți' : s === 'active' ? 'Activi' : 'Inactivi'}
             </button>
@@ -486,132 +519,50 @@ export const PatientsListPage = () => {
       </div>
 
       {/* Grid — mod server-side: paginare + sortare + filtrare la API */}
-      <AppDataGrid
-        gridRef={gridRef}
-        dataSource={patients}
-        sortSettings={SORT_SETTINGS}
+      <div className={styles.gridWrapper}>
+      <AppDataGrid<PatientDto>
+        ref={gridRef}
+        rowData={patients}
+        columnDefs={columnDefs}
+        initialSort={[{ field: 'fullName', direction: 'asc' }]}
+        loading={!patientsResp}
+        getRowId={(row) => row.id}
+        // Paginare (server-side)
+        pagination
+        pageSize={pageSize}
+        pageSizes={[10, 20, 50, 100]}
+        showPager
         serverSideCount={totalCount}
-        initialPageSize={20}
-        onDataStateChange={setGridState}
-      >
-        <ColumnsDirective>
-
-            <ColumnDirective
-              headerText=""
-              width="55"
-              minWidth="55"
-              maxWidth="55"
-              template={avatarTemplate}
-              allowSorting={false}
-              allowFiltering={false}
-              allowGrouping={false}
-              allowReordering={false}
-              allowResizing={false}
-              textAlign="Center"
-            />
-
-            <ColumnDirective
-              field="fullName"
-              headerText="Pacient"
-              width="190"
-              minWidth="150"
-              template={nameTemplate}
-              allowGrouping={false}
-            />
-
-            <ColumnDirective
-              field="genderName"
-              headerText="Vârstă / Sex"
-              width="130"
-              minWidth="100"
-              template={ageGenderTemplate}
-            />
-
-            <ColumnDirective
-              field="cnp"
-              headerText="CNP"
-              width="140"
-              minWidth="130"
-              template={cnpTemplate}
-            />
-
-            <ColumnDirective
-              field="bloodTypeName"
-              headerText="Grupă sanguină"
-              width="130"
-              minWidth="110"
-              template={bloodTypeTemplate}
-            />
-
-            <ColumnDirective
-              field="allergyCount"
-              headerText="Alergii"
-              width="150"
-              minWidth="120"
-              template={allergyTemplate}
-            />
-
-            <ColumnDirective
-              field="primaryDoctorName"
-              headerText="Medic primar"
-              width="160"
-              minWidth="130"
-              template={doctorTemplate}
-            />
-
-            <ColumnDirective
-              field="phoneNumber"
-              headerText="Telefon"
-              width="160"
-              minWidth="130"
-              template={phoneCellTemplate}
-            />
-
-            <ColumnDirective
-              field="email"
-              headerText="Email"
-              width="180"
-              minWidth="140"
-              defaultValue="—"
-              visible={false}
-              clipMode="EllipsisWithTooltip"
-            />
-
-            <ColumnDirective
-              field="isActive"
-              headerText="Status"
-              width="110"
-              minWidth="90"
-              template={statusTemplate}
-            />
-
-            <ColumnDirective
-              field="createdAt"
-              headerText="Înregistrat"
-              width="120"
-              minWidth="100"
-              format="dd.MM.yyyy"
-              type="date"
-              clipMode="EllipsisWithTooltip"
-              visible={false}
-            />
-
-            <ColumnDirective
-              field="id"
-              headerText=""
-              width="80"
-              minWidth="70"
-              template={actionsTemplate}
-              allowSorting={false}
-              allowFiltering={false}
-              allowGrouping={false}
-              allowReordering={false}
-              allowResizing={false}
-              freeze="Right"
-            />
-
-          </ColumnsDirective>
-      </AppDataGrid>
+        onPaginationChanged={handlePaginationChanged}
+        onSortChanged={handleSortChanged}
+        // Sortare
+        triStateSort
+        multiSortKey="ctrl"
+        // Filtrare
+        showFilterRow
+        // Selecție
+        rowSelection="multiple"
+        // Grupare
+        showGroupPanel
+        groupDefaultExpanded={1}
+        // Toolbar & Context Menu
+        toolbar
+        contextMenu
+        // Status Bar
+        statusBar={[
+          { type: 'totalRows' },
+          { type: 'filteredRows' },
+          { type: 'selectedRows' },
+        ]}
+        // Aspect
+        alternateRows
+        enableHover
+        gridLines="horizontal"
+        stickyHeader
+        // Drag & Drop
+        rowDragEnabled
+      />
+      </div>
 
       {/* Mesaj succes */}
       {successMsg && (

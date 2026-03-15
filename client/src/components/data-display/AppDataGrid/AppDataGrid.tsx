@@ -1,231 +1,759 @@
-import { useState, useRef, useCallback, useEffect, type MutableRefObject } from 'react'
-import {
-  GridComponent,
-  Inject,
-  Page,
-  Sort,
-  Filter,
-  Reorder,
-  Resize,
-  Freeze,
-  ExcelExport,
-  PdfExport,
-  ColumnChooser,
-  Toolbar,
-  type FilterSettingsModel,
-  type PageSettingsModel,
-  type SortSettingsModel,
-} from '@syncfusion/ej2-react-grids'
-import type { AppDataGridProps, GridServerState } from './AppDataGrid.types'
-import { CustomPager } from '@/components/data-display/Pagination'
-import styles from './AppDataGrid.module.scss'
+import React, {
+  useState, useCallback, useMemo, useRef,
+  forwardRef, useImperativeHandle, useEffect,
+} from 'react'
+import type {
+  AppDataGridProps, GridApi, ColDef, ToolbarItem,
+  CellPosition, FilterCondition, FilterGroup, FilterModel,
+  ContextMenuItem, ContextMenuParams, SortModelItem,
+  GroupRow, GridStateSnapshot, ColumnPinned,
+} from './AppDataGrid.types'
+import { getColField, isGroupRow, getNestedValue } from './AppDataGrid.types'
 
-// ── Configurări grid constante — identice pe toate paginile ──────────────────
-const DEFAULT_FILTER_SETTINGS: FilterSettingsModel = {
-  type: 'Menu',
-  showFilterBarStatus: true,
-}
+// Hooks
+import { useGridData } from './hooks/useGridData'
+import { useGridColumns } from './hooks/useGridColumns'
+import { useGridSelection } from './hooks/useGridSelection'
+import { useGridEdit } from './hooks/useGridEdit'
+import { useGridExport } from './hooks/useGridExport'
+import { useGridState } from './hooks/useGridState'
+import { useGridVirtualization } from './hooks/useGridVirtualization'
+import { useGridKeyboard } from './hooks/useGridKeyboard'
+import { useGridDragDrop } from './hooks/useGridDragDrop'
+import { flattenColumns } from './utils/aggregateUtils'
 
-const DEFAULT_PAGE_SETTINGS: PageSettingsModel = {
-  pageSize: 10,
-  pageSizes: [5, 10, 20, 50],
-}
+// Components
+import { GridHeader } from './components/GridHeader'
+import { GridBody } from './components/GridBody'
+import { GridPager } from './components/GridPager'
+import { GridToolbar, getDefaultToolbarItems } from './components/GridToolbar'
+import { GridContextMenu, getDefaultContextMenuItems } from './components/GridContextMenu'
+import { GridColumnChooser } from './components/GridColumnChooser'
+import { GridStatusBar } from './components/GridStatusBar'
+import { GridFooterRow } from './components/GridFooterRow'
+import { GridGroupPanel } from './components/GridGroupPanel'
+import { GridFilterRow } from './components/GridFilterRow'
 
-const DEFAULT_SORT_SETTINGS: SortSettingsModel = {
-  columns: [{ field: 'fullName', direction: 'Ascending' }],
-}
+import { updateSortModel } from './utils/sortUtils'
 
-const SS_PAGE_SIZES = [10, 20, 50, 100]
+import './AppDataGrid.scss'
 
-/**
- * Wrapper standardizat peste Syncfusion GridComponent.
- * Include toate configurările comune (sortare, filtrare, grupare, paginare,
- * freeze, export, column chooser) și stilurile grid container.
- *
- * Două moduri de funcționare:
- *  - Client-side (default): paginare/filtrare/sortare în browser pe dataSource complet.
- *  - Server-side: se activează automat când `onDataStateChange` este transmis.
- *    Syncfusion trackează starea intern (pagina, sortare, grupare) și emite
- *    `dataStateChange` la orice acțiune. Parentul re-fetchuiește API-ul și
- *    actualizează `dataSource` + `serverSideCount`. CustomPager rămâne pentru UI.
- */
-export const AppDataGrid = <T extends object = object>({
-  dataSource,
-  children,
-  sortSettings,
-  gridRef,
-  className,
-  height = 'auto',
-  rowHeight = 52,
-  recordClick,
-  // Props server-side
-  serverSideCount,
-  onDataStateChange,
-  initialPageSize = 20,
-}: AppDataGridProps<T>) => {
-  const serverSide = onDataStateChange !== undefined
+// ═════════════════════════════════════════════════════════════════════════════
+// Component intern tipizat
+// ═════════════════════════════════════════════════════════════════════════════
 
-  const innerRef = useRef<GridComponent>(null)
+function AppDataGridInner<T extends object>(
+  props: AppDataGridProps<T>,
+  ref: React.ForwardedRef<GridApi<T>>,
+) {
+  const {
+    rowData,
+    columnDefs,
+    defaultColDef,
+    columnTypes,
+    getRowId: getRowIdProp,
+    initialSort,
+    triStateSort,
+    multiSortKey = 'ctrl',
+    accentedSort,
+    showFilterRow: showFilterRowProp,
+    quickFilterText: quickFilterTextProp,
+    pagination = true,
+    pageSize: initialPageSize = 20,
+    pageSizes = [10, 20, 50, 100],
+    showPager = true,
+    rowSelection,
+    cellSelection,
+    suppressRowDeselection,
+    initialGroupBy,
+    showGroupPanel,
+    groupDefaultExpanded,
+    groupRowRenderer,
+    stickyGroupHeaders,
+    editable,
+    editMode,
+    singleClickEdit,
+    undoRedoEditing,
+    stopEditingWhenLoseFocus,
+    masterDetail,
+    detailRenderer,
+    detailRowHeight,
+    aggregates,
+    toolbar,
+    contextMenu,
+    statusBar,
+    serverSideDataSource,
+    serverSideCount,
+    rowDragEnabled,
+    rowDragEntireRow,
+    rowVirtualization = true,
+    overscanRows,
+    height = '100%',
+    rowHeight: rowHeightProp = 40,
+    getRowHeight: getRowHeightProp,
+    className,
+    style,
+    gridLines = 'horizontal',
+    alternateRows = true,
+    enableHover = true,
+    rowClass,
+    rowClassRules,
+    rowStyle,
+    noDataTemplate,
+    loadingTemplate,
+    loading: loadingProp,
+    stickyHeader = true,
+    statePersistence,
+    localeText,
+    rtl,
+    onGridReady,
+    onRowClick,
+    onRowDoubleClick,
+    onCellClick,
+    onSortChanged,
+    onFilterChanged,
+    onPaginationChanged,
+    onSelectionChanged,
+    onColumnResized,
+    onColumnReordered,
+    onColumnVisibilityChanged,
+    onEditStarted,
+    onEditEnded,
+    onRowDataUpdated,
+    onRowDragEnd,
+    onStateChanged,
+    onFirstDataRendered,
+  } = props
 
-  // ── Stare pager client-side ────────────────────────────────────────────────
-  const [clientPage, setClientPage] = useState(1)
-  const [clientPageSize, setClientPageSize] = useState(DEFAULT_PAGE_SETTINGS.pageSize!)
-  const [clientTotal, setClientTotal] = useState(dataSource.length)
+  // ── Refs ──────────────────────────────────────────────────────────────────
+  const gridRef = useRef<HTMLDivElement>(null)
+  const apiRef = useRef<GridApi<T>>(null!)
+  const firstRenderRef = useRef(true)
 
-  // ── Stare pager server-side (derivată din dataStateChange) ────────────────
-  const [ssPage, setSsPage] = useState(1)
-  const [ssPageSize, setSsPageSize] = useState(initialPageSize)
-  // Ref care ține starea curentă completă (pentru reconstruire la pageSize change)
-  const ssStateRef = useRef<GridServerState>({ skip: 0, take: initialPageSize })
+  // ── State local ───────────────────────────────────────────────────────────
+  const [showColumnChooser, setShowColumnChooser] = useState(false)
+  const [showFilterRow, setShowFilterRow] = useState(showFilterRowProp ?? false)
+  const [contextMenuState, setContextMenuState] = useState<{
+    position: { x: number; y: number } | null
+    params: ContextMenuParams<T>
+  }>({ position: null, params: { data: null, cell: null, area: 'body', api: null! } })
+  const [expandedDetails, setExpandedDetails] = useState<Set<number>>(new Set())
+  const [focusedCell, setFocusedCell] = useState<CellPosition | null>(null)
+  const [internalRowData, setInternalRowData] = useState<T[]>(rowData ?? [])
 
-  // Valorile efective ale pager-ului (folosite de CustomPager)
-  const currentPage  = serverSide ? ssPage    : clientPage
-  const pageSize     = serverSide ? ssPageSize : clientPageSize
-  const totalRecords = serverSide ? (serverSideCount ?? 0) : clientTotal
-
-  // Callback ref care setează atât innerRef cât și gridRef-ul extern (dacă există)
-  const setRef = useCallback((el: GridComponent | null) => {
-    (innerRef as MutableRefObject<GridComponent | null>).current = el
-    if (!gridRef) return
-    if (typeof gridRef === 'function') {
-      gridRef(el)
-    } else {
-      (gridRef as MutableRefObject<GridComponent | null>).current = el
-    }
-  }, [gridRef])
-
-  // ── Server-side: transmite datele spre Syncfusion în format { result, count } ──
-  // Syncfusion înțelege acest format: afișează `result` fără re-slicing intern
-  // și știe că totalul este `count` (pentru a calcula numărul de pagini).
+  // Sync external rowData
   useEffect(() => {
-    if (!serverSide) return
-    const grid = innerRef.current
-    if (!grid) return
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(grid as any).dataSource = { result: dataSource, count: serverSideCount ?? 0 }
-  }, [serverSide, dataSource, serverSideCount])
+    if (rowData) setInternalRowData(rowData)
+  }, [rowData])
 
-  // ── Handler dataStateChange din Syncfusion ────────────────────────────────
-  // Declanșat la: schimbare pagina (goToPage), sortare coloana, grupare, filtrare.
-  // NU se declanșează la randarea inițială.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleSfDataStateChange = useCallback((args: any) => {
-    if (!serverSide) return
+  // ── getRowId ──────────────────────────────────────────────────────────────
+  const getRowId = useCallback((data: T): string | number => {
+    if (getRowIdProp) return getRowIdProp(data)
+    const d = data as Record<string, unknown>
+    return (d.id ?? d.Id ?? d.ID ?? d._id ?? JSON.stringify(data)) as string | number
+  }, [getRowIdProp])
 
-    // ── Cerere normală: pagina, sortare ─────────────────────────────────────
-    const skip: number = args.skip ?? 0
-    const take: number = args.take ?? ssPageSize
-    const newPage = Math.floor(skip / take) + 1
+  // ── Columns hook ──────────────────────────────────────────────────────────
+  const columnsHook = useGridColumns({
+    columnDefs,
+    defaultColDef,
+    columnTypes,
+    onColumnResized,
+    onColumnReordered,
+    onColumnVisibilityChanged,
+  })
 
-    setSsPage(newPage)
-    setSsPageSize(take)
+  const flat = useMemo(() => flattenColumns(columnsHook.processedColumnDefs), [columnsHook.processedColumnDefs])
 
-    const newState: GridServerState = {
-      skip,
-      take,
-      sorted: args.sorted ?? ssStateRef.current.sorted,
-      where:  args.where  ?? ssStateRef.current.where,
-    }
-    ssStateRef.current = newState
-    onDataStateChange?.(newState)
-  }, [serverSide, onDataStateChange, ssPageSize])
+  // ── Data hook ─────────────────────────────────────────────────────────────
+  const dataHook = useGridData({
+    rowData: internalRowData,
+    columnDefs: columnsHook.processedColumnDefs,
+    initialSort,
+    initialGroupBy,
+    pageSize: initialPageSize,
+    groupDefaultExpanded,
+    triStateSort,
+    accentedSort,
+    pagination,
+    aggregates,
+    serverSideDataSource,
+    serverSideCount,
+    onSortChanged,
+    onFilterChanged,
+    onPaginationChanged,
+  })
 
-  // ── Sincronizare stare pager după operații client-side ─────────────────────
-  const handleDataBound = useCallback(() => {
-    if (serverSide) return
-    const ps = innerRef.current?.pageSettings
-    if (!ps) return
-    if (ps.currentPage !== undefined) setClientPage(ps.currentPage)
-    if (ps.totalRecordsCount !== undefined) setClientTotal(ps.totalRecordsCount)
-    if (ps.pageSize !== undefined) setClientPageSize(ps.pageSize)
-  }, [serverSide])
+  // ── Selection hook ────────────────────────────────────────────────────────
+  const selectionHook = useGridSelection({
+    rowSelection,
+    cellSelection,
+    suppressRowDeselection,
+    getRowId,
+    onSelectionChanged,
+  })
 
-  // ── Handlers CustomPager ───────────────────────────────────────────────────
-  const handlePageChange = useCallback((page: number) => {
-    if (serverSide) {
-      setSsPage(page)
-      // goToPage declanșează dataStateChange cu skip/take corecte
-      innerRef.current?.goToPage(page)
-    } else {
-      setClientPage(page)
-      innerRef.current?.goToPage(page)
-    }
-  }, [serverSide])
+  // ── Edit hook ─────────────────────────────────────────────────────────────
+  const editHook = useGridEdit({
+    editable,
+    editMode,
+    singleClickEdit,
+    undoRedoEditing,
+    columnDefs: flat,
+    getRowId,
+    onEditStarted,
+    onEditEnded,
+    onRowDataUpdated: (data) => {
+      setInternalRowData(data)
+      onRowDataUpdated?.(data)
+    },
+  })
 
-  const handlePageSizeChange = useCallback((size: number) => {
-    if (serverSide) {
-      setSsPage(1)
-      setSsPageSize(size)
-      // Actualizăm pageSettings intern — setProperties poate să nu declanșeze dataStateChange
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ;(innerRef.current as any)?.setProperties?.({ pageSettings: { pageSize: size, currentPage: 1 } })
-      // Emitem manual starea actualizată (cu sorted/group anterioare păstrate)
-      const newState: GridServerState = { ...ssStateRef.current, skip: 0, take: size }
-      ssStateRef.current = newState
-      onDataStateChange?.(newState)
-    } else {
-      setClientPageSize(size)
-      setClientPage(1)
-      const grid = innerRef.current
-      if (grid) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ;(grid as any).setProperties({ pageSettings: { pageSize: size, currentPage: 1 } })
+  // ── Virtualization hook ───────────────────────────────────────────────────
+  const virtHook = useGridVirtualization({
+    totalRows: dataHook.displayedRows.length,
+    rowHeight: rowHeightProp,
+    getRowHeight: getRowHeightProp
+      ? (idx) => getRowHeightProp({ data: dataHook.displayedRows[idx] as T, rowIndex: idx })
+      : undefined,
+    overscanRows,
+    enabled: rowVirtualization,
+  })
+
+  // ── Export hook ───────────────────────────────────────────────────────────
+  const exportHook = useGridExport({
+    columnDefs: flat,
+    defaultExcelExportParams: props.defaultExcelExportParams,
+    defaultCsvExportParams: props.defaultCsvExportParams,
+    defaultPdfExportParams: props.defaultPdfExportParams,
+    getSelectedRows: () => selectionHook.selectionState.selectedRows,
+    getDisplayedRows: () => dataHook.displayedRows,
+    getAllRows: () => dataHook.allRows,
+    gridRef,
+  })
+
+  // ── DragDrop hook ─────────────────────────────────────────────────────────
+  const dragHook = useGridDragDrop({
+    enabled: rowDragEnabled,
+    entireRow: rowDragEntireRow,
+    onRowDragEnd,
+  })
+
+  // ── Keyboard hook ─────────────────────────────────────────────────────────
+  const keyboardHook = useGridKeyboard({
+    containerRef: gridRef,
+    visibleColumns: columnsHook.allVisibleColumns,
+    totalRows: dataHook.displayedRows.length,
+    focusedCell,
+    setFocusedCell,
+    onStartEdit: (rowIndex, field) => {
+      const row = dataHook.displayedRows[rowIndex]
+      if (row && !isGroupRow(row)) editHook.startEditing(rowIndex, field, row as T)
+    },
+    onStopEdit: editHook.stopEditing,
+    onCopy: exportHook.copySelectionToClipboard,
+    onUndo: () => editHook.undo(internalRowData, setInternalRowData),
+    onRedo: () => editHook.redo(internalRowData, setInternalRowData),
+    onSelectAll: () => {
+      const plainRows = dataHook.filteredRows.filter(r => !isGroupRow(r)) as T[]
+      selectionHook.selectAll(plainRows)
+    },
+    isEditing: editHook.editingCell !== null,
+    enabled: true,
+  })
+
+  // ── State persistence hook ────────────────────────────────────────────────
+  const stateHook = useGridState({
+    statePersistence,
+    onStateChanged,
+    getState: () => ({
+      columns: flat.map(c => ({
+        field: getColField(c),
+        width: columnsHook.columnWidths.get(getColField(c)) ?? 150,
+        hide: columnsHook.hiddenColumns.has(getColField(c)),
+        pinned: columnsHook.pinnedColumns.get(getColField(c)) ?? false,
+        sortIndex: dataHook.sortModel.findIndex(s => s.field === getColField(c)),
+      })),
+      columnOrder: columnsHook.columnOrder,
+      sort: dataHook.sortModel,
+      filter: dataHook.filterModel,
+      group: dataHook.groupFields,
+      page: dataHook.page,
+      pageSize: dataHook.pageSize,
+    }),
+    applyState: (state: GridStateSnapshot) => {
+      if (state.sort) dataHook.setSort(state.sort)
+      if (state.filter) {
+        dataHook.clearAllFilters()
+        for (const [field, condition] of Object.entries(state.filter)) {
+          dataHook.setFilter(field, condition)
+        }
       }
-    }
-  }, [serverSide, onDataStateChange])
+      if (state.group) dataHook.setGroupBy(state.group)
+      if (state.page) dataHook.setPage(state.page)
+      if (state.pageSize) dataHook.setPageSize(state.pageSize)
+      if (state.columnOrder) columnsHook.setColumnOrder(state.columnOrder)
+      if (state.columns) {
+        for (const col of state.columns) {
+          if (col.width) columnsHook.setColumnWidth(col.field, col.width)
+          columnsHook.setColumnVisible(col.field, !col.hide)
+          if (col.pinned !== undefined) columnsHook.setColumnPinned(col.field, col.pinned)
+        }
+      }
+    },
+  })
 
-  const containerClass = className
-    ? `${styles.gridContainer} ${className}`
-    : styles.gridContainer
+  // ── Sort handler ──────────────────────────────────────────────────────────
+  const handleSort = useCallback((field: string, multiSort: boolean) => {
+    const useMulti = multiSortKey === 'none' ? true : multiSort
+    const newModel = updateSortModel(dataHook.sortModel, field, useMulti, triStateSort)
+    dataHook.setSort(newModel)
+    onSortChanged?.({ sort: newModel, source: 'click' })
+  }, [dataHook, multiSortKey, triStateSort, onSortChanged])
+
+  // ── Filter handler ────────────────────────────────────────────────────────
+  const handleFilterChange = useCallback((field: string, condition: FilterCondition) => {
+    dataHook.setFilter(field, condition)
+  }, [dataHook])
+
+  const handleFilterClear = useCallback((field: string) => {
+    dataHook.setFilter(field, null)
+  }, [dataHook])
+
+  // ── Row click handler ─────────────────────────────────────────────────────
+  const handleRowClick = useCallback((data: T, rowIndex: number, e: React.MouseEvent) => {
+    if (rowSelection) {
+      selectionHook.toggleRow(data, e.ctrlKey || e.metaKey, e.shiftKey, dataHook.displayedRows)
+    }
+    onRowClick?.({ data, rowIndex, event: e })
+  }, [rowSelection, selectionHook, dataHook.displayedRows, onRowClick])
+
+  const handleRowDoubleClick = useCallback((data: T, rowIndex: number, e: React.MouseEvent) => {
+    onRowDoubleClick?.({ data, rowIndex, event: e })
+  }, [onRowDoubleClick])
+
+  // ── Cell click handler ────────────────────────────────────────────────────
+  const handleCellClick = useCallback((data: T, field: string, rowIndex: number, e: React.MouseEvent) => {
+    setFocusedCell({ rowIndex, field })
+    const col = flat.find(c => getColField(c) === field)
+    if (col) {
+      onCellClick?.({
+        data,
+        value: getNestedValue(data, field),
+        field,
+        rowIndex,
+        colDef: col,
+        event: e,
+      })
+    }
+  }, [flat, onCellClick])
+
+  const handleCellDoubleClick = useCallback((data: T, field: string, rowIndex: number) => {
+    if (editable) {
+      editHook.startEditing(rowIndex, field, data)
+    }
+  }, [editable, editHook])
+
+  // ── Context menu ──────────────────────────────────────────────────────────
+  const handleContextMenu = useCallback((data: T | null, rowIndex: number, field: string, e: React.MouseEvent) => {
+    if (!contextMenu) return
+    e.preventDefault()
+    setContextMenuState({
+      position: { x: e.clientX, y: e.clientY },
+      params: {
+        data,
+        cell: data ? { rowIndex, field } : null,
+        area: data ? 'cell' : 'body',
+        api: apiRef.current,
+      },
+    })
+  }, [contextMenu])
+
+  // ── Detail toggle ─────────────────────────────────────────────────────────
+  const handleToggleDetail = useCallback((rowIndex: number) => {
+    setExpandedDetails(prev => {
+      const next = new Set(prev)
+      if (next.has(rowIndex)) next.delete(rowIndex)
+      else next.add(rowIndex)
+      return next
+    })
+  }, [])
+
+  // ── Toolbar ───────────────────────────────────────────────────────────────
+  const toolbarItems: ToolbarItem[] = useMemo(() => {
+    if (!toolbar) return []
+    if (Array.isArray(toolbar)) return toolbar
+    return getDefaultToolbarItems(true)
+  }, [toolbar])
+
+  // ── Context menu items ────────────────────────────────────────────────────
+  const contextMenuItems: ContextMenuItem[] = useMemo(() => {
+    if (!contextMenu) return []
+    if (Array.isArray(contextMenu)) return contextMenu
+    return getDefaultContextMenuItems()
+  }, [contextMenu])
+
+  // ── Column headers map ────────────────────────────────────────────────────
+  const columnHeaders = useMemo(() => {
+    const m = new Map<string, string>()
+    for (const col of flat) {
+      m.set(getColField(col), col.headerName ?? getColField(col))
+    }
+    return m
+  }, [flat])
+
+  // ── Checkbox detection ────────────────────────────────────────────────────
+  const hasCheckboxSelection = useMemo(() =>
+    flat.some(c => c.checkboxSelection || c.headerCheckboxSelection),
+    [flat]
+  )
+
+  // ── API imperative ────────────────────────────────────────────────────────
+  const api: GridApi<T> = useMemo(() => ({
+    getDisplayedRows: () => dataHook.displayedRows.filter(r => !isGroupRow(r)) as T[],
+    getAllRows: () => dataHook.allRows,
+    setRowData: setInternalRowData,
+    refreshData: () => dataHook.refreshData?.(),
+    getRowById: (id) => internalRowData.find(r => getRowId(r) === id),
+
+    getColumnDefs: () => columnsHook.processedColumnDefs,
+    setColumnVisible: columnsHook.setColumnVisible,
+    setColumnPinned: columnsHook.setColumnPinned,
+    autoSizeColumn: (f) => columnsHook.autoSizeColumn(f, internalRowData),
+    autoSizeAllColumns: () => columnsHook.autoSizeAllColumns(internalRowData),
+    setColumnWidth: columnsHook.setColumnWidth,
+
+    setSort: dataHook.setSort,
+    getSort: () => dataHook.sortModel,
+
+    setFilter: (field, condition) => {
+      if (condition) dataHook.setFilter(field, condition)
+      else dataHook.setFilter(field, null)
+    },
+    getFilter: (field) => dataHook.filterModel[field] ?? null,
+    clearAllFilters: dataHook.clearAllFilters,
+    setQuickFilter: dataHook.setQuickFilter,
+
+    goToPage: dataHook.setPage,
+    setPageSize: dataHook.setPageSize,
+    getCurrentPage: () => dataHook.page,
+    getTotalPages: () => Math.ceil(dataHook.filteredCount / dataHook.pageSize),
+
+    getSelectedRows: () => selectionHook.selectionState.selectedRows,
+    selectRows: (ids) => selectionHook.selectRows(ids, internalRowData),
+    deselectAll: selectionHook.deselectAll,
+    selectAll: () => {
+      const plainRows = dataHook.filteredRows.filter(r => !isGroupRow(r)) as T[]
+      selectionHook.selectAll(plainRows)
+    },
+
+    startEditing: (rowIndex, field) => {
+      const row = dataHook.displayedRows[rowIndex]
+      if (row && !isGroupRow(row)) editHook.startEditing(rowIndex, field, row as T)
+    },
+    stopEditing: editHook.stopEditing,
+    undo: () => editHook.undo(internalRowData, setInternalRowData),
+    redo: () => editHook.redo(internalRowData, setInternalRowData),
+    getBatchChanges: () => editHook.batchChanges,
+    commitBatch: () => editHook.commitBatch(internalRowData, setInternalRowData),
+    discardBatch: editHook.discardBatch,
+
+    exportExcel: exportHook.exportExcel,
+    exportCsv: exportHook.exportCsv,
+    exportPdf: exportHook.exportPdf,
+    print: exportHook.print,
+    copyToClipboard: exportHook.copySelectionToClipboard,
+
+    setGroupBy: dataHook.setGroupBy,
+    toggleGroup: dataHook.toggleGroup,
+    expandAllGroups: dataHook.expandAllGroups,
+    collapseAllGroups: dataHook.collapseAllGroups,
+
+    getState: stateHook.saveState as unknown as () => GridStateSnapshot,
+    setState: (state) => stateHook.loadView?.(state as unknown as string),
+    resetState: stateHook.resetState,
+    saveView: stateHook.saveView,
+    loadView: stateHook.loadView,
+    getViews: stateHook.getViews,
+    deleteView: stateHook.deleteView,
+
+    scrollToRow: virtHook.scrollToRow,
+    scrollToCell: (rowIndex, _field) => virtHook.scrollToRow(rowIndex),
+
+    expandDetail: (rowIndex) => setExpandedDetails(p => new Set(p).add(rowIndex)),
+    collapseDetail: (rowIndex) => {
+      setExpandedDetails(p => { const n = new Set(p); n.delete(rowIndex); return n })
+    },
+
+    getGridElement: () => gridRef.current,
+    redraw: () => setInternalRowData(prev => [...prev]),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [
+    dataHook, columnsHook, selectionHook, editHook, exportHook,
+    stateHook, virtHook, internalRowData, getRowId,
+  ])
+
+  apiRef.current = api
+  useImperativeHandle(ref, () => api, [api])
+
+  // ── onGridReady ───────────────────────────────────────────────────────────
+  useEffect(() => {
+    onGridReady?.(api)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ── onFirstDataRendered ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (firstRenderRef.current && dataHook.displayedRows.length > 0) {
+      firstRenderRef.current = false
+      onFirstDataRendered?.()
+    }
+  }, [dataHook.displayedRows, onFirstDataRendered])
+
+  // ── Selection helper for header checkbox ──────────────────────────────────
+  const allPlainRows = useMemo(() =>
+    dataHook.filteredRows.filter(r => !isGroupRow(r)) as T[],
+    [dataHook.filteredRows]
+  )
+  const allSelected = allPlainRows.length > 0 && selectionHook.selectionState.selectedRowIds.size >= allPlainRows.length
+  const someSelected = selectionHook.selectionState.selectedRowIds.size > 0 && !allSelected
+
+  const isLoading = loadingProp ?? dataHook.loading
+
+  // ── Visible displayed rows (paginated) ────────────────────────────────────
+  const displayedRows = dataHook.pageRows
+
+  // Rows for virtualization
+  const virtualRows = useMemo(() => {
+    if (!virtHook.isVirtualized) return displayedRows
+    return displayedRows.slice(virtHook.visibleRange.start, virtHook.visibleRange.end)
+  }, [displayedRows, virtHook])
 
   return (
-    <div className={containerClass}>
-      <GridComponent
-        ref={setRef}
-        dataSource={serverSide ? (dataSource as object[]) : dataSource}
-        allowSorting
-        allowFiltering
-        allowGrouping={false}
-        allowReordering
-        allowResizing
-        allowPaging
-        allowExcelExport
-        allowPdfExport
-        showColumnChooser
-        toolbar={['ColumnChooser']}
-        enableStickyHeader
-        enableHover
-        filterSettings={DEFAULT_FILTER_SETTINGS}
-        pageSettings={
-          serverSide
-            ? { pageSize: ssPageSize, pageSizes: SS_PAGE_SIZES }
-            : DEFAULT_PAGE_SETTINGS
-        }
-        sortSettings={sortSettings ?? DEFAULT_SORT_SETTINGS}
-        height={height}
-        gridLines="Horizontal"
-        rowHeight={rowHeight}
-        recordClick={recordClick}
-        dataBound={handleDataBound}
-        dataStateChange={serverSide ? handleSfDataStateChange : undefined}
-      >
-        {children}
+    <div
+      ref={gridRef}
+      className={`adg ${rtl ? 'adg--rtl' : ''} ${className ?? ''}`}
+      style={{ height, ...style }}
+      role="grid"
+      aria-rowcount={dataHook.filteredCount}
+      aria-colcount={columnsHook.allVisibleColumns.length}
+      tabIndex={0}
+      onKeyDown={keyboardHook.handleKeyDown}
+    >
+      {/* Toolbar */}
+      {toolbar && (
+        <GridToolbar
+          items={toolbarItems}
+          quickFilterText={dataHook.quickFilterText}
+          onQuickFilterChange={dataHook.setQuickFilter}
+          onExportExcel={exportHook.exportExcel}
+          onExportCsv={exportHook.exportCsv}
+          onExportPdf={exportHook.exportPdf}
+          onPrint={exportHook.print}
+          onToggleColumnChooser={() => setShowColumnChooser(p => !p)}
+          localeText={localeText}
+        />
+      )}
 
-        <Inject services={[
-          Page, Sort, Filter,
-          Reorder, Resize, Freeze,
-          ExcelExport, PdfExport, ColumnChooser, Toolbar,
-        ]} />
-      </GridComponent>
+      {/* Group Panel */}
+      {showGroupPanel && (
+        <GridGroupPanel
+          groupFields={dataHook.groupFields}
+          columnHeaders={columnHeaders}
+          onRemoveGroup={(field) => {
+            dataHook.setGroupBy(dataHook.groupFields.filter(f => f !== field))
+          }}
+          onClearGroups={() => dataHook.setGroupBy([])}
+          onDrop={(field) => {
+            if (!dataHook.groupFields.includes(field)) {
+              dataHook.setGroupBy([...dataHook.groupFields, field])
+            }
+          }}
+          localeText={localeText}
+        />
+      )}
 
-      <CustomPager
-        currentPage={currentPage}
-        totalRecords={totalRecords}
-        pageSize={pageSize}
-        pageSizes={serverSide ? SS_PAGE_SIZES : undefined}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-      />
+      {/* Grid container */}
+      <div className="adg__container" ref={columnsHook.containerRef}>
+        {/* Header */}
+        <GridHeader
+          columns={columnsHook.allVisibleColumns}
+          columnWidths={columnsHook.columnWidths}
+          sortModel={dataHook.sortModel}
+          onSort={(field) => handleSort(field, false)}
+          onResizeStart={columnsHook.startResize}
+          filterModel={dataHook.filterModel as Record<string, unknown>}
+          onFilterChange={(field, value) => handleFilterChange(field, value as FilterCondition)}
+          onFilterClear={handleFilterClear}
+          onColumnDragStart={dragHook.handleColumnDragStart}
+          onColumnDragOver={dragHook.handleColumnDragOver}
+          onColumnDrop={(field) => dragHook.handleColumnDrop(field, columnsHook.moveColumn, columnsHook.columnOrder)}
+          onColumnDragEnd={dragHook.handleColumnDragEnd}
+          allSelected={allSelected}
+          someSelected={someSelected}
+          onToggleSelectAll={() => {
+            if (allSelected) selectionHook.deselectAll()
+            else selectionHook.selectAll(allPlainRows)
+          }}
+          stickyHeader={stickyHeader}
+        />
+
+        {/* Filter row (if separate from header) */}
+        {showFilterRow && (
+          <GridFilterRow
+            columns={columnsHook.allVisibleColumns}
+            columnWidths={columnsHook.columnWidths}
+            filterModel={dataHook.filterModel}
+            onFilterChange={handleFilterChange}
+            onFilterClear={handleFilterClear}
+            hasCheckboxSelection={hasCheckboxSelection}
+            localeText={localeText}
+          />
+        )}
+
+        {/* Body */}
+        <GridBody
+          rows={virtualRows}
+          columns={columnsHook.allVisibleColumns}
+          columnWidths={columnsHook.columnWidths}
+          startIndex={virtHook.isVirtualized ? virtHook.visibleRange.start : 0}
+          rowHeight={rowHeightProp}
+          getRowHeight={getRowHeightProp}
+          getRowId={getRowId}
+          selectionState={selectionHook.selectionState}
+          editingCell={editHook.editingCell}
+          focusedCell={focusedCell}
+          dirtyFields={editHook.dirtyMap as unknown as Map<string, unknown>}
+          expandedDetails={expandedDetails}
+
+          alternateRows={alternateRows}
+          enableHover={enableHover}
+          gridLines={gridLines}
+          rowClass={rowClass}
+          rowClassRules={rowClassRules}
+          rowStyle={rowStyle}
+
+          rowDragEnabled={rowDragEnabled}
+          dropTargetIndex={dragHook.dropTargetIndex}
+
+          masterDetail={masterDetail}
+          detailRenderer={detailRenderer as GridBodyProps<T>['detailRenderer']}
+          detailRowHeight={detailRowHeight}
+
+          hasCheckboxSelection={hasCheckboxSelection}
+
+          onRowClick={handleRowClick}
+          onRowDoubleClick={handleRowDoubleClick}
+          onCellClick={(data, field, rowIndex, e) => handleCellClick(data, field, rowIndex, e)}
+          onCellDoubleClick={handleCellDoubleClick}
+          onToggleSelection={(data, isCtrl, isShift) => {
+            selectionHook.toggleRow(data, isCtrl, isShift, dataHook.displayedRows)
+          }}
+          onToggleGroup={dataHook.toggleGroup}
+          onToggleDetail={handleToggleDetail}
+          onDragStart={dragHook.handleDragStart}
+          onDragOver={dragHook.handleDragOver}
+          onDragEnd={dragHook.handleDragEnd}
+          onDrop={(idx) => dragHook.handleDrop(idx, internalRowData, setInternalRowData)}
+
+          totalHeight={virtHook.totalHeight}
+          offsetY={virtHook.offsetY}
+          isVirtualized={virtHook.isVirtualized}
+          scrollContainerRef={virtHook.scrollContainerRef}
+          onScroll={virtHook.handleScroll}
+
+          onStartEdit={(rowIndex, field) => {
+            const row = displayedRows[rowIndex]
+            if (row && !isGroupRow(row)) editHook.startEditing(rowIndex, field, row as T)
+          }}
+          onSetEditValue={editHook.setEditValue}
+          onStopEdit={(cancel) => {
+            if (!cancel) editHook.applyEdit(internalRowData, setInternalRowData)
+            editHook.stopEditing(cancel)
+          }}
+
+          onContextMenu={handleContextMenu as unknown as GridBodyProps<T>['onContextMenu']}
+          groupRowRenderer={groupRowRenderer as unknown as GridBodyProps<T>['groupRowRenderer']}
+
+          noDataTemplate={noDataTemplate}
+          loadingTemplate={loadingTemplate}
+          loading={isLoading}
+        />
+
+        {/* Footer aggregate row */}
+        {aggregates?.showFooter && (
+          <GridFooterRow
+            columns={columnsHook.allVisibleColumns}
+            columnWidths={columnsHook.columnWidths}
+            aggregates={dataHook.footerAggregates}
+            hasCheckboxSelection={hasCheckboxSelection}
+          />
+        )}
+      </div>
+
+      {/* Pager */}
+      {pagination && showPager && (
+        <GridPager
+          page={dataHook.page}
+          pageSize={dataHook.pageSize}
+          totalCount={dataHook.totalCount}
+          filteredCount={dataHook.filteredCount}
+          pageSizes={pageSizes}
+          onPageChange={dataHook.setPage}
+          onPageSizeChange={dataHook.setPageSize}
+          localeText={localeText}
+        />
+      )}
+
+      {/* Status bar */}
+      {statusBar && statusBar.length > 0 && (
+        <GridStatusBar
+          panels={statusBar}
+          totalCount={dataHook.totalCount}
+          filteredCount={dataHook.filteredCount}
+          selectedRows={selectionHook.selectionState.selectedRows}
+          displayedRows={allPlainRows}
+          footerAggregates={dataHook.footerAggregates}
+          localeText={localeText}
+          apiRef={apiRef}
+        />
+      )}
+
+      {/* Column chooser popup */}
+      {showColumnChooser && (
+        <div className="adg__overlay">
+          <GridColumnChooser
+            columns={flat}
+            hiddenColumns={columnsHook.hiddenColumns}
+            onToggleColumn={columnsHook.setColumnVisible}
+            onClose={() => setShowColumnChooser(false)}
+            localeText={localeText}
+          />
+        </div>
+      )}
+
+      {/* Context menu */}
+      {contextMenu && (
+        <GridContextMenu
+          items={contextMenuItems}
+          position={contextMenuState.position}
+          params={contextMenuState.params}
+          onClose={() => setContextMenuState(prev => ({ ...prev, position: null }))}
+        />
+      )}
     </div>
   )
 }
+
+// ── Type workaround for generic forwardRef ──────────────────────────────────
+// React.forwardRef doesn't support generics natively, so we use a typed wrapper
+
+type GridBodyProps<T extends object> = React.ComponentProps<typeof GridBody<T>>
+
+interface AppDataGridComponent {
+  <T extends object>(
+    props: AppDataGridProps<T> & { ref?: React.Ref<GridApi<T>> }
+  ): React.ReactElement | null
+}
+
+export const AppDataGrid = forwardRef(AppDataGridInner) as unknown as AppDataGridComponent

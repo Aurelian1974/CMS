@@ -1,10 +1,6 @@
 import { useState, useRef, useCallback, useMemo } from 'react'
-import {
-  type GridComponent,
-  ColumnsDirective,
-  ColumnDirective,
-} from '@syncfusion/ej2-react-grids'
-import { AppDataGrid, useGridExport } from '@/components/data-display/AppDataGrid'
+import type { ColDef, GridApi } from '@/components/data-display/AppDataGrid'
+import { AppDataGrid } from '@/components/data-display/AppDataGrid'
 import type { UserDto } from '../types/user.types'
 import type { CreateUserFormData } from '../schemas/user.schema'
 import type { ChangePasswordFormData } from '../schemas/user.schema'
@@ -42,12 +38,9 @@ const roleVariantMap: Record<string, BadgeVariant> = {
   clinic_manager: 'purple',
 }
 
-// ── Configurare grid ──────────────────────────────────────────────────────────
-const SORT_SETTINGS = { columns: [{ field: 'lastName' as const, direction: 'Ascending' as const }] }
-
 // ── Componenta principală ─────────────────────────────────────────────────────
 export const UsersListPage = () => {
-  const gridRef = useRef<GridComponent>(null)
+  const gridRef = useRef<GridApi<UserDto>>(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [roleFilter, setRoleFilter] = useState('')
@@ -231,11 +224,13 @@ export const UsersListPage = () => {
     }))
   , [filteredData])
 
-  // ── Export handlers (hook reutilizabil) ─────────────────────────────────────
-  const { handleExcelExport } = useGridExport(gridRef, {
-    fileNamePrefix: 'utilizatori',
-    buildExportData,
-  })
+  // ── Export handler ─────────────────────────────────────────────────────────
+  const handleExcelExport = useCallback(() => {
+    gridRef.current?.exportExcel({
+      fileName: `utilizatori_${new Date().toISOString().slice(0, 10)}`,
+      customData: buildExportData(),
+    })
+  }, [buildExportData])
 
   // ── Cell templates ─────────────────────────────────────────────────────────
   const avatarTemplate = useCallback((row: UserDto) => (
@@ -298,6 +293,76 @@ export const UsersListPage = () => {
       />
     </div>
   ), [])
+
+  // ── Column definitions ─────────────────────────────────────────────────────
+  const columnDefs = useMemo<ColDef<UserDto>[]>(() => [
+    {
+      headerName: '',
+      width: 50,
+      minWidth: 50,
+      maxWidth: 50,
+      sortable: false,
+      filterable: false,
+      resizable: false,
+      reorderable: false,
+      cellRenderer: ({ data }) => avatarTemplate(data),
+    },
+    {
+      field: 'lastName',
+      headerName: 'Utilizator',
+      width: 200,
+      minWidth: 150,
+      cellRenderer: ({ data }) => nameTemplate(data),
+    },
+    {
+      field: 'roleName',
+      headerName: 'Rol',
+      width: 150,
+      minWidth: 110,
+      cellRenderer: ({ data }) => roleTemplate(data),
+    },
+    {
+      field: 'doctorName',
+      headerName: 'Asociere',
+      width: 200,
+      minWidth: 150,
+      cellRenderer: ({ data }) => associationTemplate(data),
+    },
+    {
+      field: 'isActive',
+      headerName: 'Status',
+      width: 110,
+      minWidth: 90,
+      cellRenderer: ({ data }) => statusTemplate(data),
+    },
+    {
+      field: 'lastLoginAt',
+      headerName: 'Ultima autentificare',
+      width: 160,
+      minWidth: 130,
+      cellRenderer: ({ data }) => lastLoginTemplate(data),
+    },
+    {
+      field: 'createdAt',
+      headerName: 'Înregistrat',
+      width: 120,
+      minWidth: 100,
+      filterType: 'date',
+      valueFormatter: ({ value }) => value ? formatDate(value as string) : '',
+    },
+    {
+      field: 'id',
+      headerName: '',
+      width: 120,
+      minWidth: 110,
+      sortable: false,
+      filterable: false,
+      resizable: false,
+      reorderable: false,
+      pinned: 'right',
+      cellRenderer: ({ data }) => actionsTemplate(data),
+    },
+  ], [avatarTemplate, nameTemplate, roleTemplate, associationTemplate, statusTemplate, lastLoginTemplate, actionsTemplate])
 
   // ── Render ─────────────────────────────────────────────────────────────────
   if (isError) {
@@ -412,94 +477,47 @@ export const UsersListPage = () => {
       </div>
 
       {/* Grid */}
-      <AppDataGrid
-        gridRef={gridRef}
-        dataSource={filteredData}
-        sortSettings={SORT_SETTINGS}
-      >
-        <ColumnsDirective>
-
-            <ColumnDirective
-              headerText=""
-              width="50"
-              minWidth="50"
-              maxWidth="50"
-              template={avatarTemplate}
-              allowSorting={false}
-              allowFiltering={false}
-              allowGrouping={false}
-              allowReordering={false}
-              allowResizing={false}
-              textAlign="Center"
-            />
-
-            <ColumnDirective
-              field="lastName"
-              headerText="Utilizator"
-              width="200"
-              minWidth="150"
-              template={nameTemplate}
-              allowGrouping={false}
-            />
-
-            <ColumnDirective
-              field="roleName"
-              headerText="Rol"
-              width="150"
-              minWidth="110"
-              template={roleTemplate}
-            />
-
-            <ColumnDirective
-              field="doctorName"
-              headerText="Asociere"
-              width="200"
-              minWidth="150"
-              template={associationTemplate}
-            />
-
-            <ColumnDirective
-              field="isActive"
-              headerText="Status"
-              width="110"
-              minWidth="90"
-              template={statusTemplate}
-            />
-
-            <ColumnDirective
-              field="lastLoginAt"
-              headerText="Ultima autentificare"
-              width="160"
-              minWidth="130"
-              template={lastLoginTemplate}
-            />
-
-            <ColumnDirective
-              field="createdAt"
-              headerText="Înregistrat"
-              width="120"
-              minWidth="100"
-              format="dd.MM.yyyy"
-              type="date"
-            />
-
-            <ColumnDirective
-              field="id"
-              headerText=""
-              width="120"
-              minWidth="110"
-              template={actionsTemplate}
-              allowSorting={false}
-              allowFiltering={false}
-              allowGrouping={false}
-              allowReordering={false}
-              allowResizing={false}
-              allowExporting={false}
-              freeze="Right"
-            />
-
-          </ColumnsDirective>
-      </AppDataGrid>
+      <div className={styles.gridWrapper}>
+      <AppDataGrid<UserDto>
+        ref={gridRef}
+        rowData={filteredData}
+        columnDefs={columnDefs}
+        initialSort={[{ field: 'lastName', direction: 'asc' }]}
+        loading={isLoading}
+        getRowId={(row) => row.id}
+        // Paginare
+        pagination
+        pageSize={20}
+        pageSizes={[10, 20, 50, 100]}
+        showPager
+        // Sortare
+        triStateSort
+        multiSortKey="ctrl"
+        // Filtrare
+        showFilterRow
+        // Selecție
+        rowSelection="multiple"
+        // Grupare
+        showGroupPanel
+        groupDefaultExpanded={1}
+        // Toolbar & Context Menu
+        toolbar
+        contextMenu
+        // Status Bar
+        statusBar={[
+          { type: 'totalRows' },
+          { type: 'filteredRows' },
+          { type: 'selectedRows' },
+        ]}
+        // Aspect
+        alternateRows
+        enableHover
+        gridLines="horizontal"
+        stickyHeader
+        // Drag & Drop
+        rowDragEnabled
+      />
+      </div>
 
       {/* Mesaj succes */}
       {successMsg && (

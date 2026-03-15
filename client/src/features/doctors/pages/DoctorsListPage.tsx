@@ -1,10 +1,6 @@
 import { useState, useRef, useCallback, useMemo } from 'react'
-import {
-  type GridComponent,
-  ColumnsDirective,
-  ColumnDirective,
-} from '@syncfusion/ej2-react-grids'
-import { AppDataGrid, useGridExport } from '@/components/data-display/AppDataGrid'
+import type { ColDef, GridApi } from '@/components/data-display/AppDataGrid'
+import { AppDataGrid } from '@/components/data-display/AppDataGrid'
 import type { DoctorDto, DoctorStatusFilter } from '../types/doctor.types'
 import type { DoctorFormData } from '../schemas/doctor.schema'
 import { useDoctors, useCreateDoctor, useUpdateDoctor, useDeleteDoctor, useDoctorLookup } from '../hooks/useDoctors'
@@ -40,12 +36,9 @@ const getLicenseClass = (expiresAt: string | null): string => {
   return styles['licenseExpiry--ok'];
 };
 
-// ── Configurare grid ──────────────────────────────────────────────────────────
-const SORT_SETTINGS = { columns: [{ field: 'fullName' as const, direction: 'Ascending' as const }] }
-
 // ── Componenta principală ─────────────────────────────────────────────────────
 export const DoctorsListPage = () => {
-  const gridRef = useRef<GridComponent>(null)
+  const gridRef = useRef<GridApi<DoctorDto>>(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<DoctorStatusFilter>('all')
   const [specialtyFilter, setSpecialtyFilter] = useState('')
@@ -212,11 +205,13 @@ export const DoctorsListPage = () => {
     }))
   , [filteredData])
 
-  // ── Export handlers (hook reutilizabil) ─────────────────────────────────────
-  const { handleExcelExport } = useGridExport(gridRef, {
-    fileNamePrefix: 'doctori',
-    buildExportData,
-  })
+  // ── Export handler ─────────────────────────────────────────────────────────
+  const handleExcelExport = useCallback(() => {
+    gridRef.current?.exportExcel({
+      fileName: `doctori_${new Date().toISOString().slice(0, 10)}`,
+      customData: buildExportData(),
+    })
+  }, [buildExportData])
 
   // ── Cell templates ─────────────────────────────────────────────────────────
   const avatarTemplate = useCallback((row: DoctorDto) => (
@@ -272,6 +267,116 @@ export const DoctorsListPage = () => {
       onDelete={() => setDeleteTarget(row)}
     />
   ), [])
+
+  // ── Column definitions ─────────────────────────────────────────────────────
+  const columnDefs = useMemo<ColDef<DoctorDto>[]>(() => [
+    {
+      headerName: '',
+      width: 55,
+      minWidth: 55,
+      maxWidth: 55,
+      sortable: false,
+      filterable: false,
+      resizable: false,
+      reorderable: false,
+      cellRenderer: ({ data }) => avatarTemplate(data),
+    },
+    {
+      field: 'fullName',
+      headerName: 'Doctor',
+      width: 170,
+      minWidth: 130,
+      cellRenderer: ({ data }) => nameTemplate(data),
+    },
+    {
+      field: 'specialtyName',
+      headerName: 'Specialitate',
+      width: 150,
+      minWidth: 120,
+      cellRenderer: ({ data }) => specialtyTemplate(data),
+    },
+    {
+      field: 'subspecialtyName',
+      headerName: 'Subspecializare',
+      width: 150,
+      minWidth: 120,
+      hide: true,
+      cellRenderer: ({ data }) => subspecialtyTemplate(data),
+    },
+    {
+      field: 'departmentName',
+      headerName: 'Departament',
+      width: 140,
+      minWidth: 110,
+      cellRenderer: ({ data }) => departmentTemplate(data),
+    },
+    {
+      field: 'medicalCode',
+      headerName: 'Parafă',
+      width: 110,
+      minWidth: 90,
+      cellRenderer: ({ data }) => medicalCodeTemplate(data),
+    },
+    {
+      field: 'licenseNumber',
+      headerName: 'Nr. CMR',
+      width: 120,
+      minWidth: 100,
+      hide: true,
+      ellipsis: true,
+    },
+    {
+      field: 'licenseExpiresAt',
+      headerName: 'Aviz expiră',
+      width: 130,
+      minWidth: 110,
+      hide: true,
+      cellRenderer: ({ data }) => licenseTemplate(data),
+    },
+    {
+      field: 'phoneNumber',
+      headerName: 'Telefon',
+      width: 160,
+      minWidth: 130,
+      cellRenderer: ({ data }) => phoneCellTemplate(data as unknown as Record<string, unknown>),
+    },
+    {
+      field: 'email',
+      headerName: 'Email',
+      width: 180,
+      minWidth: 140,
+      ellipsis: true,
+    },
+    {
+      field: 'isActive',
+      headerName: 'Status',
+      width: 110,
+      minWidth: 90,
+      cellRenderer: ({ data }) => statusTemplate(data),
+    },
+    {
+      field: 'createdAt',
+      headerName: 'Înregistrat',
+      width: 120,
+      minWidth: 100,
+      filterType: 'date',
+      hide: true,
+      ellipsis: true,
+      valueFormatter: ({ value }) => value ? formatDate(value as string) : '',
+    },
+    {
+      field: 'id',
+      headerName: '',
+      width: 80,
+      minWidth: 70,
+      sortable: false,
+      filterable: false,
+      resizable: false,
+      reorderable: false,
+      pinned: 'right',
+      cellRenderer: ({ data }) => actionsTemplate(data),
+    },
+  ], [avatarTemplate, nameTemplate, specialtyTemplate, subspecialtyTemplate, departmentTemplate, medicalCodeTemplate, licenseTemplate, statusTemplate, actionsTemplate])
 
   // ── Render ─────────────────────────────────────────────────────────────────
   if (isError) {
@@ -387,141 +492,47 @@ export const DoctorsListPage = () => {
       </div>
 
       {/* Grid */}
-      <AppDataGrid
-        gridRef={gridRef}
-        dataSource={filteredData}
-        sortSettings={SORT_SETTINGS}
-      >
-        <ColumnsDirective>
-
-            <ColumnDirective
-              headerText=""
-              width="55"
-              minWidth="55"
-              maxWidth="55"
-              template={avatarTemplate}
-              allowSorting={false}
-              allowFiltering={false}
-              allowGrouping={false}
-              allowReordering={false}
-              allowResizing={false}
-              textAlign="Center"
-            />
-
-            <ColumnDirective
-              field="fullName"
-              headerText="Doctor"
-              width="170"
-              minWidth="130"
-              template={nameTemplate}
-              allowGrouping={false}
-            />
-
-            <ColumnDirective
-              field="specialtyName"
-              headerText="Specialitate"
-              width="150"
-              minWidth="120"
-              template={specialtyTemplate}
-            />
-
-            <ColumnDirective
-              field="subspecialtyName"
-              headerText="Subspecializare"
-              width="150"
-              minWidth="120"
-              template={subspecialtyTemplate}
-              visible={false}
-            />
-
-            <ColumnDirective
-              field="departmentName"
-              headerText="Departament"
-              width="140"
-              minWidth="110"
-              template={departmentTemplate}
-            />
-
-            <ColumnDirective
-              field="medicalCode"
-              headerText="Parafă"
-              width="110"
-              minWidth="90"
-              template={medicalCodeTemplate}
-            />
-
-            <ColumnDirective
-              field="licenseNumber"
-              headerText="Nr. CMR"
-              width="120"
-              minWidth="100"
-              defaultValue="—"
-              clipMode="EllipsisWithTooltip"
-              visible={false}
-            />
-
-            <ColumnDirective
-              field="licenseExpiresAt"
-              headerText="Aviz expiră"
-              width="130"
-              minWidth="110"
-              template={licenseTemplate}
-              visible={false}
-            />
-
-            <ColumnDirective
-              field="phoneNumber"
-              headerText="Telefon"
-              width="160"
-              minWidth="130"
-              template={phoneCellTemplate}
-            />
-
-            <ColumnDirective
-              field="email"
-              headerText="Email"
-              width="180"
-              minWidth="140"
-              defaultValue="—"
-              clipMode="EllipsisWithTooltip"
-            />
-
-            <ColumnDirective
-              field="isActive"
-              headerText="Status"
-              width="110"
-              minWidth="90"
-              template={statusTemplate}
-            />
-
-            <ColumnDirective
-              field="createdAt"
-              headerText="Înregistrat"
-              width="120"
-              minWidth="100"
-              format="dd.MM.yyyy"
-              type="date"
-              clipMode="EllipsisWithTooltip"
-              visible={false}
-            />
-
-            <ColumnDirective
-              field="id"
-              headerText=""
-              width="80"
-              minWidth="70"
-              template={actionsTemplate}
-              allowSorting={false}
-              allowFiltering={false}
-              allowGrouping={false}
-              allowReordering={false}
-              allowResizing={false}
-              allowExporting={false}
-              freeze="Right"
-            />
-
-          </ColumnsDirective>
-      </AppDataGrid>
+      <div className={styles.gridWrapper}>
+      <AppDataGrid<DoctorDto>
+        ref={gridRef}
+        rowData={filteredData}
+        columnDefs={columnDefs}
+        initialSort={[{ field: 'fullName', direction: 'asc' }]}
+        loading={isLoading}
+        getRowId={(row) => row.id}
+        // Paginare
+        pagination
+        pageSize={20}
+        pageSizes={[10, 20, 50, 100]}
+        showPager
+        // Sortare
+        triStateSort
+        multiSortKey="ctrl"
+        // Filtrare
+        showFilterRow
+        // Selecție
+        rowSelection="multiple"
+        // Grupare
+        showGroupPanel
+        groupDefaultExpanded={1}
+        // Toolbar & Context Menu
+        toolbar
+        contextMenu
+        // Status Bar
+        statusBar={[
+          { type: 'totalRows' },
+          { type: 'filteredRows' },
+          { type: 'selectedRows' },
+        ]}
+        // Aspect
+        alternateRows
+        enableHover
+        gridLines="horizontal"
+        stickyHeader
+        // Drag & Drop
+        rowDragEnabled
+      />
+      </div>
 
       {/* Mesaj succes */}
       {successMsg && (

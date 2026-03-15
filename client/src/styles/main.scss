@@ -21,6 +21,7 @@
 html {
   font-size: 15px;
   scroll-behavior: smooth;
+  height: 100%;
 }
 
 body {
@@ -31,6 +32,13 @@ body {
   color: $gray-700;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
 }
 
 // ===== Scrollbar custom (opțional) =====

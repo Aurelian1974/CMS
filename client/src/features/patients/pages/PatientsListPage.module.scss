@@ -8,7 +8,13 @@
   gap: 20px;
   padding: 24px 28px;
   background: $body-bg;
-  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.gridWrapper {
+  flex: 1;
+  min-height: 0;
 }
 
 // ── Page header ───────────────────────────────────────────────────────────────

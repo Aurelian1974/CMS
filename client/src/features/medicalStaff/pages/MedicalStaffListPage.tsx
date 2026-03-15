@@ -1,10 +1,6 @@
 import { useState, useRef, useCallback, useMemo } from 'react'
-import {
-  type GridComponent,
-  ColumnsDirective,
-  ColumnDirective,
-} from '@syncfusion/ej2-react-grids'
-import { AppDataGrid, useGridExport } from '@/components/data-display/AppDataGrid'
+import type { ColDef, GridApi } from '@/components/data-display/AppDataGrid'
+import { AppDataGrid } from '@/components/data-display/AppDataGrid'
 import type { MedicalStaffDto, MedicalStaffStatusFilter } from '../types/medicalStaff.types'
 import type { MedicalStaffFormData } from '../schemas/medicalStaff.schema'
 import { useMedicalStaffList, useCreateMedicalStaff, useUpdateMedicalStaff, useDeleteMedicalStaff } from '../hooks/useMedicalStaff'
@@ -30,12 +26,9 @@ const IconStaff   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="
 const getInitials = (first?: string | null, last?: string | null) =>
   `${(first ?? '').charAt(0)}${(last ?? '').charAt(0)}`.toUpperCase() || '?';
 
-// ── Configurare grid ──────────────────────────────────────────────────────────
-const SORT_SETTINGS = { columns: [{ field: 'fullName' as const, direction: 'Ascending' as const }] }
-
 // ── Componenta principală ─────────────────────────────────────────────────────
 export const MedicalStaffListPage = () => {
-  const gridRef = useRef<GridComponent>(null)
+  const gridRef = useRef<GridApi<MedicalStaffDto>>(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<MedicalStaffStatusFilter>('all')
   const [departmentFilter, setDepartmentFilter] = useState('')
@@ -188,11 +181,13 @@ export const MedicalStaffListPage = () => {
     }))
   , [filteredData])
 
-  // ── Export handlers (hook reutilizabil) ─────────────────────────────────────
-  const { handleExcelExport } = useGridExport(gridRef, {
-    fileNamePrefix: 'personal_medical',
-    buildExportData,
-  })
+  // ── Export handler ─────────────────────────────────────────────────────────
+  const handleExcelExport = useCallback(() => {
+    gridRef.current?.exportExcel({
+      fileName: `personal_medical_${new Date().toISOString().slice(0, 10)}`,
+      customData: buildExportData(),
+    })
+  }, [buildExportData])
 
   // ── Cell templates ─────────────────────────────────────────────────────────
   const avatarTemplate = useCallback((row: MedicalStaffDto) => (
@@ -236,6 +231,83 @@ export const MedicalStaffListPage = () => {
       onDelete={() => setDeleteTarget(row)}
     />
   ), [])
+
+  // ── Column definitions ─────────────────────────────────────────────────────
+  const columnDefs = useMemo<ColDef<MedicalStaffDto>[]>(() => [
+    {
+      headerName: '',
+      width: 50,
+      minWidth: 50,
+      maxWidth: 50,
+      sortable: false,
+      filterable: false,
+      resizable: false,
+      reorderable: false,
+      cellRenderer: ({ data }) => avatarTemplate(data),
+    },
+    {
+      field: 'fullName',
+      headerName: 'Angajat',
+      width: 200,
+      minWidth: 150,
+      cellRenderer: ({ data }) => nameTemplate(data),
+    },
+    {
+      field: 'medicalTitleName',
+      headerName: 'Titulatură',
+      width: 160,
+      minWidth: 120,
+      cellRenderer: ({ data }) => titleTemplate(data),
+    },
+    {
+      field: 'departmentName',
+      headerName: 'Departament',
+      width: 150,
+      minWidth: 110,
+      cellRenderer: ({ data }) => departmentTemplate(data),
+    },
+    {
+      field: 'supervisorName',
+      headerName: 'Doctor supervizor',
+      width: 180,
+      minWidth: 140,
+      cellRenderer: ({ data }) => supervisorTemplate(data),
+    },
+    {
+      field: 'phoneNumber',
+      headerName: 'Telefon',
+      width: 160,
+      minWidth: 130,
+      cellRenderer: ({ data }) => phoneCellTemplate(data as unknown as Record<string, unknown>),
+    },
+    {
+      field: 'isActive',
+      headerName: 'Status',
+      width: 110,
+      minWidth: 90,
+      cellRenderer: ({ data }) => statusTemplate(data),
+    },
+    {
+      field: 'createdAt',
+      headerName: 'Înregistrat',
+      width: 120,
+      minWidth: 100,
+      filterType: 'date',
+      valueFormatter: ({ value }) => value ? formatDate(value as string) : '',
+    },
+    {
+      field: 'id',
+      headerName: '',
+      width: 80,
+      minWidth: 70,
+      sortable: false,
+      filterable: false,
+      resizable: false,
+      reorderable: false,
+      pinned: 'right',
+      cellRenderer: ({ data }) => actionsTemplate(data),
+    },
+  ], [avatarTemplate, nameTemplate, titleTemplate, departmentTemplate, supervisorTemplate, statusTemplate, actionsTemplate])
 
   // ── Render ─────────────────────────────────────────────────────────────────
   if (isError) {
@@ -350,102 +422,47 @@ export const MedicalStaffListPage = () => {
       </div>
 
       {/* Grid */}
-      <AppDataGrid
-        gridRef={gridRef}
-        dataSource={filteredData}
-        sortSettings={SORT_SETTINGS}
-      >
-        <ColumnsDirective>
-
-            <ColumnDirective
-              headerText=""
-              width="50"
-              minWidth="50"
-              maxWidth="50"
-              template={avatarTemplate}
-              allowSorting={false}
-              allowFiltering={false}
-              allowGrouping={false}
-              allowReordering={false}
-              allowResizing={false}
-              textAlign="Center"
-            />
-
-            <ColumnDirective
-              field="fullName"
-              headerText="Angajat"
-              width="200"
-              minWidth="150"
-              template={nameTemplate}
-              allowGrouping={false}
-            />
-
-            <ColumnDirective
-              field="medicalTitleName"
-              headerText="Titulatură"
-              width="160"
-              minWidth="120"
-              template={titleTemplate}
-            />
-
-            <ColumnDirective
-              field="departmentName"
-              headerText="Departament"
-              width="150"
-              minWidth="110"
-              template={departmentTemplate}
-            />
-
-            <ColumnDirective
-              field="supervisorName"
-              headerText="Doctor supervizor"
-              width="180"
-              minWidth="140"
-              template={supervisorTemplate}
-            />
-
-            <ColumnDirective
-              field="phoneNumber"
-              headerText="Telefon"
-              width="160"
-              minWidth="130"
-              template={phoneCellTemplate}
-            />
-
-            <ColumnDirective
-              field="isActive"
-              headerText="Status"
-              width="110"
-              minWidth="90"
-              template={statusTemplate}
-            />
-
-            <ColumnDirective
-              field="createdAt"
-              headerText="Înregistrat"
-              width="120"
-              minWidth="100"
-              format="dd.MM.yyyy"
-              type="date"
-            />
-
-            <ColumnDirective
-              field="id"
-              headerText=""
-              width="80"
-              minWidth="70"
-              template={actionsTemplate}
-              allowSorting={false}
-              allowFiltering={false}
-              allowGrouping={false}
-              allowReordering={false}
-              allowResizing={false}
-              allowExporting={false}
-              freeze="Right"
-            />
-
-          </ColumnsDirective>
-      </AppDataGrid>
+      <div className={styles.gridWrapper}>
+      <AppDataGrid<MedicalStaffDto>
+        ref={gridRef}
+        rowData={filteredData}
+        columnDefs={columnDefs}
+        initialSort={[{ field: 'fullName', direction: 'asc' }]}
+        loading={isLoading}
+        getRowId={(row) => row.id}
+        // Paginare
+        pagination
+        pageSize={20}
+        pageSizes={[10, 20, 50, 100]}
+        showPager
+        // Sortare
+        triStateSort
+        multiSortKey="ctrl"
+        // Filtrare
+        showFilterRow
+        // Selecție
+        rowSelection="multiple"
+        // Grupare
+        showGroupPanel
+        groupDefaultExpanded={1}
+        // Toolbar & Context Menu
+        toolbar
+        contextMenu
+        // Status Bar
+        statusBar={[
+          { type: 'totalRows' },
+          { type: 'filteredRows' },
+          { type: 'selectedRows' },
+        ]}
+        // Aspect
+        alternateRows
+        enableHover
+        gridLines="horizontal"
+        stickyHeader
+        // Drag & Drop
+        rowDragEnabled
+      />
+      </div>
 
       {/* Mesaj succes */}
       {successMsg && (
