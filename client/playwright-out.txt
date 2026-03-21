@@ -1,0 +1,59 @@
+
+Running 55 tests using 1 worker
+
+[1A[2K[1/55] [setup] ΓÇ║ e2e\global.setup.ts:17:1 ΓÇ║ autentificare admin ΓÇö salvare sesiune
+[1A[2K[2/55] [auth] ΓÇ║ e2e\specs\auth.spec.ts:14:3 ΓÇ║ Autentificare ΓÇ║ afi╚Öeaz─â pagina de login la r─âd─âcin─â
+[1A[2K[3/55] [auth] ΓÇ║ e2e\specs\auth.spec.ts:20:3 ΓÇ║ Autentificare ΓÇ║ afi╚Öeaz─â formularul de login corect
+[1A[2K[4/55] [auth] ΓÇ║ e2e\specs\auth.spec.ts:27:3 ΓÇ║ Autentificare ΓÇ║ afi╚Öeaz─â eroare la creden╚¢iale incorecte
+[1A[2K[5/55] [auth] ΓÇ║ e2e\specs\auth.spec.ts:40:3 ΓÇ║ Autentificare ΓÇ║ login reu╚Öit cu admin redirec╚¢ioneaz─â la dashboard
+[1A[2K[6/55] [auth] ΓÇ║ e2e\specs\auth.spec.ts:45:3 ΓÇ║ Autentificare ΓÇ║ pagina de login nu este accesibil─â dup─â login (redirect la dashboard)
+[1A[2K[7/55] [auth] ΓÇ║ e2e\specs\auth.spec.ts:56:3 ΓÇ║ Autentificare ΓÇ║ sidebar-ul apare dup─â login
+[1A[2K[8/55] [auth] ΓÇ║ e2e\specs\auth.spec.ts:62:3 ΓÇ║ Autentificare ΓÇ║ deconectare cur─â╚¢─â sesiunea ╚Öi redirec╚¢ioneaz─â la login
+[1A[2K[9/55] [pages] ΓÇ║ e2e\specs\admin.spec.ts:7:3 ΓÇ║ Permisiuni Roluri ΓÇ║ pagina Permisiuni Roluri se ├«ncarc─â f─âr─â erori
+[1A[2K[10/55] [pages] ΓÇ║ e2e\specs\admin.spec.ts:25:3 ΓÇ║ Override Utilizatori ΓÇ║ pagina Override Utilizatori se ├«ncarc─â f─âr─â erori
+[1A[2K[11/55] [pages] ΓÇ║ e2e\specs\admin.spec.ts:43:3 ΓÇ║ Nomenclatoare ΓÇ║ pagina Specializ─âri se ├«ncarc─â f─âr─â erori
+[1A[2K[12/55] [pages] ΓÇ║ e2e\specs\admin.spec.ts:57:3 ΓÇ║ Nomenclatoare ΓÇ║ pagina Titulaturi Medicale se ├«ncarc─â f─âr─â erori
+[1A[2K[13/55] [pages] ΓÇ║ e2e\specs\admin.spec.ts:73:3 ΓÇ║ Administrare Clinic─â ΓÇ║ pagina Clinic se ├«ncarc─â f─âr─â erori
+[1A[2K[14/55] [pages] ΓÇ║ e2e\specs\admin.spec.ts:87:3 ΓÇ║ Administrare Clinic─â ΓÇ║ pagina Departamente se ├«ncarc─â f─âr─â erori
+[1A[2K[15/55] [pages] ΓÇ║ e2e\specs\api.spec.ts:22:5 ΓÇ║ API ΓÇö endpoint-uri critice accesibile pentru admin ΓÇ║ GET /api/users ΓÇö returneaz─â 200 (nu 401/403)
+[1A[2K[16/55] [pages] ΓÇ║ e2e\specs\api.spec.ts:22:5 ΓÇ║ API ΓÇö endpoint-uri critice accesibile pentru admin ΓÇ║ GET /api/users/roles ΓÇö returneaz─â 200 (nu 401/403)
+[1A[2K[17/55] [pages] ΓÇ║ e2e\specs\api.spec.ts:22:5 ΓÇ║ API ΓÇö endpoint-uri critice accesibile pentru admin ΓÇ║ GET /api/doctors/lookup ΓÇö returneaz─â 200 (nu 401/403)
+[1A[2K[18/55] [pages] ΓÇ║ e2e\specs\api.spec.ts:22:5 ΓÇ║ API ΓÇö endpoint-uri critice accesibile pentru admin ΓÇ║ GET /api/medicalstaff/lookup ΓÇö returneaz─â 200 (nu 401/403)
+[1A[2K[19/55] [pages] ΓÇ║ e2e\specs\api.spec.ts:22:5 ΓÇ║ API ΓÇö endpoint-uri critice accesibile pentru admin ΓÇ║ GET /api/patients ΓÇö returneaz─â 200 (nu 401/403)
+[1A[2K[20/55] [pages] ΓÇ║ e2e\specs\api.spec.ts:22:5 ΓÇ║ API ΓÇö endpoint-uri critice accesibile pentru admin ΓÇ║ GET /api/doctors ΓÇö returneaz─â 200 (nu 401/403)
+[1A[2K[21/55] [pages] ΓÇ║ e2e\specs\api.spec.ts:22:5 ΓÇ║ API ΓÇö endpoint-uri critice accesibile pentru admin ΓÇ║ GET /api/medicalstaff ΓÇö returneaz─â 200 (nu 401/403)
+[1A[2K[22/55] [pages] ΓÇ║ e2e\specs\api.spec.ts:22:5 ΓÇ║ API ΓÇö endpoint-uri critice accesibile pentru admin ΓÇ║ GET /api/departments ΓÇö returneaz─â 200 (nu 401/403)
+[1A[2K[23/55] [pages] ΓÇ║ e2e\specs\api.spec.ts:22:5 ΓÇ║ API ΓÇö endpoint-uri critice accesibile pentru admin ΓÇ║ GET /api/nomenclature/specialties ΓÇö returneaz─â 200 (nu 401/403)
+[1A[2K[24/55] [pages] ΓÇ║ e2e\specs\api.spec.ts:49:3 ΓÇ║ API ΓÇö nu exist─â 401 la navigarea complet─â ΓÇ║ zero erori 401 la parcurgerea tuturor paginilor principale
+[1A[2K[25/55] [pages] ΓÇ║ e2e\specs\dashboard.spec.ts:13:3 ΓÇ║ Dashboard ΓÇ║ afi╚Öeaz─â titlul Dashboard
+[1A[2K[26/55] [pages] ΓÇ║ e2e\specs\dashboard.spec.ts:18:3 ΓÇ║ Dashboard ΓÇ║ sidebar-ul este vizibil ╚Öi con╚¢ine linkuri de navigare
+[1A[2K[27/55] [pages] ΓÇ║ e2e\specs\dashboard.spec.ts:31:3 ΓÇ║ Dashboard ΓÇ║ f─âr─â erori API pe dashboard
+[1A[2K[28/55] [pages] ΓÇ║ e2e\specs\dashboard.spec.ts:41:3 ΓÇ║ Dashboard ΓÇ║ nu are erori JavaScript ├«n consol─â
+[1A[2K[29/55] [pages] ΓÇ║ e2e\specs\navigation.spec.ts:40:5 ΓÇ║ Navigare ΓÇö toate paginile se ├«ncarc─â f─âr─â erori ΓÇ║ Dashboard (/dashboard) ΓÇö f─âr─â 401/403/500
+[1A[2K[30/55] [pages] ΓÇ║ e2e\specs\navigation.spec.ts:40:5 ΓÇ║ Navigare ΓÇö toate paginile se ├«ncarc─â f─âr─â erori ΓÇ║ Pacien╚¢i (/patients) ΓÇö f─âr─â 401/403/500
+[1A[2K[31/55] [pages] ΓÇ║ e2e\specs\navigation.spec.ts:40:5 ΓÇ║ Navigare ΓÇö toate paginile se ├«ncarc─â f─âr─â erori ΓÇ║ Doctori (/doctors) ΓÇö f─âr─â 401/403/500
+[1A[2K[32/55] [pages] ΓÇ║ e2e\specs\navigation.spec.ts:40:5 ΓÇ║ Navigare ΓÇö toate paginile se ├«ncarc─â f─âr─â erori ΓÇ║ Personal Medical (/medical-staff) ΓÇö f─âr─â 401/403/500
+[1A[2K[33/55] [pages] ΓÇ║ e2e\specs\navigation.spec.ts:40:5 ΓÇ║ Navigare ΓÇö toate paginile se ├«ncarc─â f─âr─â erori ΓÇ║ Departamente (/departments) ΓÇö f─âr─â 401/403/500
+[1A[2K[34/55] [pages] ΓÇ║ e2e\specs\navigation.spec.ts:40:5 ΓÇ║ Navigare ΓÇö toate paginile se ├«ncarc─â f─âr─â erori ΓÇ║ Utilizatori (/users) ΓÇö f─âr─â 401/403/500
+[1A[2K[35/55] [pages] ΓÇ║ e2e\specs\navigation.spec.ts:40:5 ΓÇ║ Navigare ΓÇö toate paginile se ├«ncarc─â f─âr─â erori ΓÇ║ Specializ─âri (/specialties) ΓÇö f─âr─â 401/403/500
+[1A[2K[36/55] [pages] ΓÇ║ e2e\specs\navigation.spec.ts:40:5 ΓÇ║ Navigare ΓÇö toate paginile se ├«ncarc─â f─âr─â erori ΓÇ║ Titulaturi Medicale (/medical-titles) ΓÇö f─âr─â 401/403/500
+[1A[2K[37/55] [pages] ΓÇ║ e2e\specs\navigation.spec.ts:40:5 ΓÇ║ Navigare ΓÇö toate paginile se ├«ncarc─â f─âr─â erori ΓÇ║ Clinica (/clinic) ΓÇö f─âr─â 401/403/500
+[1A[2K[38/55] [pages] ΓÇ║ e2e\specs\navigation.spec.ts:40:5 ΓÇ║ Navigare ΓÇö toate paginile se ├«ncarc─â f─âr─â erori ΓÇ║ Facturi (/invoices) ΓÇö f─âr─â 401/403/500
+[1A[2K[39/55] [pages] ΓÇ║ e2e\specs\navigation.spec.ts:40:5 ΓÇ║ Navigare ΓÇö toate paginile se ├«ncarc─â f─âr─â erori ΓÇ║ Program─âri (/appointments) ΓÇö f─âr─â 401/403/500
+[1A[2K[40/55] [pages] ΓÇ║ e2e\specs\navigation.spec.ts:40:5 ΓÇ║ Navigare ΓÇö toate paginile se ├«ncarc─â f─âr─â erori ΓÇ║ Consulta╚¢ii (/consultations) ΓÇö f─âr─â 401/403/500
+[1A[2K[41/55] [pages] ΓÇ║ e2e\specs\navigation.spec.ts:40:5 ΓÇ║ Navigare ΓÇö toate paginile se ├«ncarc─â f─âr─â erori ΓÇ║ Prescrip╚¢ii (/prescriptions) ΓÇö f─âr─â 401/403/500
+[1A[2K[42/55] [pages] ΓÇ║ e2e\specs\navigation.spec.ts:40:5 ΓÇ║ Navigare ΓÇö toate paginile se ├«ncarc─â f─âr─â erori ΓÇ║ Permisiuni Roluri (/permissions/roles) ΓÇö f─âr─â 401/403/500
+[1A[2K[43/55] [pages] ΓÇ║ e2e\specs\navigation.spec.ts:40:5 ΓÇ║ Navigare ΓÇö toate paginile se ├«ncarc─â f─âr─â erori ΓÇ║ Override Utilizatori (/permissions/users) ΓÇö f─âr─â 401/403/500
+[1A[2K[44/55] [pages] ΓÇ║ e2e\specs\patients.spec.ts:17:3 ΓÇ║ Pacien╚¢i ΓÇ║ afi╚Öeaz─â titlul paginii "Pacien╚¢i"
+[1A[2K[45/55] [pages] ΓÇ║ e2e\specs\patients.spec.ts:21:3 ΓÇ║ Pacien╚¢i ΓÇ║ nu returneaz─â 401 la ├«nc─ârcarea listei de pacien╚¢i
+[1A[2K[46/55] [pages] ΓÇ║ e2e\specs\patients.spec.ts:34:3 ΓÇ║ Pacien╚¢i ΓÇ║ butonul "Pacient nou" este vizibil pentru admin
+[1A[2K[47/55] [pages] ΓÇ║ e2e\specs\patients.spec.ts:39:3 ΓÇ║ Pacien╚¢i ΓÇ║ c├ómpul de c─âutare este func╚¢ional
+[1A[2K[48/55] [pages] ΓÇ║ e2e\specs\patients.spec.ts:49:3 ΓÇ║ Pacien╚¢i ΓÇ║ navigare la formular pacient nou
+[1A[2K[49/55] [pages] ΓÇ║ e2e\specs\users.spec.ts:8:3 ΓÇ║ Utilizatori ΓÇ║ pagina Utilizatori se ├«ncarc─â f─âr─â 401
+[1A[2K[50/55] [pages] ΓÇ║ e2e\specs\users.spec.ts:36:3 ΓÇ║ Utilizatori ΓÇ║ endpoint /api/users returneaz─â 200 pentru admin
+[1A[2K[51/55] [pages] ΓÇ║ e2e\specs\users.spec.ts:55:3 ΓÇ║ Utilizatori ΓÇ║ endpoint /api/doctors/lookup nu returneaz─â 401
+[1A[2K[52/55] [pages] ΓÇ║ e2e\specs\users.spec.ts:70:3 ΓÇ║ Utilizatori ΓÇ║ endpoint /api/medicalstaff/lookup nu returneaz─â 401
+[1A[2K[53/55] [pages] ΓÇ║ e2e\specs\users.spec.ts:85:3 ΓÇ║ Utilizatori ΓÇ║ butonul "Adaug─â utilizator" este vizibil pentru admin
+[1A[2K[54/55] [pages] ΓÇ║ e2e\specs\users.spec.ts:96:3 ΓÇ║ Doctori ΓÇ║ pagina Doctori se ├«ncarc─â f─âr─â 401
+[1A[2K[55/55] [pages] ΓÇ║ e2e\specs\users.spec.ts:114:3 ΓÇ║ Personal Medical ΓÇ║ pagina Personal Medical se ├«ncarc─â f─âr─â 401
+[1A[2K  55 passed (3.1m)

@@ -39,7 +39,7 @@ public interface IPatientRepository
         string? chronicDiseases, string? familyDoctorName, string? notes,
         bool isActive, Guid updatedBy, CancellationToken ct);
 
-    Task DeleteAsync(Guid id, Guid clinicId, CancellationToken ct);
+    Task DeleteAsync(Guid id, Guid clinicId, Guid deletedBy, CancellationToken ct);
 
     Task SyncAllergiesAsync(Guid patientId, Guid createdBy, IEnumerable<SyncAllergyItem> allergies, CancellationToken ct);
 

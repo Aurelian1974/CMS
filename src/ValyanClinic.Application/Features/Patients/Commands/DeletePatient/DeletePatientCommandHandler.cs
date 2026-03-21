@@ -19,6 +19,7 @@ public sealed class DeletePatientCommandHandler(
             await repository.DeleteAsync(
                 request.Id,
                 currentUser.ClinicId,
+                currentUser.Id,
                 cancellationToken);
 
             return Result<bool>.Success(true);

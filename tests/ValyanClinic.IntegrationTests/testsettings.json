@@ -1,0 +1,57 @@
+{
+  "ConnectionStrings": {
+    "DefaultConnection": ""
+  },
+
+  "Integration": {
+    // GUID-ul unei clinici existente în baza de date (completează înainte de rulare)
+    "TestClinicId": "00000000-0000-0000-0000-000000000000",
+    // Email + parolă ale unui utilizator activ din clinica de test
+    "TestUserEmail": "",
+    "TestUserPassword": "",
+    // Prefixul folosit pe datele de test pentru identificare și cleanup
+    "TestDataPrefix": "IT_"
+  },
+
+  "Jwt": {
+    "Secret": "INTEGRATION_TEST_SECRET_MIN_64_CHARS_012345678901234567890123456789",
+    "Issuer": "ValyanClinic.API",
+    "Audience": "ValyanClinic.Client",
+    "AccessTokenExpiryMinutes": 15,
+    "RefreshTokenExpiryDays": 7
+  },
+
+  "Security": {
+    "BcryptWorkFactor": 4,
+    "MaxFailedLoginAttempts": 5,
+    "LockoutMinutes": 15
+  },
+
+  "Pagination": {
+    "DefaultPageSize": 20,
+    "MaxPageSize": 100
+  },
+
+  "Storage": {
+    "BasePath": "C:\\Temp\\ValyanTest",
+    "MaxFileSizeBytes": 10485760,
+    "AllowedExtensions": [ ".pdf", ".jpg" ]
+  },
+
+  "Cors": {
+    "AllowedOrigins": [ "http://localhost:5173" ]
+  },
+
+  "RateLimiting": {
+    "LoginMaxAttempts": 100,
+    "LoginWindowMinutes": 1,
+    "GeneralMaxRequests": 10000,
+    "GeneralWindowSeconds": 1
+  },
+
+  "Logging": {
+    "LogLevel": {
+      "Default": "Warning"
+    }
+  }
+}

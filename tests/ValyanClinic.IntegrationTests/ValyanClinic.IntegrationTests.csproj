@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Fără server HTTP — e doar harness DI -->
+    <UseStartupInitializer>false</UseStartupInitializer>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Update="testsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk"          Version="17.*" />
+    <PackageReference Include="xunit"                           Version="2.*" />
+    <PackageReference Include="xunit.runner.visualstudio"       Version="2.*">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector"              Version="6.*">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Respawn"                         Version="6.*" />
+    <PackageReference Include="Microsoft.Data.SqlClient"        Version="6.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ValyanClinic.Application\ValyanClinic.Application.csproj" />
+    <ProjectReference Include="..\..\src\ValyanClinic.Infrastructure\ValyanClinic.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

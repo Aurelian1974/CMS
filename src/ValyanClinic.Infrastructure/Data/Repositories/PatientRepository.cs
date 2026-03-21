@@ -188,13 +188,13 @@ public sealed class PatientRepository(DapperContext context) : IPatientRepositor
                 cancellationToken: ct));
     }
 
-    public async Task DeleteAsync(Guid id, Guid clinicId, CancellationToken ct)
+    public async Task DeleteAsync(Guid id, Guid clinicId, Guid deletedBy, CancellationToken ct)
     {
         using var connection = context.CreateConnection();
         await connection.ExecuteAsync(
             new CommandDefinition(
                 PatientProcedures.Delete,
-                new { Id = id, ClinicId = clinicId },
+                new { Id = id, ClinicId = clinicId, DeletedBy = deletedBy },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct));
     }
