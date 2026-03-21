@@ -97,7 +97,7 @@ describe('useDebounce', () => {
   // ── Cleanup ───────────────────────────────────────────────────────────────
 
   it('curăță timer-ul la unmount (fără memory leaks)', () => {
-    const { result, unmount, rerender } = renderHook(
+    const { unmount, rerender } = renderHook(
       ({ value, delay }) => useDebounce(value, delay),
       { initialProps: { value: 'initial', delay: 300 } }
     );

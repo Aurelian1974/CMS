@@ -1,7 +1,6 @@
 import api from '@/api/axiosInstance'
 import type { ApiResponse } from '@/types/common.types'
 import type {
-  DoctorDto,
   DoctorDetailDto,
   DoctorLookupDto,
   DoctorsPagedResult,

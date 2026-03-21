@@ -235,7 +235,7 @@ const ClinicPage = () => {
 
   const { data: departmentsResp } = useDepartments()
   const locations = locationsResp?.data ?? []
-  const departments = departmentsResp?.data ?? []
+  const departments = useMemo(() => departmentsResp?.data ?? [], [departmentsResp])
   const isLoading = loadingClinic || loadingLocations
 
   const deptsByLocation = useMemo(() => {

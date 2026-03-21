@@ -99,8 +99,8 @@ const DepartmentsPage = () => {
 
   const departments = departmentsResp?.data ?? []
   const locations = locationsResp?.data ?? []
-  const doctors = doctorsResp?.data ?? []
-  const staff = staffResp?.data ?? []
+  const doctors = useMemo(() => doctorsResp?.data ?? [], [doctorsResp])
+  const staff = useMemo(() => staffResp?.data ?? [], [staffResp])
   const isLoading = loadingDepts || loadingLocations
 
   // Grupare doctori per departament (pentru master-detail)

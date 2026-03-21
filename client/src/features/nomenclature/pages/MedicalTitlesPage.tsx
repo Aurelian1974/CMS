@@ -43,7 +43,7 @@ export const MedicalTitlesPage = () => {
   const updateMutation = useUpdateMedicalTitle()
   const toggleMutation = useToggleMedicalTitle()
 
-  const titles = titlesResponse?.data ?? []
+  const titles = useMemo(() => titlesResponse?.data ?? [], [titlesResponse])
 
   // Filtrare text
   const filteredTitles = useMemo(() => {

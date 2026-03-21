@@ -11,6 +11,7 @@ test.describe('Pacienți', () => {
     await page.waitForLoadState('networkidle').catch(() => {});
 
     // Salvează erorile pentru verificare în fiecare test
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (page as any).__apiErrors = errors;
   });
 

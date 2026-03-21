@@ -31,6 +31,7 @@ export const test = base.extend({
         sessionStorage.setItem('auth-storage', data);
       }, authStorage);
     }
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     await use(page);
   },
 });

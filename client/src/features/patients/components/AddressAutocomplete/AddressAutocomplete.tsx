@@ -46,6 +46,7 @@ async function searchPhoton(query: string, locationHint?: string): Promise<Addre
     params: { q, limit: 10, bbox: RO_BBOX },
   })
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (data.features as any[])
     .filter((f) => {
       const p = f.properties

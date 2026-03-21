@@ -56,7 +56,7 @@ export const UsersListPage = () => {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [roleFilter, setRoleFilter] = useState('')
-  const [page, setPage] = useState(1)
+  const [page] = useState(1)
   const [pageSize] = useState(20)
 
   // Modal formular creare/editare
@@ -96,133 +96,16 @@ export const UsersListPage = () => {
   const deleteUser = useDeleteUser()
   const changePassword = useChangePassword()
 
-  if (!canManageUsers) return <AccessDenied />
-
-  const userList = usersResp?.data?.items ?? []
-  const totalCount = usersResp?.data?.totalCount ?? 0
-  const roles = rolesResp?.data ?? []
-  const doctorLookup = doctorsResp?.data ?? []
-  const staffLookup = staffResp?.data ?? []
-
-  // Filtrare locală suplimentară pentru role (server-side deja, dar keep local filter in sync)
-  const filteredData = roleFilter
-    ? userList.filter(u => u.roleId === roleFilter)
-    : userList
-
-  // Statistici
-  const totalActive   = userList.filter(u => u.isActive).length
-  const totalInactive = userList.filter(u => !u.isActive).length
+  // ── Computed data (useMemo/useCallback MUST be before any conditional return) ──
+  const userList = useMemo(() => usersResp?.data?.items ?? [], [usersResp])
+  const filteredData = useMemo(
+    () => roleFilter ? userList.filter(u => u.roleId === roleFilter) : userList,
+    [roleFilter, userList],
+  )
   const roleNames = useMemo(
     () => [...new Set(userList.map(u => u.roleName).filter(Boolean))].sort() as string[],
     [userList],
   )
-
-  // Funcții helper — mesaje feedback
-  const showSuccess = (msg: string) => {
-    setErrorMsg(null)
-    setSuccessMsg(msg)
-    setTimeout(() => setSuccessMsg(null), 3000)
-  }
-
-  const showError = (err: unknown) => {
-    setSuccessMsg(null)
-    const message = err instanceof Error ? err.message : 'A apărut o eroare neașteptată.'
-    setErrorMsg(message)
-  }
-
-  // ── Modal handlers ─────────────────────────────────────────────────────────
-  const handleOpenCreate = () => {
-    setEditingUser(null)
-    setErrorMsg(null)
-    setModalOpen(true)
-  }
-
-  const handleOpenEdit = (user: UserDto) => {
-    setEditingUser(user)
-    setErrorMsg(null)
-    setModalOpen(true)
-  }
-
-  const handleCloseModal = () => {
-    setModalOpen(false)
-    setEditingUser(null)
-    setErrorMsg(null)
-  }
-
-  const handleFormSubmit = (formData: CreateUserFormData) => {
-    const toNull = (v: string | undefined) => v || null
-
-    if (editingUser) {
-      updateUser.mutate(
-        {
-          id: editingUser.id,
-          roleId: formData.roleId,
-          doctorId: formData.associationType === 'doctor' ? toNull(formData.doctorId) : null,
-          medicalStaffId: formData.associationType === 'medicalStaff' ? toNull(formData.medicalStaffId) : null,
-          username: formData.username,
-          email: formData.email,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          isActive: formData.isActive,
-        },
-        {
-          onSuccess: () => { handleCloseModal(); showSuccess('Utilizatorul a fost actualizat cu succes.') },
-          onError: (err) => showError(err),
-        },
-      )
-    } else {
-      createUser.mutate(
-        {
-          roleId: formData.roleId,
-          doctorId: formData.associationType === 'doctor' ? toNull(formData.doctorId) : null,
-          medicalStaffId: formData.associationType === 'medicalStaff' ? toNull(formData.medicalStaffId) : null,
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          isActive: formData.isActive,
-        },
-        {
-          onSuccess: () => { handleCloseModal(); showSuccess('Utilizatorul a fost creat cu succes.') },
-          onError: (err) => showError(err),
-        },
-      )
-    }
-  }
-
-  // ── Password modal handlers ────────────────────────────────────────────────
-  const handleOpenPasswordModal = (user: UserDto) => {
-    setPasswordTarget(user)
-    setErrorMsg(null)
-    setPasswordModalOpen(true)
-  }
-
-  const handleClosePasswordModal = () => {
-    setPasswordModalOpen(false)
-    setPasswordTarget(null)
-    setErrorMsg(null)
-  }
-
-  const handlePasswordSubmit = (formData: ChangePasswordFormData) => {
-    if (!passwordTarget) return
-    changePassword.mutate(
-      { userId: passwordTarget.id, payload: { newPassword: formData.newPassword } },
-      {
-        onSuccess: () => { handleClosePasswordModal(); showSuccess('Parola a fost schimbată cu succes.') },
-        onError: (err) => showError(err),
-      },
-    )
-  }
-
-  // ── Confirmare ștergere ────────────────────────────────────────────────────
-  const handleConfirmDelete = () => {
-    if (!deleteTarget) return
-    deleteUser.mutate(deleteTarget.id, {
-      onSuccess: () => { setDeleteTarget(null); showSuccess('Utilizatorul a fost șters cu succes.') },
-      onError: (err) => { setDeleteTarget(null); showError(err) },
-    })
-  }
 
   // Date transformate pentru export — plain objects, fără template JSX
   const buildExportData = useCallback(() =>
@@ -296,6 +179,19 @@ export const UsersListPage = () => {
       : <span style={{ color: '#C9D3DC', fontSize: '0.78rem' }}>Niciodată</span>
   , [])
 
+  // ── Handlers referenced by actionsTemplate (must be declared before it) ──
+  const handleOpenPasswordModal = (user: UserDto) => {
+    setPasswordTarget(user)
+    setErrorMsg(null)
+    setPasswordModalOpen(true)
+  }
+
+  const handleOpenEdit = (user: UserDto) => {
+    setEditingUser(user)
+    setErrorMsg(null)
+    setModalOpen(true)
+  }
+
   const actionsTemplate = useCallback((row: UserDto) => (
     <div className={styles.actionBtns}>
       <button className={styles.iconBtn} title="Schimbă parola" onClick={() => handleOpenPasswordModal(row)}>
@@ -306,7 +202,7 @@ export const UsersListPage = () => {
         onDelete={() => setDeleteTarget(row)}
       />
     </div>
-  ), [])
+  ), []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Column definitions ─────────────────────────────────────────────────────
   const columnDefs = useMemo<ColDef<UserDto>[]>(() => [
@@ -377,6 +273,112 @@ export const UsersListPage = () => {
       cellRenderer: ({ data }) => actionsTemplate(data),
     },
   ], [avatarTemplate, nameTemplate, roleTemplate, associationTemplate, statusTemplate, lastLoginTemplate, actionsTemplate])
+
+  if (!canManageUsers) return <AccessDenied />
+
+  const totalCount = usersResp?.data?.totalCount ?? 0
+  const roles = rolesResp?.data ?? []
+  const doctorLookup = doctorsResp?.data ?? []
+  const staffLookup = staffResp?.data ?? []
+
+  // Statistici
+  const totalActive   = userList.filter(u => u.isActive).length
+  const totalInactive = userList.filter(u => !u.isActive).length
+
+  // Funcții helper — mesaje feedback
+  const showSuccess = (msg: string) => {
+    setErrorMsg(null)
+    setSuccessMsg(msg)
+    setTimeout(() => setSuccessMsg(null), 3000)
+  }
+
+  const showError = (err: unknown) => {
+    setSuccessMsg(null)
+    const message = err instanceof Error ? err.message : 'A apărut o eroare neașteptată.'
+    setErrorMsg(message)
+  }
+
+  // ── Modal handlers ─────────────────────────────────────────────────────────
+  const handleOpenCreate = () => {
+    setEditingUser(null)
+    setErrorMsg(null)
+    setModalOpen(true)
+  }
+
+  const handleCloseModal = () => {
+    setModalOpen(false)
+    setEditingUser(null)
+    setErrorMsg(null)
+  }
+
+  const handleFormSubmit = (formData: CreateUserFormData) => {
+    const toNull = (v: string | undefined) => v || null
+
+    if (editingUser) {
+      updateUser.mutate(
+        {
+          id: editingUser.id,
+          roleId: formData.roleId,
+          doctorId: formData.associationType === 'doctor' ? toNull(formData.doctorId) : null,
+          medicalStaffId: formData.associationType === 'medicalStaff' ? toNull(formData.medicalStaffId) : null,
+          username: formData.username,
+          email: formData.email,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          isActive: formData.isActive,
+        },
+        {
+          onSuccess: () => { handleCloseModal(); showSuccess('Utilizatorul a fost actualizat cu succes.') },
+          onError: (err) => showError(err),
+        },
+      )
+    } else {
+      createUser.mutate(
+        {
+          roleId: formData.roleId,
+          doctorId: formData.associationType === 'doctor' ? toNull(formData.doctorId) : null,
+          medicalStaffId: formData.associationType === 'medicalStaff' ? toNull(formData.medicalStaffId) : null,
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          isActive: formData.isActive,
+        },
+        {
+          onSuccess: () => { handleCloseModal(); showSuccess('Utilizatorul a fost creat cu succes.') },
+          onError: (err) => showError(err),
+        },
+      )
+    }
+  }
+
+  // ── Password modal handlers ────────────────────────────────────────────────
+  const handleClosePasswordModal = () => {
+    setPasswordModalOpen(false)
+    setPasswordTarget(null)
+    setErrorMsg(null)
+  }
+
+  const handlePasswordSubmit = (formData: ChangePasswordFormData) => {
+    if (!passwordTarget) return
+    changePassword.mutate(
+      { userId: passwordTarget.id, payload: { newPassword: formData.newPassword } },
+      {
+        onSuccess: () => { handleClosePasswordModal(); showSuccess('Parola a fost schimbată cu succes.') },
+        onError: (err) => showError(err),
+      },
+    )
+  }
+
+  // ── Confirmare ștergere ────────────────────────────────────────────────────
+  const handleConfirmDelete = () => {
+    if (!deleteTarget) return
+    deleteUser.mutate(deleteTarget.id, {
+      onSuccess: () => { setDeleteTarget(null); showSuccess('Utilizatorul a fost șters cu succes.') },
+      onError: (err) => { setDeleteTarget(null); showError(err) },
+    })
+  }
 
   // ── Render ─────────────────────────────────────────────────────────────────
   if (isError) {

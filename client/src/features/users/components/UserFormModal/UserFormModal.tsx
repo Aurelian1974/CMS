@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { createUserSchema, updateUserSchema, type CreateUserFormData, type UpdateUserFormData } from '../../schemas/user.schema'
+import { createUserSchema, updateUserSchema, type CreateUserFormData } from '../../schemas/user.schema'
 import type { UserDto, RoleDto, UserAssociationType } from '../../types/user.types'
 import type { DoctorLookupDto } from '@/features/doctors/types/doctor.types'
 import type { MedicalStaffLookupDto } from '@/features/medicalStaff/types/medicalStaff.types'

@@ -19,5 +19,20 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      '@typescript-eslint/no-unused-vars': ['error', {
+        varsIgnorePattern: '^_',
+        argsIgnorePattern: '^_',
+        caughtErrorsIgnorePattern: '^_',
+        destructuredArrayIgnorePattern: '^_',
+      }],
+      // These React Compiler rules flag valid pre-existing React 18/19 patterns.
+      // This project does not use the React Compiler, so disable them.
+      'react-hooks/refs': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+      // Downgrade from error to warn — having utility exports alongside components
+      // is intentional in the custom AppDataGrid library files.
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+    },
   },
 ])

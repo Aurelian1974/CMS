@@ -73,7 +73,7 @@ export function GridCell<T extends object>(props: GridCellProps<T>) {
       Object.assign(base, colDef.cellStyle)
     }
     return base
-  }, [width, colDef, rawValue, data, rowIndex, field])
+  }, [width, colDef, rawValue, data, rowIndex, field, stickyOffset])
 
   // Cell class
   const cellClass = useMemo(() => {
@@ -104,7 +104,7 @@ export function GridCell<T extends object>(props: GridCellProps<T>) {
     }
 
     return classes.filter(Boolean).join(' ')
-  }, [isFocused, isDirty, isEditing, colDef, rawValue, data, rowIndex, field])
+  }, [isFocused, isDirty, isEditing, colDef, rawValue, data, rowIndex, field, stickyOffset])
 
   // Auto-focus the editor input
   useEffect(() => {

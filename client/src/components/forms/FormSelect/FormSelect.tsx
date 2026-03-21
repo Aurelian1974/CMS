@@ -42,6 +42,7 @@ export const FormSelect = <T extends FieldValues>({
 
       <DropDownListComponent
         ref={ref}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         dataSource={options as any}
         fields={{ text: 'label', value: 'value' }}
         value={value ?? null}

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import type {
   RowSelectionMode, CellPosition, CellRange, SelectionState,
   SelectionChangedEvent, GroupRow,
@@ -42,7 +42,7 @@ export function useGridSelection<T extends object>(options: UseGridSelectionOpti
     cellRanges: [],
   })
 
-  const lastSelectedRef = { current: null as (string | number | null) }
+  const lastSelectedRef = useRef<string | number | null>(null)
 
   const emitChange = useCallback((state: SelectionState<T>) => {
     onSelectionChanged?.({

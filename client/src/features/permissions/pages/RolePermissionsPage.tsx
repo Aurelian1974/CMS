@@ -8,7 +8,6 @@ import {
   useUpdateRolePermissions,
 } from '../hooks/usePermissions'
 import type {
-  RoleModulePermissionDto,
   RolePermissionItemPayload,
   AccessLevelDto,
 } from '../types/permission.types'

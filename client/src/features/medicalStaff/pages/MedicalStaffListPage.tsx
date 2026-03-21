@@ -32,7 +32,7 @@ export const MedicalStaffListPage = () => {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<MedicalStaffStatusFilter>('all')
   const [departmentFilter, setDepartmentFilter] = useState('')
-  const [page, setPage] = useState(1)
+  const [page] = useState(1)
   const [pageSize] = useState(20)
 
   // Modal formular
@@ -66,7 +66,7 @@ export const MedicalStaffListPage = () => {
   const updateStaff = useUpdateMedicalStaff()
   const deleteStaff = useDeleteMedicalStaff()
 
-  const staffList = staffResp?.data?.items ?? []
+  const staffList = useMemo(() => staffResp?.data?.items ?? [], [staffResp])
   const totalCount = staffResp?.data?.totalCount ?? 0
   const medicalTitles = medicalTitlesResp?.data ?? []
   const departments = departmentsResp?.data ?? []

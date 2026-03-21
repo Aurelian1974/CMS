@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useUsersList, useRoles } from '@/features/users/hooks/useUsers'
+import { useUsersList } from '@/features/users/hooks/useUsers'
 import { AppButton } from '@/components/ui/AppButton'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import {
@@ -10,7 +10,6 @@ import {
   useUpdateUserOverrides,
 } from '../hooks/usePermissions'
 import type { UserOverrideItemPayload, AccessLevelDto } from '../types/permission.types'
-import type { UserDto } from '@/features/users/types/user.types'
 import styles from './UserOverridesPage.module.scss'
 
 // ── Icoane SVG ────────────────────────────────────────────────────────────────
