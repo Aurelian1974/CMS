@@ -105,7 +105,7 @@ export const PatientsListPage = () => {
   const updatePatient = useUpdatePatient()
   const deletePatient = useDeletePatient()
 
-  const patients  = patientsResp?.data?.pagedResult?.items ?? []
+  const patients  = useMemo(() => patientsResp?.data?.pagedResult?.items ?? [], [patientsResp])
   const totalCount = patientsResp?.data?.pagedResult?.totalCount ?? 0
   const stats      = patientsResp?.data?.stats
 
@@ -285,7 +285,7 @@ export const PatientsListPage = () => {
   const handleSortChanged = useCallback((e: SortChangedEvent) => {
     if (e.sort.length > 0) {
       setSortBy(e.sort[0].field)
-      setSortDir(e.sort[0].direction)
+      setSortDir(e.sort[0].direction ?? 'asc')
     } else {
       setSortBy('fullName')
       setSortDir('asc')
@@ -550,9 +550,9 @@ export const PatientsListPage = () => {
         contextMenu
         // Status Bar
         statusBar={[
-          { type: 'totalRows' },
-          { type: 'filteredRows' },
-          { type: 'selectedRows' },
+          { type: 'total-count' },
+          { type: 'filtered-count' },
+          { type: 'selected-count' },
         ]}
         // Aspect
         alternateRows

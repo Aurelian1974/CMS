@@ -3,7 +3,7 @@ import { z } from 'zod'
 /// Schema Zod — creare utilizator
 export const createUserSchema = z.object({
   roleId:           z.string().min(1, 'Rolul este obligatoriu'),
-  associationType:  z.enum(['doctor', 'medicalStaff'], { required_error: 'Selectați tipul asocierii' }),
+  associationType:  z.enum(['doctor', 'medicalStaff'], { error: 'Selectați tipul asocierii' }),
   doctorId:         z.string().optional().or(z.literal('')),
   medicalStaffId:   z.string().optional().or(z.literal('')),
   username:         z.string().min(1, 'Username-ul este obligatoriu').max(100, 'Maxim 100 caractere')
@@ -28,7 +28,7 @@ export const createUserSchema = z.object({
 /// Schema Zod — editare utilizator (fără parolă obligatorie)
 export const updateUserSchema = z.object({
   roleId:           z.string().min(1, 'Rolul este obligatoriu'),
-  associationType:  z.enum(['doctor', 'medicalStaff'], { required_error: 'Selectați tipul asocierii' }),
+  associationType:  z.enum(['doctor', 'medicalStaff'], { error: 'Selectați tipul asocierii' }),
   doctorId:         z.string().optional().or(z.literal('')),
   medicalStaffId:   z.string().optional().or(z.literal('')),
   username:         z.string().min(1, 'Username-ul este obligatoriu').max(100, 'Maxim 100 caractere')

@@ -208,7 +208,8 @@ const ClinicPage = () => {
 
   // Formular clinică
   const { control, handleSubmit, reset, formState: { isDirty } } = useForm<ClinicFormData>({
-    resolver: zodResolver(clinicSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(clinicSchema) as any,
   })
 
   const clinic = clinicResp?.data ?? null

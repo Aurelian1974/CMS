@@ -35,7 +35,8 @@ export const LocationFormModal = ({
     reset,
     setValue,
   } = useForm<ClinicLocationFormData>({
-    resolver: zodResolver(clinicLocationSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(clinicLocationSchema) as any,
     defaultValues: {
       name: '',
       address: '',

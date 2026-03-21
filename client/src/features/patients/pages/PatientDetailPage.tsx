@@ -109,7 +109,7 @@ export const PatientDetailPage = () => {
         emergencyContacts: formData.emergencyContacts?.map(ec => ({
           fullName: ec.fullName,
           relationship: toNull(ec.relationship),
-          phoneNumber: ec.phoneNumber,
+          phoneNumber: ec.phoneNumber ?? '',
           isDefault: ec.isDefault,
         })),
       },

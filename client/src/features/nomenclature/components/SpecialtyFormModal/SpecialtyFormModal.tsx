@@ -45,7 +45,8 @@ export const SpecialtyFormModal = ({
     watch,
     setValue,
   } = useForm<SpecialtyFormData>({
-    resolver: zodResolver(specialtySchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(specialtySchema) as any,
     defaultValues: {
       parentId: null,
       name: '',
@@ -176,7 +177,7 @@ export const SpecialtyFormModal = ({
               label="Descriere"
               placeholder="Descriere opțională"
               multiline
-              multilineRows={2}
+              rows={2}
             />
 
             {/* Ordine afișare */}

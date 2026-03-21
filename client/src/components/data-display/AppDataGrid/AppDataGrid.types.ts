@@ -265,6 +265,7 @@ export interface ExportParams {
   includeAggregates?: boolean
   columnFields?: string[]
   customHeaders?: string[]
+  customData?: Record<string, unknown>[]
 }
 
 export interface ExcelExportParams extends ExportParams {
@@ -330,7 +331,7 @@ export interface ContextMenuParams<T = unknown> {
 // ── 11. STATUS BAR ───────────────────────────────────────────────────────────
 
 export interface StatusBarPanel {
-  id: string
+  id?: string
   type: 'selected-count' | 'total-count' | 'filtered-count' | 'sum' | 'avg' | 'min' | 'max' | 'custom'
   field?: string
   label?: string

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useWatch, type Control, type FieldValues, type Path } from 'react-hook-form'
+import { useWatch, type Control, type FieldValues, type Path, type UseFormSetValue } from 'react-hook-form'
 import { AddressAutocomplete, type AddressSuggestion } from '@/components/forms/AddressAutocomplete'
 import { FormInput } from '@/components/forms/FormInput'
 import { FormSelect } from '@/components/forms/FormSelect'
@@ -16,7 +16,8 @@ export type WithAddressFields = {
 export interface AddressFieldsProps<T extends FieldValues> {
   control: Control<T>
   /** setValue din useForm al formularului gazdă */
-  setValue: (name: string, value: string) => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setValue: UseFormSetValue<any>
 }
 
 // ── Iconiță ⓘ pentru câmpul Cod poștal ───────────────────────────────────────

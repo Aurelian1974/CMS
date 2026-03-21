@@ -31,7 +31,8 @@ export const MedicalTitleFormModal = ({
     handleSubmit,
     reset,
   } = useForm<MedicalTitleFormData>({
-    resolver: zodResolver(medicalTitleSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(medicalTitleSchema) as any,
     defaultValues: {
       name: '',
       code: '',

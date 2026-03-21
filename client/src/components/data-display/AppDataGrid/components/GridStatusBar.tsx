@@ -21,10 +21,11 @@ export function GridStatusBar<T extends object>(props: GridStatusBarProps<T>) {
 
   const locale = { ...DEFAULT_LOCALE_TEXT, ...localeText }
 
-  const renderPanel = (panel: StatusBarPanel) => {
+  const renderPanel = (panel: StatusBarPanel, index: number) => {
+    const key = panel.id ?? `${panel.type}-${index}`
     if (panel.render) {
       return (
-        <div key={panel.id} className={`adg-status-bar__panel adg-status-bar__panel--${panel.align ?? 'left'}`}>
+        <div key={key} className={`adg-status-bar__panel adg-status-bar__panel--${panel.align ?? 'left'}`}>
           {panel.render({
             api: apiRef.current,
             selectedRows,
@@ -65,7 +66,7 @@ export function GridStatusBar<T extends object>(props: GridStatusBarProps<T>) {
     if (!content) return null
 
     return (
-      <div key={panel.id} className={`adg-status-bar__panel adg-status-bar__panel--${panel.align ?? 'left'}`}>
+      <div key={key} className={`adg-status-bar__panel adg-status-bar__panel--${panel.align ?? 'left'}`}>
         {content}
       </div>
     )

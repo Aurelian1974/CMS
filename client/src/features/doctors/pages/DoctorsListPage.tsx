@@ -517,9 +517,9 @@ export const DoctorsListPage = () => {
         contextMenu
         // Status Bar
         statusBar={[
-          { type: 'totalRows' },
-          { type: 'filteredRows' },
-          { type: 'selectedRows' },
+          { type: 'total-count' },
+          { type: 'filtered-count' },
+          { type: 'selected-count' },
         ]}
         // Aspect
         alternateRows

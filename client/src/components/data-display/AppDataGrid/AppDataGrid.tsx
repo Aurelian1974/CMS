@@ -520,7 +520,6 @@ function AppDataGridInner<T extends object>(
 
     getGridElement: () => gridRef.current,
     redraw: () => setInternalRowData(prev => [...prev]),
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [
     dataHook, columnsHook, selectionHook, editHook, exportHook,
     stateHook, virtHook, internalRowData, getRowId,

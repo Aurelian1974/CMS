@@ -49,7 +49,7 @@ interface PatientFormModalProps {
   onClose: () => void
   onSubmit: (data: PatientFormData) => void
   isLoading: boolean
-  editData: PatientDto | null
+  editData: (PatientDto & { city?: string | null; county?: string | null }) | null
   genders: NomenclatureItem[]
   bloodTypes: NomenclatureItem[]
   allergyTypes: NomenclatureItem[]
@@ -93,7 +93,8 @@ export const PatientFormModal = ({
     setValue,
     formState: { errors },
   } = useForm<PatientFormData>({
-    resolver: zodResolver(patientSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(patientSchema) as any,
     defaultValues: {
       firstName: '', lastName: '', cnp: '',
       birthDate: '', genderId: '', bloodTypeId: '',
@@ -340,7 +341,7 @@ export const PatientFormModal = ({
                         label="Boli cronice"
                         placeholder="Diabet, hipertensiune arterială..."
                         multiline
-                        multilineRows={2}
+                        rows={2}
                       />
                     </div>
                   </div>
@@ -621,7 +622,7 @@ export const PatientFormModal = ({
                   label="Note"
                   placeholder="Observații generale (opțional)"
                   multiline
-                  multilineRows={4}
+                  rows={4}
                 />
 
                 {isEdit && (

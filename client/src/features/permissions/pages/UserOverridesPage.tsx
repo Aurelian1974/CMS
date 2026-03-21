@@ -61,8 +61,8 @@ export const UserOverridesPage = () => {
     sortDir: 'asc',
   })
 
-  const modules = metaResp?.data?.modules ?? []
-  const accessLevels = metaResp?.data?.accessLevels ?? []
+  const modules = useMemo(() => metaResp?.data?.modules ?? [], [metaResp])
+  const accessLevels = useMemo(() => metaResp?.data?.accessLevels ?? [], [metaResp])
   const users = usersResp?.data?.items ?? []
 
   // Selectare utilizator
@@ -73,11 +73,11 @@ export const UserOverridesPage = () => {
   const { data: rolePermResp, isLoading: loadingRolePerm } = useRolePermissions(
     selectedUser?.roleId ?? '',
   )
-  const rolePermissions = rolePermResp?.data ?? []
+  const rolePermissions = useMemo(() => rolePermResp?.data ?? [], [rolePermResp])
 
   // Override-uri existente ale utilizatorului
   const { data: overridesResp, isLoading: loadingOverrides } = useUserOverrides(selectedUserId)
-  const existingOverrides = overridesResp?.data ?? []
+  const existingOverrides = useMemo(() => overridesResp?.data ?? [], [overridesResp])
 
   // State local editare — map moduleId → { isOverridden, accessLevelId }
   const [editMap, setEditMap] = useState<Record<string, ModuleEditState>>({})

@@ -42,9 +42,9 @@ export const RolePermissionsPage = () => {
   const { data: rolesResp, isLoading: loadingRoles } = useRoles()
   const { data: metaResp, isLoading: loadingMeta } = useModulesAndLevels()
 
-  const roles = rolesResp?.data ?? []
-  const modules = metaResp?.data?.modules ?? []
-  const accessLevels = metaResp?.data?.accessLevels ?? []
+  const roles = useMemo(() => rolesResp?.data ?? [], [rolesResp])
+  const modules = useMemo(() => metaResp?.data?.modules ?? [], [metaResp])
+  const accessLevels = useMemo(() => metaResp?.data?.accessLevels ?? [], [metaResp])
 
   // Selectare rol activ — default primul din listă
   const [selectedRoleId, setSelectedRoleId] = useState<string>('')
@@ -57,7 +57,7 @@ export const RolePermissionsPage = () => {
 
   // Permisiuni curente ale rolului selectat
   const { data: permResp, isLoading: loadingPerms } = useRolePermissions(selectedRoleId)
-  const currentPermissions = permResp?.data ?? []
+  const currentPermissions = useMemo(() => permResp?.data ?? [], [permResp])
 
   // State local pentru editare — map moduleId → accessLevelId
   const [editMap, setEditMap] = useState<Record<string, string>>({})

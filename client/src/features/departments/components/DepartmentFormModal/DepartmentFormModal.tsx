@@ -41,7 +41,8 @@ export const DepartmentFormModal = ({
     handleSubmit,
     reset,
   } = useForm<DepartmentFormData>({
-    resolver: zodResolver(departmentSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(departmentSchema) as any,
     defaultValues: {
       locationId: '',
       name: '',
