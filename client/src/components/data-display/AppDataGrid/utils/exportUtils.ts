@@ -260,7 +260,7 @@ export function printGrid(gridElement: HTMLElement | null): void {
 // HELPERS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function getExportColumns<T>(columns: ColDef<T>[], params?: ExportParams): ColDef<T>[] {
+function getExportColumns<T extends object>(columns: ColDef<T>[], params?: ExportParams): ColDef<T>[] {
   const flat = flattenColumns(columns)
 
   if (params?.columnFields?.length) {

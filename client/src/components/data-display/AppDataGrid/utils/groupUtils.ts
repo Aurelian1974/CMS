@@ -106,7 +106,7 @@ export function getLeafRows<T>(group: GroupRow<T>): T[] {
 }
 
 /** Obține headerName-ul unui group field. */
-export function getGroupFieldHeader<T>(field: string, columnDefs: ColDef<T>[]): string {
+export function getGroupFieldHeader<T extends object>(field: string, columnDefs: ColDef<T>[]): string {
   for (const col of columnDefs) {
     const colField = getColField(col)
     if (colField === field) return col.headerName ?? field

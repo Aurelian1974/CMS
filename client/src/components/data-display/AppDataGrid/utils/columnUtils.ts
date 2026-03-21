@@ -75,7 +75,7 @@ export function autoSizeColumnWidth<T>(
 }
 
 /** Distribuie flex pe coloane, dând fiecărei coloane flex proporțional din spațiul disponibil. */
-export function distributeFlexWidths<T>(
+export function distributeFlexWidths<T extends object>(
   columns: ColDef<T>[],
   columnWidths: Map<string, number>,
   containerWidth: number,
@@ -116,7 +116,7 @@ export function distributeFlexWidths<T>(
 }
 
 /** Obține coloanele vizibile, sortate pe ordine, cu pinned-urile separate. */
-export function getVisibleColumns<T>(
+export function getVisibleColumns<T extends object>(
   columns: ColDef<T>[],
   columnOrder: string[],
   hiddenColumns: Set<string>,
@@ -153,7 +153,7 @@ export function getVisibleColumns<T>(
 }
 
 /** Rezolvă column spanning pe un rând. Returnează map field → colSpan. */
-export function resolveColumnSpanning<T>(
+export function resolveColumnSpanning<T extends object>(
   columns: ColDef<T>[],
   row: T,
   rowIndex: number,

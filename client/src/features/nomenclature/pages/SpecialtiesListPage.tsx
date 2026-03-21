@@ -143,7 +143,7 @@ export const SpecialtiesListPage = () => {
   const updateMutation = useUpdateSpecialty()
   const toggleMutation = useToggleSpecialty()
 
-  const treeData = treeResponse?.data ?? []
+  const treeData = useMemo(() => treeResponse?.data ?? [], [treeResponse?.data])
 
   // Construiește lista flat de opțiuni parent din arbore
   const parentOptions = useMemo(() => {

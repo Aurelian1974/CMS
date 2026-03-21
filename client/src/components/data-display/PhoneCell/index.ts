@@ -1,1 +1,2 @@
-export { PhoneCell, phoneCellTemplate, phoneFieldTemplate } from './PhoneCell'
+export { PhoneCell } from './PhoneCell'
+export { phoneCellTemplate, phoneFieldTemplate } from './phoneCellHelpers'

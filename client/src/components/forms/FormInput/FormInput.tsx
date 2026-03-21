@@ -1,4 +1,3 @@
-import type React from 'react'
 import { TextBoxComponent } from '@syncfusion/ej2-react-inputs'
 import { useController, type FieldValues } from 'react-hook-form'
 import type { FormInputProps } from './FormInput.types'

@@ -1,7 +1,8 @@
 import React, { useCallback, useState } from 'react'
 import type { ColDef, SortDirection, SortModelItem, FilterCondition } from '../AppDataGrid.types'
 import { getColField } from '../AppDataGrid.types'
-import { FilterPopup, getOperators } from './GridFilterRow'
+import { FilterPopup } from './GridFilterRow'
+import { getOperators } from './gridFilterConstants'
 
 export interface StickyOffset {
   side: 'left' | 'right'
