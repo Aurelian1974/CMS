@@ -2,8 +2,10 @@ using System.Globalization;
 using System.Reflection;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.OpenApi.Models;
 using Serilog;
 using ValyanClinic.API.Middleware;
+using ValyanClinic.Application.Common.Behaviors;
 using ValyanClinic.Infrastructure;
 using ValyanClinic.Application.Common.Configuration;
 using ValyanClinic.Infrastructure.Configuration;
@@ -33,8 +35,11 @@ try
 
     // ===== MediatR (scanare automată a handler-elor din Application) =====
     builder.Services.AddMediatR(cfg =>
+    {
         cfg.RegisterServicesFromAssembly(
-            typeof(ValyanClinic.Application.Common.Models.Result<>).Assembly));
+            typeof(ValyanClinic.Application.Common.Models.Result<>).Assembly);
+        cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
+    });
 
     // ===== FluentValidation =====
     builder.Services.AddValidatorsFromAssembly(
@@ -73,6 +78,27 @@ try
             name: "sql-server",
             tags: ["db", "ready"]);
 
+    // ===== Swagger/OpenAPI =====
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen(c =>
+    {
+        c.SwaggerDoc("v1", new() { Title = "ValyanClinic API", Version = "v1" });
+        c.AddSecurityDefinition("Bearer", new()
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "Introdu token-ul JWT (fără prefixul 'Bearer')"
+        });
+        c.AddSecurityRequirement(new()
+        {
+            {
+                new() { Reference = new() { Type = ReferenceType.SecurityScheme, Id = "Bearer" } },
+                Array.Empty<string>()
+            }
+        });
+    });
+
     // ===== Controllers =====
     builder.Services.AddControllers();
 
@@ -84,6 +110,12 @@ try
     app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 
     app.UseSerilogRequestLogging();
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+    }
 
     // HTTPS redirect doar în producție — în development, Vite proxy gestionează conexiunea
     if (!app.Environment.IsDevelopment())
