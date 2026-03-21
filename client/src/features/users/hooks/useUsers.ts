@@ -18,20 +18,22 @@ export const userKeys = {
 }
 
 // ── Roluri (nomenclator) ─────────────────────────────────────────────────────
-export const useRoles = () =>
+export const useRoles = (options?: { enabled?: boolean }) =>
   useQuery({
     queryKey: userKeys.roles(),
     queryFn: () => usersApi.getRoles(),
     staleTime: 10 * 60 * 1000,
+    enabled: options?.enabled ?? true,
   })
 
 // ── Listare paginată ──────────────────────────────────────────────────────────
-export const useUsersList = (params: GetUsersParams) =>
+export const useUsersList = (params: GetUsersParams, options?: { enabled?: boolean }) =>
   useQuery({
     queryKey: userKeys.list(params),
     queryFn: () => usersApi.getAll(params),
     placeholderData: keepPreviousData,
     staleTime: 3 * 60 * 1000,
+    enabled: options?.enabled ?? true,
   })
 
 // ── Detaliu utilizator ───────────────────────────────────────────────────────

@@ -47,7 +47,6 @@ public class DoctorsController : BaseApiController
 
     /// <summary>Listare simplificată doctori (pentru dropdown-uri).</summary>
     [HttpGet("lookup")]
-    [HasAccess(ModuleCodes.Users, AccessLevel.Read)]
     public async Task<IActionResult> GetLookup(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetDoctorsByClinicQuery(), ct);

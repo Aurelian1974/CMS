@@ -7,6 +7,7 @@ import type { ChangePasswordFormData } from '../schemas/user.schema'
 import { useUsersList, useCreateUser, useUpdateUser, useDeleteUser, useChangePassword, useRoles } from '../hooks/useUsers'
 import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
 import { useMedicalStaffLookup } from '@/features/medicalStaff/hooks/useMedicalStaff'
+import { useHasAccess, MODULE, ACCESS_LEVEL } from '@/hooks/useHasAccess'
 import { UserFormModal } from '../components/UserFormModal/UserFormModal'
 import { ChangePasswordModal } from '../components/ChangePasswordModal/ChangePasswordModal'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
@@ -38,8 +39,19 @@ const roleVariantMap: Record<string, BadgeVariant> = {
   clinic_manager: 'purple',
 }
 
+// ── Access denied fallback ───────────────────────────────────────────────────
+const AccessDenied = () => (
+  <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+    <h3>Acces interzis</h3>
+    <p>Nu ai permisiunile necesare pentru a accesa această pagină.</p>
+  </div>
+)
+
 // ── Componenta principală ─────────────────────────────────────────────────────
 export const UsersListPage = () => {
+  const { hasAccess } = useHasAccess()
+  const canManageUsers = hasAccess(MODULE.Users, ACCESS_LEVEL.Read)
+
   const gridRef = useRef<GridApi<UserDto>>(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
@@ -71,18 +83,20 @@ export const UsersListPage = () => {
     isActive: statusFilter === 'all' ? undefined : statusFilter === 'active',
     sortBy: 'lastName',
     sortDir: 'asc',
-  })
+  }, { enabled: canManageUsers })
 
   // Date auxiliare pentru modal
-  const { data: rolesResp } = useRoles()
-  const { data: doctorsResp } = useDoctorLookup()
-  const { data: staffResp } = useMedicalStaffLookup()
+  const { data: rolesResp } = useRoles({ enabled: canManageUsers })
+  const { data: doctorsResp } = useDoctorLookup({ enabled: canManageUsers })
+  const { data: staffResp } = useMedicalStaffLookup({ enabled: canManageUsers })
 
   // Mutații
   const createUser = useCreateUser()
   const updateUser = useUpdateUser()
   const deleteUser = useDeleteUser()
   const changePassword = useChangePassword()
+
+  if (!canManageUsers) return <AccessDenied />
 
   const userList = usersResp?.data?.items ?? []
   const totalCount = usersResp?.data?.totalCount ?? 0

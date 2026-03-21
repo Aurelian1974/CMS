@@ -3,10 +3,10 @@ import React, {
   forwardRef, useImperativeHandle, useEffect,
 } from 'react'
 import type {
-  AppDataGridProps, GridApi, ColDef, ToolbarItem,
-  CellPosition, FilterCondition, FilterGroup, FilterModel,
-  ContextMenuItem, ContextMenuParams, SortModelItem,
-  GroupRow, GridStateSnapshot, ColumnPinned,
+  AppDataGridProps, GridApi, ToolbarItem,
+  CellPosition, FilterCondition,
+  ContextMenuItem, ContextMenuParams,
+  GridStateSnapshot,
 } from './AppDataGrid.types'
 import { getColField, isGroupRow, getNestedValue } from './AppDataGrid.types'
 
@@ -32,7 +32,7 @@ import { GridColumnChooser } from './components/GridColumnChooser'
 import { GridStatusBar } from './components/GridStatusBar'
 import { GridFooterRow } from './components/GridFooterRow'
 import { GridGroupPanel } from './components/GridGroupPanel'
-import { GridFilterRow } from './components/GridFilterRow'
+import type { StickyOffset } from './components/GridCell'
 
 import { updateSortModel } from './utils/sortUtils'
 
@@ -56,8 +56,8 @@ function AppDataGridInner<T extends object>(
     triStateSort,
     multiSortKey = 'ctrl',
     accentedSort,
-    showFilterRow: showFilterRowProp,
-    quickFilterText: quickFilterTextProp,
+    showFilterRow: _showFilterRowProp,
+    quickFilterText: _quickFilterTextProp,
     pagination = true,
     pageSize: initialPageSize = 20,
     pageSizes = [10, 20, 50, 100],
@@ -69,12 +69,12 @@ function AppDataGridInner<T extends object>(
     showGroupPanel,
     groupDefaultExpanded,
     groupRowRenderer,
-    stickyGroupHeaders,
+    stickyGroupHeaders: _stickyGroupHeaders,
     editable,
     editMode,
     singleClickEdit,
     undoRedoEditing,
-    stopEditingWhenLoseFocus,
+    stopEditingWhenLoseFocus: _stopEditingWhenLoseFocus,
     masterDetail,
     detailRenderer,
     detailRowHeight,
@@ -132,7 +132,6 @@ function AppDataGridInner<T extends object>(
 
   // ── State local ───────────────────────────────────────────────────────────
   const [showColumnChooser, setShowColumnChooser] = useState(false)
-  const [showFilterRow, setShowFilterRow] = useState(showFilterRowProp ?? false)
   const [contextMenuState, setContextMenuState] = useState<{
     position: { x: number; y: number } | null
     params: ContextMenuParams<T>
@@ -306,7 +305,7 @@ function AppDataGridInner<T extends object>(
   // ── Sort handler ──────────────────────────────────────────────────────────
   const handleSort = useCallback((field: string, multiSort: boolean) => {
     const useMulti = multiSortKey === 'none' ? true : multiSort
-    const newModel = updateSortModel(dataHook.sortModel, field, useMulti, triStateSort)
+    const newModel = updateSortModel(dataHook.sortModel, field, useMulti, triStateSort ?? false)
     dataHook.setSort(newModel)
     onSortChanged?.({ sort: newModel, source: 'click' })
   }, [dataHook, multiSortKey, triStateSort, onSortChanged])
@@ -407,6 +406,38 @@ function AppDataGridInner<T extends object>(
     flat.some(c => c.checkboxSelection || c.headerCheckboxSelection),
     [flat]
   )
+
+  // ── Sticky column offsets ─────────────────────────────────────────────────
+  const stickyOffsets = useMemo(() => {
+    const map = new Map<string, StickyOffset>()
+
+    // Extra columns before the first data column in body rows
+    let extraLeft = 0
+    if (hasCheckboxSelection) extraLeft += 40
+    if (rowDragEnabled) extraLeft += 30
+    if (masterDetail) extraLeft += 30
+
+    // Left-pinned columns
+    let leftOffset = extraLeft
+    for (const col of columnsHook.visibleColumns.left) {
+      const field = getColField(col)
+      const width = columnsHook.columnWidths.get(field) ?? col.width ?? 150
+      map.set(field, { side: 'left', offset: leftOffset })
+      leftOffset += width
+    }
+
+    // Right-pinned columns (accumulate from the right edge)
+    let rightOffset = 0
+    for (let i = columnsHook.visibleColumns.right.length - 1; i >= 0; i--) {
+      const col = columnsHook.visibleColumns.right[i]
+      const field = getColField(col)
+      const width = columnsHook.columnWidths.get(field) ?? col.width ?? 150
+      map.set(field, { side: 'right', offset: rightOffset })
+      rightOffset += width
+    }
+
+    return map
+  }, [columnsHook.visibleColumns, columnsHook.columnWidths, hasCheckboxSelection, rowDragEnabled, masterDetail])
 
   // ── API imperative ────────────────────────────────────────────────────────
   const api: GridApi<T> = useMemo(() => ({
@@ -596,20 +627,8 @@ function AppDataGridInner<T extends object>(
             else selectionHook.selectAll(allPlainRows)
           }}
           stickyHeader={stickyHeader}
+          stickyOffsets={stickyOffsets}
         />
-
-        {/* Filter row (if separate from header) */}
-        {showFilterRow && (
-          <GridFilterRow
-            columns={columnsHook.allVisibleColumns}
-            columnWidths={columnsHook.columnWidths}
-            filterModel={dataHook.filterModel}
-            onFilterChange={handleFilterChange}
-            onFilterClear={handleFilterClear}
-            hasCheckboxSelection={hasCheckboxSelection}
-            localeText={localeText}
-          />
-        )}
 
         {/* Body */}
         <GridBody
@@ -675,6 +694,8 @@ function AppDataGridInner<T extends object>(
           onContextMenu={handleContextMenu as unknown as GridBodyProps<T>['onContextMenu']}
           groupRowRenderer={groupRowRenderer as unknown as GridBodyProps<T>['groupRowRenderer']}
 
+          stickyOffsets={stickyOffsets}
+
           noDataTemplate={noDataTemplate}
           loadingTemplate={loadingTemplate}
           loading={isLoading}
@@ -685,7 +706,7 @@ function AppDataGridInner<T extends object>(
           <GridFooterRow
             columns={columnsHook.allVisibleColumns}
             columnWidths={columnsHook.columnWidths}
-            aggregates={dataHook.footerAggregates}
+            aggregates={dataHook.footerAggregates as Record<string, Record<string, unknown>>}
             hasCheckboxSelection={hasCheckboxSelection}
           />
         )}
@@ -713,7 +734,7 @@ function AppDataGridInner<T extends object>(
           filteredCount={dataHook.filteredCount}
           selectedRows={selectionHook.selectionState.selectedRows}
           displayedRows={allPlainRows}
-          footerAggregates={dataHook.footerAggregates}
+          footerAggregates={dataHook.footerAggregates as Record<string, Record<string, unknown>>}
           localeText={localeText}
           apiRef={apiRef}
         />
@@ -737,7 +758,7 @@ function AppDataGridInner<T extends object>(
         <GridContextMenu
           items={contextMenuItems}
           position={contextMenuState.position}
-          params={contextMenuState.params}
+          params={contextMenuState.params as ContextMenuParams<unknown>}
           onClose={() => setContextMenuState(prev => ({ ...prev, position: null }))}
         />
       )}

@@ -2,6 +2,7 @@ import React from 'react'
 import type { ColDef, EditingCell, CellPosition } from '../AppDataGrid.types'
 import { getColField } from '../AppDataGrid.types'
 import { GridCell } from './GridCell'
+import type { StickyOffset } from './GridCell'
 
 export interface GridRowProps<T extends object> {
   data: T
@@ -38,6 +39,7 @@ export interface GridRowProps<T extends object> {
   masterDetail?: boolean
   expandedDetails: Set<number>
   onToggleDetail: (rowIndex: number) => void
+  stickyOffsets?: Map<string, StickyOffset>
 }
 
 export function GridRow<T extends object>(props: GridRowProps<T>) {
@@ -52,6 +54,7 @@ export function GridRow<T extends object>(props: GridRowProps<T>) {
     onStartEdit, onSetEditValue, onStopEdit,
     onContextMenu,
     masterDetail, expandedDetails, onToggleDetail,
+    stickyOffsets,
   } = props
 
   const rowClasses = [
@@ -90,7 +93,8 @@ export function GridRow<T extends object>(props: GridRowProps<T>) {
             checked={isSelected}
             onChange={e => {
               e.stopPropagation()
-              onToggleSelection(data, e.ctrlKey || e.metaKey, e.shiftKey)
+              const nativeE = e.nativeEvent as MouseEvent
+              onToggleSelection(data, nativeE.ctrlKey || nativeE.metaKey, nativeE.shiftKey)
             }}
             aria-label={`Select row ${rowIndex + 1}`}
           />
@@ -118,37 +122,82 @@ export function GridRow<T extends object>(props: GridRowProps<T>) {
       )}
 
       {/* Data cells */}
-      {columns.map(col => {
-        const field = getColField(col)
-        const width = columnWidths.get(field) ?? col.width ?? 150
-        const isEditing = editingCell?.rowIndex === rowIndex && editingCell?.field === field
-        const isFocused = focusedCell?.rowIndex === rowIndex && focusedCell?.field === field
-        const isDirty = dirtyFields.has(`${rowIndex}:${field}`)
-
-        return (
-          <GridCell
-            key={field}
-            data={data}
-            field={field}
-            colDef={col}
-            rowIndex={rowIndex}
-            width={width}
-            isEditing={isEditing}
-            isFocused={isFocused}
-            isDirty={isDirty}
-            editValue={isEditing ? editingCell?.value : undefined}
-            onClick={(e) => onCellClick(data, field, rowIndex, e)}
-            onDoubleClick={() => onCellDoubleClick(data, field, rowIndex)}
-            onStartEdit={() => onStartEdit(rowIndex, field)}
-            onSetEditValue={onSetEditValue}
-            onStopEdit={onStopEdit}
-            onContextMenu={(e) => {
-              e.stopPropagation()
-              onContextMenu?.(data, rowIndex, field, e)
-            }}
-          />
+      {(() => {
+        const rightFields = new Set(
+          columns
+            .filter(col => stickyOffsets?.get(getColField(col))?.side === 'right')
+            .map(col => getColField(col))
         )
-      })}
+        const nonRightCells = columns.filter(col => !rightFields.has(getColField(col)))
+        const rightCells = columns.filter(col => rightFields.has(getColField(col)))
+        return (
+          <>
+            {nonRightCells.map(col => {
+              const field = getColField(col)
+              const width = columnWidths.get(field) ?? col.width ?? 150
+              const isEditing = editingCell?.rowIndex === rowIndex && editingCell?.field === field
+              const isFocused = focusedCell?.rowIndex === rowIndex && focusedCell?.field === field
+              const isDirty = dirtyFields.has(`${rowIndex}:${field}`)
+              return (
+                <GridCell
+                  key={field}
+                  data={data}
+                  field={field}
+                  colDef={col}
+                  rowIndex={rowIndex}
+                  width={width}
+                  isEditing={isEditing}
+                  isFocused={isFocused}
+                  isDirty={isDirty}
+                  editValue={isEditing ? editingCell?.value : undefined}
+                  stickyOffset={stickyOffsets?.get(field)}
+                  onClick={(e) => onCellClick(data, field, rowIndex, e)}
+                  onDoubleClick={() => onCellDoubleClick(data, field, rowIndex)}
+                  onStartEdit={() => onStartEdit(rowIndex, field)}
+                  onSetEditValue={onSetEditValue}
+                  onStopEdit={onStopEdit}
+                  onContextMenu={(e) => {
+                    e.stopPropagation()
+                    onContextMenu?.(data, rowIndex, field, e)
+                  }}
+                />
+              )
+            })}
+            {rightCells.length > 0 && <div className="adg-cell adg-cell--spacer" aria-hidden="true" />}
+            {rightCells.map(col => {
+              const field = getColField(col)
+              const width = columnWidths.get(field) ?? col.width ?? 150
+              const isEditing = editingCell?.rowIndex === rowIndex && editingCell?.field === field
+              const isFocused = focusedCell?.rowIndex === rowIndex && focusedCell?.field === field
+              const isDirty = dirtyFields.has(`${rowIndex}:${field}`)
+              return (
+                <GridCell
+                  key={field}
+                  data={data}
+                  field={field}
+                  colDef={col}
+                  rowIndex={rowIndex}
+                  width={width}
+                  isEditing={isEditing}
+                  isFocused={isFocused}
+                  isDirty={isDirty}
+                  editValue={isEditing ? editingCell?.value : undefined}
+                  stickyOffset={stickyOffsets?.get(field)}
+                  onClick={(e) => onCellClick(data, field, rowIndex, e)}
+                  onDoubleClick={() => onCellDoubleClick(data, field, rowIndex)}
+                  onStartEdit={() => onStartEdit(rowIndex, field)}
+                  onSetEditValue={onSetEditValue}
+                  onStopEdit={onStopEdit}
+                  onContextMenu={(e) => {
+                    e.stopPropagation()
+                    onContextMenu?.(data, rowIndex, field, e)
+                  }}
+                />
+              )
+            })}
+          </>
+        )
+      })()}
     </div>
   )
 }

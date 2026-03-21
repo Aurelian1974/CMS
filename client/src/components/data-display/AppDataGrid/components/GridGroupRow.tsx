@@ -1,6 +1,5 @@
 import React from 'react'
 import type { ColDef, GroupRow } from '../AppDataGrid.types'
-import { getColField } from '../AppDataGrid.types'
 
 export interface GridGroupRowProps<T extends object> {
   groupRow: GroupRow<T>
@@ -23,14 +22,8 @@ export interface GridGroupRowProps<T extends object> {
 }
 
 export function GridGroupRow<T extends object>(props: GridGroupRowProps<T>) {
-  const { groupRow, columns, columnWidths, onToggle, hasCheckboxSelection, groupRowRenderer } = props
+  const { groupRow, onToggle, groupRowRenderer } = props
 
-  const totalWidth = columns.reduce((sum, col) => {
-    const field = getColField(col)
-    return sum + (columnWidths.get(field) ?? col.width ?? 150)
-  }, 0)
-
-  const extraCols = (hasCheckboxSelection ? 1 : 0)
   const indent = groupRow.__groupLevel * 24
 
   // Custom renderer

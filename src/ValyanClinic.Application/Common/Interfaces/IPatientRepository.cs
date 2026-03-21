@@ -8,14 +8,15 @@ namespace ValyanClinic.Application.Common.Interfaces;
 /// </summary>
 public interface IPatientRepository
 {
-    Task<PagedResult<PatientListDto>> GetPagedAsync(
+    /// <summary>
+    /// Listare paginată cu filtre + statistici clinică — returnează toate cele 3 result sets din SP
+    /// într-un singur apel (evită dublul apel SP).
+    /// </summary>
+    Task<PatientPagedResult> GetPagedAsync(
         Guid clinicId, string? search, Guid? genderId, Guid? bloodTypeId, Guid? doctorId,
         bool? hasAllergies, bool? isActive,
         int page, int pageSize, string sortBy, string sortDir,
         CancellationToken ct);
-
-    /// <summary>Returnează statistici globale pacienți (total, activi, cu alergii, noi luna curentă).</summary>
-    Task<PatientStatsDto> GetStatsAsync(Guid clinicId, CancellationToken ct);
 
     /// <summary>Detalii complete pacient — 4 result sets: pacient, alergii, doctori, contacte urgență.</summary>
     Task<PatientFullResult?> GetByIdAsync(Guid id, Guid clinicId, CancellationToken ct);
@@ -69,6 +70,14 @@ public sealed record SyncEmergencyContactItem(
     string PhoneNumber,
     bool IsDefault,
     string? Notes);
+
+/// <summary>
+/// Rezultatul combinat din GetPagedAsync — date paginate + statistici clinică
+/// obținute într-un singur apel la stored procedure.
+/// </summary>
+public sealed record PatientPagedResult(
+    PagedResult<PatientListDto> Paged,
+    PatientStatsDto Stats);
 
 /// <summary>Toate cele 4 result sets de la Patient_GetById.</summary>
 public sealed class PatientFullResult

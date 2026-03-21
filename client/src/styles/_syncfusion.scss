@@ -137,23 +137,24 @@
     }
 
     td.e-selected span.e-day {
-      background: #5B8DB8 !important;
+      background: #2D5F8A !important;
       color: #fff !important;
       font-weight: 600;
-      box-shadow: 0 2px 6px rgba(#5B8DB8, 0.3);
+      box-shadow: 0 2px 6px rgba(45, 95, 138, 0.25);
     }
 
     td.e-today span.e-day {
       border: 2px solid #5B8DB8 !important;
-      color: #5B8DB8 !important;
+      color: #2D5F8A !important;
       font-weight: 600;
+      background: rgba(#5B8DB8, 0.08) !important;
       line-height: 28px;
     }
 
     td.e-today.e-selected span.e-day {
-      background: #5B8DB8 !important;
+      background: #2D5F8A !important;
       color: #fff !important;
-      border-color: #5B8DB8 !important;
+      border-color: #2D5F8A !important;
     }
 
     td.e-disabled span.e-day {
@@ -173,16 +174,20 @@
 
     .e-btn.e-today,
     button.e-today {
-      color: #5B8DB8 !important;
+      background: transparent !important;
+      border: 1px solid #5B8DB8 !important;
+      color: #2D5F8A !important;
       font-weight: 600;
       font-size: 0.8125rem;
       text-transform: none;
       padding: 0.25rem 0.75rem;
       border-radius: 0.375rem;
-      transition: background 0.15s ease;
+      box-shadow: none !important;
+      transition: background 0.15s ease, color 0.15s ease;
 
       &:hover {
         background: rgba(#5B8DB8, 0.08) !important;
+        color: #1F4A6E !important;
       }
     }
   }
@@ -198,12 +203,12 @@
 
       &:hover {
         background: rgba(#5B8DB8, 0.1) !important;
-        color: #3A6F99 !important;
+        color: #2D5F8A !important;
       }
     }
 
     td.e-selected span {
-      background: #5B8DB8 !important;
+      background: #2D5F8A !important;
       color: #fff !important;
     }
   }

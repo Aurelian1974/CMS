@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback } from 'react'
 import type { CellPosition, ColDef } from '../AppDataGrid.types'
 import { getColField } from '../AppDataGrid.types'
 
@@ -30,7 +30,7 @@ export interface UseGridKeyboardReturn {
 
 export function useGridKeyboard<T extends object>(options: UseGridKeyboardOptions<T>): UseGridKeyboardReturn {
   const {
-    containerRef,
+    containerRef: _containerRef,
     visibleColumns,
     totalRows,
     focusedCell,

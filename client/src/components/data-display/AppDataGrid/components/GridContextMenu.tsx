@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
-import type { ContextMenuItem, ContextMenuParams, CellPosition } from '../AppDataGrid.types'
+import { useEffect, useRef } from 'react'
+import type { ContextMenuItem, ContextMenuParams } from '../AppDataGrid.types'
 
 export interface GridContextMenuProps {
   items: ContextMenuItem[]

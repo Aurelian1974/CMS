@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react'
-import type { FilterModel, FilterCondition, FilterGroup, ColDef, FilterOperator, GridLocaleText } from '../AppDataGrid.types'
+import type { FilterModel, FilterCondition, ColDef, FilterOperator, GridLocaleText } from '../AppDataGrid.types'
 import { getColField } from '../AppDataGrid.types'
 import { DEFAULT_LOCALE_TEXT } from '../utils/localeUtils'
 
@@ -14,7 +14,7 @@ export interface GridFilterRowProps<T extends object> {
 }
 
 // Operator labels per filter type
-const TEXT_OPERATORS: { value: FilterOperator; label: string }[] = [
+export const TEXT_OPERATORS: { value: FilterOperator; label: string }[] = [
   { value: 'contains', label: 'Conține' },
   { value: 'notContains', label: 'Nu conține' },
   { value: 'equals', label: 'Egal cu' },
@@ -25,7 +25,7 @@ const TEXT_OPERATORS: { value: FilterOperator; label: string }[] = [
   { value: 'notBlank', label: 'Nu e gol' },
 ]
 
-const NUMBER_OPERATORS: { value: FilterOperator; label: string }[] = [
+export const NUMBER_OPERATORS: { value: FilterOperator; label: string }[] = [
   { value: 'equals', label: '=' },
   { value: 'notEquals', label: '≠' },
   { value: 'greaterThan', label: '>' },
@@ -37,7 +37,7 @@ const NUMBER_OPERATORS: { value: FilterOperator; label: string }[] = [
   { value: 'notBlank', label: 'Nu e gol' },
 ]
 
-const DATE_OPERATORS: { value: FilterOperator; label: string }[] = [
+export const DATE_OPERATORS: { value: FilterOperator; label: string }[] = [
   { value: 'equals', label: 'Egal cu' },
   { value: 'notEquals', label: 'Diferit de' },
   { value: 'greaterThan', label: 'După' },
@@ -47,7 +47,7 @@ const DATE_OPERATORS: { value: FilterOperator; label: string }[] = [
   { value: 'notBlank', label: 'Nu e gol' },
 ]
 
-function getOperators(filterType: string) {
+export function getOperators(filterType: string) {
   switch (filterType) {
     case 'number': return NUMBER_OPERATORS
     case 'date': return DATE_OPERATORS
@@ -55,9 +55,9 @@ function getOperators(filterType: string) {
   }
 }
 
-const NO_VALUE_OPERATORS: FilterOperator[] = ['blank', 'notBlank']
+export const NO_VALUE_OPERATORS: FilterOperator[] = ['blank', 'notBlank']
 
-interface FilterPopupProps {
+export interface FilterPopupProps {
   field: string
   filterType: string
   currentFilter?: FilterCondition
@@ -68,7 +68,7 @@ interface FilterPopupProps {
   anchorRect: DOMRect
 }
 
-function FilterPopup({ field, filterType, currentFilter, operators, onApply, onClear, onClose, anchorRect }: FilterPopupProps) {
+export function FilterPopup({ field, filterType, currentFilter, operators, onApply, onClear, onClose, anchorRect }: FilterPopupProps) {
   const popupRef = useRef<HTMLDivElement>(null)
   const [operator, setOperator] = useState<FilterOperator>(currentFilter?.operator ?? operators[0].value)
   const [value, setValue] = useState<string>(currentFilter?.value != null ? String(currentFilter.value) : '')

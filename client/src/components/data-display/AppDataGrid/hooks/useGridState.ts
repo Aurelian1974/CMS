@@ -1,7 +1,6 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import type {
   GridStateSnapshot, GridStatePersistence, NamedView,
-  SortModelItem, FilterModel, ColumnPinned,
 } from '../AppDataGrid.types'
 
 export interface UseGridStateOptions {
@@ -31,7 +30,6 @@ export function useGridState(options: UseGridStateOptions): UseGridStateReturn {
   const { statePersistence, onStateChanged, getState, applyState } = options
 
   const storageKey = statePersistence?.gridId ?? null
-  const autoSave = statePersistence?.autoSave ?? true
 
   // ── Save current state to localStorage ────────────────────────────────────
   const saveState = useCallback(() => {

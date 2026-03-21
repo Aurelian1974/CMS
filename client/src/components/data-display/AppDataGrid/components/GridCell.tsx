@@ -1,6 +1,11 @@
 import React, { useRef, useEffect, useMemo } from 'react'
 import type { ColDef, CellRendererParams, CellEditorParams } from '../AppDataGrid.types'
-import { getColField, getNestedValue } from '../AppDataGrid.types'
+import { getNestedValue } from '../AppDataGrid.types'
+
+export interface StickyOffset {
+  side: 'left' | 'right'
+  offset: number
+}
 
 export interface GridCellProps<T extends object> {
   data: T
@@ -12,6 +17,7 @@ export interface GridCellProps<T extends object> {
   isFocused: boolean
   isDirty: boolean
   editValue?: unknown
+  stickyOffset?: StickyOffset
   onClick: (e: React.MouseEvent) => void
   onDoubleClick: () => void
   onStartEdit: () => void
@@ -24,7 +30,8 @@ export function GridCell<T extends object>(props: GridCellProps<T>) {
   const {
     data, field, colDef, rowIndex, width,
     isEditing, isFocused, isDirty, editValue,
-    onClick, onDoubleClick, onStartEdit,
+    stickyOffset,
+    onClick, onDoubleClick,
     onSetEditValue, onStopEdit, onContextMenu,
   } = props
 
@@ -52,6 +59,11 @@ export function GridCell<T extends object>(props: GridCellProps<T>) {
   // Cell style
   const cellStyle = useMemo(() => {
     const base: React.CSSProperties = { width, minWidth: colDef.minWidth, maxWidth: colDef.maxWidth }
+    if (stickyOffset) {
+      base.position = 'sticky'
+      if (stickyOffset.side === 'left') base.left = stickyOffset.offset
+      else base.right = stickyOffset.offset
+    }
     if (typeof colDef.cellStyle === 'function') {
       Object.assign(base, colDef.cellStyle({
         value: rawValue, data, colDef, rowIndex, field,
@@ -71,6 +83,8 @@ export function GridCell<T extends object>(props: GridCellProps<T>) {
     if (isEditing) classes.push('adg-cell--editing')
     if (colDef.ellipsis !== false) classes.push('adg-cell--ellipsis')
     if (colDef.wrapText) classes.push('adg-cell--wrap')
+    if (stickyOffset?.side === 'left') classes.push('adg-cell--pinned-left')
+    if (stickyOffset?.side === 'right') classes.push('adg-cell--pinned-right')
 
     if (typeof colDef.cellClass === 'function') {
       classes.push(colDef.cellClass({

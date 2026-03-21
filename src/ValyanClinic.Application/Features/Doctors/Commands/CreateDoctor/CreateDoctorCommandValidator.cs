@@ -16,7 +16,7 @@ public sealed class CreateDoctorCommandValidator : AbstractValidator<CreateDocto
 
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Adresa de email este obligatorie.")
-            .MaximumLength(200).WithMessage("Adresa de email nu poate depăși 200 de caractere.")
+            .MaximumLength(199).WithMessage("Adresa de email nu poate depăși 199 de caractere.")
             .EmailAddress().WithMessage("Adresa de email nu este validă.");
 
         RuleFor(x => x.PhoneNumber)

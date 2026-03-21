@@ -1,10 +1,11 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import type {
   ColDef, GroupRow, CellPosition, EditingCell, SelectionState,
 } from '../AppDataGrid.types'
 import { isGroupRow } from '../AppDataGrid.types'
 import { GridRow } from './GridRow'
 import { GridGroupRow } from './GridGroupRow'
+import type { StickyOffset } from './GridCell'
 
 export interface GridBodyProps<T extends object> {
   rows: Array<T | GroupRow<T>>
@@ -75,6 +76,9 @@ export interface GridBodyProps<T extends object> {
   onContextMenu?: (data: T | null, rowIndex: number, field: string, e: React.MouseEvent) => void
   groupRowRenderer?: (params: unknown) => React.ReactNode
 
+  // Sticky (frozen) columns
+  stickyOffsets?: Map<string, StickyOffset>
+
   // Empty / loading states
   noDataTemplate?: React.ReactNode
   loadingTemplate?: React.ReactNode
@@ -128,6 +132,7 @@ export function GridBody<T extends object>(props: GridBodyProps<T>) {
     onStopEdit,
     onContextMenu,
     groupRowRenderer,
+    stickyOffsets,
     noDataTemplate,
     loadingTemplate,
     loading,
@@ -235,6 +240,7 @@ export function GridBody<T extends object>(props: GridBodyProps<T>) {
                 masterDetail={masterDetail}
                 expandedDetails={expandedDetails}
                 onToggleDetail={onToggleDetail ?? (() => {})}
+                stickyOffsets={stickyOffsets}
               />
               {hasExpandedDetail && detailRenderer && (
                 <div

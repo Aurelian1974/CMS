@@ -1,3 +1,4 @@
+import React from 'react'
 import { useController, type FieldValues } from 'react-hook-form'
 import PhoneInput, {
   getCountryCallingCode,
@@ -9,6 +10,14 @@ import en from 'react-phone-number-input/locale/en.json'
 // Nu importăm style.css din pachet — controluăm complet stilizarea prin SCSS
 import type { FormPhoneInputProps } from './FormPhoneInput.types'
 import styles from './FormPhoneInput.module.scss'
+
+// ===== Input component personalizat — evită prop-ul non-standard inputClassName =====
+const PhoneInputField = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
+  ({ className, ...props }, ref) => (
+    <input {...props} ref={ref} className={`${styles.phoneInput}${className ? ` ${className}` : ''}`} />
+  )
+)
+PhoneInputField.displayName = 'PhoneInputField'
 
 // ===== Selector țară personalizat cu steag SVG și prefix =====
 interface CountrySelectProps {
@@ -96,7 +105,7 @@ export const FormPhoneInput = <T extends FieldValues>({
           defaultCountry={defaultCountry}
           disabled={disabled}
           countrySelectComponent={CountrySelect}
-          inputClassName={styles.phoneInput}
+          inputComponent={PhoneInputField}
           labels={en}
           international
           withCountryCallingCode

@@ -35,7 +35,7 @@ export function useGridExport<T extends object>(options: UseGridExportOptions<T>
     defaultPdfExportParams,
     getSelectedRows,
     getDisplayedRows,
-    getAllRows,
+    getAllRows: _getAllRows,
     gridRef,
   } = options
 

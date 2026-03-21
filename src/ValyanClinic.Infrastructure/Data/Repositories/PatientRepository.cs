@@ -10,7 +10,7 @@ namespace ValyanClinic.Infrastructure.Data.Repositories;
 /// <summary>Repository Dapper pentru pacienți (exclusiv prin Stored Procedures).</summary>
 public sealed class PatientRepository(DapperContext context) : IPatientRepository
 {
-    public async Task<PagedResult<PatientListDto>> GetPagedAsync(
+    public async Task<PatientPagedResult> GetPagedAsync(
         Guid clinicId, string? search, Guid? genderId, Guid? bloodTypeId, Guid? doctorId,
         bool? hasAllergies, bool? isActive,
         int page, int pageSize, string sortBy, string sortDir,
@@ -37,10 +37,16 @@ public sealed class PatientRepository(DapperContext context) : IPatientRepositor
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct));
 
+        // Result set 1: rânduri paginate
         var items = (await multi.ReadAsync<PatientListDto>()).ToList();
+        // Result set 2: total count
         var totalCount = await multi.ReadSingleAsync<int>();
+        // Result set 3: statistici clinică (evită al doilea apel SP)
+        var stats = await multi.ReadSingleAsync<PatientStatsDto>();
 
-        return new PagedResult<PatientListDto>(items, totalCount, page, pageSize);
+        return new PatientPagedResult(
+            new PagedResult<PatientListDto>(items, totalCount, page, pageSize),
+            stats);
     }
 
     public async Task<PatientStatsDto> GetStatsAsync(Guid clinicId, CancellationToken ct)

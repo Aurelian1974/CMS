@@ -13,7 +13,7 @@ public sealed class GetPatientsQueryHandler(
     public async Task<Result<PatientsPagedResponse>> Handle(
         GetPatientsQuery request, CancellationToken cancellationToken)
     {
-        var pagedResult = await repository.GetPagedAsync(
+        var result = await repository.GetPagedAsync(
             currentUser.ClinicId,
             request.Search,
             request.GenderId,
@@ -27,14 +27,10 @@ public sealed class GetPatientsQueryHandler(
             request.SortDir,
             cancellationToken);
 
-        var stats = await repository.GetStatsAsync(
-            currentUser.ClinicId,
-            cancellationToken);
-
         var response = new PatientsPagedResponse
         {
-            PagedResult = pagedResult,
-            Stats = stats
+            PagedResult = result.Paged,
+            Stats = result.Stats,
         };
 
         return Result<PatientsPagedResponse>.Success(response);

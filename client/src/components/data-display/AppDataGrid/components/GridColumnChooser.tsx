@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import type { ColDef, GridLocaleText } from '../AppDataGrid.types'
-import { getColField, isGroupRow } from '../AppDataGrid.types'
+import { getColField } from '../AppDataGrid.types'
 import { DEFAULT_LOCALE_TEXT } from '../utils/localeUtils'
 
 export interface GridColumnChooserProps<T extends object> {

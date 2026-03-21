@@ -20,7 +20,7 @@ public sealed class CreatePatientCommandValidator : AbstractValidator<CreatePati
 
         RuleFor(x => x.Email)
             .EmailAddress().WithMessage("Adresa de email nu este validă.")
-            .MaximumLength(200).WithMessage("Email-ul nu poate depăși 200 de caractere.")
+            .MaximumLength(199).WithMessage("Email-ul nu poate depăși 199 de caractere.")
             .When(x => !string.IsNullOrWhiteSpace(x.Email));
 
         RuleFor(x => x.PhoneNumber)

@@ -23,11 +23,12 @@ export const useMedicalStaffList = (params: GetMedicalStaffParams) =>
     staleTime: 3 * 60 * 1000,
   })
 // ── Lookup (dropdown / departamente) ───────────────────────────────────────────────────
-export const useMedicalStaffLookup = () =>
+export const useMedicalStaffLookup = (options?: { enabled?: boolean }) =>
   useQuery({
     queryKey: medicalStaffKeys.lookup(),
     queryFn: () => medicalStaffApi.getLookup(),
     staleTime: 5 * 60 * 1000,
+    enabled: options?.enabled ?? true,
   })
 // ── Detaliu personal medical ──────────────────────────────────────────────────
 export const useMedicalStaffDetail = (id: string) =>

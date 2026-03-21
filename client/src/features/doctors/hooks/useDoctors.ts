@@ -34,11 +34,12 @@ export const useDoctorDetail = (id: string) =>
   })
 
 // ── Lookup (dropdown) ─────────────────────────────────────────────────────────
-export const useDoctorLookup = () =>
+export const useDoctorLookup = (options?: { enabled?: boolean }) =>
   useQuery({
     queryKey: doctorKeys.lookup(),
     queryFn: () => doctorsApi.getLookup(),
     staleTime: 5 * 60 * 1000,
+    enabled: options?.enabled ?? true,
   })
 
 // ── Creare doctor ─────────────────────────────────────────────────────────────

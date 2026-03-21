@@ -16,7 +16,7 @@ export function applyDefaultColDef<T>(
       (merged as Record<string, unknown>)[key as string] = col[key]
     }
     if (col.children) {
-      merged.children = applyDefaultColDef(col.children as ColDef<T>[], defaults) as ColDef[]
+      merged.children = applyDefaultColDef(col.children as ColDef<T>[], defaults) as ColDef<T>[]
     }
     return merged
   })

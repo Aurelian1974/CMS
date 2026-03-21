@@ -24,6 +24,7 @@ $grid-transition: 150ms ease;
 .adg {
   display: flex;
   flex-direction: column;
+  width: 100%;
   background: $card-bg;
   border: $grid-border;
   border-radius: $border-radius;
@@ -258,6 +259,14 @@ $grid-transition: 150ms ease;
     display: flex;
     background: $grid-header-bg;
     border-bottom: 2px solid $grid-border-color;
+    min-width: max-content;
+    width: 100%;
+  }
+
+  &__spacer {
+    flex: 1;
+    min-width: 0;
+    background: $grid-header-bg;
   }
 
   &__cell {
@@ -274,7 +283,8 @@ $grid-transition: 150ms ease;
     user-select: none;
     flex-shrink: 0;
     border-right: 1px solid $gray-100;
-    overflow: hidden;
+    overflow: visible;
+    background: $grid-header-bg;
 
     &--sortable {
       cursor: pointer;
@@ -291,6 +301,26 @@ $grid-transition: 150ms ease;
         cursor: grabbing;
         opacity: 0.6;
       }
+    }
+
+    &--pinned-left {
+      position: sticky;
+      z-index: 3;
+      background: $grid-header-bg;
+      box-shadow: 2px 0 6px rgba(0, 0, 0, 0.08);
+    }
+
+    &--pinned-right {
+      position: sticky;
+      z-index: 3;
+      background: $grid-header-bg;
+      box-shadow: -2px 0 6px rgba(0, 0, 0, 0.08);
+      border-left: 1px solid $gray-200;
+    }
+    
+    // Show filter button on hover or when active
+    &:not(:hover) .adg-header__filter-btn:not(.adg-header__filter-btn--active) {
+      opacity: 0;
     }
   }
 
@@ -313,6 +343,33 @@ $grid-transition: 150ms ease;
   &__sort-index {
     font-size: 0.6rem;
     color: $primary-light;
+  }
+
+  &__filter-btn {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: transparent;
+    color: $gray-400;
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 2px;
+    transition: opacity 0.15s, color 0.15s, background 0.15s;
+    margin-left: 2px;
+
+    &:hover {
+      color: $primary;
+      background: rgba($primary, 0.1);
+    }
+
+    &--active {
+      color: $primary !important;
+      opacity: 1 !important;
+    }
   }
 
   &__checkbox {
@@ -629,6 +686,8 @@ $grid-transition: 150ms ease;
   display: flex;
   align-items: center;
   transition: background-color $grid-transition;
+  min-width: max-content;
+  width: 100%;
 
   &--alternate {
     background: $grid-row-alt-bg;
@@ -658,6 +717,45 @@ $grid-transition: 150ms ease;
   height: 100%;
   overflow: hidden;
   flex-shrink: 0;
+  // No background here — regular cells inherit from .adg-row so alternate rows work
+
+  // Pinned (frozen) columns need explicit background to cover scrolled content beneath them
+  &--pinned-left {
+    position: sticky;
+    z-index: 1;
+    background: $card-bg;
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.06);
+  }
+
+  &--pinned-right {
+    position: sticky;
+    z-index: 1;
+    background: $card-bg;
+    box-shadow: -2px 0 6px rgba(0, 0, 0, 0.08);
+    border-left: 1px solid $gray-200;
+  }
+
+  &--spacer {
+    flex: 1;
+    min-width: 0;
+    // No background — inherits from .adg-row (handles alternate, hover, selected)
+  }
+
+  // Adjust pinned cell backgrounds per row state (spacer inherits from row automatically)
+  .adg-row--alternate &--pinned-left,
+  .adg-row--alternate &--pinned-right {
+    background: $grid-row-alt-bg;
+  }
+
+  .adg-row--selected &--pinned-left,
+  .adg-row--selected &--pinned-right {
+    background: $grid-row-selected-bg;
+  }
+
+  .adg-row--hoverable:hover &--pinned-left,
+  .adg-row--hoverable:hover &--pinned-right {
+    background: $grid-row-hover-bg;
+  }
 
   &--ellipsis {
     .adg-cell__text {

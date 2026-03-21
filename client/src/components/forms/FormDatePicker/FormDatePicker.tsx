@@ -52,6 +52,7 @@ export const FormDatePicker = <T extends FieldValues>({
         blur={onBlur}
         placeholder={placeholder}
         format={format}
+        locale="ro"
         enabled={!disabled}
         readonly={readOnly}
         min={min}

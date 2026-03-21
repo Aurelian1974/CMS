@@ -6,4 +6,7 @@
     <Project Path="src/ValyanClinic.Infrastructure/ValyanClinic.Infrastructure.csproj" />
     <Project Path="src/ValyanClinic.Shared/ValyanClinic.Shared.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ValyanClinic.Tests/ValyanClinic.Tests.csproj" />
+  </Folder>
 </Solution>

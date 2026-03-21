@@ -4,7 +4,7 @@ import type {
   GroupRow, ServerSideDataSource, ServerSideRequest, TreeDataConfig,
   AggregateConfig, PaginationChangedEvent, SortChangedEvent, FilterChangedEvent,
 } from '../AppDataGrid.types'
-import { getColField, getNestedValue, isGroupRow } from '../AppDataGrid.types'
+import { getColField, isGroupRow } from '../AppDataGrid.types'
 import { multiColumnSort, updateSortModel } from '../utils/sortUtils'
 import { applyFilterOrGroup, applyQuickFilter } from '../utils/filterUtils'
 import { buildGroupTree, flattenGroupTree, collectAllGroupKeys } from '../utils/groupUtils'

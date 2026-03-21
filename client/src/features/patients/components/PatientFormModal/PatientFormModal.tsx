@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useForm, useFieldArray } from 'react-hook-form'
-import type { Path } from 'react-hook-form'
+import type { Path, FieldErrors } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { patientSchema, type PatientFormData } from '../../schemas/patient.schema'
 import type { PatientDto } from '../../types/patient.types'
@@ -21,6 +21,20 @@ const IconPlus   = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="n
 const IconTrash  = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
 
 type FormTab = 'personal' | 'contact' | 'medical' | 'doctors' | 'notes'
+
+/** Maps every form field name to the tab where it is rendered. */
+const FIELD_TAB: Partial<Record<keyof PatientFormData, FormTab>> = {
+  firstName: 'personal', lastName: 'personal', cnp: 'personal',
+  birthDate: 'personal', genderId: 'personal', bloodTypeId: 'personal',
+  phoneNumber: 'contact', secondaryPhone: 'contact', email: 'contact',
+  address: 'contact', city: 'contact', county: 'contact', postalCode: 'contact',
+  familyDoctorName: 'medical', chronicDiseases: 'medical',
+  insuranceNumber: 'medical', insuranceExpiry: 'medical', isInsured: 'medical', allergies: 'medical',
+  doctors: 'doctors', emergencyContacts: 'doctors',
+  notes: 'notes', isActive: 'notes',
+}
+
+const TAB_ORDER: FormTab[] = ['personal', 'contact', 'medical', 'doctors', 'notes']
 
 const TABS: ModalTab[] = [
   { key: 'personal', label: 'Date personale' },
@@ -59,6 +73,17 @@ export const PatientFormModal = ({
 }: PatientFormModalProps) => {
   const isEdit = !!editData
   const [activeTab, setActiveTab] = useState<FormTab>('personal')
+
+  /** When validation fails, navigate to the first tab that contains an error. */
+  const handleInvalidSubmit = (errors: FieldErrors<PatientFormData>) => {
+    const errorKeys = Object.keys(errors) as (keyof PatientFormData)[]
+    for (const tab of TAB_ORDER) {
+      if (errorKeys.some(k => FIELD_TAB[k] === tab)) {
+        setActiveTab(tab)
+        break
+      }
+    }
+  }
 
   const {
     register,
@@ -177,7 +202,7 @@ export const PatientFormModal = ({
       activeTab={activeTab}
       onTabChange={(key) => setActiveTab(key as FormTab)}
       as="form"
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(onSubmit, handleInvalidSubmit)}
       footer={footerContent}
       containerQuery
       bodyClassName={styles.modalBody}

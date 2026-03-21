@@ -16,7 +16,7 @@ export interface GridStatusBarProps<T extends object> {
 export function GridStatusBar<T extends object>(props: GridStatusBarProps<T>) {
   const {
     panels, totalCount, filteredCount, selectedRows,
-    displayedRows, footerAggregates, localeText, apiRef,
+    displayedRows: _displayedRows, footerAggregates, localeText, apiRef,
   } = props
 
   const locale = { ...DEFAULT_LOCALE_TEXT, ...localeText }
@@ -30,7 +30,7 @@ export function GridStatusBar<T extends object>(props: GridStatusBarProps<T>) {
             selectedRows,
             totalCount,
             filteredCount,
-          } as StatusBarRenderParams<T>)}
+          } as StatusBarRenderParams<unknown>)}
         </div>
       )
     }

@@ -38,7 +38,6 @@ public class MedicalStaffController : BaseApiController
 
     /// <summary>Listare simplificată personal medical (pentru dropdown-uri / departamente).</summary>
     [HttpGet("lookup")]
-    [HasAccess(ModuleCodes.Users, AccessLevel.Read)]
     public async Task<IActionResult> GetLookup(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetMedicalStaffByClinicQuery(), ct);

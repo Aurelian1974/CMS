@@ -1,5 +1,4 @@
-import React from 'react'
-import type { ColDef, AggFunc } from '../AppDataGrid.types'
+import type { ColDef } from '../AppDataGrid.types'
 import { getColField } from '../AppDataGrid.types'
 
 export interface GridFooterRowProps<T extends object> {

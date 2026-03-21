@@ -881,7 +881,7 @@ export function isGroupRow<T>(row: T | GroupRow<T>): row is GroupRow<T> {
 }
 
 /** Obține field-ul efectiv al unei coloane, cu fallback pe colId. */
-export function getColField(col: ColDef): string {
+export function getColField(col: ColDef<any>): string {
   return col.field ?? col.colId ?? ''
 }
 

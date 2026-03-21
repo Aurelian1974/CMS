@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import type { RowDragEndEvent } from '../AppDataGrid.types'
 
 export interface UseGridDragDropOptions<T extends object> {
@@ -97,7 +97,7 @@ export function useGridDragDrop<T extends object>(options: UseGridDragDropOption
     e.dataTransfer.setData('text/plain', field)
   }, [])
 
-  const handleColumnDragOver = useCallback((field: string, e: React.DragEvent) => {
+  const handleColumnDragOver = useCallback((_field: string, e: React.DragEvent) => {
     if (!columnDragState) return
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
