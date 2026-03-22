@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { useAppointmentsForScheduler, useCreateAppointment, useUpdateAppointment } from '../hooks/useAppointments'
 import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
 import { usePatientLookup } from '@/features/patients/hooks/usePatients'
+import { useClinicSchedule, useDoctorSchedules } from '@/features/clinic/hooks/useSchedule'
 import type { AppointmentDto, AppointmentSchedulerDto, CreateAppointmentPayload, UpdateAppointmentPayload } from '../types/appointment.types'
 import type { DoctorLookupDto } from '@/features/doctors/types/doctor.types'
+import type { ClinicScheduleDto } from '@/features/clinic/types/schedule.types'
 import { AppointmentFormModal } from '../components/AppointmentFormModal/AppointmentFormModal'
 import styles from './AppointmentsSchedulerPage.module.scss'
 
@@ -62,6 +64,56 @@ const getEventModifier = (code: string | null): string => {
 
 const formatHour = (h: number): string =>
   `${String(h).padStart(2, '0')}:00`
+
+// ── Schedule helpers ──────────────────────────────────────────────────────────
+
+/** Converteste string 'HH:MM' în minute de la miezul nopții */
+const parseTime = (t: string | null | undefined): number | null => {
+  if (!t) return null
+  const [h, m] = t.split(':').map(Number)
+  return h * 60 + m
+}
+
+/** Converteste minute absolute în pixeli pe timeline */
+const minutesToLeft = (min: number): number =>
+  ((min - HOUR_START * 60) / 60) * SLOT_WIDTH_PX
+
+interface BlockedRange { fromMin: number; toMin: number }
+
+/**
+ * Calculează zonele blocate din timeline pentru un doctor într-o zi.
+ * Zona efectivă de lucru = intersecția programului clinicii cu cel al doctorului.
+ */
+const getBlockedRanges = (
+  clinicEntry: ClinicScheduleDto | undefined,
+  doctorDay: { startTime: string; endTime: string } | undefined,
+): BlockedRange[] => {
+  const tlStart = HOUR_START * 60
+  const tlEnd   = HOUR_END   * 60
+
+  if (!clinicEntry || !clinicEntry.isOpen) {
+    return [{ fromMin: tlStart, toMin: tlEnd }]
+  }
+
+  const clinicFrom = parseTime(clinicEntry.openTime)  ?? tlStart
+  const clinicTo   = parseTime(clinicEntry.closeTime) ?? tlEnd
+
+  if (!doctorDay) {
+    return [{ fromMin: tlStart, toMin: tlEnd }]
+  }
+
+  const docFrom = parseTime(doctorDay.startTime) ?? clinicFrom
+  const docTo   = parseTime(doctorDay.endTime)   ?? clinicTo
+
+  // Fereastra efectivă = intersecția
+  const effFrom = Math.max(clinicFrom, docFrom)
+  const effTo   = Math.min(clinicTo,   docTo)
+
+  const ranges: BlockedRange[] = []
+  if (effFrom > tlStart) ranges.push({ fromMin: tlStart, toMin: effFrom })
+  if (effTo   < tlEnd)   ranges.push({ fromMin: effTo,   toMin: tlEnd })
+  return ranges
+}
 
 const formatTimeShort = (dateStr: string): string => {
   const d = new Date(dateStr)
@@ -142,10 +194,34 @@ export const AppointmentsSchedulerPage = () => {
   const { data: schedulerResp, isLoading } = useAppointmentsForScheduler(dateFrom, dateTo, doctorFilter)
   const { data: doctorLookupResp } = useDoctorLookup()
   const { data: patientLookupResp } = usePatientLookup()
+  const { data: clinicScheduleResp }  = useClinicSchedule()
+  const { data: doctorSchedulesResp } = useDoctorSchedules()
 
-  const appointments = useMemo(() => schedulerResp?.data ?? [], [schedulerResp])
-  const doctorLookup = useMemo(() => doctorLookupResp?.data ?? [], [doctorLookupResp])
-  const patientLookup = useMemo(() => patientLookupResp?.data ?? [], [patientLookupResp])
+  const appointments       = useMemo(() => schedulerResp?.data      ?? [], [schedulerResp])
+  const doctorLookup       = useMemo(() => doctorLookupResp?.data   ?? [], [doctorLookupResp])
+  const patientLookup      = useMemo(() => patientLookupResp?.data  ?? [], [patientLookupResp])
+  const clinicSchedule     = useMemo(() => clinicScheduleResp?.data ?? [], [clinicScheduleResp])
+  const allDoctorSchedules = useMemo(() => doctorSchedulesResp?.data ?? [], [doctorSchedulesResp])
+
+  // Ziua săptămânii curentă (1=Luni … 7=Duminică)
+  const jsDow    = currentDate.getDay()
+  const currentDow = jsDow === 0 ? 7 : jsDow
+
+  const clinicEntry = useMemo(
+    () => clinicSchedule.find(e => e.dayOfWeek === currentDow),
+    [clinicSchedule, currentDow],
+  )
+
+  /** Map doctorId → orele de lucru ale doctorului în ziua curentă */
+  const doctorTodayMap = useMemo(() => {
+    const map = new Map<string, { startTime: string; endTime: string }>()
+    for (const e of allDoctorSchedules) {
+      if (e.dayOfWeek === currentDow && e.startTime && e.endTime) {
+        map.set(e.doctorId, { startTime: e.startTime, endTime: e.endTime })
+      }
+    }
+    return map
+  }, [allDoctorSchedules, currentDow])
 
   // Mutații
   const createAppointment = useCreateAppointment()
@@ -417,6 +493,18 @@ export const AppointmentsSchedulerPage = () => {
                         key={`half-${h}`}
                         className={styles.timelineHalfMark}
                         style={{ left: (h - HOUR_START) * SLOT_WIDTH_PX + SLOT_WIDTH_PX / 2 }}
+                      />
+                    ))}
+
+                    {/* Blocked zones — outside clinic / doctor schedule */}
+                    {getBlockedRanges(clinicEntry, doctorTodayMap.get(doctor.id)).map((r, i) => (
+                      <div
+                        key={`blocked-${i}`}
+                        className={styles.blockedZone}
+                        style={{
+                          left:  minutesToLeft(r.fromMin),
+                          width: minutesToLeft(r.toMin) - minutesToLeft(r.fromMin),
+                        }}
                       />
                     ))}
 

@@ -307,6 +307,23 @@
   pointer-events: none;
   z-index: 1;
 }
+
+// ── Blocked zone (outside clinic / doctor schedule) ───────────────────────────
+.blockedZone {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.035) 0px,
+    rgba(0, 0, 0, 0.035) 4px,
+    transparent 4px,
+    transparent 10px
+  );
+  background-color: rgba(0, 0, 0, 0.03);
+  pointer-events: none;
+  z-index: 1;
+}
 // ── Event bar ─────────────────────────────────────────────────────────────────
 .eventBar {
   position: absolute;
