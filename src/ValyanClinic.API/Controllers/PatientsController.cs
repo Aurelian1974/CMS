@@ -8,6 +8,7 @@ using ValyanClinic.Application.Features.Patients.Commands.UpdatePatient;
 using ValyanClinic.Application.Features.Patients.Commands.DeletePatient;
 using ValyanClinic.Application.Features.Patients.Queries.GetPatients;
 using ValyanClinic.Application.Features.Patients.Queries.GetPatientById;
+using ValyanClinic.Application.Features.Patients.Queries.GetPatientsLookup;
 
 namespace ValyanClinic.API.Controllers;
 
@@ -45,6 +46,15 @@ public class PatientsController : BaseApiController
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetPatientByIdQuery(id), ct);
+        return HandleResult(result);
+    }
+
+    /// <summary>Listare simplificată pacienți (pentru dropdown-uri).</summary>
+    [HttpGet("lookup")]
+    [HasAccess(ModuleCodes.Patients, AccessLevel.Read)]
+    public async Task<IActionResult> GetLookup(CancellationToken ct)
+    {
+        var result = await Mediator.Send(new GetPatientsLookupQuery(), ct);
         return HandleResult(result);
     }
 

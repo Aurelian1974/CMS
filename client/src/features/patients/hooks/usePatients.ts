@@ -13,6 +13,7 @@ export const patientKeys = {
   list:    (params: GetPatientsParams) => [...patientKeys.lists(), params] as const,
   details: () => [...patientKeys.all, 'detail'] as const,
   detail:  (id: string) => [...patientKeys.details(), id] as const,
+  lookup:  () => [...patientKeys.all, 'lookup'] as const,
 }
 
 // ── Listare paginată ──────────────────────────────────────────────────────────
@@ -53,6 +54,14 @@ export const useUpdatePatient = () => {
     },
   })
 }
+
+// ── Lookup (dropdown) ─────────────────────────────────────────────────────────
+export const usePatientLookup = () =>
+  useQuery({
+    queryKey: patientKeys.lookup(),
+    queryFn: () => patientsApi.getLookup(),
+    staleTime: 5 * 60 * 1000,
+  })
 
 // ── Ștergere pacient (soft delete) ────────────────────────────────────────────
 export const useDeletePatient = () => {

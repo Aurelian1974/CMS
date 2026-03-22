@@ -1,0 +1,153 @@
+@import '@/styles/variables';
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+}
+
+.infoRow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.infoRowFull {
+  grid-column: 1 / -1;
+}
+
+.infoLabel {
+  font-size: 0.72rem;
+  color: $gray-400;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+}
+
+.infoValue {
+  font-size: 0.88rem;
+  color: $gray-700;
+  font-weight: 500;
+}
+
+.mono {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.82rem;
+}
+
+// ── Secțiuni ──────────────────────────────────────────────────────────────────
+.section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid $gray-200;
+}
+
+.sectionTitle {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: $gray-600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+}
+
+// ── Header custom ─────────────────────────────────────────────────────────────
+.header {
+  padding: 20px 24px 16px;
+}
+
+.headerTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.patientName {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: $gray-700;
+  line-height: 1.2;
+}
+
+.headerMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  color: $gray-400;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.editBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: $primary;
+  background: rgba($primary, 0.08);
+  border: 1px solid rgba($primary, 0.15);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background: rgba($primary, 0.14);
+    border-color: rgba($primary, 0.3);
+  }
+}
+
+.closeBtn {
+  font-size: 1.4rem;
+  line-height: 1;
+  color: $gray-400;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0 4px;
+  transition: color 0.15s;
+
+  &:hover {
+    color: $gray-600;
+  }
+}
+
+// ── Loading / Error ────────────────────────────────────────────────────────────
+.bodyLoading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 0;
+  color: $gray-400;
+  font-size: 0.85rem;
+}
+
+.headerLoading,
+.headerError {
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

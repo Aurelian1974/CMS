@@ -7,6 +7,7 @@ import type {
   CreatePatientPayload,
   UpdatePatientPayload,
 } from '@/features/patients/types/patient.types'
+import type { PatientLookupDto } from '@/features/appointments/types/appointment.types'
 
 export const patientsApi = {
   getAll: (params: GetPatientsParams): Promise<ApiResponse<PatientsPagedResponse>> =>
@@ -23,4 +24,7 @@ export const patientsApi = {
 
   delete: (id: string): Promise<ApiResponse<boolean>> =>
     api.delete(`/api/patients/${id}`),
+
+  getLookup: (): Promise<ApiResponse<PatientLookupDto[]>> =>
+    api.get('/api/patients/lookup'),
 }

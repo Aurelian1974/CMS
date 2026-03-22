@@ -41,6 +41,9 @@ public interface IPatientRepository
 
     Task DeleteAsync(Guid id, Guid clinicId, Guid deletedBy, CancellationToken ct);
 
+    /// <summary>Listare simplificată pacienți (pentru dropdown-uri).</summary>
+    Task<IEnumerable<PatientLookupDto>> GetLookupAsync(Guid clinicId, CancellationToken ct);
+
     Task SyncAllergiesAsync(Guid patientId, Guid createdBy, IEnumerable<SyncAllergyItem> allergies, CancellationToken ct);
 
     Task SyncDoctorsAsync(Guid patientId, Guid createdBy, IEnumerable<SyncDoctorItem> doctors, CancellationToken ct);

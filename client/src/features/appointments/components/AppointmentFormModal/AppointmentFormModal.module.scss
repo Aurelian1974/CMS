@@ -1,0 +1,53 @@
+@import '@/styles/variables';
+
+.modalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: $gray-500;
+}
+
+.required {
+  color: $danger;
+  margin-left: 2px;
+}
+
+.error {
+  color: $danger;
+  font-size: 0.72rem;
+  margin-top: 2px;
+}
+
+.timeInput {
+  height: 38px;
+  border: 1.5px solid $gray-200;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 0.85rem;
+  color: $gray-700;
+  width: 100%;
+  outline: none;
+  background: $body-bg;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+    background: $card-bg;
+  }
+
+  &.hasError {
+    border-color: $danger;
+  }
+}

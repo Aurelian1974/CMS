@@ -199,6 +199,17 @@ public sealed class PatientRepository(DapperContext context) : IPatientRepositor
                 cancellationToken: ct));
     }
 
+    public async Task<IEnumerable<PatientLookupDto>> GetLookupAsync(Guid clinicId, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        return await connection.QueryAsync<PatientLookupDto>(
+            new CommandDefinition(
+                PatientProcedures.GetLookup,
+                new { ClinicId = clinicId },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+    }
+
     public async Task SyncAllergiesAsync(
         Guid patientId, Guid createdBy,
         IEnumerable<SyncAllergyItem> allergies, CancellationToken ct)

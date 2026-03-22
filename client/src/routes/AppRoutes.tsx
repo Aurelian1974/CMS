@@ -8,7 +8,8 @@ const MainLayout     = lazy(() => import('../components/layout/MainLayout'))
 const DashboardPage  = lazy(() => import('../features/dashboard/pages/DashboardPage'))
 const PatientsListPage   = lazy(() => import('../features/patients/pages/PatientsListPage'))
 const PatientFormPage    = lazy(() => import('../features/patients/pages/PatientFormPage'))
-const AppointmentsPage   = lazy(() => import('../features/appointments/pages/AppointmentsListPage'))
+const AppointmentsPage       = lazy(() => import('../features/appointments/pages/AppointmentsListPage'))
+const AppointmentsScheduler  = lazy(() => import('../features/appointments/pages/AppointmentsSchedulerPage'))
 const ConsultationsPage  = lazy(() => import('../features/consultations/pages/ConsultationsListPage'))
 const PrescriptionsPage  = lazy(() => import('../features/prescriptions/pages/PrescriptionsListPage'))
 const InvoicesPage       = lazy(() => import('../features/invoices/pages/InvoicesListPage'))
@@ -44,7 +45,8 @@ export const AppRoutes = () => (
           <Route path="/patients"        element={<PatientsListPage />} />
           <Route path="/patients/new"    element={<PatientFormPage />} />
           <Route path="/patients/:id/edit" element={<PatientFormPage />} />
-          <Route path="/appointments"    element={<AppointmentsPage />} />
+          <Route path="/appointments"           element={<AppointmentsPage />} />
+          <Route path="/appointments/scheduler" element={<AppointmentsScheduler />} />
           <Route path="/consultations"   element={<ConsultationsPage />} />
           <Route path="/prescriptions"   element={<PrescriptionsPage />} />
           <Route path="/invoices"        element={<InvoicesPage />} />
