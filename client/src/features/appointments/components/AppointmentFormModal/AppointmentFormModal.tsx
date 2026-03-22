@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { appointmentSchema, type AppointmentFormData } from '../../schemas/appointment.schema'
 import type { AppointmentDto, CreateAppointmentPayload, UpdateAppointmentPayload, PatientLookupDto } from '../../types/appointment.types'
@@ -11,7 +11,47 @@ import { FormDatePicker } from '@/components/forms/FormDatePicker'
 import { AppButton } from '@/components/ui/AppButton'
 import styles from './AppointmentFormModal.module.scss'
 
-// ── Constante status programare ───────────────────────────────────────────────
+// ── Time picker inline ────────────────────────────────────────────────────────
+const TIME_HOURS    = Array.from({ length: 14 }, (_, i) => i + 7)   // 07–20
+const TIME_MINUTES  = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]
+
+interface TimeSelectProps {
+  value: string                  // "HH:mm"
+  onChange: (v: string) => void
+  hasError?: boolean
+}
+
+const TimeSelect = ({ value, onChange, hasError }: TimeSelectProps) => {
+  const parts   = value ? value.split(':') : ['07', '00']
+  const hVal    = parseInt(parts[0], 10)
+  const mVal    = parseInt(parts[1], 10)
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+
+  return (
+    <div className={`${styles.timeSelectGroup}${hasError ? ` ${styles['timeSelectGroup--error']}` : ''}`}>
+      <select
+        className={styles.timeSelectPart}
+        value={hVal}
+        onChange={e => onChange(`${pad(Number(e.target.value))}:${pad(mVal)}`)}
+      >
+        {TIME_HOURS.map(h => (
+          <option key={h} value={h}>{pad(h)}</option>
+        ))}
+      </select>
+      <span className={styles.timeSelectSep}>:</span>
+      <select
+        className={styles.timeSelectPart}
+        value={mVal}
+        onChange={e => onChange(`${pad(hVal)}:${pad(Number(e.target.value))}`)}
+      >
+        {TIME_MINUTES.map(m => (
+          <option key={m} value={m}>{pad(m)}</option>
+        ))}
+      </select>
+    </div>
+  )
+}
 const APPOINTMENT_STATUS_OPTIONS = [
   { value: 'a1000000-0000-0000-0000-000000000001', label: 'Programat' },
   { value: 'a1000000-0000-0000-0000-000000000002', label: 'Confirmat' },
@@ -22,6 +62,13 @@ const APPOINTMENT_STATUS_OPTIONS = [
 
 const DEFAULT_STATUS_ID = 'a1000000-0000-0000-0000-000000000001' // Programat
 
+interface CreateDefaults {
+  doctorId?: string
+  date?: string
+  startTime?: string
+  endTime?: string
+}
+
 interface AppointmentFormModalProps {
   isOpen: boolean
   onClose: () => void
@@ -31,6 +78,7 @@ interface AppointmentFormModalProps {
   patientLookup: PatientLookupDto[]
   doctorLookup: DoctorLookupDto[]
   serverError?: string | null
+  createDefaults?: CreateDefaults
 }
 
 export const AppointmentFormModal = ({
@@ -42,11 +90,11 @@ export const AppointmentFormModal = ({
   patientLookup,
   doctorLookup,
   serverError,
+  createDefaults,
 }: AppointmentFormModalProps) => {
   const isEdit = !!editData
 
   const {
-    register,
     handleSubmit,
     reset,
     control,
@@ -78,13 +126,16 @@ export const AppointmentFormModal = ({
       })
     } else {
       reset({
-        patientId: '', doctorId: '',
-        date: new Date().toISOString().slice(0, 10),
-        startTime: '', endTime: '',
-        statusId: DEFAULT_STATUS_ID, notes: '',
+        patientId: '',
+        doctorId:  createDefaults?.doctorId ?? '',
+        date:      createDefaults?.date ?? new Date().toISOString().slice(0, 10),
+        startTime: createDefaults?.startTime ?? '',
+        endTime:   createDefaults?.endTime ?? '',
+        statusId:  DEFAULT_STATUS_ID,
+        notes:     '',
       })
     }
-  }, [isOpen, editData, reset])
+  }, [isOpen, editData, createDefaults, reset])
 
   const handleFormSubmit = (data: AppointmentFormData) => {
     const payload: CreateAppointmentPayload = {
@@ -179,10 +230,16 @@ export const AppointmentFormModal = ({
             <label className={styles.label}>
               Ora început <span className={styles.required}>*</span>
             </label>
-            <input
-              type="time"
-              className={`${styles.timeInput}${errors.startTime ? ` ${styles.hasError}` : ''}`}
-              {...register('startTime')}
+            <Controller
+              name="startTime"
+              control={control}
+              render={({ field }) => (
+                <TimeSelect
+                  value={field.value}
+                  onChange={field.onChange}
+                  hasError={!!errors.startTime}
+                />
+              )}
             />
             {errors.startTime && <span className={styles.error}>{errors.startTime.message}</span>}
           </div>
@@ -192,10 +249,16 @@ export const AppointmentFormModal = ({
             <label className={styles.label}>
               Ora sfârșit <span className={styles.required}>*</span>
             </label>
-            <input
-              type="time"
-              className={`${styles.timeInput}${errors.endTime ? ` ${styles.hasError}` : ''}`}
-              {...register('endTime')}
+            <Controller
+              name="endTime"
+              control={control}
+              render={({ field }) => (
+                <TimeSelect
+                  value={field.value}
+                  onChange={field.onChange}
+                  hasError={!!errors.endTime}
+                />
+              )}
             />
             {errors.endTime && <span className={styles.error}>{errors.endTime.message}</span>}
           </div>

@@ -1,0 +1,16 @@
+{
+  "title": "Highlighting resource calendars demo (React + Vite)",
+  "description": "Help end users understand the scheduling logic by visualizing resource calendars",
+  "source": [
+    "index.html",
+    "package.json",
+    "public/data/data.json",
+    "src/App.scss",
+    "src/App.tsx",
+    "src/AppConfig.tsx",
+    "src/lib/Appointment.ts",
+    "src/main.tsx",
+    "tsconfig.json",
+    "vite.config.mts"
+  ]
+}

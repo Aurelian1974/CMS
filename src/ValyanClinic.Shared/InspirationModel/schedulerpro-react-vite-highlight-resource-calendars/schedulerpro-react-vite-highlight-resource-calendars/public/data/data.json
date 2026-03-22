@@ -1,0 +1,349 @@
+{
+  "success" : true,
+  "project" : {
+    "calendar" : "workweek"
+  },
+  "calendars" : {
+    "rows" : [
+      {
+        "id"        : "workweek",
+        "name"      : "Work week",
+        "intervals" : [
+          {
+            "recurrentStartDate" : "on Sat",
+            "recurrentEndDate"   : "on Mon",
+            "isWorking"          : false
+          }
+        ]
+      },
+      {
+        "id"                       : "firstdayhalf",
+        "name"                     : "First day half",
+        "unspecifiedTimeIsWorking" : false,
+        "intervals"                : [
+          {
+            "name"               : "Available",
+            "recurrentStartDate" : "every weekday at 08:00",
+            "recurrentEndDate"   : "every weekday at 12:00",
+            "isWorking"          : true
+          }
+        ]
+      },
+      {
+        "id"                       : "seconddayhalf",
+        "name"                     : "Second day half",
+        "unspecifiedTimeIsWorking" : false,
+        "intervals"                : [
+          {
+            "name"               : "Available",
+            "recurrentStartDate" : "every weekday at 13:00",
+            "recurrentEndDate"   : "every weekday at 17:00",
+            "isWorking"          : true
+          }
+        ]
+      },
+      {
+        "id"                       : "allday",
+        "name"                     : "All day",
+        "unspecifiedTimeIsWorking" : false,
+        "intervals"                : [
+          {
+            "name"               : "Morning",
+            "recurrentStartDate" : "every weekday at 07:00",
+            "recurrentEndDate"   : "every weekday at 12:00",
+            "isWorking"          : true
+          },
+          {
+            "name"               : "Afternoon",
+            "recurrentStartDate" : "every weekday at 13:00",
+            "recurrentEndDate"   : "every weekday at 18:00",
+            "isWorking"          : true
+          }
+        ]
+      }
+    ]
+  },
+  "resources" : {
+    "rows" : [
+      {
+        "id"       : 1,
+        "name"     : "Jacob",
+        "role"     : "Doctor",
+        "iconCls"  : "b-icon fa-user-md",
+        "calendar" : "firstdayhalf",
+        "image"    : false
+      },
+      {
+        "id"       : 2,
+        "name"     : "David",
+        "role"     : "Radiation oncology nurse",
+        "iconCls"  : "b-icon fa-user-nurse",
+        "calendar" : "seconddayhalf",
+        "image"    : false
+      },
+      {
+        "id"       : 3,
+        "name"     : "Henrik",
+        "role"     : "Nurse",
+        "iconCls"  : "b-icon fa-user-nurse",
+        "calendar" : "allday",
+        "image"    : false
+      },
+      {
+        "id"       : 4,
+        "name"     : "Linda",
+        "role"     : "Doctor",
+        "iconCls"  : "b-icon fa-user-md",
+        "calendar" : "seconddayhalf",
+        "image"    : false
+      },
+      {
+        "id"       : 5,
+        "name"     : "Barbara",
+        "role"     : "Doctor",
+        "iconCls"  : "b-icon fa-user-md",
+        "calendar" : "allday",
+        "image"    : false
+      },
+      {
+        "id"       : 6,
+        "name"     : "Michael",
+        "role"     : "Nurse",
+        "iconCls"  : "b-icon fa-user-md",
+        "calendar" : "allday",
+        "image"    : false
+      },
+      {
+        "id"       : 7,
+        "name"     : "Lee",
+        "role"     : "Nurse",
+        "iconCls"  : "b-icon fa-user-nurse",
+        "calendar" : "allday",
+        "image"    : false
+      },
+      {
+        "id"       : 8,
+        "name"     : "Madison",
+        "role"     : "Nurse",
+        "iconCls"  : "b-icon fa-user-md",
+        "calendar" : "seconddayhalf",
+        "image"    : false
+      }
+    ]
+  },
+  "events" : {
+    "rows" : [
+      {
+        "id"           : 1,
+        "name"         : "Hip replacement",
+        "iconCls"      : "fa fa-stethoscope",
+        "patient"      : "Sarah Larson",
+        "confirmed"    : true,
+        "duration"     : 2,
+        "eventColor"   : "red",
+        "startDate"    : "2022-05-25T09:00",
+        "requiredRole" : "Doctor"
+      },
+      {
+        "id"           : 2,
+        "name"         : "Annual checkup",
+        "iconCls"      : "fa fa-stethoscope",
+        "patient"      : "Dave Mathews",
+        "duration"     : 2,
+        "eventColor"   : "green",
+        "startDate"    : "2022-05-25T10:00",
+        "requiredRole" : "Nurse"
+      },
+      {
+        "id"           : 3,
+        "name"         : "Moderna #2",
+        "iconCls"      : "fa fa-syringe",
+        "patient"      : "Kevin Bell",
+        "confirmed"    : true,
+        "duration"     : 1,
+        "eventColor"   : "blue",
+        "startDate"    : "2022-05-25T13:00",
+        "requiredRole" : "Nurse"
+      },
+      {
+        "id"           : 4,
+        "name"         : "Pfizer #1",
+        "iconCls"      : "fa fa-syringe",
+        "patient"      : "Doug Williams",
+        "confirmed"    : true,
+        "duration"     : 1,
+        "eventColor"   : "blue",
+        "startDate"    : "2022-05-25T10:00",
+        "requiredRole" : "Nurse"
+      },
+      {
+        "id"           : 5,
+        "name"         : "Heart transplant",
+        "iconCls"      : "fa fa-heart",
+        "patient"      : "Fred Dermot",
+        "confirmed"    : true,
+        "duration"     : 3,
+        "eventColor"   : "red",
+        "startDate"    : "2022-05-25T12:00",
+        "requiredRole" : "Doctor"
+      },
+      {
+        "id"           : 6,
+        "name"         : "Sputnik #1",
+        "iconCls"      : "fa fa-syringe",
+        "patient"      : "Peter Ball",
+        "confirmed"    : true,
+        "duration"     : 1,
+        "eventColor"   : "blue",
+        "startDate"    : "2022-05-25T09:00",
+        "requiredRole" : "Nurse"
+      },
+      {
+        "id"           : 7,
+        "name"         : "Johnson",
+        "iconCls"      : "fa fa-syringe",
+        "patient"      : "Lara Kraft",
+        "confirmed"    : true,
+        "duration"     : 1,
+        "eventColor"   : "blue",
+        "startDate"    : "2022-05-25T11:00",
+        "requiredRole" : "Nurse"
+      },
+      {
+        "id"           : 8,
+        "name"         : "Johnson",
+        "iconCls"      : "fa fa-syringe",
+        "patient"      : "Randy Barth",
+        "confirmed"    : true,
+        "duration"     : 1,
+        "eventColor"   : "blue",
+        "startDate"    : "2022-05-25T13:00",
+        "requiredRole" : "Nurse"
+      },
+      {
+        "id"           : 9,
+        "name"         : "Moderna #1",
+        "iconCls"      : "fa fa-syringe",
+        "patient"      : "Peter Douglas",
+        "duration"     : 1,
+        "eventColor"   : "blue",
+        "startDate"    : "2022-05-25T09:00",
+        "requiredRole" : "Nurse"
+      },
+      {
+        "id"           : 10,
+        "name"         : "Pfizer #2",
+        "iconCls"      : "fa fa-syringe",
+        "patient"      : "Fanny White",
+        "confirmed"    : true,
+        "duration"     : 1,
+        "eventColor"   : "blue",
+        "startDate"    : "2022-05-25T11:00",
+        "requiredRole" : "Nurse"
+      },
+      {
+        "id"           : 11,
+        "name"         : "Johnson",
+        "iconCls"      : "fa fa-syringe",
+        "patient"      : "Gordon Anderson",
+        "duration"     : 1,
+        "startDate"    : "2022-05-25T13:00",
+        "requiredRole" : "Nurse"
+      },
+      {
+        "id"           : 12,
+        "name"         : "Brain transplant",
+        "iconCls"      : "fa fa-brain",
+        "patient"      : "Frank Enstein",
+        "confirmed"    : true,
+        "duration"     : 3,
+        "eventColor"   : "red",
+        "startDate"    : "2022-05-25T12:00",
+        "requiredRole" : "Doctor"
+      },
+      {
+        "id"           : 13,
+        "name"         : "Radiation therapy",
+        "iconCls"      : "fa fa-radiation",
+        "patient"      : "Katie Person",
+        "confirmed"    : true,
+        "duration"     : 2,
+        "eventColor"   : "red",
+        "startDate"    : "2022-05-25T13:00",
+        "requiredRole" : "Radiation oncology nurse"
+      }
+    ]
+  },
+  "assignments" : {
+    "rows" : [
+      {
+        "id"       : 1,
+        "event"    : 1,
+        "resource" : 1
+      },
+      {
+        "id"       : 2,
+        "event"    : 2,
+        "resource" : 8
+      },
+      {
+        "id"       : 3,
+        "event"    : 3,
+        "resource" : 3
+      },
+      {
+        "id"       : 4,
+        "event"    : 4,
+        "resource" : 3
+      },
+      {
+        "id"       : 5,
+        "event"    : 5,
+        "resource" : 1
+      },
+      {
+        "id"       : 6,
+        "event"    : 6,
+        "resource" : 6
+      },
+      {
+        "id"       : 7,
+        "event"    : 7,
+        "resource" : 6
+      },
+      {
+        "id"       : 8,
+        "event"    : 8,
+        "resource" : 6
+      },
+      {
+        "id"       : 9,
+        "event"    : 9,
+        "resource" : 7
+      },
+      {
+        "id"       : 11,
+        "event"    : 10,
+        "resource" : 7
+      },
+      {
+        "id"       : 12,
+        "event"    : 11,
+        "resource" : 7
+      },
+      {
+        "id"       : 13,
+        "event"    : 12,
+        "resource" : 5
+      },
+      {
+        "id"       : 14,
+        "event"    : 13,
+        "resource" : 2
+      }
+    ]
+  },
+  "dependencies" : {
+    "rows" : []
+  }
+}

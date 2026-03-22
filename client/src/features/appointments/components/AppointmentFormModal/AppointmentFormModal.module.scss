@@ -51,3 +51,53 @@
     border-color: $danger;
   }
 }
+
+// ── Custom time select (hour + minute dropdowns) ───────────────────────────────
+.timeSelectGroup {
+  display: flex;
+  align-items: center;
+  height: 38px;
+  border: 1.5px solid $gray-200;
+  border-radius: 8px;
+  background: $body-bg;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &:focus-within {
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+    background: $card-bg;
+  }
+
+  &--error {
+    border-color: $danger;
+  }
+}
+
+.timeSelectPart {
+  flex: 1;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: $gray-700;
+  cursor: pointer;
+  text-align: center;
+  appearance: none;
+  padding: 0 4px;
+
+  &:hover { background: rgba($primary, 0.04); }
+  &:focus { background: rgba($primary, 0.06); }
+}
+
+.timeSelectSep {
+  font-size: 1rem;
+  font-weight: 700;
+  color: $gray-400;
+  user-select: none;
+  pointer-events: none;
+  padding: 0 1px;
+  line-height: 1;
+}

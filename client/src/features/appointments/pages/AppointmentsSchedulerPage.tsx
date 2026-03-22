@@ -1,9 +1,11 @@
 import { useState, useMemo, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAppointmentsForScheduler } from '../hooks/useAppointments'
+import { useAppointmentsForScheduler, useCreateAppointment, useUpdateAppointment } from '../hooks/useAppointments'
 import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
-import type { AppointmentSchedulerDto } from '../types/appointment.types'
+import { usePatientLookup } from '@/features/patients/hooks/usePatients'
+import type { AppointmentDto, AppointmentSchedulerDto, CreateAppointmentPayload, UpdateAppointmentPayload } from '../types/appointment.types'
 import type { DoctorLookupDto } from '@/features/doctors/types/doctor.types'
+import { AppointmentFormModal } from '../components/AppointmentFormModal/AppointmentFormModal'
 import styles from './AppointmentsSchedulerPage.module.scss'
 
 // ── Icoane SVG inline ─────────────────────────────────────────────────────────
@@ -14,6 +16,9 @@ const IconPlus         = () => <svg width="15" height="15" viewBox="0 0 24 24" f
 const IconUser         = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
 const IconClock        = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
 const IconCalendar     = () => <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+const IconNote         = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+const IconTag          = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+const IconCheck        = () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
 
 // ── Constante scheduler ───────────────────────────────────────────────────────
 const HOUR_START = 7    // 07:00
@@ -90,6 +95,22 @@ const groupByDoctor = (appointments: AppointmentSchedulerDto[]): Map<string, App
   return map
 }
 
+/** Adaptează AppointmentSchedulerDto pentru AppointmentFormModal (editare) */
+const schedulerDtoToFormEditData = (apt: AppointmentSchedulerDto): AppointmentDto => ({
+  ...apt,
+  clinicId: '',
+  patientPhone: null,
+  specialtyName: null,
+  isDeleted: false,
+  createdAt: '',
+  createdByName: null,
+})
+
+/** Rotunjește minutele la cel mai apropiat multiplu de 15 */
+const roundToNearest15 = (totalMinutes: number): number => Math.round(totalMinutes / 15) * 15
+
+const pad2 = (n: number) => String(n).padStart(2, '0')
+
 // ── Tooltip ───────────────────────────────────────────────────────────────────
 interface TooltipState {
   x: number
@@ -105,14 +126,30 @@ export const AppointmentsSchedulerPage = () => {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
   const tooltipTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
+  // Form modal state
+  const [formModalOpen, setFormModalOpen] = useState(false)
+  const [editingSchedulerApt, setEditingSchedulerApt] = useState<AppointmentSchedulerDto | null>(null)
+  const [formCreateDefaults, setFormCreateDefaults] = useState<{ doctorId?: string; date?: string; startTime?: string; endTime?: string } | undefined>()
+  const [serverError, setServerError] = useState<string | null>(null)
+
+  // Drag & drop state
+  const dragInfoRef = useRef<{ apt: AppointmentSchedulerDto; offsetMinutes: number } | null>(null)
+  const [draggingId, setDraggingId] = useState<string | null>(null)
+
   // Date din API
   const dateFrom = formatDateISO(currentDate)
   const dateTo = formatDateISO(currentDate)
   const { data: schedulerResp, isLoading } = useAppointmentsForScheduler(dateFrom, dateTo, doctorFilter)
   const { data: doctorLookupResp } = useDoctorLookup()
+  const { data: patientLookupResp } = usePatientLookup()
 
   const appointments = useMemo(() => schedulerResp?.data ?? [], [schedulerResp])
-  const doctorLookup = doctorLookupResp?.data ?? []
+  const doctorLookup = useMemo(() => doctorLookupResp?.data ?? [], [doctorLookupResp])
+  const patientLookup = useMemo(() => patientLookupResp?.data ?? [], [patientLookupResp])
+
+  // Mutații
+  const createAppointment = useCreateAppointment()
+  const updateAppointment = useUpdateAppointment()
 
   // Grupare programări pe doctor
   const groupedByDoctor = useMemo(() => groupByDoctor(appointments), [appointments])
@@ -136,6 +173,112 @@ export const AppointmentsSchedulerPage = () => {
   const goToday = useCallback(() => setCurrentDate(new Date()), [])
   const goPrev = useCallback(() => setCurrentDate(d => addDays(d, -1)), [])
   const goNext = useCallback(() => setCurrentDate(d => addDays(d, 1)), [])
+
+  // ── Form modal handlers ──────────────────────────────────────────────────────
+  const handleOpenCreate = useCallback(() => {
+    setEditingSchedulerApt(null)
+    setFormCreateDefaults(undefined)
+    setServerError(null)
+    setFormModalOpen(true)
+  }, [])
+
+  /** Click pe un slot gol din timeline — deschide formularul de creare pre-completat */
+  const handleSlotClick = useCallback((e: React.MouseEvent<HTMLDivElement>, doctorId: string) => {
+    // Ignoră click-urile pe event bars (propagate din copil)
+    if ((e.target as HTMLElement).closest('[data-event-bar]')) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const relX = e.clientX - rect.left
+    const totalMinutes = HOUR_START * 60 + (relX / SLOT_WIDTH_PX) * 60
+    const startMin = Math.max(HOUR_START * 60, Math.min(roundToNearest15(totalMinutes), HOUR_END * 60 - 15))
+    const endMin = Math.min(startMin + 60, HOUR_END * 60)
+    setEditingSchedulerApt(null)
+    setFormCreateDefaults({
+      doctorId,
+      date:      formatDateISO(currentDate),
+      startTime: `${pad2(Math.floor(startMin / 60))}:${pad2(startMin % 60)}`,
+      endTime:   `${pad2(Math.floor(endMin / 60))}:${pad2(endMin % 60)}`,
+    })
+    setServerError(null)
+    setFormModalOpen(true)
+  }, [currentDate])
+
+  /** Click pe o programare existentă — deschide formularul de editare */
+  const handleEventClick = useCallback((e: React.MouseEvent, apt: AppointmentSchedulerDto) => {
+    e.stopPropagation()
+    setTooltip(null)
+    setEditingSchedulerApt(apt)
+    setFormCreateDefaults(undefined)
+    setServerError(null)
+    setFormModalOpen(true)
+  }, [])
+
+  const handleFormClose = useCallback(() => {
+    setFormModalOpen(false)
+    setEditingSchedulerApt(null)
+  }, [])
+
+  const handleFormSubmit = useCallback((data: CreateAppointmentPayload | UpdateAppointmentPayload) => {
+    const isEdit = 'id' in data
+    const mutation = isEdit ? updateAppointment : createAppointment
+    mutation.mutate(data as never, {
+      onSuccess: () => {
+        setFormModalOpen(false)
+        setEditingSchedulerApt(null)
+        setServerError(null)
+      },
+      onError: () => {
+        setServerError('A apărut o eroare. Te rugăm să încerci din nou.')
+      },
+    })
+  }, [createAppointment, updateAppointment])
+
+  // ── Drag & Drop handlers ─────────────────────────────────────────────────────
+  const handleDragStart = useCallback((e: React.DragEvent, apt: AppointmentSchedulerDto) => {
+    e.stopPropagation()
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const offsetMinutes = ((e.clientX - rect.left) / SLOT_WIDTH_PX) * 60
+    dragInfoRef.current = { apt, offsetMinutes }
+    setDraggingId(apt.id)
+    e.dataTransfer.effectAllowed = 'move'
+    // Vizibil drag image (browser default)
+  }, [])
+
+  const handleDragEnd = useCallback(() => {
+    setDraggingId(null)
+    dragInfoRef.current = null
+  }, [])
+
+  const handleTimelineDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }, [])
+
+  const handleTimelineDrop = useCallback((e: React.DragEvent<HTMLDivElement>, doctorId: string) => {
+    e.preventDefault()
+    if (!dragInfoRef.current) return
+    const { apt, offsetMinutes } = dragInfoRef.current
+    const rect = e.currentTarget.getBoundingClientRect()
+    const relX = e.clientX - rect.left
+    const droppedMin = HOUR_START * 60 + (relX / SLOT_WIDTH_PX) * 60
+    const durationMin = (new Date(apt.endTime).getTime() - new Date(apt.startTime).getTime()) / 60000
+    const newStart = Math.max(HOUR_START * 60, Math.min(
+      roundToNearest15(droppedMin - offsetMinutes),
+      HOUR_END * 60 - Math.ceil(durationMin / 15) * 15,
+    ))
+    const newEnd = newStart + durationMin
+    const dateStr = formatDateISO(currentDate)
+    updateAppointment.mutate({
+      id:        apt.id,
+      patientId: apt.patientId,
+      doctorId,
+      startTime: `${dateStr}T${pad2(Math.floor(newStart / 60))}:${pad2(newStart % 60)}:00`,
+      endTime:   `${dateStr}T${pad2(Math.floor(newEnd / 60))}:${pad2(newEnd % 60)}:00`,
+      statusId:  apt.statusId,
+      notes:     apt.notes,
+    })
+    dragInfoRef.current = null
+    setDraggingId(null)
+  }, [currentDate, updateAppointment])
 
   // Tooltip handlers
   const handleEventMouseEnter = useCallback((e: React.MouseEvent, apt: AppointmentSchedulerDto) => {
@@ -174,7 +317,7 @@ export const AppointmentsSchedulerPage = () => {
           <button className={styles.btnSecondary} onClick={() => navigate('/appointments')}>
             <IconList /> Vizualizare tabel
           </button>
-          <button className={styles.btnPrimary} onClick={() => {/* TODO: create appointment */}}>
+          <button className={styles.btnPrimary} onClick={handleOpenCreate}>
             <IconPlus /> Programare nouă
           </button>
         </div>
@@ -252,13 +395,28 @@ export const AppointmentsSchedulerPage = () => {
                   </div>
 
                   {/* Timeline */}
-                  <div className={styles.timelineCells} style={{ width: timelineWidth, minWidth: timelineWidth, position: 'relative' }}>
+                  <div
+                    className={styles.timelineCells}
+                    style={{ width: timelineWidth, minWidth: timelineWidth, position: 'relative' }}
+                    onClick={e => handleSlotClick(e, doctor.id)}
+                    onDragOver={handleTimelineDragOver}
+                    onDrop={e => handleTimelineDrop(e, doctor.id)}
+                  >
                     {/* Hour grid lines */}
                     {HOURS.map(h => (
                       <div
                         key={h}
                         className={styles.timelineCell}
                         style={{ width: SLOT_WIDTH_PX, minWidth: SLOT_WIDTH_PX }}
+                      />
+                    ))}
+
+                    {/* Half-hour grid marks */}
+                    {HOURS.map(h => (
+                      <div
+                        key={`half-${h}`}
+                        className={styles.timelineHalfMark}
+                        style={{ left: (h - HOUR_START) * SLOT_WIDTH_PX + SLOT_WIDTH_PX / 2 }}
                       />
                     ))}
 
@@ -270,18 +428,23 @@ export const AppointmentsSchedulerPage = () => {
                       return (
                         <div
                           key={apt.id}
-                          className={`${styles.eventBar} ${modifier}`}
+                          data-event-bar="true"
+                          className={`${styles.eventBar} ${modifier}${draggingId === apt.id ? ` ${styles['eventBar--dragging']}` : ''}`}
                           style={{ left, width }}
+                          draggable
+                          onDragStart={e => handleDragStart(e, apt)}
+                          onDragEnd={handleDragEnd}
+                          onClick={e => handleEventClick(e, apt)}
                           onMouseEnter={(e) => handleEventMouseEnter(e, apt)}
                           onMouseLeave={handleEventMouseLeave}
                         >
+                          {apt.statusCode?.toUpperCase() === 'CONFIRMAT' && (
+                            <span className={styles.eventCheck}><IconCheck /></span>
+                          )}
                           <span className={styles.eventName}>{apt.patientName}</span>
                           <span className={styles.eventTime}>
                             {formatTimeShort(apt.startTime)} — {formatTimeShort(apt.endTime)}
                           </span>
-                          {apt.statusName && (
-                            <span className={styles.eventPatient}>{apt.statusName}</span>
-                          )}
                         </div>
                       )
                     })}
@@ -309,24 +472,41 @@ export const AppointmentsSchedulerPage = () => {
           }}
         >
           <div className={styles.tooltipTitle}>{tooltip.appointment.patientName}</div>
-          <div className={styles.tooltipRow}>
-            <IconClock />
-            <span>{formatTimeShort(tooltip.appointment.startTime)} — {formatTimeShort(tooltip.appointment.endTime)}</span>
-          </div>
-          <div className={styles.tooltipRow}>
-            <IconUser />
-            <span>Dr. {tooltip.appointment.doctorName}</span>
-          </div>
-          {tooltip.appointment.notes && (
+          <dl className={styles.tooltipDl}>
             <div className={styles.tooltipRow}>
-              <span style={{ fontStyle: 'italic' }}>{tooltip.appointment.notes}</span>
+              <dt><IconClock /></dt>
+              <dd>{formatTimeShort(tooltip.appointment.startTime)} — {formatTimeShort(tooltip.appointment.endTime)}</dd>
             </div>
-          )}
-          <div className={styles.tooltipRow}>
-            <span>Status: {tooltip.appointment.statusName}</span>
-          </div>
+            <div className={styles.tooltipRow}>
+              <dt><IconUser /></dt>
+              <dd>Dr. {tooltip.appointment.doctorName}</dd>
+            </div>
+            {tooltip.appointment.notes && (
+              <div className={styles.tooltipRow}>
+                <dt><IconNote /></dt>
+                <dd>{tooltip.appointment.notes}</dd>
+              </div>
+            )}
+            <div className={styles.tooltipRow}>
+              <dt><IconTag /></dt>
+              <dd>{tooltip.appointment.statusName}</dd>
+            </div>
+          </dl>
         </div>
       )}
+
+      {/* Form modal creare / editare */}
+      <AppointmentFormModal
+        isOpen={formModalOpen}
+        onClose={handleFormClose}
+        onSubmit={handleFormSubmit}
+        isLoading={createAppointment.isPending || updateAppointment.isPending}
+        editData={editingSchedulerApt ? schedulerDtoToFormEditData(editingSchedulerApt) : null}
+        createDefaults={formCreateDefaults}
+        patientLookup={patientLookup}
+        doctorLookup={doctorLookup}
+        serverError={serverError}
+      />
     </div>
   )
 }

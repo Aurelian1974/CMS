@@ -1,0 +1,110 @@
+/* FontAwesome is not built-in, but used for icons */
+@import "@bryntum/schedulerpro/fontawesome/css/fontawesome.css";
+@import "@bryntum/schedulerpro/fontawesome/css/solid.css";
+
+/* Bryntum structural CSS */
+@import "@bryntum/schedulerpro/schedulerpro.css";
+
+/* Bryntum theme is included in index.html to enable runtime theme switching, but it could instead be included here if you want to use a single theme */
+/* @import "@bryntum/schedulerpro/svalbard-light.css"; */
+
+/* Bryntum shared demo styling, not needed in your app */
+@import "@bryntum/demo-resources/scss/example.scss";
+
+body #content.demo-app {
+    display        : flex;
+    flex-direction : row;
+    flex           : 1;
+
+    .config-panel {
+        flex : none;
+    }
+}
+
+.b-scheduler-pro {
+    --b-sch-event-box-shadow          : var(--b-elevation-1);
+    --b-sch-event-border-width        : 0 0 0 3px;
+    --b-sch-event-border-color        : var(--b-primary);
+    --b-sch-event-border-style        : solid;
+    --b-sch-event-background          : var(--b-neutral-95);
+    --b-sch-event-hover-background    : var(--b-neutral-93);
+    --b-sch-event-selected-background : var(--b-neutral-92);
+}
+
+.b-sch-event-wrap {
+    .b-sch-event-content {
+        div {
+            flex : 1;
+        }
+
+        * {
+            color         : var(--b-neutral-40);
+            overflow      : hidden;
+            text-overflow : ellipsis;
+        }
+    }
+}
+
+.b-color-red .b-sch-event {
+    border-color : var(--b-color-red);
+}
+
+.b-color-green .b-sch-event {
+    border-color : var(--b-color-green);
+}
+
+.b-sch-event-tooltip {
+    min-width : 15em;
+
+    dl {
+        margin : 0;
+    }
+
+    dt, dd {
+        margin-inline-start : 0;
+    }
+
+    dt {
+        font-weight   : bold;
+        margin-bottom : .5em;
+    }
+
+    dd {
+        display     : flex;
+        align-items : center;
+
+        &:not(:last-child) {
+            margin-bottom : 1.5em;
+        }
+
+        .b-icon {
+            margin-inline-end : 0.5em;
+        }
+    }
+}
+
+.b-sch-highlighted-range {
+    font-size : 0.9em;
+}
+
+.b-event-name {
+    font-weight : bold;
+}
+
+.b-resource-avatar.b-icon {
+    font-size : 1.2em;
+}
+
+.b-patient {
+    font-size  : 0.8em;
+    margin-top : 0.5em;
+}
+
+.b-sch-header-row:first-child .b-sch-header-time-axis-cell {
+    font-weight : bold;
+}
+
+.b-resource-name {
+    font-size   : 1.2em;
+    font-weight : 600;
+}

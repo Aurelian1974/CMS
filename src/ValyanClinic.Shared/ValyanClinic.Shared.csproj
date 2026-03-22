@@ -6,4 +6,12 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <!-- Excludem folderul de inspiratie/modele externe din compilare -->
+  <ItemGroup>
+    <Compile Remove="InspirationModel\**" />
+    <Content Remove="InspirationModel\**" />
+    <EmbeddedResource Remove="InspirationModel\**" />
+    <None Remove="InspirationModel\**" />
+  </ItemGroup>
+
 </Project>
