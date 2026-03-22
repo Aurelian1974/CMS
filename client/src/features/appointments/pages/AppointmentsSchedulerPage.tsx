@@ -23,10 +23,8 @@ const IconTag          = () => <svg width="12" height="12" viewBox="0 0 24 24" f
 const IconCheck        = () => <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
 
 // ── Constante scheduler ───────────────────────────────────────────────────────
-const HOUR_START = 7    // 07:00
-const HOUR_END   = 20   // 20:00
-const HOURS = Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i)
-const SLOT_WIDTH_PX = 156 // pixel width per hour
+const DEFAULT_HOUR_START = 7    // fallback: 07:00
+const DEFAULT_HOUR_END   = 20   // fallback: 20:00
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const formatDateISO = (d: Date): string => {
@@ -74,9 +72,9 @@ const parseTime = (t: string | null | undefined): number | null => {
   return h * 60 + m
 }
 
-/** Converteste minute absolute în pixeli pe timeline */
-const minutesToLeft = (min: number): number =>
-  ((min - HOUR_START * 60) / 60) * SLOT_WIDTH_PX
+/** Converteste minute absolute în procente (0–100) pe timeline */
+const minutesToPercent = (min: number, tsMin: number, tsMax: number): number =>
+  ((min - tsMin) / (tsMax - tsMin)) * 100
 
 interface BlockedRange { fromMin: number; toMin: number }
 
@@ -85,12 +83,11 @@ interface BlockedRange { fromMin: number; toMin: number }
  * Zona efectivă de lucru = intersecția programului clinicii cu cel al doctorului.
  */
 const getBlockedRanges = (
+  tlStart: number,
+  tlEnd: number,
   clinicEntry: ClinicScheduleDto | undefined,
   doctorDay: { startTime: string; endTime: string } | undefined,
 ): BlockedRange[] => {
-  const tlStart = HOUR_START * 60
-  const tlEnd   = HOUR_END   * 60
-
   if (!clinicEntry || !clinicEntry.isOpen) {
     return [{ fromMin: tlStart, toMin: tlEnd }]
   }
@@ -99,6 +96,7 @@ const getBlockedRanges = (
   const clinicTo   = parseTime(clinicEntry.closeTime) ?? tlEnd
 
   if (!doctorDay) {
+    // Doctor has no schedule for this day → block the entire timeline
     return [{ fromMin: tlStart, toMin: tlEnd }]
   }
 
@@ -120,20 +118,18 @@ const formatTimeShort = (dateStr: string): string => {
   return d.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })
 }
 
-/** Calculeaza pozitia si latime event in pixeli relativ la timeline */
-const getEventPosition = (startTime: string, endTime: string): { left: number, width: number } => {
+/** Calculeaza pozitia si latime event ca procente relativ la timeline */
+const getEventPosition = (startTime: string, endTime: string, tsMin: number, tsMax: number): { left: string, width: string } => {
   const start = new Date(startTime)
   const end = new Date(endTime)
   const startMinutes = start.getHours() * 60 + start.getMinutes()
   const endMinutes = end.getHours() * 60 + end.getMinutes()
 
-  const offsetMinutes = startMinutes - HOUR_START * 60
-  const durationMinutes = endMinutes - startMinutes
+  const leftPct  = minutesToPercent(startMinutes, tsMin, tsMax)
+  const rightPct = minutesToPercent(endMinutes,   tsMin, tsMax)
+  const widthPct = Math.max(rightPct - leftPct, 2) // minim 2%
 
-  const left = (offsetMinutes / 60) * SLOT_WIDTH_PX
-  const width = Math.max((durationMinutes / 60) * SLOT_WIDTH_PX, 40) // minim 40px
-
-  return { left, width }
+  return { left: `${leftPct}%`, width: `${widthPct}%` }
 }
 
 /** Grupează programări pe doctorId */
@@ -223,6 +219,23 @@ export const AppointmentsSchedulerPage = () => {
     return map
   }, [allDoctorSchedules, currentDow])
 
+  // ── Timeline dinamic bazat pe programul clinicii ─────────────────────────────
+  /** Minutul de start al timeline-ului (= ora de deschidere a clinicii pentru ziua curentă) */
+  const tlStart = useMemo(() => {
+    if (!clinicEntry?.isOpen || !clinicEntry.openTime) return DEFAULT_HOUR_START * 60
+    return parseTime(clinicEntry.openTime) ?? DEFAULT_HOUR_START * 60
+  }, [clinicEntry])
+
+  /** Minutul de end al timeline-ului (= ora de închidere a clinicii pentru ziua curentă) */
+  const tlEnd = useMemo(() => {
+    if (!clinicEntry?.isOpen || !clinicEntry.closeTime) return DEFAULT_HOUR_END * 60
+    return parseTime(clinicEntry.closeTime) ?? DEFAULT_HOUR_END * 60
+  }, [clinicEntry])
+
+  const hourStart = Math.floor(tlStart / 60)
+  const hourEnd   = Math.ceil(tlEnd   / 60)
+  const hours     = Array.from({ length: hourEnd - hourStart }, (_, i) => hourStart + i)
+
   // Mutații
   const createAppointment = useCreateAppointment()
   const updateAppointment = useUpdateAppointment()
@@ -264,9 +277,9 @@ export const AppointmentsSchedulerPage = () => {
     if ((e.target as HTMLElement).closest('[data-event-bar]')) return
     const rect = e.currentTarget.getBoundingClientRect()
     const relX = e.clientX - rect.left
-    const totalMinutes = HOUR_START * 60 + (relX / SLOT_WIDTH_PX) * 60
-    const startMin = Math.max(HOUR_START * 60, Math.min(roundToNearest15(totalMinutes), HOUR_END * 60 - 15))
-    const endMin = Math.min(startMin + 60, HOUR_END * 60)
+    const totalMinutes = tlStart + (relX / rect.width) * (tlEnd - tlStart)
+    const startMin = Math.max(tlStart, Math.min(roundToNearest15(totalMinutes), tlEnd - 15))
+    const endMin = Math.min(startMin + 60, tlEnd)
     setEditingSchedulerApt(null)
     setFormCreateDefaults({
       doctorId,
@@ -276,7 +289,7 @@ export const AppointmentsSchedulerPage = () => {
     })
     setServerError(null)
     setFormModalOpen(true)
-  }, [currentDate])
+  }, [currentDate, tlStart, tlEnd])
 
   /** Click pe o programare existentă — deschide formularul de editare */
   const handleEventClick = useCallback((e: React.MouseEvent, apt: AppointmentSchedulerDto) => {
@@ -312,7 +325,9 @@ export const AppointmentsSchedulerPage = () => {
   const handleDragStart = useCallback((e: React.DragEvent, apt: AppointmentSchedulerDto) => {
     e.stopPropagation()
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    const offsetMinutes = ((e.clientX - rect.left) / SLOT_WIDTH_PX) * 60
+    const durationMin = (new Date(apt.endTime).getTime() - new Date(apt.startTime).getTime()) / 60000
+    // offset în minute de la început event = fracţia din event bar înmulţită cu durata
+    const offsetMinutes = (e.clientX - rect.left) / rect.width * durationMin
     dragInfoRef.current = { apt, offsetMinutes }
     setDraggingId(apt.id)
     e.dataTransfer.effectAllowed = 'move'
@@ -335,12 +350,19 @@ export const AppointmentsSchedulerPage = () => {
     const { apt, offsetMinutes } = dragInfoRef.current
     const rect = e.currentTarget.getBoundingClientRect()
     const relX = e.clientX - rect.left
-    const droppedMin = HOUR_START * 60 + (relX / SLOT_WIDTH_PX) * 60
+    const droppedMin = tlStart + (relX / rect.width) * (tlEnd - tlStart)
     const durationMin = (new Date(apt.endTime).getTime() - new Date(apt.startTime).getTime()) / 60000
-    const newStart = Math.max(HOUR_START * 60, Math.min(
+    const newStart = Math.max(tlStart, Math.min(
       roundToNearest15(droppedMin - offsetMinutes),
-      HOUR_END * 60 - Math.ceil(durationMin / 15) * 15,
+      tlEnd - Math.ceil(durationMin / 15) * 15,
     ))
+    // Nu permite drop pe zone blocate
+    const blocked = getBlockedRanges(tlStart, tlEnd, clinicEntry, doctorTodayMap.get(doctorId))
+    if (blocked.some(r => newStart >= r.fromMin && newStart < r.toMin)) {
+      dragInfoRef.current = null
+      setDraggingId(null)
+      return
+    }
     const newEnd = newStart + durationMin
     const dateStr = formatDateISO(currentDate)
     updateAppointment.mutate({
@@ -354,7 +376,7 @@ export const AppointmentsSchedulerPage = () => {
     })
     dragInfoRef.current = null
     setDraggingId(null)
-  }, [currentDate, updateAppointment])
+  }, [currentDate, updateAppointment, tlStart, tlEnd, clinicEntry, doctorTodayMap])
 
   // Tooltip handlers
   const handleEventMouseEnter = useCallback((e: React.MouseEvent, apt: AppointmentSchedulerDto) => {
@@ -375,10 +397,8 @@ export const AppointmentsSchedulerPage = () => {
   const now = new Date()
   const isToday = now.toDateString() === currentDate.toDateString()
   const nowMinutes = now.getHours() * 60 + now.getMinutes()
-  const nowOffset = ((nowMinutes - HOUR_START * 60) / 60) * SLOT_WIDTH_PX
-  const showNow = isToday && nowMinutes >= HOUR_START * 60 && nowMinutes <= HOUR_END * 60
-
-  const timelineWidth = HOURS.length * SLOT_WIDTH_PX
+  const nowLeftPct = ((nowMinutes - tlStart) / (tlEnd - tlStart)) * 100
+  const showNow = isToday && nowMinutes >= tlStart && nowMinutes <= tlEnd
 
   return (
     <div className={styles.page}>
@@ -444,9 +464,9 @@ export const AppointmentsSchedulerPage = () => {
             {/* Time header */}
             <div className={styles.timeHeader}>
               <div className={styles.timeHeaderLabel}>Doctor</div>
-              <div style={{ display: 'flex', width: timelineWidth, minWidth: timelineWidth }}>
-                {HOURS.map(h => (
-                  <div key={h} className={styles.timeSlot} style={{ width: SLOT_WIDTH_PX, minWidth: SLOT_WIDTH_PX }}>
+              <div style={{ display: 'flex', flex: 1 }}>
+                {hours.map(h => (
+                  <div key={h} className={styles.timeSlot}>
                     {formatHour(h)}
                   </div>
                 ))}
@@ -473,44 +493,44 @@ export const AppointmentsSchedulerPage = () => {
                   {/* Timeline */}
                   <div
                     className={styles.timelineCells}
-                    style={{ width: timelineWidth, minWidth: timelineWidth, position: 'relative' }}
+                    style={{ position: 'relative' }}
                     onClick={e => handleSlotClick(e, doctor.id)}
                     onDragOver={handleTimelineDragOver}
                     onDrop={e => handleTimelineDrop(e, doctor.id)}
                   >
                     {/* Hour grid lines */}
-                    {HOURS.map(h => (
+                    {hours.map(h => (
                       <div
                         key={h}
                         className={styles.timelineCell}
-                        style={{ width: SLOT_WIDTH_PX, minWidth: SLOT_WIDTH_PX }}
                       />
                     ))}
 
                     {/* Half-hour grid marks */}
-                    {HOURS.map(h => (
+                    {hours.map((h, idx) => (
                       <div
                         key={`half-${h}`}
                         className={styles.timelineHalfMark}
-                        style={{ left: (h - HOUR_START) * SLOT_WIDTH_PX + SLOT_WIDTH_PX / 2 }}
+                        style={{ left: `${(idx + 0.5) / hours.length * 100}%` }}
                       />
                     ))}
 
                     {/* Blocked zones — outside clinic / doctor schedule */}
-                    {getBlockedRanges(clinicEntry, doctorTodayMap.get(doctor.id)).map((r, i) => (
+                    {getBlockedRanges(tlStart, tlEnd, clinicEntry, doctorTodayMap.get(doctor.id)).map((r, i) => (
                       <div
                         key={`blocked-${i}`}
                         className={styles.blockedZone}
                         style={{
-                          left:  minutesToLeft(r.fromMin),
-                          width: minutesToLeft(r.toMin) - minutesToLeft(r.fromMin),
+                          left:  `${minutesToPercent(r.fromMin, tlStart, tlEnd)}%`,
+                          width: `${minutesToPercent(r.toMin, tlStart, tlEnd) - minutesToPercent(r.fromMin, tlStart, tlEnd)}%`,
                         }}
+                        onClick={e => e.stopPropagation()}
                       />
                     ))}
 
                     {/* Event bars */}
                     {doctorAppointments.map(apt => {
-                      const { left, width } = getEventPosition(apt.startTime, apt.endTime)
+                      const { left, width } = getEventPosition(apt.startTime, apt.endTime, tlStart, tlEnd)
                       const modifier = getEventModifier(apt.statusCode)
 
                       return (
@@ -539,7 +559,7 @@ export const AppointmentsSchedulerPage = () => {
 
                     {/* Now indicator */}
                     {showNow && (
-                      <div className={styles.nowIndicator} style={{ left: nowOffset }} />
+                      <div className={styles.nowIndicator} style={{ left: `${nowLeftPct}%` }} />
                     )}
                   </div>
                 </div>
