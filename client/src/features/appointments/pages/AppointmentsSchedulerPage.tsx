@@ -24,7 +24,7 @@ const IconCheck        = () => <svg width="10" height="10" viewBox="0 0 24 24" f
 const HOUR_START = 7    // 07:00
 const HOUR_END   = 20   // 20:00
 const HOURS = Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i)
-const SLOT_WIDTH_PX = 120 // pixel width per hour
+const SLOT_WIDTH_PX = 156 // pixel width per hour
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const formatDateISO = (d: Date): string => {

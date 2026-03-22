@@ -49,7 +49,8 @@ export const useCreateAppointment = () => {
   return useMutation({
     mutationFn: (payload: CreateAppointmentPayload) => appointmentsApi.create(payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: appointmentKeys.all })
+      qc.invalidateQueries({ queryKey: appointmentKeys.lists() })
+      qc.invalidateQueries({ queryKey: [...appointmentKeys.all, 'scheduler'] })
     },
   })
 }
@@ -60,7 +61,8 @@ export const useUpdateAppointment = () => {
   return useMutation({
     mutationFn: (payload: UpdateAppointmentPayload) => appointmentsApi.update(payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: appointmentKeys.all })
+      qc.invalidateQueries({ queryKey: appointmentKeys.lists() })
+      qc.invalidateQueries({ queryKey: [...appointmentKeys.all, 'scheduler'] })
     },
   })
 }
