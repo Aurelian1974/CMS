@@ -82,6 +82,11 @@ vi.mock('@/features/patients/hooks/usePatients', () => ({
   usePatientLookup: vi.fn(() => ({ data: { data: [] } })),
 }))
 
+vi.mock('@/features/clinic/hooks/useSchedule', () => ({
+  useClinicSchedule:  vi.fn(() => ({ data: { data: [] } })),
+  useDoctorSchedules: vi.fn(() => ({ data: { data: [] } })),
+}))
+
 vi.mock('@/features/appointments/components/AppointmentFormModal/AppointmentFormModal', () => ({
   AppointmentFormModal: () => null,
 }))
