@@ -562,3 +562,202 @@
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+
+// ── View toggle (Zi / Săptămână / Lună) ───────────────────────────────────────
+.viewToggle {
+  display: flex;
+  background: $body-bg;
+  border: 1.5px solid $gray-200;
+  border-radius: 9px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.viewBtn {
+  padding: 0 14px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: $gray-500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+
+  & + & { border-left: 1px solid $gray-200; }
+  &:hover { background: rgba($primary, 0.06); color: $primary; }
+
+  &--active {
+    background: $primary;
+    color: #fff;
+    &:hover { background: $primary-dark; }
+  }
+}
+
+// ── Overview grid (week / month) ──────────────────────────────────────────────
+.overviewGrid {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.overviewHeaderRow {
+  display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: $card-bg;
+  border-bottom: 2px solid $gray-200;
+  flex-shrink: 0;
+}
+
+.overviewDoctorCol {
+  width: 200px;
+  min-width: 200px;
+  padding: 10px 16px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: $gray-500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-right: 1px solid $gray-200;
+  display: flex;
+  align-items: center;
+  background: $gray-50;
+  position: sticky;
+  left: 0;
+  z-index: 11;
+}
+
+.overviewDayHeader {
+  flex: 1;
+  min-width: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 2px;
+  background: $gray-50;
+  border-right: 1px solid rgba($gray-200, 0.5);
+
+  &:last-child { border-right: none; }
+
+  &--today {
+    background: rgba($primary, 0.08);
+    .overviewDayNum { color: $primary; font-weight: 700; }
+  }
+}
+
+.overviewDow {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: $gray-400;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.overviewDayNum {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: $gray-700;
+  line-height: 1.3;
+}
+
+.overviewRow {
+  display: flex;
+  min-height: 60px;
+  border-bottom: 1px solid rgba($gray-200, 0.6);
+  flex-shrink: 0;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: rgba($primary, 0.015); }
+}
+
+.overviewRowDoctorCell {
+  width: 200px;
+  min-width: 200px;
+  padding: 4px 12px;
+  border-right: 1px solid $gray-200;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: sticky;
+  left: 0;
+  z-index: 5;
+  background: $card-bg;
+}
+
+.overviewCell {
+  flex: 1;
+  min-width: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid rgba($gray-200, 0.25);
+  cursor: pointer;
+  transition: background 0.12s;
+  gap: 1px;
+
+  &:last-child { border-right: none; }
+
+  &--today {
+    outline: 2px solid rgba($primary, 0.25);
+    outline-offset: -2px;
+  }
+
+  &--unavailable {
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(0, 0, 0, 0.022) 0px,
+      rgba(0, 0, 0, 0.022) 4px,
+      transparent 4px,
+      transparent 10px
+    );
+    cursor: default;
+    pointer-events: none;
+  }
+
+  &--full {
+    background-color: rgba(#ef4444, 0.1);
+    &:hover { background-color: rgba(#ef4444, 0.18); }
+  }
+
+  &--busy {
+    background-color: rgba(#f97316, 0.1);
+    &:hover { background-color: rgba(#f97316, 0.18); }
+  }
+
+  &--moderate {
+    background-color: rgba(#eab308, 0.09);
+    &:hover { background-color: rgba(#eab308, 0.16); }
+  }
+
+  &--free {
+    background-color: rgba(#22c55e, 0.1);
+    &:hover { background-color: rgba(#22c55e, 0.18); }
+  }
+}
+
+.overviewSlotCount {
+  font-size: 1rem;
+  font-weight: 700;
+  color: $gray-700;
+  line-height: 1;
+}
+
+.overviewSlotLabel {
+  font-size: 0.6rem;
+  color: $gray-500;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.overviewUnavailable {
+  font-size: 1rem;
+  color: $gray-300;
+}

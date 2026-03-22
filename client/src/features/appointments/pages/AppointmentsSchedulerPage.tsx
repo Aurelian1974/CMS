@@ -6,7 +6,7 @@ import { usePatientLookup } from '@/features/patients/hooks/usePatients'
 import { useClinicSchedule, useDoctorSchedules } from '@/features/clinic/hooks/useSchedule'
 import type { AppointmentDto, AppointmentSchedulerDto, CreateAppointmentPayload, UpdateAppointmentPayload } from '../types/appointment.types'
 import type { DoctorLookupDto } from '@/features/doctors/types/doctor.types'
-import type { ClinicScheduleDto } from '@/features/clinic/types/schedule.types'
+import type { ClinicScheduleDto, DoctorScheduleDto } from '@/features/clinic/types/schedule.types'
 import { AppointmentFormModal } from '../components/AppointmentFormModal/AppointmentFormModal'
 import styles from './AppointmentsSchedulerPage.module.scss'
 
@@ -159,6 +159,99 @@ const roundToNearest15 = (totalMinutes: number): number => Math.round(totalMinut
 
 const pad2 = (n: number) => String(n).padStart(2, '0')
 
+// ── Week / Month view helpers ─────────────────────────────────────────────────
+
+const DOW_SHORT = ['Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm', 'Dum']
+
+/** Prima zi (Luni) a săptămânii care conține data d */
+const getWeekStart = (d: Date): Date => {
+  const r = new Date(d)
+  const dow = r.getDay()
+  r.setDate(r.getDate() + (dow === 0 ? -6 : 1 - dow))
+  r.setHours(0, 0, 0, 0)
+  return r
+}
+
+/** Cele 7 zile (Lun–Dum) ale săptămânii care conține data d */
+const getWeekDays = (d: Date): Date[] =>
+  Array.from({ length: 7 }, (_, i) => addDays(getWeekStart(d), i))
+
+/** Toate zilele din luna datei d */
+const getMonthDays = (d: Date): Date[] => {
+  const count = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+  return Array.from({ length: count }, (_, i) => new Date(d.getFullYear(), d.getMonth(), i + 1))
+}
+
+/** Formatează intervalul săptămânii: "16 – 22 mar 2026" */
+const formatWeekRange = (d: Date): string => {
+  const days = getWeekDays(d)
+  const [first, last] = [days[0], days[6]]
+  const months = ['ian', 'feb', 'mar', 'apr', 'mai', 'iun', 'iul', 'aug', 'sep', 'oct', 'noi', 'dec']
+  if (first.getMonth() === last.getMonth())
+    return `${first.getDate()} – ${last.getDate()} ${months[first.getMonth()]} ${first.getFullYear()}`
+  return `${first.getDate()} ${months[first.getMonth()]} – ${last.getDate()} ${months[last.getMonth()]} ${last.getFullYear()}`
+}
+
+/** Formatează luna anului: "martie 2026" */
+const formatMonthYear = (d: Date): string =>
+  d.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' })
+
+/** Ziua săptămânii abreviată + numărul zilei din lună */
+const formatDayHeader = (d: Date): { dow: string; dayNum: string } => {
+  const idx = d.getDay() === 0 ? 6 : d.getDay() - 1
+  return { dow: DOW_SHORT[idx], dayNum: String(d.getDate()) }
+}
+
+/** Clasă CSS modifier pentru celula de overview în funcție de sloturi libere */
+const getSlotCellMod = (free: number): string => {
+  if (free < 0) return 'overviewCell--unavailable'
+  if (free === 0) return 'overviewCell--full'
+  if (free <= 2)  return 'overviewCell--busy'
+  if (free <= 5)  return 'overviewCell--moderate'
+  return 'overviewCell--free'
+}
+
+/**
+ * Calculează numărul de sloturi libere de slotMin minute pentru un doctor la o dată.
+ * Returnează -1 dacă clinica e închisă sau doctorul nu lucrează în acea zi.
+ */
+const computeFreeSlots = (
+  doctorId: string,
+  date: Date,
+  clinicSchedule: ClinicScheduleDto[],
+  allDoctorSchedules: DoctorScheduleDto[],
+  appointments: AppointmentSchedulerDto[],
+  slotMin = 30,
+): number => {
+  const dow = date.getDay() === 0 ? 7 : date.getDay()
+  const clinic = clinicSchedule.find(e => e.dayOfWeek === dow)
+  if (!clinic?.isOpen || !clinic.openTime || !clinic.closeTime) return -1
+
+  const clinicFrom = parseTime(clinic.openTime) ?? 0
+  const clinicTo   = parseTime(clinic.closeTime) ?? 0
+
+  const docDay = allDoctorSchedules.find(
+    e => e.doctorId === doctorId && e.dayOfWeek === dow && e.startTime && e.endTime,
+  )
+  if (!docDay) return -1
+
+  const docFrom = parseTime(docDay.startTime) ?? clinicFrom
+  const docTo   = parseTime(docDay.endTime)   ?? clinicTo
+  const effFrom = Math.max(clinicFrom, docFrom)
+  const effTo   = Math.min(clinicTo,   docTo)
+  if (effTo <= effFrom) return -1
+
+  const totalSlots = Math.floor((effTo - effFrom) / slotMin)
+  const dateStr = formatDateISO(date)
+  const dayApts = appointments.filter(a => a.doctorId === doctorId && a.startTime.startsWith(dateStr))
+  let booked = 0
+  for (const apt of dayApts) {
+    const dur = (new Date(apt.endTime).getTime() - new Date(apt.startTime).getTime()) / 60000
+    booked += Math.ceil(dur / slotMin)
+  }
+  return Math.max(0, totalSlots - booked)
+}
+
 // ── Tooltip ───────────────────────────────────────────────────────────────────
 interface TooltipState {
   x: number
@@ -171,6 +264,7 @@ export const AppointmentsSchedulerPage = () => {
   const navigate = useNavigate()
   const [currentDate, setCurrentDate] = useState(() => new Date())
   const [doctorFilter, setDoctorFilter] = useState<string | undefined>(undefined)
+  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day')
   const [tooltip, setTooltip] = useState<TooltipState | null>(null)
   const tooltipTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
@@ -184,10 +278,19 @@ export const AppointmentsSchedulerPage = () => {
   const dragInfoRef = useRef<{ apt: AppointmentSchedulerDto; offsetMinutes: number } | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
 
-  // Date din API
-  const dateFrom = formatDateISO(currentDate)
-  const dateTo = formatDateISO(currentDate)
-  const { data: schedulerResp, isLoading } = useAppointmentsForScheduler(dateFrom, dateTo, doctorFilter)
+  // Date din API — intervalul variază cu modul de vizualizare
+  const { rangeFrom, rangeTo, weekDays, monthDays } = useMemo(() => {
+    if (viewMode === 'week') {
+      const days = getWeekDays(currentDate)
+      return { rangeFrom: formatDateISO(days[0]), rangeTo: formatDateISO(days[6]), weekDays: days, monthDays: [] as Date[] }
+    }
+    if (viewMode === 'month') {
+      const days = getMonthDays(currentDate)
+      return { rangeFrom: formatDateISO(days[0]), rangeTo: formatDateISO(days[days.length - 1]), weekDays: [] as Date[], monthDays: days }
+    }
+    return { rangeFrom: formatDateISO(currentDate), rangeTo: formatDateISO(currentDate), weekDays: [] as Date[], monthDays: [] as Date[] }
+  }, [viewMode, currentDate])
+  const { data: schedulerResp, isLoading } = useAppointmentsForScheduler(rangeFrom, rangeTo, viewMode === 'day' ? doctorFilter : undefined)
   const { data: doctorLookupResp } = useDoctorLookup()
   const { data: patientLookupResp } = usePatientLookup()
   const { data: clinicScheduleResp }  = useClinicSchedule()
@@ -245,7 +348,7 @@ export const AppointmentsSchedulerPage = () => {
 
   // Lista doctorilor care au programări (sau toți dacă nu sunt programări)
   const displayDoctors = useMemo<DoctorLookupDto[]>(() => {
-    if (doctorFilter) {
+    if (viewMode === 'day' && doctorFilter) {
       return doctorLookup.filter(d => d.id === doctorFilter)
     }
     // Afișăm doctori care au programări + restul
@@ -256,12 +359,20 @@ export const AppointmentsSchedulerPage = () => {
       return aHas - bHas || a.fullName.localeCompare(b.fullName)
     })
     return sorted
-  }, [doctorLookup, groupedByDoctor, doctorFilter])
+  }, [doctorLookup, groupedByDoctor, doctorFilter, viewMode])
 
   // Navigare dată
   const goToday = useCallback(() => setCurrentDate(new Date()), [])
-  const goPrev = useCallback(() => setCurrentDate(d => addDays(d, -1)), [])
-  const goNext = useCallback(() => setCurrentDate(d => addDays(d, 1)), [])
+  const goPrev = useCallback(() => {
+    if (viewMode === 'week')  setCurrentDate(d => addDays(d, -7))
+    else if (viewMode === 'month') setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1))
+    else setCurrentDate(d => addDays(d, -1))
+  }, [viewMode])
+  const goNext = useCallback(() => {
+    if (viewMode === 'week')  setCurrentDate(d => addDays(d, 7))
+    else if (viewMode === 'month') setCurrentDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1))
+    else setCurrentDate(d => addDays(d, 1))
+  }, [viewMode])
 
   // ── Form modal handlers ──────────────────────────────────────────────────────
   const handleOpenCreate = useCallback(() => {
@@ -400,6 +511,14 @@ export const AppointmentsSchedulerPage = () => {
   const nowLeftPct = ((nowMinutes - tlStart) / (tlEnd - tlStart)) * 100
   const showNow = isToday && nowMinutes >= tlStart && nowMinutes <= tlEnd
 
+  const dateLabel = viewMode === 'week'
+    ? formatWeekRange(currentDate)
+    : viewMode === 'month'
+    ? formatMonthYear(currentDate)
+    : formatDateDisplay(currentDate)
+
+  const overviewDays = viewMode === 'week' ? weekDays : monthDays
+
   return (
     <div className={styles.page}>
 
@@ -423,27 +542,48 @@ export const AppointmentsSchedulerPage = () => {
       <div className={styles.toolbar}>
         <div className={styles.dateNav}>
           <button className={styles.navBtn} onClick={goPrev}><IconChevronLeft /></button>
-          <span className={styles.currentDate}>{formatDateDisplay(currentDate)}</span>
+          <span className={styles.currentDate}>{dateLabel}</span>
           <button className={styles.navBtn} onClick={goNext}><IconChevronRight /></button>
         </div>
 
         <button className={styles.todayBtn} onClick={goToday}>Astăzi</button>
 
+        {/* View toggle */}
+        <div className={styles.viewToggle}>
+          <button
+            className={`${styles.viewBtn}${viewMode === 'day' ? ` ${styles['viewBtn--active']}` : ''}`}
+            onClick={() => setViewMode('day')}>
+            Zi
+          </button>
+          <button
+            className={`${styles.viewBtn}${viewMode === 'week' ? ` ${styles['viewBtn--active']}` : ''}`}
+            onClick={() => setViewMode('week')}>
+            Săptămână
+          </button>
+          <button
+            className={`${styles.viewBtn}${viewMode === 'month' ? ` ${styles['viewBtn--active']}` : ''}`}
+            onClick={() => setViewMode('month')}>
+            Lună
+          </button>
+        </div>
+
         <div className={styles.toolbarDivider} />
 
-        <div className={styles.filterGroup}>
-          <span className={styles.filterLabel}>Doctor:</span>
-          <select
-            className={styles.filterSelect}
-            value={doctorFilter ?? ''}
-            onChange={e => setDoctorFilter(e.target.value || undefined)}
-          >
-            <option value="">Toți doctorii</option>
-            {doctorLookup.map(d => (
-              <option key={d.id} value={d.id}>{d.fullName}</option>
-            ))}
-          </select>
-        </div>
+        {viewMode === 'day' && (
+          <div className={styles.filterGroup}>
+            <span className={styles.filterLabel}>Doctor:</span>
+            <select
+              className={styles.filterSelect}
+              value={doctorFilter ?? ''}
+              onChange={e => setDoctorFilter(e.target.value || undefined)}
+            >
+              <option value="">Toți doctorii</option>
+              {doctorLookup.map(d => (
+                <option key={d.id} value={d.id}>{d.fullName}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Scheduler Grid */}
@@ -459,7 +599,7 @@ export const AppointmentsSchedulerPage = () => {
             <IconCalendar />
             <span className={styles.emptyText}>Nu există doctori disponibili</span>
           </div>
-        ) : (
+        ) : viewMode === 'day' ? (
           <div className={styles.schedulerGrid}>
             {/* Time header */}
             <div className={styles.timeHeader}>
@@ -565,6 +705,69 @@ export const AppointmentsSchedulerPage = () => {
                 </div>
               )
             })}
+          </div>
+        ) : (
+          /* ── Week / Month overview ──────────────────────────────────────────── */
+          <div className={styles.overviewGrid}>
+            {/* Header row */}
+            <div className={styles.overviewHeaderRow}>
+              <div className={styles.overviewDoctorCol}>Doctor</div>
+              {overviewDays.map(d => {
+                const { dow, dayNum } = formatDayHeader(d)
+                const isTodayDate = d.toDateString() === now.toDateString()
+                return (
+                  <div
+                    key={formatDateISO(d)}
+                    className={`${styles.overviewDayHeader}${isTodayDate ? ` ${styles['overviewDayHeader--today']}` : ''}`}
+                  >
+                    <span className={styles.overviewDow}>{dow}</span>
+                    <span className={styles.overviewDayNum}>{dayNum}</span>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Doctor rows */}
+            {displayDoctors.map(doctor => (
+              <div key={doctor.id} className={styles.overviewRow}>
+                <div className={styles.overviewRowDoctorCell}>
+                  <div className={styles.resourceAvatar}>{getInitials(doctor.fullName)}</div>
+                  <div className={styles.resourceInfo}>
+                    <span className={styles.resourceName}>{doctor.fullName}</span>
+                    {doctor.specialtyName && (
+                      <span className={styles.resourceSpecialty}>{doctor.specialtyName}</span>
+                    )}
+                  </div>
+                </div>
+                {overviewDays.map(d => {
+                  const free = computeFreeSlots(doctor.id, d, clinicSchedule, allDoctorSchedules, appointments)
+                  const isTodayDate = d.toDateString() === now.toDateString()
+                  const cellMod = styles[getSlotCellMod(free)] ?? ''
+                  const todayMod = isTodayDate ? ` ${styles['overviewCell--today']}` : ''
+                  return (
+                    <div
+                      key={formatDateISO(d)}
+                      className={`${styles.overviewCell} ${cellMod}${todayMod}`}
+                      title={free < 0 ? 'Indisponibil' : `${free} sloturi libere de 30 min`}
+                      onClick={() => {
+                        setCurrentDate(new Date(d))
+                        setDoctorFilter(doctor.id)
+                        setViewMode('day')
+                      }}
+                    >
+                      {free < 0 ? (
+                        <span className={styles.overviewUnavailable}>—</span>
+                      ) : (
+                        <>
+                          <span className={styles.overviewSlotCount}>{free}</span>
+                          <span className={styles.overviewSlotLabel}>libere</span>
+                        </>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ))}
           </div>
         )}
       </div>
