@@ -70,10 +70,20 @@ const defaultDoctorLookupReturn = {
 
 vi.mock('@/features/appointments/hooks/useAppointments', () => ({
   useAppointmentsForScheduler: vi.fn(() => defaultSchedulerReturn),
+  useCreateAppointment: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+  useUpdateAppointment: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
 }))
 
 vi.mock('@/features/doctors/hooks/useDoctors', () => ({
   useDoctorLookup: vi.fn(() => defaultDoctorLookupReturn),
+}))
+
+vi.mock('@/features/patients/hooks/usePatients', () => ({
+  usePatientLookup: vi.fn(() => ({ data: { data: [] } })),
+}))
+
+vi.mock('@/features/appointments/components/AppointmentFormModal/AppointmentFormModal', () => ({
+  AppointmentFormModal: () => null,
 }))
 
 import { useAppointmentsForScheduler } from '@/features/appointments/hooks/useAppointments'
