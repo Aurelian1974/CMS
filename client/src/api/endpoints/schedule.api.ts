@@ -6,7 +6,7 @@ import type {
   DoctorDayDto,
   UpsertClinicDayPayload,
   UpsertDoctorDayPayload,
-} from '../types/schedule.types'
+} from '@/features/clinic/types/schedule.types'
 
 export const scheduleApi = {
   getClinicSchedule: (): Promise<ApiResponse<ClinicScheduleDto[]>> =>
