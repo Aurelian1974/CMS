@@ -84,8 +84,8 @@ import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
 describe('AppointmentsSchedulerPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(useAppointmentsForScheduler).mockReturnValue(defaultSchedulerReturn as ReturnType<typeof useAppointmentsForScheduler>)
-    vi.mocked(useDoctorLookup).mockReturnValue(defaultDoctorLookupReturn as ReturnType<typeof useDoctorLookup>)
+    vi.mocked(useAppointmentsForScheduler).mockReturnValue(defaultSchedulerReturn as unknown as ReturnType<typeof useAppointmentsForScheduler>)
+    vi.mocked(useDoctorLookup).mockReturnValue(defaultDoctorLookupReturn as unknown as ReturnType<typeof useDoctorLookup>)
   })
 
   // ── Header ────────────────────────────────────────────────────────────────
@@ -178,7 +178,7 @@ describe('AppointmentsSchedulerPage', () => {
       vi.mocked(useAppointmentsForScheduler).mockReturnValue({
         ...defaultSchedulerReturn,
         isLoading: true,
-      } as ReturnType<typeof useAppointmentsForScheduler>)
+      } as unknown as ReturnType<typeof useAppointmentsForScheduler>)
 
       render(<AppointmentsSchedulerPage />)
       expect(screen.getByText('Se încarcă...')).toBeInTheDocument()
@@ -191,12 +191,12 @@ describe('AppointmentsSchedulerPage', () => {
     it('afișează mesaj gol când nu sunt doctori', () => {
       vi.mocked(useDoctorLookup).mockReturnValue({
         data: { data: [] },
-      } as ReturnType<typeof useDoctorLookup>)
+      } as unknown as ReturnType<typeof useDoctorLookup>)
 
       vi.mocked(useAppointmentsForScheduler).mockReturnValue({
         data: { data: [] },
         isLoading: false,
-      } as ReturnType<typeof useAppointmentsForScheduler>)
+      } as unknown as ReturnType<typeof useAppointmentsForScheduler>)
 
       render(<AppointmentsSchedulerPage />)
       expect(screen.getByText('Nu există doctori disponibili')).toBeInTheDocument()

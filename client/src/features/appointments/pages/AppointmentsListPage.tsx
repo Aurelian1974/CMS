@@ -510,7 +510,7 @@ export const AppointmentsListPage = () => {
               <AppButton
                 variant="danger"
                 size="sm"
-                loading={deleteAppointment.isPending}
+                isLoading={deleteAppointment.isPending}
                 onClick={handleConfirmDelete}
               >
                 Anulează programarea

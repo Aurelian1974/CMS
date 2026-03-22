@@ -154,7 +154,7 @@ describe('AppointmentsListPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(useAppointments).mockReturnValue(defaultAppointmentsReturn as ReturnType<typeof useAppointments>)
-    vi.mocked(useDeleteAppointment).mockReturnValue(defaultDeleteReturn as ReturnType<typeof useDeleteAppointment>)
+    vi.mocked(useDeleteAppointment).mockReturnValue(defaultDeleteReturn as unknown as ReturnType<typeof useDeleteAppointment>)
     vi.mocked(useDoctorLookup).mockReturnValue(defaultDoctorLookupReturn as ReturnType<typeof useDoctorLookup>)
   })
 
