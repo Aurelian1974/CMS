@@ -10,14 +10,14 @@ public sealed record ClinicScheduleDto(
 );
 
 public sealed record DoctorScheduleDto(
-    Guid Id,
+    Guid? Id,
     Guid ClinicId,
     Guid DoctorId,
     string DoctorName,
     string? SpecialtyName,
-    byte DayOfWeek,
-    string StartTime,
-    string EndTime
+    byte? DayOfWeek,
+    string? StartTime,
+    string? EndTime
 );
 
 /// <summary>Program medic simplificat (fără info doctor — pentru GetByDoctor).</summary>

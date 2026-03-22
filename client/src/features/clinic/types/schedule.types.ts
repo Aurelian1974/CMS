@@ -12,14 +12,14 @@ export interface ClinicScheduleDto {
 // ── Doctor schedule ──────────────────────────────────────────────────────────
 
 export interface DoctorScheduleDto {
-  id: string
+  id: string | null
   clinicId: string
   doctorId: string
   doctorName: string
   specialtyName: string | null
-  dayOfWeek: number
-  startTime: string
-  endTime: string
+  dayOfWeek: number | null
+  startTime: string | null
+  endTime: string | null
 }
 
 export interface DoctorDayDto {

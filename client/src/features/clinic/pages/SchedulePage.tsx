@@ -145,7 +145,7 @@ interface DoctorCardProps {
 const DoctorCard = ({
   doctorId, doctorName, specialtyName, days, onAddDay, onEditDay, onDeleteDay
 }: DoctorCardProps) => {
-  const sortedDays = [...days].sort((a, b) => a.dayOfWeek - b.dayOfWeek)
+  const sortedDays = [...days].sort((a, b) => (a.dayOfWeek ?? 0) - (b.dayOfWeek ?? 0))
 
   return (
     <div className={styles.doctorCard}>
@@ -172,7 +172,7 @@ const DoctorCard = ({
         <div className={styles.doctorDays}>
           {sortedDays.map(d => (
             <div key={d.dayOfWeek} className={styles.doctorDayRow}>
-              <span className={styles.doctorDayName}>{DAYS[d.dayOfWeek]}</span>
+              <span className={styles.doctorDayName}>{DAYS[d.dayOfWeek!]}</span>
               <span className={styles.doctorDayTime}>{d.startTime} – {d.endTime}</span>
               <div className={styles.doctorDayActions}>
                 <button
@@ -184,7 +184,7 @@ const DoctorCard = ({
                 </button>
                 <button
                   className={styles.deleteBtn}
-                  onClick={() => onDeleteDay(doctorId, d.dayOfWeek)}
+                  onClick={() => onDeleteDay(doctorId, d.dayOfWeek!)}
                   title="Șterge"
                 >
                   <TrashIcon />
@@ -305,7 +305,10 @@ const SchedulePage = () => {
       if (!map.has(e.doctorId)) {
         map.set(e.doctorId, { name: e.doctorName, specialty: e.specialtyName, days: [] })
       }
-      map.get(e.doctorId)!.days.push(e)
+      // Skip rows where dayOfWeek is null (doctor without schedule entries)
+      if (e.dayOfWeek != null) {
+        map.get(e.doctorId)!.days.push(e)
+      }
     }
     return map
   }, [doctorsResp])
@@ -385,6 +388,7 @@ const SchedulePage = () => {
             (doctorMap.get(doctorModal.doctorId)?.days ?? [])
               .filter(d => doctorModal.entry == null || d.dayOfWeek !== doctorModal.entry.dayOfWeek)
               .map(d => d.dayOfWeek)
+              .filter((d): d is number => d != null)
           }
           entry={doctorModal.entry}
           onClose={() => setDoctorModal(null)}
