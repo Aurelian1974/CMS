@@ -1,0 +1,1 @@
+export { CnasSyncCard } from './CnasSyncCard'

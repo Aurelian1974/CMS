@@ -22,7 +22,12 @@ const DepartmentsPage    = lazy(() => import('../features/departments/pages/Depa
 const MedicalStaffPage   = lazy(() => import('../features/medicalStaff/pages/MedicalStaffListPage'))
 const RolePermissionsPage = lazy(() => import('../features/permissions/pages/RolePermissionsPage'))
 const UserOverridesPage   = lazy(() => import('../features/permissions/pages/UserOverridesPage'))
-const SchedulePage        = lazy(() => import('../features/clinic/pages/SchedulePage'))
+const SchedulePage              = lazy(() => import('../features/clinic/pages/SchedulePage'))
+const CnasDrugsPage             = lazy(() => import('../features/cnas/pages/CnasDrugsPage'))
+const CnasCompensatedPage       = lazy(() => import('../features/cnas/pages/CnasCompensatedPage'))
+const CnasActiveSubstancesPage  = lazy(() => import('../features/cnas/pages/CnasActiveSubstancesPage'))
+const CnasAtcPage               = lazy(() => import('../features/cnas/pages/CnasAtcPage'))
+const CnasIcd10Page             = lazy(() => import('../features/cnas/pages/CnasIcd10Page'))
 
 const LoadingFallback = () => (
   <div className="d-flex justify-content-center align-items-center vh-100">
@@ -61,6 +66,11 @@ export const AppRoutes = () => (
           <Route path="/permissions/roles" element={<RolePermissionsPage />} />
           <Route path="/permissions/users" element={<UserOverridesPage />} />
           <Route path="/schedule"          element={<SchedulePage />} />
+          <Route path="/cnas/drugs"              element={<CnasDrugsPage />} />
+          <Route path="/cnas/compensated"        element={<CnasCompensatedPage />} />
+          <Route path="/cnas/active-substances"  element={<CnasActiveSubstancesPage />} />
+          <Route path="/cnas/atc"                element={<CnasAtcPage />} />
+          <Route path="/cnas/icd10"              element={<CnasIcd10Page />} />
         </Route>
       </Route>
 

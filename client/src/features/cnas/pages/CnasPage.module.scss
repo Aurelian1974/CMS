@@ -1,0 +1,127 @@
+.pageWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  height: 100%;
+}
+
+.pageHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--color-text-primary, #1a1a2e);
+  }
+
+  .badge {
+    font-size: 0.75rem;
+  }
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.tableWrapper {
+  flex: 1;
+  overflow-x: auto;
+  background: #fff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+}
+
+table.cnasTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  thead th {
+    padding: 0.6rem 0.75rem;
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    font-weight: 600;
+    white-space: nowrap;
+    color: #495057;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #f1f3f5;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover {
+      background: #f8f9fa;
+    }
+  }
+
+  td {
+    padding: 0.55rem 0.75rem;
+    vertical-align: middle;
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  font-size: 0.85rem;
+
+  .pageInfo {
+    color: #6c757d;
+  }
+}
+
+.emptyState {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #6c757d;
+}
+
+.tagActive {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.tagInactive {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.tagCompensated {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.noData {
+  color: #adb5bd;
+}

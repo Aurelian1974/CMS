@@ -10,6 +10,7 @@ using ValyanClinic.Application.Common.Configuration;
 using ValyanClinic.Infrastructure.Configuration;
 using ValyanClinic.Infrastructure.Data;
 using ValyanClinic.Infrastructure.Data.Repositories;
+using ValyanClinic.Infrastructure.Services;
 
 namespace ValyanClinic.Infrastructure;
 
@@ -29,6 +30,7 @@ public static class DependencyInjection
         services.Configure<CorsOptions>(configuration.GetSection(CorsOptions.SectionName));
         services.Configure<SecurityOptions>(configuration.GetSection(SecurityOptions.SectionName));
         services.Configure<RateLimitingOptions>(configuration.GetSection(RateLimitingOptions.SectionName));
+        services.Configure<CnasOptions>(configuration.GetSection(CnasOptions.SectionName));
 
         // ===== Baza de date =====
         services.AddSingleton<DapperContext>();
@@ -51,10 +53,20 @@ public static class DependencyInjection
         services.AddScoped<IAuthRepository, AuthRepository>();
         services.AddScoped<IPermissionRepository, PermissionRepository>();
         services.AddScoped<IScheduleRepository, ScheduleRepository>();
+        services.AddScoped<ICnasSyncRepository, CnasSyncRepository>();
 
         // ===== Servicii =====
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
         services.AddScoped<ITokenService, JwtTokenService>();
+        services.AddScoped<ICnasNomenclatorService, CnasNomenclatorService>();
+        services.AddHostedService<CnasSyncHostedService>();
+
+        // ===== HttpClient CNAS (URL-uri permise doar pe cnas.ro) =====
+        services.AddHttpClient("CnasClient", client =>
+        {
+            client.DefaultRequestHeaders.Add("User-Agent", "ValyanClinic/1.0");
+            client.Timeout = TimeSpan.FromMinutes(10);
+        });
 
         // ===== Autentificare =====
         services.AddHttpContextAccessor();

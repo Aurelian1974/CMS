@@ -24,6 +24,10 @@ const PAGES = [
   { path: '/prescriptions',      heading: /Prescripț/i,           label: 'Prescripții' },
   { path: '/permissions/roles',  heading: /Permisiuni|Roluri/i,   label: 'Permisiuni Roluri' },
   { path: '/permissions/users',  heading: /Permisiuni|Override/i, label: 'Override Utilizatori' },
+  { path: '/cnas/drugs',         heading: /Medicamente CNAS/i,    label: 'CNAS Medicamente' },
+  { path: '/cnas/compensated',   heading: /compensa/i,            label: 'CNAS Lista Compensate' },
+  { path: '/cnas/active-substances', heading: /Substan/i,         label: 'CNAS Substanțe Active' },
+  { path: '/cnas/icd10',         heading: /ICD/i,                 label: 'CNAS ICD-10' },
 ] as const;
 
 // ── Helper: aşteaptă să nu mai fie request-uri în zbor ────────────────────────

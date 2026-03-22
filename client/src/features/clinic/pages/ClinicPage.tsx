@@ -52,6 +52,7 @@ import {
 } from '../hooks/useClinic'
 import { useDepartments } from '@/features/departments/hooks/useDepartments'
 import styles from './ClinicPage.module.scss'
+import { CnasSyncCard } from '../components/CnasSyncCard'
 
 // ===== Icoane SVG inline =====
 const IconCompany = () => (
@@ -815,6 +816,9 @@ const ClinicPage = () => {
                 </div>
               )}
       </div>
+
+      {/* ===== Secțiunea CNAS — Nomenclator farmacii ===== */}
+      <CnasSyncCard />
 
       {/* ===== Modals ===== */}
       <BankAccountFormModal

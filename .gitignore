@@ -122,3 +122,9 @@ lcov.info
 *~
 
 login_test.json
+
+# ==================== CNAS TEMP FILES ====================
+src/ValyanClinic.API/cnas_*.xml
+src/ValyanClinic.API/cnas_*.zip
+src/ValyanClinic.Shared/InspirationModel/
+import-medicamente.ps1

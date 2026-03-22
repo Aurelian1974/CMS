@@ -18,6 +18,10 @@ import {
   ChevronLeft,
   LogOut,
   Clock,
+  Pill,
+  ListFilter,
+  FlaskConical,
+  GitBranch,
 } from 'lucide-react';
 import { useUiStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
@@ -79,6 +83,16 @@ const NAV_SECTIONS: NavSection[] = [
       { to: '/schedule',            label: 'Program',              icon: <Clock         size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'clinic' },
       { to: '/permissions/roles',   label: 'Permisiuni Roluri',    icon: <ShieldCheck   size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'users' },
       { to: '/permissions/users',   label: 'Override Utilizatori', icon: <ShieldAlert   size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'users' },
+    ],
+  },
+  {
+    section: 'Nomenclatoare CNAS',
+    items: [
+      { to: '/cnas/drugs',             label: 'Medicamente',         icon: <Pill         size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'cnas' },
+      { to: '/cnas/compensated',       label: 'Liste Compensate',    icon: <ListFilter   size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'cnas' },
+      { to: '/cnas/active-substances', label: 'Substanțe Active',   icon: <FlaskConical size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'cnas' },
+      { to: '/cnas/atc',              label: 'Clasificare ATC',     icon: <GitBranch    size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'cnas' },
+      { to: '/cnas/icd10',            label: 'Diagnostice ICD-10',  icon: <Stethoscope  size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'cnas' },
     ],
   },
 ];
