@@ -13,6 +13,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/invoices':      'Facturi',
   '/doctors':       'Doctori',
   '/medical-staff': 'Personal Medical',
+  '/schedule':      'Program',
   '/users':         'Utilizatori',
 };
 

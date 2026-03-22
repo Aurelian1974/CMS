@@ -11,6 +11,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   'invoices':      'Facturi',
   'doctors':       'Doctori',
   'medical-staff': 'Personal Medical',
+  'schedule':      'Program',
   'users':         'Utilizatori',
   'new':           'Nou',
   'edit':          'Editare',

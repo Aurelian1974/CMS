@@ -50,6 +50,7 @@ public static class DependencyInjection
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IAuthRepository, AuthRepository>();
         services.AddScoped<IPermissionRepository, PermissionRepository>();
+        services.AddScoped<IScheduleRepository, ScheduleRepository>();
 
         // ===== Servicii =====
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();

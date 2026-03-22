@@ -17,6 +17,7 @@ import {
   ShieldAlert,
   ChevronLeft,
   LogOut,
+  Clock,
 } from 'lucide-react';
 import { useUiStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
@@ -75,6 +76,7 @@ const NAV_SECTIONS: NavSection[] = [
       { to: '/specialties',         label: 'Specializări',         icon: <BookOpen      size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'nomenclature' },
       { to: '/medical-titles',      label: 'Titulaturi',           icon: <GraduationCap size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'nomenclature' },
       { to: '/clinic',              label: 'Clinica',              icon: <Hospital      size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'clinic' },
+      { to: '/schedule',            label: 'Program',              icon: <Clock         size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'clinic' },
       { to: '/permissions/roles',   label: 'Permisiuni Roluri',    icon: <ShieldCheck   size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'users' },
       { to: '/permissions/users',   label: 'Override Utilizatori', icon: <ShieldAlert   size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'users' },
     ],
