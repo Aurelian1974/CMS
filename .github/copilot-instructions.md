@@ -2436,10 +2436,12 @@ cd "d:\Lucru\CMS\CMS\client"
 npm run build 2>&1 | Select-Object -Last 20
 ```
 
-**Pasul 4 — Rulare teste unitare**
+**Pasul 4 — Rulare teste (unit + integration)**
 ```powershell
 cd "d:\Lucru\CMS\CMS"
-dotnet test tests/ValyanClinic.Tests/ValyanClinic.Tests.csproj --no-build -q 2>&1 | Select-Object -Last 10
+dotnet test tests/ValyanClinic.Tests/ValyanClinic.Tests.csproj -q 2>&1 | Select-Object -Last 3
+dotnet test tests/ValyanClinic.IntegrationTests/ValyanClinic.IntegrationTests.csproj -q 2>&1 | Select-Object -Last 3
+# Total așteptat: 145 unit + 62 integration = 207 teste
 ```
 
 **Pasul 5 — Commit și push pe GitHub**
