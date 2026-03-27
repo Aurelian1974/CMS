@@ -10,6 +10,7 @@ import { FormSelect } from '@/components/forms/FormSelect'
 import { FormDatePicker } from '@/components/forms/FormDatePicker'
 import { AppButton } from '@/components/ui/AppButton'
 import { toLocalDateISO } from '@/utils/format'
+import styles from './AppointmentFormModal.module.scss'
 // ── Time picker inline ────────────────────────────────────────────────────────
 const TIME_HOURS    = Array.from({ length: 14 }, (_, i) => i + 7)   // 07–20
 const TIME_MINUTES  = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]
