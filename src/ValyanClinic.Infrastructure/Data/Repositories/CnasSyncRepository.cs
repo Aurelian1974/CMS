@@ -16,7 +16,7 @@ public sealed class CnasSyncRepository(DapperContext context) : ICnasSyncReposit
         const string sql = """
             INSERT INTO dbo.NomenclatorSyncLog (TriggeredBy, Status, StartedAt)
             OUTPUT INSERTED.Id
-            VALUES (@TriggeredBy, 'Running', GETUTCDATE());
+            VALUES (@TriggeredBy, 'Running', GETDATE());
             """;
 
         using var conn = context.CreateConnection();
@@ -29,7 +29,7 @@ public sealed class CnasSyncRepository(DapperContext context) : ICnasSyncReposit
         const string sql = """
             UPDATE dbo.NomenclatorSyncLog
             SET Status              = @Status,
-                FinishedAt          = GETUTCDATE(),
+                FinishedAt          = GETDATE(),
                 ErrorMessage        = @ErrorMessage,
                 NomenclatorVersion  = @NomenclatorVersion,
                 UrlNomenclator      = @UrlNomenclator,

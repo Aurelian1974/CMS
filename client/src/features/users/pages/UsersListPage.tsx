@@ -13,7 +13,7 @@ import { ChangePasswordModal } from '../components/ChangePasswordModal/ChangePas
 import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { AppBadge, type BadgeVariant } from '@/components/ui/AppBadge'
 import { AppButton } from '@/components/ui/AppButton'
-import { formatDate } from '@/utils/format'
+import { formatDate, toLocalDateISO } from '@/utils/format'
 import styles from './UsersListPage.module.scss'
 
 // ── Icoane SVG inline ─────────────────────────────────────────────────────────
@@ -124,7 +124,7 @@ export const UsersListPage = () => {
   // ── Export handler ─────────────────────────────────────────────────────────
   const handleExcelExport = useCallback(() => {
     gridRef.current?.exportExcel({
-      fileName: `utilizatori_${new Date().toISOString().slice(0, 10)}`,
+      fileName: `utilizatori_${toLocalDateISO(new Date())}`,
       customData: buildExportData(),
     })
   }, [buildExportData])

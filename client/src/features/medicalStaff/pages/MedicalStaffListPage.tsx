@@ -11,7 +11,7 @@ import { MedicalStaffFormModal } from '../components/MedicalStaffFormModal/Medic
 import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { AppBadge } from '@/components/ui/AppBadge'
 import { AppButton } from '@/components/ui/AppButton'
-import { formatDate } from '@/utils/format'
+import { formatDate, toLocalDateISO } from '@/utils/format'
 import { phoneCellTemplate } from '@/components/data-display/PhoneCell'
 import styles from './MedicalStaffListPage.module.scss'
 
@@ -184,7 +184,7 @@ export const MedicalStaffListPage = () => {
   // ── Export handler ─────────────────────────────────────────────────────────
   const handleExcelExport = useCallback(() => {
     gridRef.current?.exportExcel({
-      fileName: `personal_medical_${new Date().toISOString().slice(0, 10)}`,
+      fileName: `personal_medical_${toLocalDateISO(new Date())}`,
       customData: buildExportData(),
     })
   }, [buildExportData])

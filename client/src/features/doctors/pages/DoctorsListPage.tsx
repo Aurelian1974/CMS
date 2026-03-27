@@ -11,7 +11,7 @@ import { DoctorFormModal } from '../components/DoctorFormModal/DoctorFormModal'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { AppBadge } from '@/components/ui/AppBadge'
 import { AppButton } from '@/components/ui/AppButton'
-import { formatDate } from '@/utils/format'
+import { formatDate, toLocalDateISO } from '@/utils/format'
 import { phoneCellTemplate } from '@/components/data-display/PhoneCell'
 import styles from './DoctorsListPage.module.scss'
 
@@ -205,7 +205,7 @@ export const DoctorsListPage = () => {
   // ── Export handler ─────────────────────────────────────────────────────────
   const handleExcelExport = useCallback(() => {
     gridRef.current?.exportExcel({
-      fileName: `doctori_${new Date().toISOString().slice(0, 10)}`,
+      fileName: `doctori_${toLocalDateISO(new Date())}`,
       customData: buildExportData(),
     })
   }, [buildExportData])

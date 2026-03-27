@@ -7,6 +7,7 @@ import { exportToExcel, exportToPdf, generateCsv, downloadCsv, printGrid } from 
 import { copyToClipboard, rowsToTsv } from '../utils/clipboardUtils'
 import { getColField } from '../AppDataGrid.types'
 import { flattenColumns } from '../utils/aggregateUtils'
+import { toLocalDateISO } from '@/utils/format'
 
 export interface UseGridExportOptions<T extends object> {
   columnDefs: ColDef<T>[]
@@ -56,7 +57,7 @@ export function useGridExport<T extends object>(options: UseGridExportOptions<T>
     const merged = { ...defaultCsvExportParams, ...params }
     const rows = getExportRows(merged)
     const csv = generateCsv(rows, columnDefs, merged)
-    const dateStr = new Date().toISOString().slice(0, 10)
+    const dateStr = toLocalDateISO(new Date())
     downloadCsv(csv, `${merged.fileName ?? 'export'}_${dateStr}`)
   }, [columnDefs, defaultCsvExportParams, getExportRows])
 

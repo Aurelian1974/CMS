@@ -2412,6 +2412,72 @@ export const useApiError = () => {
 
 ## 17. INSTRUCȚIUNI SPECIFICE PENTRU CLAUDE
 
+### Rutina Post-Modificare — OBLIGATORIE (execută automat după ORICE schimbare de cod)
+
+După orice modificare de cod (backend C# sau frontend TypeScript/React), execuți **automat și în ordine** pașii următori, fără a aștepta instrucțiuni suplimentare de la utilizator:
+
+**Pasul 1 — Oprire procese (ÎNTOTDEAUNA primul pas)**
+```powershell
+# Oprire API
+Get-Process -Name "ValyanClinic.API" -ErrorAction SilentlyContinue | Stop-Process -Force
+# Oprire dev server Vite (dacă rulează)
+Get-Process -Name "node" -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -match "vite" -or $_.CommandLine -match "vite" } | Stop-Process -Force -ErrorAction SilentlyContinue
+```
+
+**Pasul 2 — Verificare build .NET (dacă s-au modificat fișiere backend)**
+```powershell
+cd "d:\Lucru\CMS\CMS"
+dotnet build --no-restore -q 2>&1 | Select-Object -Last 20
+```
+
+**Pasul 3 — Verificare erori TypeScript (dacă s-au modificat fișiere frontend)**
+```powershell
+cd "d:\Lucru\CMS\CMS\client"
+npm run build 2>&1 | Select-Object -Last 20
+```
+
+**Pasul 4 — Rulare teste unitare**
+```powershell
+cd "d:\Lucru\CMS\CMS"
+dotnet test tests/ValyanClinic.Tests/ValyanClinic.Tests.csproj --no-build -q 2>&1 | Select-Object -Last 10
+```
+
+**Pasul 5 — Commit și push pe GitHub**
+```powershell
+cd "d:\Lucru\CMS\CMS"
+git add -A
+git commit -m "<tip>: <descriere concisă în engleză>"
+git push origin main
+```
+
+**Pasul 6 — Repornire aplicație (când modificările o necesită)**
+
+> **Când repornești BE (API)?** — la orice modificare C# (repository, handler, controller, DI, configurare, migrare SQL)
+> **Când repornești FE (dev server)?** — când rulează în mod dev (`vite`); dacă utilizatorul testează în browser cu `npm run dev`
+> **Când NU repornești?** — modificări doar de CSS/SCSS/fișiere statice cu HMR activ (Vite le aplică live fără restart)
+
+```powershell
+# Repornire API (backend) — rulează în background
+cd "d:\Lucru\CMS\CMS\src\ValyanClinic.API"
+Start-Process -FilePath "dotnet" -ArgumentList "run --no-build --urls http://localhost:5008" -WindowStyle Minimized
+
+# Repornire FE dev server (doar dacă utilizatorul lucrează în modul dev)
+cd "d:\Lucru\CMS\CMS\client"
+Start-Process -FilePath "cmd" -ArgumentList "/c npm run dev" -WindowStyle Minimized
+```
+
+**Reguli pentru mesajul de commit:**
+- Tip: `fix` (bugfix), `feat` (funcționalitate nouă), `refactor`, `style`, `chore`, `docs`
+- Descriere: **engleză**, concisă, imperativ (ex: `fix: correct UTC datetime display for CNAS sync`)
+- Dacă se modifică și DB (SQL/SP): include `(db)` în mesaj (ex: `fix(db): use GETDATE instead of GETUTCDATE`)
+
+**Excepții (NU rulezi automat pașii de mai sus):**
+- Utilizatorul cere explicit să NU commiteze (`nu pusha`, `fără push`, etc.)
+- Există fișiere intermediare / lucru incomplet și utilizatorul indică explicit
+- Schimbare SQL migrare care necesită verificare manuală în DB înainte de push
+
+---
+
 ### Plan înainte de implementare — OBLIGATORIU
 **Înainte de a crea tabele, stored procedures, migrări SQL sau alte obiecte de bază de date:**
 1. **Prezintă planul** — listează toate obiectele care urmează a fi create (tabele, SP-uri, indecși, seed data, constante C#, DTOs etc.)

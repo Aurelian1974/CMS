@@ -1,5 +1,14 @@
 /// Utilitare globale de formatare — locale ro-RO
 
+/// Formatare dată locală ca YYYY-MM-DD (fără conversie UTC)
+/// Folosiți în loc de new Date().toISOString().slice(0, 10) care poate schimba ziua
+export const toLocalDateISO = (date: Date): string => {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
 /// Formatare dată: dd.MM.yyyy
 export const formatDate = (date: string | Date): string =>
   new Intl.DateTimeFormat('ro-RO', {

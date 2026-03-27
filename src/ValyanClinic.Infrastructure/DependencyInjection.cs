@@ -1,3 +1,4 @@
+using Dapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
@@ -23,6 +24,9 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        // ===== Dapper — DateTime marcat ca UTC =====
+        SqlMapper.AddTypeHandler(new UtcDateTimeTypeHandler());
+
         // ===== Opțiuni strongly-typed =====
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.Configure<StorageOptions>(configuration.GetSection(StorageOptions.SectionName));

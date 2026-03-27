@@ -46,7 +46,7 @@ BEGIN
         StatusId    UNIQUEIDENTIFIER NOT NULL,
         Notes       NVARCHAR(2000)   NULL,
         IsDeleted   BIT              NOT NULL DEFAULT 0,
-        CreatedAt   DATETIME2(0)     NOT NULL DEFAULT SYSUTCDATETIME(),
+        CreatedAt   DATETIME2(0)     NOT NULL DEFAULT SYSDATETIME(),
         CreatedBy   UNIQUEIDENTIFIER NOT NULL,
         UpdatedAt   DATETIME2(0)     NULL,
         UpdatedBy   UNIQUEIDENTIFIER NULL,
@@ -329,7 +329,7 @@ BEGIN
         EndTime   = @EndTime,
         StatusId  = ISNULL(@StatusId, StatusId),
         Notes     = @Notes,
-        UpdatedAt = SYSUTCDATETIME(),
+        UpdatedAt = SYSDATETIME(),
         UpdatedBy = @UpdatedBy
     WHERE Id = @Id AND ClinicId = @ClinicId;
 END;
@@ -353,7 +353,7 @@ BEGIN
 
     UPDATE dbo.Appointments SET
         StatusId  = @StatusId,
-        UpdatedAt = SYSUTCDATETIME(),
+        UpdatedAt = SYSDATETIME(),
         UpdatedBy = @UpdatedBy
     WHERE Id = @Id AND ClinicId = @ClinicId;
 END;
@@ -376,7 +376,7 @@ BEGIN
 
     UPDATE dbo.Appointments SET
         IsDeleted = 1,
-        UpdatedAt = SYSUTCDATETIME(),
+        UpdatedAt = SYSDATETIME(),
         UpdatedBy = @DeletedBy
     WHERE Id = @Id AND ClinicId = @ClinicId;
 END;

@@ -11,7 +11,7 @@ import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { AppBadge, type BadgeVariant } from '@/components/ui/AppBadge'
 import { AppButton } from '@/components/ui/AppButton'
 import { FormDatePicker } from '@/components/forms/FormDatePicker'
-import { formatDate } from '@/utils/format'
+import { formatDate, toLocalDateISO } from '@/utils/format'
 import { phoneCellTemplate } from '@/components/data-display/PhoneCell'
 import { AppointmentFormModal } from '../components/AppointmentFormModal/AppointmentFormModal'
 import { AppointmentDetailModal } from '../components/AppointmentDetailModal/AppointmentDetailModal'
@@ -384,7 +384,7 @@ export const AppointmentsListPage = () => {
           showClearButton
           showTodayButton={false}
           onValueChange={(date) => {
-            setDateFrom(date ? date.toISOString().slice(0, 10) : undefined)
+            setDateFrom(date ? toLocalDateISO(date) : undefined)
             setPage(1)
           }}
         />
@@ -397,7 +397,7 @@ export const AppointmentsListPage = () => {
           showClearButton
           showTodayButton={false}
           onValueChange={(date) => {
-            setDateTo(date ? date.toISOString().slice(0, 10) : undefined)
+            setDateTo(date ? toLocalDateISO(date) : undefined)
             setPage(1)
           }}
         />

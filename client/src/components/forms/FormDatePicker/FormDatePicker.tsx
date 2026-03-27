@@ -1,6 +1,7 @@
 import { DatePickerComponent } from '@syncfusion/ej2-react-calendars'
 import { useController, type FieldValues } from 'react-hook-form'
 import type { FormDatePickerProps } from './FormDatePicker.types'
+import { toLocalDateISO } from '@/utils/format'
 import styles from './FormDatePicker.module.scss'
 
 /**
@@ -32,8 +33,8 @@ export const FormDatePicker = <T extends FieldValues>({
 
   const handleChange = (args: { value?: Date | null }) => {
     const newValue = args.value ?? null
-    // Convertim Date → string YYYY-MM-DD pentru a respecta schema Zod (z.string())
-    const stringValue = newValue ? newValue.toISOString().slice(0, 10) : ''
+    // Convertim Date → string YYYY-MM-DD folosind ora locală (nu UTC)
+    const stringValue = newValue ? toLocalDateISO(newValue) : ''
     onChange(stringValue)
     onValueChange?.(newValue)
   }

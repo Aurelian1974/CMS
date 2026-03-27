@@ -1,6 +1,7 @@
 import type { ColDef, ExcelExportParams, PdfExportParams, ExportParams, GroupRow } from '../AppDataGrid.types'
 import { getColField, getNestedValue, isGroupRow } from '../AppDataGrid.types'
 import { flattenColumns } from './aggregateUtils'
+import { toLocalDateISO } from '@/utils/format'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CSV EXPORT (zero dependințe)
@@ -145,7 +146,7 @@ export async function exportToExcel<T extends object>(
   // Download
   const buffer = await workbook.xlsx.writeBuffer()
   const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-  const dateStr = new Date().toISOString().slice(0, 10)
+  const dateStr = toLocalDateISO(new Date())
   downloadBlob(blob, `${params?.fileName ?? 'export'}_${dateStr}.xlsx`)
 }
 
@@ -218,7 +219,7 @@ export async function exportToPdf<T extends object>(
     },
   })
 
-  const dateStr = new Date().toISOString().slice(0, 10)
+  const dateStr = toLocalDateISO(new Date())
   doc.save(`${params?.fileName ?? 'export'}_${dateStr}.pdf`)
 }
 
