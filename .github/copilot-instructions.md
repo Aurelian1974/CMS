@@ -2436,12 +2436,18 @@ cd "d:\Lucru\CMS\CMS\client"
 npm run build 2>&1 | Select-Object -Last 20
 ```
 
-**Pasul 4 — Rulare teste (unit + integration)**
+**Pasul 4 — Rulare teste (unit + integration BE + unit FE)**
 ```powershell
+# Backend — unit tests (145)
 cd "d:\Lucru\CMS\CMS"
 dotnet test tests/ValyanClinic.Tests/ValyanClinic.Tests.csproj -q 2>&1 | Select-Object -Last 3
+# Backend — integration tests (62)
 dotnet test tests/ValyanClinic.IntegrationTests/ValyanClinic.IntegrationTests.csproj -q 2>&1 | Select-Object -Last 3
-# Total așteptat: 145 unit + 62 integration = 207 teste
+# Frontend — unit tests Vitest (202)
+cd "d:\Lucru\CMS\CMS\client"
+npm run test:unit 2>&1 | Select-Object -Last 5
+# Total așteptat: 145 + 62 BE + 202 FE = 409 teste
+# Nota: E2E Playwright (npm run test:e2e) NU se rulează automat — necesită app pornit + mediu configurat
 ```
 
 **Pasul 5 — Commit și push pe GitHub**
