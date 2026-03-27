@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { specialtySchema, type SpecialtyFormData } from '../../schemas/specialty.schema'
 import type { SpecialtyDto } from '../../types/specialty.types'
@@ -42,7 +42,6 @@ export const SpecialtyFormModal = ({
     register,
     handleSubmit,
     reset,
-    watch,
     setValue,
   } = useForm<SpecialtyFormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -57,7 +56,7 @@ export const SpecialtyFormModal = ({
     },
   })
 
-  const currentLevel = watch('level')
+  const currentLevel = useWatch({ control, name: 'level', defaultValue: 1 })
 
   // Populare formular la editare
   useEffect(() => {

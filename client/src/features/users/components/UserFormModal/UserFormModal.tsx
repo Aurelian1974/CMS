@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createUserSchema, updateUserSchema, type CreateUserFormData } from '../../schemas/user.schema'
 import type { UserDto, RoleDto, UserAssociationType } from '../../types/user.types'
@@ -47,7 +47,6 @@ export const UserFormModal = ({
     register,
     handleSubmit,
     reset,
-    watch,
     setValue,
   } = useForm<CreateUserFormData>({
     resolver: zodResolver(isEdit ? (updateUserSchema as typeof createUserSchema) : createUserSchema),
@@ -66,9 +65,9 @@ export const UserFormModal = ({
     },
   })
 
-  const associationType = watch('associationType')
-  const watchDoctorId = watch('doctorId')
-  const watchStaffId = watch('medicalStaffId')
+  const associationType = useWatch({ control, name: 'associationType', defaultValue: 'doctor' })
+  const watchDoctorId = useWatch({ control, name: 'doctorId', defaultValue: '' })
+  const watchStaffId = useWatch({ control, name: 'medicalStaffId', defaultValue: '' })
 
   // Populare formular la editare / reset la creare
   useEffect(() => {

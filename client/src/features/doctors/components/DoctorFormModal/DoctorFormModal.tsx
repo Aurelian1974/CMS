@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { doctorSchema, type DoctorFormData } from '../../schemas/doctor.schema'
 import type { DoctorDto } from '../../types/doctor.types'
@@ -53,7 +53,6 @@ export const DoctorFormModal = ({
     register,
     handleSubmit,
     reset,
-    watch,
     setValue,
   } = useForm<DoctorFormData>({
     resolver: zodResolver(doctorSchema),
@@ -75,7 +74,7 @@ export const DoctorFormModal = ({
   })
 
   // Urmărim specialitatea selectată pentru dropdown cascadat
-  const selectedSpecialtyId = watch('specialtyId')
+  const selectedSpecialtyId = useWatch({ control, name: 'specialtyId', defaultValue: '' })
 
   // Specializări nivel 1 (specialty)
   const level1Specialties = useMemo(
