@@ -76,12 +76,11 @@ export default defineConfig({
     },
   ],
 
-  // Opențional: pornește frontend-ul automat dacă nu e deja pornit
-  // Dezactivat implicit — se presupune că `npm run dev` și backend-ul rulează deja.
-  // webServer: {
-  //   command: 'npm run dev',
-  //   url: 'http://localhost:5173',
-  //   reuseExistingServer: true,
-  //   timeout: 30_000,
-  // },
+  // Pornire automată FE dev server dacă nu e deja pornit
+  webServer: {
+    command: 'npm run dev',
+    url: 'http://localhost:5173',
+    reuseExistingServer: true,
+    timeout: 60_000,
+  },
 });

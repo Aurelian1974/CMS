@@ -2436,7 +2436,7 @@ cd "d:\Lucru\CMS\CMS\client"
 npm run build 2>&1 | Select-Object -Last 20
 ```
 
-**Pasul 4 — Rulare teste (unit + integration BE + unit FE)**
+**Pasul 4 — Rulare teste (unit + integration BE + unit FE + E2E)**
 ```powershell
 # Backend — unit tests (145)
 cd "d:\Lucru\CMS\CMS"
@@ -2446,9 +2446,15 @@ dotnet test tests/ValyanClinic.IntegrationTests/ValyanClinic.IntegrationTests.cs
 # Frontend — unit tests Vitest (202)
 cd "d:\Lucru\CMS\CMS\client"
 npm run test:unit 2>&1 | Select-Object -Last 5
-# Total așteptat: 145 + 62 BE + 202 FE = 409 teste
-# Nota: E2E Playwright (npm run test:e2e) NU se rulează automat — necesită app pornit + mediu configurat
+# E2E — Playwright (necesită BE pornit)
+# Pornire API în background pentru E2E
+Start-Process -FilePath "dotnet" -ArgumentList "run --project d:\Lucru\CMS\CMS\src\ValyanClinic.API\ValyanClinic.API.csproj --urls http://localhost:5008" -WindowStyle Minimized
+Start-Sleep -Seconds 12   # așteaptă pornirea API (~10-12s)
+# Playwright pornește FE automat (webServer în config), rulează spec-urile
+npm run test:e2e 2>&1 | Select-Object -Last 10
+# Total așteptat: 145 + 62 BE + 202 FE unit + E2E specs
 ```
+> Dacă API-ul e deja pornit (pasul 6 anterior), omite Start-Process și Start-Sleep.
 
 **Pasul 5 — Commit și push pe GitHub**
 ```powershell
