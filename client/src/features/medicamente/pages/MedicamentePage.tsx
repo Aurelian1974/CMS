@@ -8,6 +8,48 @@ import styles from '../../cnas/pages/CnasPage.module.scss'
 
 const PAGE_SIZE = 20
 
+interface SyncAlertAnmProps {
+  anmJobId: string | null
+  status: { status: string; errorMessage?: string | null; totalInserted?: number | null; totalUpdated?: number | null; durationSeconds?: number | null } | null | undefined
+}
+function SyncAlertAnm({ anmJobId, status }: SyncAlertAnmProps) {
+  if (!anmJobId || !status) return null
+  const s = status
+  const cls = s.status === 'Success' ? 'alert-success' : s.status === 'Failed' ? 'alert-danger' : 'alert-info'
+  return (
+    <div className={`alert d-flex align-items-center gap-2 py-2 ${cls}`} style={{ fontSize: '0.85rem' }}>
+      {s.status === 'Success' && <CheckCircle size={16} />}
+      {s.status === 'Failed'  && <XCircle size={16} />}
+      {s.status === 'Running' && <Loader2 size={16} className="spin" />}
+      <strong>ANM:</strong>&nbsp;
+      {s.status === 'Running' && 'Sincronizare în curs…'}
+      {s.status === 'Failed'  && `Eroare: ${s.errorMessage ?? 'necunoscută'}`}
+      {s.status === 'Success' && `Reușit — ${s.totalInserted ?? 0} inserate, ${s.totalUpdated ?? 0} actualizate (${s.durationSeconds ?? 0}s)`}
+    </div>
+  )
+}
+
+interface SyncAlertCnasProps {
+  cnasJobId: string | null
+  status: { status: string; errorMessage?: string | null; drugsInserted?: number | null; drugsUpdated?: number | null; durationSeconds?: number | null } | null | undefined
+}
+function SyncAlertCnas({ cnasJobId, status }: SyncAlertCnasProps) {
+  if (!cnasJobId || !status) return null
+  const s = status
+  const cls = s.status === 'Success' ? 'alert-success' : s.status === 'Failed' ? 'alert-danger' : 'alert-info'
+  return (
+    <div className={`alert d-flex align-items-center gap-2 py-2 ${cls}`} style={{ fontSize: '0.85rem' }}>
+      {s.status === 'Success' && <CheckCircle size={16} />}
+      {s.status === 'Failed'  && <XCircle size={16} />}
+      {s.status === 'Running' && <Loader2 size={16} className="spin" />}
+      <strong>CNAS:</strong>&nbsp;
+      {s.status === 'Running' && 'Sincronizare în curs…'}
+      {s.status === 'Failed'  && `Eroare: ${s.errorMessage ?? 'necunoscută'}`}
+      {s.status === 'Success' && `Reușit — ${s.drugsInserted ?? 0} medicamente inserate, ${s.drugsUpdated ?? 0} actualizate (${s.durationSeconds ?? 0}s)`}
+    </div>
+  )
+}
+
 export default function MedicamentePage() {
   const qc = useQueryClient()
 
@@ -81,40 +123,6 @@ export default function MedicamentePage() {
         })
       : null
 
-  const SyncAlertAnm = () => {
-    if (!anmJobId || !anmSyncStatus?.data) return null
-    const s = anmSyncStatus.data
-    const cls = s.status === 'Success' ? 'alert-success' : s.status === 'Failed' ? 'alert-danger' : 'alert-info'
-    return (
-      <div className={`alert d-flex align-items-center gap-2 py-2 ${cls}`} style={{ fontSize: '0.85rem' }}>
-        {s.status === 'Success' && <CheckCircle size={16} />}
-        {s.status === 'Failed'  && <XCircle size={16} />}
-        {s.status === 'Running' && <Loader2 size={16} className="spin" />}
-        <strong>ANM:</strong>&nbsp;
-        {s.status === 'Running' && 'Sincronizare în curs…'}
-        {s.status === 'Failed'  && `Eroare: ${s.errorMessage ?? 'necunoscută'}`}
-        {s.status === 'Success' && `Reușit — ${s.totalInserted ?? 0} inserate, ${s.totalUpdated ?? 0} actualizate (${s.durationSeconds ?? 0}s)`}
-      </div>
-    )
-  }
-
-  const SyncAlertCnas = () => {
-    if (!cnasJobId || !cnasSyncStatus?.data) return null
-    const s = cnasSyncStatus.data
-    const cls = s.status === 'Success' ? 'alert-success' : s.status === 'Failed' ? 'alert-danger' : 'alert-info'
-    return (
-      <div className={`alert d-flex align-items-center gap-2 py-2 ${cls}`} style={{ fontSize: '0.85rem' }}>
-        {s.status === 'Success' && <CheckCircle size={16} />}
-        {s.status === 'Failed'  && <XCircle size={16} />}
-        {s.status === 'Running' && <Loader2 size={16} className="spin" />}
-        <strong>CNAS:</strong>&nbsp;
-        {s.status === 'Running' && 'Sincronizare în curs…'}
-        {s.status === 'Failed'  && `Eroare: ${s.errorMessage ?? 'necunoscută'}`}
-        {s.status === 'Success' && `Reușit — ${s.drugsInserted ?? 0} medicamente inserate, ${s.drugsUpdated ?? 0} actualizate (${s.durationSeconds ?? 0}s)`}
-      </div>
-    )
-  }
-
   return (
     <div className={styles.pageWrapper}>
 
@@ -157,8 +165,8 @@ export default function MedicamentePage() {
         </button>
       </div>
 
-      <SyncAlertAnm />
-      <SyncAlertCnas />
+      <SyncAlertAnm anmJobId={anmJobId} status={anmSyncStatus?.data} />
+      <SyncAlertCnas cnasJobId={cnasJobId} status={cnasSyncStatus?.data} />
 
       {/* ── Toolbar ────────────────────────────────────────────────────── */}
       <div className={styles.toolbar}>
