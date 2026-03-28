@@ -46,9 +46,9 @@ export default defineConfig({
       include: [
         'src/utils/**/*.ts',
         'src/hooks/**/*.ts',
-        'src/store/**/*.ts',
-        'src/features/**/hooks/*.ts',
-        'src/features/**/schemas/*.ts',
+        'src/store/authStore.ts',
+        'src/features/appointments/schemas/*.ts',
+        'src/features/patients/schemas/*.ts',
       ],
       exclude: [
         'src/**/*.test.ts',

@@ -19,8 +19,8 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 
-$apiProject   = Join-Path $root "src\ValyanClinic.API\ValyanClinic.API.csproj"
-$outputJson   = Join-Path $root "$OutputDir\openapi-v1.json"
+$apiProject   = Join-Path $root "src/ValyanClinic.API/ValyanClinic.API.csproj"
+$outputJson   = Join-Path $root "$OutputDir/openapi-v1.json"
 $clientDir    = Join-Path $root "client"
 
 Write-Host "=== Generare schema OpenAPI ===" -ForegroundColor Cyan
@@ -47,7 +47,7 @@ if ($SkipTypeGen) {
 # 3. Generare tipuri TypeScript cu openapi-typescript
 Write-Host "3. Generare tipuri TypeScript cu openapi-typescript..." -ForegroundColor Yellow
 
-$schemaTs = Join-Path $clientDir "src\api\generated\schema.d.ts"
+$schemaTs = Join-Path $clientDir "src/api/generated/schema.d.ts"
 New-Item -ItemType Directory -Force -Path (Split-Path $schemaTs) | Out-Null
 
 Push-Location $clientDir

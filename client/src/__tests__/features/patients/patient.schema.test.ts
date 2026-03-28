@@ -174,7 +174,45 @@ describe('patientSchema', () => {
     });
   });
 
-  // ── câmpuri cu lungime maximă ──────────────────────────────────────────────
+  // ── phoneNumber (opțional, validat cu isValidPhoneNumber) ────────────────
+
+  describe('phoneNumber (opțional)', () => {
+    it('acceptă string gol', () => {
+      expect(patientSchema.safeParse({ ...validPatient, phoneNumber: '' }).success).toBe(true);
+    });
+
+    it('acceptă număr de telefon internațional valid', () => {
+      expect(
+        patientSchema.safeParse({ ...validPatient, phoneNumber: '+40721234567' }).success
+      ).toBe(true);
+    });
+
+    it('eșuează cu număr de telefon invalid', () => {
+      const result = patientSchema.safeParse({ ...validPatient, phoneNumber: 'abc123' });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  // ── secondaryPhone (opțional, validat cu isValidPhoneNumber) ──────────────
+
+  describe('secondaryPhone (opțional)', () => {
+    it('acceptă string gol', () => {
+      expect(patientSchema.safeParse({ ...validPatient, secondaryPhone: '' }).success).toBe(true);
+    });
+
+    it('acceptă număr de telefon internațional valid', () => {
+      expect(
+        patientSchema.safeParse({ ...validPatient, secondaryPhone: '+40722345678' }).success
+      ).toBe(true);
+    });
+
+    it('eșuează cu număr de telefon secundar invalid', () => {
+      const result = patientSchema.safeParse({ ...validPatient, secondaryPhone: 'xyz' });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  // ── câmpuri cu lungime maximă ────────────────────────────────────────────
 
   describe('câmpuri opționale cu MaxLength', () => {
     it('address — eșuează peste 500 caractere', () => {

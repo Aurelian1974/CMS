@@ -5,12 +5,32 @@
  */
 import { describe, it, expect } from 'vitest';
 import {
+  toLocalDateISO,
   formatDate,
   formatDateTime,
   formatCurrency,
   formatNumber,
   formatMonthYear,
 } from '@/utils/format';
+
+// ── toLocalDateISO ────────────────────────────────────────────────────────────
+
+describe('toLocalDateISO', () => {
+  it('formatează data ca YYYY-MM-DD în ora locală', () => {
+    const date = new Date(2025, 5, 7); // 7 iunie 2025
+    expect(toLocalDateISO(date)).toBe('2025-06-07');
+  });
+
+  it('face zero-padding pe lună și zi', () => {
+    const date = new Date(2025, 0, 1); // 1 ianuarie 2025
+    expect(toLocalDateISO(date)).toBe('2025-01-01');
+  });
+
+  it('formatează 31 decembrie corect', () => {
+    const date = new Date(2025, 11, 31);
+    expect(toLocalDateISO(date)).toBe('2025-12-31');
+  });
+});
 
 // ── formatDate ────────────────────────────────────────────────────────────────
 
