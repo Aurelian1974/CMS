@@ -17,7 +17,7 @@ namespace ValyanClinic.API.Controllers;
 /// <summary>
 /// Controller pentru sincronizarea și interogarea nomenclatoarelor CNAS (farmacii).
 /// </summary>
-[Route("api/cnas")]
+[Route("api/v{version:apiVersion}/cnas")]
 public class CnasController : BaseApiController
 {
     /// <summary>

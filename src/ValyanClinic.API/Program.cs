@@ -1,9 +1,14 @@
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
 using System.Globalization;
 using System.Reflection;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using ValyanClinic.API.Configuration;
 using ValyanClinic.API.Middleware;
 using ValyanClinic.Application.Common.Behaviors;
 using ValyanClinic.Infrastructure;
@@ -78,26 +83,23 @@ try
             name: "sql-server",
             tags: ["db", "ready"]);
 
+    // ===== API Versioning =====
+    builder.Services.AddApiVersioning(options =>
+    {
+        options.DefaultApiVersion = new ApiVersion(1, 0);
+        options.AssumeDefaultVersionWhenUnspecified = true;
+        options.ReportApiVersions = true;
+    }).AddApiExplorer(options =>
+    {
+        // formatul grupului: "v1", "v2" etc.
+        options.GroupNameFormat = "'v'VVV";
+        options.SubstituteApiVersionInUrl = true;
+    });
+
     // ===== Swagger/OpenAPI =====
     builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen(c =>
-    {
-        c.SwaggerDoc("v1", new() { Title = "ValyanClinic API", Version = "v1" });
-        c.AddSecurityDefinition("Bearer", new()
-        {
-            Type = SecuritySchemeType.Http,
-            Scheme = "bearer",
-            BearerFormat = "JWT",
-            Description = "Introdu token-ul JWT (fără prefixul 'Bearer')"
-        });
-        c.AddSecurityRequirement(new()
-        {
-            {
-                new() { Reference = new() { Type = ReferenceType.SecurityScheme, Id = "Bearer" } },
-                Array.Empty<string>()
-            }
-        });
-    });
+    builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
+    builder.Services.AddSwaggerGen();
 
     // ===== Controllers =====
     builder.Services.AddControllers();
@@ -114,7 +116,19 @@ try
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
-        app.UseSwaggerUI();
+        app.UseSwaggerUI(ui =>
+        {
+            // Generăm un endpoint Swagger pentru fiecare versiune API descoperită
+            var apiVersionDescriptionProvider =
+                app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+
+            foreach (var description in apiVersionDescriptionProvider.ApiVersionDescriptions)
+            {
+                ui.SwaggerEndpoint(
+                    $"/swagger/{description.GroupName}/swagger.json",
+                    $"ValyanClinic API {description.GroupName.ToUpperInvariant()}");
+            }
+        });
     }
 
     // HTTPS redirect doar în producție — în development, Vite proxy gestionează conexiunea

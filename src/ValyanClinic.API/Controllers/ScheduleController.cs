@@ -10,7 +10,7 @@ namespace ValyanClinic.API.Controllers;
 /// <summary>
 /// Gestionare program clinic și program individual al medicilor.
 /// </summary>
-[Route("api/schedule")]
+[Route("api/v{version:apiVersion}/schedule")]
 public class ScheduleController : BaseApiController
 {
     // ── Program clinică ───────────────────────────────────────────────────────
