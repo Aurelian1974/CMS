@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Options;
-using Moq;
+using NSubstitute;
 using ValyanClinic.Application.Common.Configuration;
 using ValyanClinic.Application.Common.Interfaces;
 using ValyanClinic.Application.Features.Auth.Commands.Login;
@@ -14,19 +14,19 @@ namespace ValyanClinic.Tests.Handlers;
 /// </summary>
 public sealed class LoginCommandHandlerTests
 {
-    private readonly Mock<IAuthRepository> _authRepo = new();
-    private readonly Mock<IPasswordHasher> _passwordHasher = new();
-    private readonly Mock<ITokenService> _tokenService = new();
-    private readonly Mock<IPermissionRepository> _permissionRepo = new();
+    private readonly IAuthRepository _authRepo = Substitute.For<IAuthRepository>();
+    private readonly IPasswordHasher _passwordHasher = Substitute.For<IPasswordHasher>();
+    private readonly ITokenService _tokenService = Substitute.For<ITokenService>();
+    private readonly IPermissionRepository _permissionRepo = Substitute.For<IPermissionRepository>();
 
     private readonly JwtOptions _jwtOptions = new() { RefreshTokenExpiryDays = 7 };
     private readonly RateLimitingOptions _rateLimitOptions = new() { LoginMaxAttempts = 5, LoginWindowMinutes = 15 };
 
     private LoginCommandHandler CreateHandler() => new(
-        _authRepo.Object,
-        _passwordHasher.Object,
-        _tokenService.Object,
-        _permissionRepo.Object,
+        _authRepo,
+        _passwordHasher,
+        _tokenService,
+        _permissionRepo,
         Options.Create(_jwtOptions),
         Options.Create(_rateLimitOptions));
 
@@ -56,9 +56,9 @@ public sealed class LoginCommandHandlerTests
     [Fact]
     public async Task Handle_UserNotFound_ReturnsUnauthorized()
     {
-        _authRepo.Setup(r => r.GetByEmailOrUsernameAsync(
-                      It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync((UserAuthDto?)null);
+        _authRepo.GetByEmailOrUsernameAsync(
+                      Arg.Any<string>(), Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<UserAuthDto?>(null));
 
         var result = await CreateHandler().Handle(
             new LoginCommand("nonexistent", "password"), default);
@@ -74,9 +74,9 @@ public sealed class LoginCommandHandlerTests
     public async Task Handle_InactiveUser_ReturnsUnauthorized()
     {
         var user = BuildUser(isActive: false);
-        _authRepo.Setup(r => r.GetByEmailOrUsernameAsync(
-                      It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(user);
+        _authRepo.GetByEmailOrUsernameAsync(
+                      Arg.Any<string>(), Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<UserAuthDto?>(user));
 
         var result = await CreateHandler().Handle(
             new LoginCommand("admin", "password"), default);
@@ -91,9 +91,9 @@ public sealed class LoginCommandHandlerTests
     public async Task Handle_LockedAccount_ReturnsUnauthorized()
     {
         var user = BuildUser(lockoutEnd: DateTime.Now.AddMinutes(10));
-        _authRepo.Setup(r => r.GetByEmailOrUsernameAsync(
-                      It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(user);
+        _authRepo.GetByEmailOrUsernameAsync(
+                      Arg.Any<string>(), Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<UserAuthDto?>(user));
 
         var result = await CreateHandler().Handle(
             new LoginCommand("admin", "password"), default);
@@ -107,15 +107,15 @@ public sealed class LoginCommandHandlerTests
     {
         // Lockout în trecut — contul nu mai este blocat
         var user = BuildUser(lockoutEnd: DateTime.Now.AddMinutes(-1));
-        _authRepo.Setup(r => r.GetByEmailOrUsernameAsync(
-                      It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(user);
+        _authRepo.GetByEmailOrUsernameAsync(
+                      Arg.Any<string>(), Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<UserAuthDto?>(user));
 
         // Parolă greșită pentru a nu trece de autentificare (testăm că lockout-ul nu blochează)
-        _passwordHasher.Setup(p => p.VerifyPassword(It.IsAny<string>(), user.PasswordHash))
+        _passwordHasher.VerifyPassword(Arg.Any<string>(), user.PasswordHash)
                        .Returns(false);
-        _authRepo.Setup(r => r.IncrementFailedLoginAsync(
-                      It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        _authRepo.IncrementFailedLoginAsync(
+                      Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
                  .Returns(Task.CompletedTask);
 
         var result = await CreateHandler().Handle(
@@ -132,13 +132,13 @@ public sealed class LoginCommandHandlerTests
     public async Task Handle_WrongPassword_ReturnsUnauthorized_AndIncrementsFailedLogins()
     {
         var user = BuildUser();
-        _authRepo.Setup(r => r.GetByEmailOrUsernameAsync(
-                      It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(user);
-        _passwordHasher.Setup(p => p.VerifyPassword("wrong-password", user.PasswordHash))
+        _authRepo.GetByEmailOrUsernameAsync(
+                      Arg.Any<string>(), Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<UserAuthDto?>(user));
+        _passwordHasher.VerifyPassword("wrong-password", user.PasswordHash)
                        .Returns(false);
-        _authRepo.Setup(r => r.IncrementFailedLoginAsync(
-                      It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        _authRepo.IncrementFailedLoginAsync(
+                      Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
                  .Returns(Task.CompletedTask);
 
         var result = await CreateHandler().Handle(
@@ -148,30 +148,30 @@ public sealed class LoginCommandHandlerTests
         Assert.Equal(401, result.StatusCode);
 
         // Trebuie să fi incrementat failed logins
-        _authRepo.Verify(r => r.IncrementFailedLoginAsync(
+        await _authRepo.Received(1).IncrementFailedLoginAsync(
             user.Id,
             _rateLimitOptions.LoginMaxAttempts,
             _rateLimitOptions.LoginWindowMinutes,
-            It.IsAny<CancellationToken>()), Times.Once);
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task Handle_WrongPassword_ShouldNotCallResetFailedLogin()
     {
         var user = BuildUser();
-        _authRepo.Setup(r => r.GetByEmailOrUsernameAsync(
-                      It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(user);
-        _passwordHasher.Setup(p => p.VerifyPassword(It.IsAny<string>(), user.PasswordHash))
+        _authRepo.GetByEmailOrUsernameAsync(
+                      Arg.Any<string>(), Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<UserAuthDto?>(user));
+        _passwordHasher.VerifyPassword(Arg.Any<string>(), user.PasswordHash)
                        .Returns(false);
-        _authRepo.Setup(r => r.IncrementFailedLoginAsync(
-                      It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+        _authRepo.IncrementFailedLoginAsync(
+                      Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
                  .Returns(Task.CompletedTask);
 
         await CreateHandler().Handle(new LoginCommand("admin", "wrong"), default);
 
-        _authRepo.Verify(r => r.ResetFailedLoginAsync(
-            It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        await _authRepo.DidNotReceive().ResetFailedLoginAsync(
+            Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     // ── Login reușit ──────────────────────────────────────────────────────
@@ -196,22 +196,22 @@ public sealed class LoginCommandHandlerTests
             IsActive = true,
         };
 
-        _authRepo.Setup(r => r.GetByEmailOrUsernameAsync("admin", It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(user);
-        _passwordHasher.Setup(p => p.VerifyPassword("correct-password", "correct-hash"))
+        _authRepo.GetByEmailOrUsernameAsync("admin", Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<UserAuthDto?>(user));
+        _passwordHasher.VerifyPassword("correct-password", "correct-hash")
                        .Returns(true);
-        _tokenService.Setup(t => t.GenerateAccessToken(
-                         userId, clinicId, user.Email, "Admin User", "admin", roleId))
+        _tokenService.GenerateAccessToken(
+                         userId, clinicId, user.Email, "Admin User", "admin", roleId)
                      .Returns("jwt-access-token");
-        _tokenService.Setup(t => t.GenerateRefreshToken())
+        _tokenService.GenerateRefreshToken()
                      .Returns("refresh-token-value");
-        _authRepo.Setup(r => r.ResetFailedLoginAsync(userId, It.IsAny<CancellationToken>()))
+        _authRepo.ResetFailedLoginAsync(userId, Arg.Any<CancellationToken>())
                  .Returns(Task.CompletedTask);
-        _authRepo.Setup(r => r.CreateRefreshTokenAsync(
-                     userId, "refresh-token-value", It.IsAny<DateTime>(), null, It.IsAny<CancellationToken>()))
+        _authRepo.CreateRefreshTokenAsync(
+                     Arg.Is<Guid>(x => x == userId), Arg.Is<string>(x => x == "refresh-token-value"), Arg.Any<DateTime>(), Arg.Is<string?>(x => x == null), Arg.Any<CancellationToken>())
                  .Returns(Task.CompletedTask);
-        _permissionRepo.Setup(p => p.GetEffectiveByUserAsync(userId, roleId, It.IsAny<CancellationToken>()))
-                       .ReturnsAsync(Array.Empty<UserModulePermissionDto>());
+        _permissionRepo.GetEffectiveByUserAsync(Arg.Is<Guid>(x => x == userId), Arg.Is<Guid>(x => x == roleId), Arg.Any<CancellationToken>())
+                       .Returns(Task.FromResult<IReadOnlyList<UserModulePermissionDto>>(Array.Empty<UserModulePermissionDto>()));
 
         var result = await CreateHandler().Handle(
             new LoginCommand("admin", "correct-password"), default);
@@ -231,8 +231,8 @@ public sealed class LoginCommandHandlerTests
 
         await CreateHandler().Handle(new LoginCommand("admin", "correct"), default);
 
-        _authRepo.Verify(r => r.ResetFailedLoginAsync(
-            user.Id, It.IsAny<CancellationToken>()), Times.Once);
+        await _authRepo.Received(1).ResetFailedLoginAsync(
+            user.Id, Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -243,12 +243,12 @@ public sealed class LoginCommandHandlerTests
 
         await CreateHandler().Handle(new LoginCommand("admin", "correct"), default);
 
-        _authRepo.Verify(r => r.CreateRefreshTokenAsync(
-            user.Id,
-            It.IsAny<string>(),
-            It.IsAny<DateTime>(),
-            null,
-            It.IsAny<CancellationToken>()), Times.Once);
+        await _authRepo.Received(1).CreateRefreshTokenAsync(
+            Arg.Is<Guid>(x => x == user.Id),
+            Arg.Any<string>(),
+            Arg.Any<DateTime>(),
+            Arg.Is<string?>(x => x == null),
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -276,25 +276,25 @@ public sealed class LoginCommandHandlerTests
             new UserModulePermissionDto { ModuleCode = "users",    AccessLevel = 3 },
         };
 
-        _authRepo.Setup(r => r.GetByEmailOrUsernameAsync(
-                      It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(user);
-        _passwordHasher.Setup(p => p.VerifyPassword("correct", user.PasswordHash))
+        _authRepo.GetByEmailOrUsernameAsync(
+                      Arg.Any<string>(), Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<UserAuthDto?>(user));
+        _passwordHasher.VerifyPassword("correct", user.PasswordHash)
                        .Returns(true);
-        _tokenService.Setup(t => t.GenerateAccessToken(
-                         It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>(),
-                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Guid>()))
+        _tokenService.GenerateAccessToken(
+                         Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(),
+                         Arg.Any<string>(), Arg.Any<string>(), Arg.Any<Guid>())
                      .Returns("token");
-        _tokenService.Setup(t => t.GenerateRefreshToken()).Returns("refresh");
-        _authRepo.Setup(r => r.ResetFailedLoginAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+        _tokenService.GenerateRefreshToken().Returns("refresh");
+        _authRepo.ResetFailedLoginAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
                  .Returns(Task.CompletedTask);
-        _authRepo.Setup(r => r.CreateRefreshTokenAsync(
-                     It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<DateTime>(),
-                     null, It.IsAny<CancellationToken>()))
+        _authRepo.CreateRefreshTokenAsync(
+                     Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<DateTime>(),
+                     Arg.Is<string?>(x => x == null), Arg.Any<CancellationToken>())
                  .Returns(Task.CompletedTask);
-        _permissionRepo.Setup(p => p.GetEffectiveByUserAsync(
-                            user.Id, user.RoleId, It.IsAny<CancellationToken>()))
-                       .ReturnsAsync(permissions);
+        _permissionRepo.GetEffectiveByUserAsync(
+                            Arg.Is<Guid>(x => x == user.Id), Arg.Is<Guid>(x => x == user.RoleId), Arg.Any<CancellationToken>())
+                       .Returns(Task.FromResult<IReadOnlyList<UserModulePermissionDto>>(permissions));
 
         var result = await CreateHandler().Handle(
             new LoginCommand("admin", "correct"), default);
@@ -309,25 +309,25 @@ public sealed class LoginCommandHandlerTests
 
     private void SetupSuccessfulLogin(UserAuthDto user)
     {
-        _authRepo.Setup(r => r.GetByEmailOrUsernameAsync(
-                      It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(user);
-        _passwordHasher.Setup(p => p.VerifyPassword("correct", user.PasswordHash))
+        _authRepo.GetByEmailOrUsernameAsync(
+                      Arg.Any<string>(), Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<UserAuthDto?>(user));
+        _passwordHasher.VerifyPassword("correct", user.PasswordHash)
                        .Returns(true);
-        _tokenService.Setup(t => t.GenerateAccessToken(
-                         It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>(),
-                         It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Guid>()))
+        _tokenService.GenerateAccessToken(
+                         Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(),
+                         Arg.Any<string>(), Arg.Any<string>(), Arg.Any<Guid>())
                      .Returns("access-token");
-        _tokenService.Setup(t => t.GenerateRefreshToken()).Returns("refresh-token");
-        _authRepo.Setup(r => r.ResetFailedLoginAsync(
-                     It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+        _tokenService.GenerateRefreshToken().Returns("refresh-token");
+        _authRepo.ResetFailedLoginAsync(
+                     Arg.Any<Guid>(), Arg.Any<CancellationToken>())
                  .Returns(Task.CompletedTask);
-        _authRepo.Setup(r => r.CreateRefreshTokenAsync(
-                     It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<DateTime>(),
-                     null, It.IsAny<CancellationToken>()))
+        _authRepo.CreateRefreshTokenAsync(
+                     Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<DateTime>(),
+                     Arg.Is<string?>(x => x == null), Arg.Any<CancellationToken>())
                  .Returns(Task.CompletedTask);
-        _permissionRepo.Setup(p => p.GetEffectiveByUserAsync(
-                            It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
-                       .ReturnsAsync(Array.Empty<UserModulePermissionDto>());
+        _permissionRepo.GetEffectiveByUserAsync(
+                            Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+                       .Returns(Task.FromResult<IReadOnlyList<UserModulePermissionDto>>(Array.Empty<UserModulePermissionDto>()));
     }
 }

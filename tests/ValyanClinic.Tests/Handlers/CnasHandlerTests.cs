@@ -1,4 +1,4 @@
-using Moq;
+using NSubstitute;
 using ValyanClinic.Application.Common.Interfaces;
 using ValyanClinic.Application.Common.Models;
 using ValyanClinic.Application.Features.Cnas.Commands.TriggerSync;
@@ -17,13 +17,13 @@ namespace ValyanClinic.Tests.Handlers;
 /// </summary>
 public sealed class CnasHandlerTests
 {
-    private readonly Mock<ICnasSyncRepository>     _repo    = new();
-    private readonly Mock<ICnasNomenclatorService> _service = new();
-    private readonly Mock<ICurrentUser>            _user    = new();
+    private readonly ICnasSyncRepository     _repo    = Substitute.For<ICnasSyncRepository>();
+    private readonly ICnasNomenclatorService _service = Substitute.For<ICnasNomenclatorService>();
+    private readonly ICurrentUser            _user    = Substitute.For<ICurrentUser>();
 
     public CnasHandlerTests()
     {
-        _user.Setup(u => u.Email).Returns("admin@test.ro");
+        _user.Email.Returns("admin@test.ro");
     }
 
     // ── Helper factory ────────────────────────────────────────────────────────
@@ -71,10 +71,10 @@ public sealed class CnasHandlerTests
     public async Task GetDrugs_ReturnsSuccess_WithItems()
     {
         var drugs = new[] { MakeDrug("TST001"), MakeDrug("TST002") };
-        _repo.Setup(r => r.GetDrugsPagedAsync(null, true, null, 1, 20, It.IsAny<CancellationToken>()))
-             .ReturnsAsync(MakePaged(drugs));
+        _repo.GetDrugsPagedAsync(null, true, null, 1, 20, Arg.Any<CancellationToken>())
+             .Returns(Task.FromResult(MakePaged(drugs)));
 
-        var handler = new GetCnasDrugsPagedQueryHandler(_repo.Object);
+        var handler = new GetCnasDrugsPagedQueryHandler(_repo);
         var result  = await handler.Handle(new GetCnasDrugsPagedQuery(null, true, null, 1, 20), default);
 
         Assert.True(result.IsSuccess);
@@ -85,11 +85,11 @@ public sealed class CnasHandlerTests
     [Fact]
     public async Task GetDrugs_EmptyResult_ReturnsEmptyPage()
     {
-        _repo.Setup(r => r.GetDrugsPagedAsync(It.IsAny<string?>(), It.IsAny<bool?>(), It.IsAny<bool?>(),
-                     It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-             .ReturnsAsync(MakePaged(Array.Empty<CnasDrugDto>(), 0));
+        _repo.GetDrugsPagedAsync(Arg.Any<string?>(), Arg.Any<bool?>(), Arg.Any<bool?>(),
+                     Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+             .Returns(Task.FromResult(MakePaged(Array.Empty<CnasDrugDto>(), 0)));
 
-        var handler = new GetCnasDrugsPagedQueryHandler(_repo.Object);
+        var handler = new GetCnasDrugsPagedQueryHandler(_repo);
         var result  = await handler.Handle(new GetCnasDrugsPagedQuery("inexistent", null, null, 1, 20), default);
 
         Assert.True(result.IsSuccess);
@@ -100,37 +100,37 @@ public sealed class CnasHandlerTests
     [Fact]
     public async Task GetDrugs_ClampsBadPage_ToMin1()
     {
-        _repo.Setup(r => r.GetDrugsPagedAsync(null, null, null, 1, 20, It.IsAny<CancellationToken>()))
-             .ReturnsAsync(MakePaged(Array.Empty<CnasDrugDto>(), 0));
+        _repo.GetDrugsPagedAsync(null, null, null, 1, 20, Arg.Any<CancellationToken>())
+             .Returns(Task.FromResult(MakePaged(Array.Empty<CnasDrugDto>(), 0)));
 
-        var handler = new GetCnasDrugsPagedQueryHandler(_repo.Object);
+        var handler = new GetCnasDrugsPagedQueryHandler(_repo);
         await handler.Handle(new GetCnasDrugsPagedQuery(null, null, null, -5, 20), default);
 
-        _repo.Verify(r => r.GetDrugsPagedAsync(null, null, null, 1, 20, It.IsAny<CancellationToken>()), Times.Once);
+        await _repo.Received(1).GetDrugsPagedAsync(null, null, null, 1, 20, Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task GetDrugs_ClampsPageSize_ToMax100()
     {
-        _repo.Setup(r => r.GetDrugsPagedAsync(null, null, null, 1, 100, It.IsAny<CancellationToken>()))
-             .ReturnsAsync(MakePaged(Array.Empty<CnasDrugDto>(), 0));
+        _repo.GetDrugsPagedAsync(null, null, null, 1, 100, Arg.Any<CancellationToken>())
+             .Returns(Task.FromResult(MakePaged(Array.Empty<CnasDrugDto>(), 0)));
 
-        var handler = new GetCnasDrugsPagedQueryHandler(_repo.Object);
+        var handler = new GetCnasDrugsPagedQueryHandler(_repo);
         await handler.Handle(new GetCnasDrugsPagedQuery(null, null, null, 1, 999), default);
 
-        _repo.Verify(r => r.GetDrugsPagedAsync(null, null, null, 1, 100, It.IsAny<CancellationToken>()), Times.Once);
+        await _repo.Received(1).GetDrugsPagedAsync(null, null, null, 1, 100, Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task GetDrugs_PassesAllFiltersToRepo()
     {
-        _repo.Setup(r => r.GetDrugsPagedAsync("amox", true, true, 2, 10, It.IsAny<CancellationToken>()))
-             .ReturnsAsync(MakePaged(new[] { MakeDrug() }));
+        _repo.GetDrugsPagedAsync("amox", true, true, 2, 10, Arg.Any<CancellationToken>())
+             .Returns(Task.FromResult(MakePaged(new[] { MakeDrug() })));
 
-        var handler = new GetCnasDrugsPagedQueryHandler(_repo.Object);
+        var handler = new GetCnasDrugsPagedQueryHandler(_repo);
         await handler.Handle(new GetCnasDrugsPagedQuery("amox", true, true, 2, 10), default);
 
-        _repo.Verify(r => r.GetDrugsPagedAsync("amox", true, true, 2, 10, It.IsAny<CancellationToken>()), Times.Once);
+        await _repo.Received(1).GetDrugsPagedAsync("amox", true, true, 2, 10, Arg.Any<CancellationToken>());
     }
 
     // ── GetCnasCompensatedDrugsPagedQueryHandler ──────────────────────────────
@@ -139,10 +139,10 @@ public sealed class CnasHandlerTests
     public async Task GetCompensated_ReturnsSuccess_WithItems()
     {
         var items = new[] { MakeCompDrug(1), MakeCompDrug(2) };
-        _repo.Setup(r => r.GetCompensatedDrugsPagedAsync(null, null, 1, 20, It.IsAny<CancellationToken>()))
-             .ReturnsAsync(MakePaged(items));
+        _repo.GetCompensatedDrugsPagedAsync(null, null, 1, 20, Arg.Any<CancellationToken>())
+             .Returns(Task.FromResult(MakePaged(items)));
 
-        var handler = new GetCnasCompensatedDrugsPagedQueryHandler(_repo.Object);
+        var handler = new GetCnasCompensatedDrugsPagedQueryHandler(_repo);
         var result  = await handler.Handle(new GetCnasCompensatedDrugsPagedQuery(null, null, 1, 20), default);
 
         Assert.True(result.IsSuccess);
@@ -152,13 +152,13 @@ public sealed class CnasHandlerTests
     [Fact]
     public async Task GetCompensated_FilterByListType_PassesToRepo()
     {
-        _repo.Setup(r => r.GetCompensatedDrugsPagedAsync(null, "A", 1, 20, It.IsAny<CancellationToken>()))
-             .ReturnsAsync(MakePaged(new[] { MakeCompDrug() }));
+        _repo.GetCompensatedDrugsPagedAsync(null, "A", 1, 20, Arg.Any<CancellationToken>())
+             .Returns(Task.FromResult(MakePaged(new[] { MakeCompDrug() })));
 
-        var handler = new GetCnasCompensatedDrugsPagedQueryHandler(_repo.Object);
+        var handler = new GetCnasCompensatedDrugsPagedQueryHandler(_repo);
         await handler.Handle(new GetCnasCompensatedDrugsPagedQuery(null, "A", 1, 20), default);
 
-        _repo.Verify(r => r.GetCompensatedDrugsPagedAsync(null, "A", 1, 20, It.IsAny<CancellationToken>()), Times.Once);
+        await _repo.Received(1).GetCompensatedDrugsPagedAsync(null, "A", 1, 20, Arg.Any<CancellationToken>());
     }
 
     // ── GetCnasActiveSubstancesPagedQueryHandler ──────────────────────────────
@@ -171,10 +171,10 @@ public sealed class CnasHandlerTests
             new CnasActiveSubstanceDto("ACT001", new DateTime(2020, 1, 1)),
             new CnasActiveSubstanceDto("ACT002", null),
         };
-        _repo.Setup(r => r.GetActiveSubstancesPagedAsync(null, 1, 20, It.IsAny<CancellationToken>()))
-             .ReturnsAsync(MakePaged(items));
+        _repo.GetActiveSubstancesPagedAsync(null, 1, 20, Arg.Any<CancellationToken>())
+             .Returns(Task.FromResult(MakePaged(items)));
 
-        var handler = new GetCnasActiveSubstancesPagedQueryHandler(_repo.Object);
+        var handler = new GetCnasActiveSubstancesPagedQueryHandler(_repo);
         var result  = await handler.Handle(new GetCnasActiveSubstancesPagedQuery(null, 1, 20), default);
 
         Assert.True(result.IsSuccess);
@@ -194,10 +194,10 @@ public sealed class CnasHandlerTests
             ActiveDrugs: 115000,
             CompensatedDrugs: 7564
         );
-        _repo.Setup(r => r.GetCurrentStatsAsync(It.IsAny<CancellationToken>()))
-             .ReturnsAsync(stats);
+        _repo.GetCurrentStatsAsync(Arg.Any<CancellationToken>())
+             .Returns(Task.FromResult(stats));
 
-        var handler = new GetCnasCurrentStatsQueryHandler(_repo.Object);
+        var handler = new GetCnasCurrentStatsQueryHandler(_repo);
         var result  = await handler.Handle(new GetCnasCurrentStatsQuery(), default);
 
         Assert.True(result.IsSuccess);
@@ -210,10 +210,10 @@ public sealed class CnasHandlerTests
     public async Task GetStats_NeverSynced_ReturnsNullDates()
     {
         var stats = new CnasSyncStatsDto(null, null, null, 0, 0, 0);
-        _repo.Setup(r => r.GetCurrentStatsAsync(It.IsAny<CancellationToken>()))
-             .ReturnsAsync(stats);
+        _repo.GetCurrentStatsAsync(Arg.Any<CancellationToken>())
+             .Returns(Task.FromResult(stats));
 
-        var handler = new GetCnasCurrentStatsQueryHandler(_repo.Object);
+        var handler = new GetCnasCurrentStatsQueryHandler(_repo);
         var result  = await handler.Handle(new GetCnasCurrentStatsQuery(), default);
 
         Assert.True(result.IsSuccess);
@@ -227,10 +227,10 @@ public sealed class CnasHandlerTests
     public async Task TriggerSync_ReturnsJobId()
     {
         var expectedJobId = Guid.NewGuid();
-        _service.Setup(s => s.StartSyncAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(expectedJobId);
+        _service.StartSyncAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(expectedJobId));
 
-        var handler = new TriggerCnasSyncCommandHandler(_service.Object, _user.Object);
+        var handler = new TriggerCnasSyncCommandHandler(_service, _user);
         var result  = await handler.Handle(new TriggerCnasSyncCommand(), default);
 
         Assert.True(result.IsSuccess);
@@ -240,14 +240,14 @@ public sealed class CnasHandlerTests
     [Fact]
     public async Task TriggerSync_UsesCurrentUserEmail_InTriggeredBy()
     {
-        _user.Setup(u => u.Email).Returns("doctor@clinica.ro");
-        _service.Setup(s => s.StartSyncAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(Guid.NewGuid());
+        _user.Email.Returns("doctor@clinica.ro");
+        _service.StartSyncAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult(Guid.NewGuid()));
 
-        var handler = new TriggerCnasSyncCommandHandler(_service.Object, _user.Object);
+        var handler = new TriggerCnasSyncCommandHandler(_service, _user);
         await handler.Handle(new TriggerCnasSyncCommand(), default);
 
-        _service.Verify(s => s.StartSyncAsync("manual:doctor@clinica.ro", It.IsAny<CancellationToken>()), Times.Once);
+        await _service.Received(1).StartSyncAsync("manual:doctor@clinica.ro", Arg.Any<CancellationToken>());
     }
 
     // ── CnasDrugDto — câmpuri noi ─────────────────────────────────────────────
