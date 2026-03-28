@@ -64,6 +64,9 @@ export interface CnasDrugDto {
   company: string | null
   pricePerPackage: number | null
   isActive: boolean
+  isCompensated: boolean
+  isNarcotic: boolean
+  isBrand: boolean
   anmAuthorizationCode: string | null
   anmCommercialName: string | null
   anmCountry: string | null
