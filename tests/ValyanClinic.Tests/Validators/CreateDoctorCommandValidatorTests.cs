@@ -98,7 +98,7 @@ public sealed class CreateDoctorCommandValidatorTests
     [Fact]
     public void Email_WhenExceeds200Chars_ShouldHaveError()
     {
-        var cmd = MinimalValid() with { Email = new string('a', 192) + "@test.ro" };
+        var cmd = MinimalValid() with { Email = new string('a', 193) + "@test.ro" };
         _validator.TestValidate(cmd)
                   .ShouldHaveValidationErrorFor(x => x.Email);
     }

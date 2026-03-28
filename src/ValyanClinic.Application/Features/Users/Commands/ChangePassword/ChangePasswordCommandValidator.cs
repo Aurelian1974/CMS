@@ -11,7 +11,12 @@ public sealed class ChangePasswordCommandValidator : AbstractValidator<ChangePas
 
         RuleFor(x => x.NewPassword)
             .NotEmpty().WithMessage("Parola nouă este obligatorie.")
-            .MinimumLength(6).WithMessage("Parola trebuie să aibă minimum 6 caractere.")
+            .MinimumLength(8).WithMessage("Parola trebuie să aibă minimum 8 caractere.")
             .MaximumLength(100).WithMessage("Parola nu poate depăși 100 de caractere.");
+
+        // Dacă CurrentPassword este furnizată, nu poate fi goală
+        RuleFor(x => x.CurrentPassword)
+            .NotEmpty().WithMessage("Parola curentă nu poate fi goală dacă este furnizată.")
+            .When(x => x.CurrentPassword is not null);
     }
 }

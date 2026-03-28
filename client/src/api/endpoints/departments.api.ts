@@ -8,17 +8,17 @@ import type {
 
 export const departmentsApi = {
   getAll: (isActive?: boolean, locationId?: string): Promise<ApiResponse<DepartmentDto[]>> =>
-    api.get('/api/departments', { params: { isActive, locationId } }),
+    api.get('/api/v1/Departments', { params: { isActive, locationId } }),
 
   getById: (id: string): Promise<ApiResponse<DepartmentDto>> =>
-    api.get(`/api/departments/${id}`),
+    api.get(`/api/v1/Departments/${id}`),
 
   create: (payload: CreateDepartmentPayload): Promise<ApiResponse<string>> =>
-    api.post('/api/departments', payload),
+    api.post('/api/v1/Departments', payload),
 
   update: ({ id, ...data }: UpdateDepartmentPayload): Promise<ApiResponse<boolean>> =>
-    api.put(`/api/departments/${id}`, data),
+    api.put(`/api/v1/Departments/${id}`, data),
 
   delete: (id: string): Promise<ApiResponse<boolean>> =>
-    api.delete(`/api/departments/${id}`),
+    api.delete(`/api/v1/Departments/${id}`),
 }

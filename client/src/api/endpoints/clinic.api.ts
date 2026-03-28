@@ -21,70 +21,70 @@ export const clinicApi = {
   // ===== Clinica curentă =====
 
   getCurrentClinic: (): Promise<ApiResponse<ClinicDto>> =>
-    api.get('/api/clinics/current'),
+    api.get('/api/v1/Clinics/current'),
 
   updateCurrentClinic: (payload: UpdateClinicPayload): Promise<ApiResponse<boolean>> =>
-    api.put('/api/clinics/current', payload),
+    api.put('/api/v1/Clinics/current', payload),
 
   syncCaenCodes: (payload: SyncClinicCaenCodesPayload): Promise<ApiResponse<boolean>> =>
-    api.put('/api/clinics/current/caen-codes', payload),
+    api.put('/api/v1/Clinics/current/caen-codes', payload),
 
   // ===== Conturi bancare =====
 
   createBankAccount: (payload: CreateClinicBankAccountPayload): Promise<ApiResponse<string>> =>
-    api.post('/api/clinics/current/bank-accounts', payload),
+    api.post('/api/v1/Clinics/current/bank-accounts', payload),
 
   updateBankAccount: ({ id, ...data }: UpdateClinicBankAccountPayload): Promise<ApiResponse<boolean>> =>
-    api.put(`/api/clinics/current/bank-accounts/${id}`, data),
+    api.put(`/api/v1/Clinics/current/bank-accounts/${id}`, data),
 
   deleteBankAccount: (id: string): Promise<ApiResponse<boolean>> =>
-    api.delete(`/api/clinics/current/bank-accounts/${id}`),
+    api.delete(`/api/v1/Clinics/current/bank-accounts/${id}`),
 
   // ===== Adrese =====
 
   createAddress: (payload: CreateClinicAddressPayload): Promise<ApiResponse<string>> =>
-    api.post('/api/clinics/current/addresses', payload),
+    api.post('/api/v1/Clinics/current/addresses', payload),
 
   updateAddress: ({ id, ...data }: UpdateClinicAddressPayload): Promise<ApiResponse<boolean>> =>
-    api.put(`/api/clinics/current/addresses/${id}`, data),
+    api.put(`/api/v1/Clinics/current/addresses/${id}`, data),
 
   deleteAddress: (id: string): Promise<ApiResponse<boolean>> =>
-    api.delete(`/api/clinics/current/addresses/${id}`),
+    api.delete(`/api/v1/Clinics/current/addresses/${id}`),
 
   // ===== Date de contact =====
 
   createContact: (payload: CreateClinicContactPayload): Promise<ApiResponse<string>> =>
-    api.post('/api/clinics/current/contacts', payload),
+    api.post('/api/v1/Clinics/current/contacts', payload),
 
   updateContact: ({ id, ...data }: UpdateClinicContactPayload): Promise<ApiResponse<boolean>> =>
-    api.put(`/api/clinics/current/contacts/${id}`, data),
+    api.put(`/api/v1/Clinics/current/contacts/${id}`, data),
 
   deleteContact: (id: string): Promise<ApiResponse<boolean>> =>
-    api.delete(`/api/clinics/current/contacts/${id}`),
+    api.delete(`/api/v1/Clinics/current/contacts/${id}`),
 
   // ===== Persoane de contact =====
 
   createContactPerson: (payload: CreateClinicContactPersonPayload): Promise<ApiResponse<string>> =>
-    api.post('/api/clinics/current/contact-persons', payload),
+    api.post('/api/v1/Clinics/current/contact-persons', payload),
 
   updateContactPerson: ({ id, ...data }: UpdateClinicContactPersonPayload): Promise<ApiResponse<boolean>> =>
-    api.put(`/api/clinics/current/contact-persons/${id}`, data),
+    api.put(`/api/v1/Clinics/current/contact-persons/${id}`, data),
 
   deleteContactPerson: (id: string): Promise<ApiResponse<boolean>> =>
-    api.delete(`/api/clinics/current/contact-persons/${id}`),
+    api.delete(`/api/v1/Clinics/current/contact-persons/${id}`),
 
   // ===== Locații =====
 
   getLocations: (isActive?: boolean): Promise<ApiResponse<ClinicLocationDto[]>> =>
-    api.get('/api/clinics/current/locations', { params: { isActive } }),
+    api.get('/api/v1/Clinics/current/locations', { params: { isActive } }),
 
   createLocation: (payload: CreateClinicLocationPayload): Promise<ApiResponse<string>> =>
-    api.post('/api/clinics/current/locations', payload),
+    api.post('/api/v1/Clinics/current/locations', payload),
 
   updateLocation: ({ id, ...data }: UpdateClinicLocationPayload): Promise<ApiResponse<boolean>> =>
-    api.put(`/api/clinics/current/locations/${id}`, data),
+    api.put(`/api/v1/Clinics/current/locations/${id}`, data),
 
   deleteLocation: (id: string): Promise<ApiResponse<boolean>> =>
-    api.delete(`/api/clinics/current/locations/${id}`),
+    api.delete(`/api/v1/Clinics/current/locations/${id}`),
 }
 

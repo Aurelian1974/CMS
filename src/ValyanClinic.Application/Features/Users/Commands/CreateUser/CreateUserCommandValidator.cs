@@ -16,12 +16,12 @@ public sealed class CreateUserCommandValidator : AbstractValidator<CreateUserCom
 
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Adresa de email este obligatorie.")
-            .MaximumLength(199).WithMessage("Adresa de email nu poate depăși 199 de caractere.")
+            .MaximumLength(200).WithMessage("Adresa de email nu poate depăși 200 de caractere.")
             .EmailAddress().WithMessage("Adresa de email nu este validă.");
 
         RuleFor(x => x.Password)
             .NotEmpty().WithMessage("Parola este obligatorie.")
-            .MinimumLength(6).WithMessage("Parola trebuie să aibă minimum 6 caractere.")
+            .MinimumLength(8).WithMessage("Parola trebuie să aibă minimum 8 caractere.")
             .MaximumLength(100).WithMessage("Parola nu poate depăși 100 de caractere.");
 
         RuleFor(x => x.FirstName)

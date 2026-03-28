@@ -10,20 +10,20 @@ import type {
 
 export const scheduleApi = {
   getClinicSchedule: (): Promise<ApiResponse<ClinicScheduleDto[]>> =>
-    api.get('/api/schedule/clinic'),
+    api.get('/api/v1/Schedule/clinic'),
 
   upsertClinicDay: (payload: UpsertClinicDayPayload): Promise<ApiResponse<boolean>> =>
-    api.put('/api/schedule/clinic/day', payload),
+    api.put('/api/v1/Schedule/clinic/day', payload),
 
   getDoctorScheduleByClinic: (): Promise<ApiResponse<DoctorScheduleDto[]>> =>
-    api.get('/api/schedule/doctors'),
+    api.get('/api/v1/Schedule/doctors'),
 
   getDoctorSchedule: (doctorId: string): Promise<ApiResponse<DoctorDayDto[]>> =>
-    api.get(`/api/schedule/doctors/${doctorId}`),
+    api.get(`/api/v1/Schedule/doctors/${doctorId}`),
 
   upsertDoctorDay: (doctorId: string, payload: UpsertDoctorDayPayload): Promise<ApiResponse<boolean>> =>
-    api.put(`/api/schedule/doctors/${doctorId}/day`, payload),
+    api.put(`/api/v1/Schedule/doctors/${doctorId}/day`, payload),
 
   deleteDoctorDay: (doctorId: string, dayOfWeek: number): Promise<ApiResponse<boolean>> =>
-    api.delete(`/api/schedule/doctors/${doctorId}/day/${dayOfWeek}`),
+    api.delete(`/api/v1/Schedule/doctors/${doctorId}/day/${dayOfWeek}`),
 }

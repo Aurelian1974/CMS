@@ -12,23 +12,23 @@ import type {
 
 export const usersApi = {
   getRoles: (): Promise<ApiResponse<RoleDto[]>> =>
-    api.get('/api/users/roles'),
+    api.get('/api/v1/Users/roles'),
 
   getAll: (params: GetUsersParams): Promise<ApiResponse<UsersPagedResult>> =>
-    api.get('/api/users', { params }),
+    api.get('/api/v1/Users', { params }),
 
   getById: (id: string): Promise<ApiResponse<UserDetailDto>> =>
-    api.get(`/api/users/${id}`),
+    api.get(`/api/v1/Users/${id}`),
 
   create: (payload: CreateUserPayload): Promise<ApiResponse<string>> =>
-    api.post('/api/users', payload),
+    api.post('/api/v1/Users', payload),
 
   update: ({ id, ...data }: UpdateUserPayload): Promise<ApiResponse<boolean>> =>
-    api.put(`/api/users/${id}`, data),
+    api.put(`/api/v1/Users/${id}`, data),
 
   changePassword: (id: string, payload: ChangePasswordPayload): Promise<ApiResponse<boolean>> =>
-    api.patch(`/api/users/${id}/password`, payload),
+    api.patch(`/api/v1/Users/${id}/password`, payload),
 
   delete: (id: string): Promise<ApiResponse<boolean>> =>
-    api.delete(`/api/users/${id}`),
+    api.delete(`/api/v1/Users/${id}`),
 }

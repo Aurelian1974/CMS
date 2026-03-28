@@ -11,20 +11,20 @@ import type { PatientLookupDto } from '@/features/appointments/types/appointment
 
 export const patientsApi = {
   getAll: (params: GetPatientsParams): Promise<ApiResponse<PatientsPagedResponse>> =>
-    api.get('/api/patients', { params }),
+    api.get('/api/v1/Patients', { params }),
 
   getById: (id: string): Promise<ApiResponse<PatientFullDetailDto>> =>
-    api.get(`/api/patients/${id}`),
+    api.get(`/api/v1/Patients/${id}`),
 
   create: (payload: CreatePatientPayload): Promise<ApiResponse<string>> =>
-    api.post('/api/patients', payload),
+    api.post('/api/v1/Patients', payload),
 
   update: ({ id, ...data }: UpdatePatientPayload): Promise<ApiResponse<boolean>> =>
-    api.put(`/api/patients/${id}`, data),
+    api.put(`/api/v1/Patients/${id}`, data),
 
   delete: (id: string): Promise<ApiResponse<boolean>> =>
-    api.delete(`/api/patients/${id}`),
+    api.delete(`/api/v1/Patients/${id}`),
 
   getLookup: (): Promise<ApiResponse<PatientLookupDto[]>> =>
-    api.get('/api/patients/lookup'),
+    api.get('/api/v1/Patients/lookup'),
 }

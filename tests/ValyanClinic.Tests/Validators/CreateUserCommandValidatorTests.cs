@@ -111,7 +111,7 @@ public sealed class CreateUserCommandValidatorTests
     [Fact]
     public void Email_WhenExceeds200Characters_ShouldHaveError()
     {
-        var cmd = ValidCommand() with { Email = new string('a', 192) + "@test.ro" };
+        var cmd = ValidCommand() with { Email = new string('a', 193) + "@test.ro" };
         _validator.TestValidate(cmd)
                   .ShouldHaveValidationErrorFor(x => x.Email);
     }
@@ -139,13 +139,13 @@ public sealed class CreateUserCommandValidatorTests
         var cmd = ValidCommand() with { Password = "ab123" }; // 5 chars
         _validator.TestValidate(cmd)
                   .ShouldHaveValidationErrorFor(x => x.Password)
-                  .WithErrorMessage("Parola trebuie să aibă minimum 6 caractere.");
+                  .WithErrorMessage("Parola trebuie să aibă minimum 8 caractere.");
     }
 
     [Fact]
-    public void Password_WhenExactly6Characters_ShouldNotHaveError()
+    public void Password_WhenExactly8Characters_ShouldNotHaveError()
     {
-        var cmd = ValidCommand() with { Password = "abc123" };
+        var cmd = ValidCommand() with { Password = "abc12345" };
         _validator.TestValidate(cmd)
                   .ShouldNotHaveValidationErrorFor(x => x.Password);
     }

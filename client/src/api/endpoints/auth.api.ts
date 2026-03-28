@@ -6,15 +6,15 @@ import type { LoginPayload, LoginResponse } from '@/features/auth/types/auth.typ
 // Pentru login extragem .data din wrapper-ul ApiResponse
 export const authApi = {
   login: async (payload: LoginPayload): Promise<LoginResponse> => {
-    const response = await api.post<unknown, ApiResponse<LoginResponse>>('/api/auth/login', payload);
+    const response = await api.post<unknown, ApiResponse<LoginResponse>>('/api/v1/Auth/login', payload);
     return response.data!;
   },
 
   refresh: async (): Promise<LoginResponse> => {
-    const response = await api.post<unknown, ApiResponse<LoginResponse>>('/api/auth/refresh');
+    const response = await api.post<unknown, ApiResponse<LoginResponse>>('/api/v1/Auth/refresh');
     return response.data!;
   },
 
   logout: (): Promise<void> =>
-    api.post('/api/auth/logout'),
+    api.post('/api/v1/Auth/logout'),
 };

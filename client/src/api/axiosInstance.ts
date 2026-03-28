@@ -28,7 +28,7 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as typeof error.config & { _retry?: boolean }
 
-    const isAuthEndpoint = originalRequest?.url?.startsWith('/api/auth/');
+    const isAuthEndpoint = originalRequest?.url?.startsWith('/api/v1/Auth/');
     if (error.response?.status === 401 && !originalRequest?._retry && !isAuthEndpoint) {
       if (isRefreshing) {
         // Pune în coadă până se termină refresh-ul curent
@@ -45,7 +45,7 @@ api.interceptors.response.use(
 
       try {
         const { data } = await axios.post(
-          '/api/auth/refresh',
+          '/api/v1/Auth/refresh',
           {},
           { withCredentials: true }
         )

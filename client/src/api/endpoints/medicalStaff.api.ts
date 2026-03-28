@@ -11,20 +11,20 @@ import type {
 
 export const medicalStaffApi = {
   getAll: (params: GetMedicalStaffParams): Promise<ApiResponse<MedicalStaffPagedResult>> =>
-    api.get('/api/medicalstaff', { params }),
+    api.get('/api/v1/MedicalStaff', { params }),
 
   getById: (id: string): Promise<ApiResponse<MedicalStaffDetailDto>> =>
-    api.get(`/api/medicalstaff/${id}`),
+    api.get(`/api/v1/MedicalStaff/${id}`),
 
   getLookup: (): Promise<ApiResponse<MedicalStaffLookupDto[]>> =>
-    api.get('/api/medicalstaff/lookup'),
+    api.get('/api/v1/MedicalStaff/lookup'),
 
   create: (payload: CreateMedicalStaffPayload): Promise<ApiResponse<string>> =>
-    api.post('/api/medicalstaff', payload),
+    api.post('/api/v1/MedicalStaff', payload),
 
   update: ({ id, ...data }: UpdateMedicalStaffPayload): Promise<ApiResponse<boolean>> =>
-    api.put(`/api/medicalstaff/${id}`, data),
+    api.put(`/api/v1/MedicalStaff/${id}`, data),
 
   delete: (id: string): Promise<ApiResponse<boolean>> =>
-    api.delete(`/api/medicalstaff/${id}`),
+    api.delete(`/api/v1/MedicalStaff/${id}`),
 }

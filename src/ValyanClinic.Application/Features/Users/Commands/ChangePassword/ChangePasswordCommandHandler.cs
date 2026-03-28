@@ -8,6 +8,7 @@ namespace ValyanClinic.Application.Features.Users.Commands.ChangePassword;
 
 public sealed class ChangePasswordCommandHandler(
     IUserRepository repository,
+    IAuthRepository authRepository,
     IPasswordHasher passwordHasher,
     ICurrentUser currentUser)
     : IRequestHandler<ChangePasswordCommand, Result<bool>>
@@ -15,6 +16,20 @@ public sealed class ChangePasswordCommandHandler(
     public async Task<Result<bool>> Handle(
         ChangePasswordCommand request, CancellationToken cancellationToken)
     {
+        // Dacă utilizatorul își schimbă propria parolă, verificăm parola curentă
+        if (request.UserId == currentUser.Id)
+        {
+            if (string.IsNullOrWhiteSpace(request.CurrentPassword))
+                return Result<bool>.Failure("Parola curentă este obligatorie când îți schimbi propria parolă.");
+
+            var user = await authRepository.GetUserByIdForTokenAsync(request.UserId, cancellationToken);
+            if (user is null)
+                return Result<bool>.NotFound(ErrorMessages.User.NotFound);
+
+            if (!passwordHasher.VerifyPassword(request.CurrentPassword, user.PasswordHash))
+                return Result<bool>.Unauthorized("Parola curentă este incorectă.");
+        }
+
         try
         {
             var passwordHash = passwordHasher.HashPassword(request.NewPassword);
@@ -28,7 +43,7 @@ public sealed class ChangePasswordCommandHandler(
 
             return Result<bool>.Success(true);
         }
-        catch (SqlException ex) when (ex.Number == 50507)
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.UserNotFound)
         {
             return Result<bool>.NotFound(ErrorMessages.User.NotFound);
         }

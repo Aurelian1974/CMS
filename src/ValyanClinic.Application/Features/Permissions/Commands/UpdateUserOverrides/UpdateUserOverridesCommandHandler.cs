@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.Extensions.Caching.Memory;
 using ValyanClinic.Application.Common.Interfaces;
 using ValyanClinic.Application.Common.Models;
+using ValyanClinic.Application.Features.Permissions.Commands.UpdateRolePermissions;
 
 namespace ValyanClinic.Application.Features.Permissions.Commands.UpdateUserOverrides;
 
@@ -25,9 +26,11 @@ public sealed class UpdateUserOverridesCommandHandler(
         var affectedRows = await permissionRepository.SyncUserOverridesAsync(
             request.UserId, json, currentUser.Id, ct);
 
-        // Invalidare cache permisiuni pentru userul specificat
-        var cacheKey = $"permissions:{request.UserId}";
-        memoryCache.Remove(cacheKey);
+        // Invalidare cache permisiuni — incrementăm versiunea globală pentru a forța
+        // reload la toți utilizatorii afectați. Cheia reală din cache are formatul
+        // "permissions:{userId}:v{version}", deci ștergerea cheii simple nu funcționează.
+        var currentVersion = memoryCache.Get<long>(UpdateRolePermissionsCommandHandler.CacheVersionKey);
+        memoryCache.Set(UpdateRolePermissionsCommandHandler.CacheVersionKey, currentVersion + 1);
 
         return Result<int>.Success(affectedRows);
     }

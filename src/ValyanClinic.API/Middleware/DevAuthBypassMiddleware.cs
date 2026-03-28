@@ -14,6 +14,7 @@ public sealed class DevAuthBypassMiddleware(RequestDelegate next)
     // GUID-uri dev — corespund cu seed-ul din baza de date
     private static readonly string DevClinicId = "A0000001-0000-0000-0000-000000000001";
     private static readonly string DevUserId   = "B0000001-0000-0000-0000-000000000001";
+    private static readonly string DevRoleId   = "D1000001-0000-0000-0000-000000000001"; // Admin
 
     public async Task InvokeAsync(HttpContext context)
     {
@@ -27,6 +28,7 @@ public sealed class DevAuthBypassMiddleware(RequestDelegate next)
                 new Claim(ClaimTypes.Email, "admin@valyanclinic.dev"),
                 new Claim("fullName", "Admin Dev"),
                 new Claim(ClaimTypes.Role, "Admin"),
+                new Claim("roleId", DevRoleId),
             };
 
             var identity  = new ClaimsIdentity(claims, "DevBypass");

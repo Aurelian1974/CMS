@@ -11,20 +11,20 @@ import type {
 
 export const doctorsApi = {
   getAll: (params: GetDoctorsParams): Promise<ApiResponse<DoctorsPagedResult>> =>
-    api.get('/api/doctors', { params }),
+    api.get('/api/v1/Doctors', { params }),
 
   getById: (id: string): Promise<ApiResponse<DoctorDetailDto>> =>
-    api.get(`/api/doctors/${id}`),
+    api.get(`/api/v1/Doctors/${id}`),
 
   getLookup: (): Promise<ApiResponse<DoctorLookupDto[]>> =>
-    api.get('/api/doctors/lookup'),
+    api.get('/api/v1/Doctors/lookup'),
 
   create: (payload: CreateDoctorPayload): Promise<ApiResponse<string>> =>
-    api.post('/api/doctors', payload),
+    api.post('/api/v1/Doctors', payload),
 
   update: ({ id, ...data }: UpdateDoctorPayload): Promise<ApiResponse<boolean>> =>
-    api.put(`/api/doctors/${id}`, data),
+    api.put(`/api/v1/Doctors/${id}`, data),
 
   delete: (id: string): Promise<ApiResponse<boolean>> =>
-    api.delete(`/api/doctors/${id}`),
+    api.delete(`/api/v1/Doctors/${id}`),
 }

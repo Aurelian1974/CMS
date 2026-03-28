@@ -24,22 +24,11 @@ public sealed class AuthRepository(DapperContext context) : IAuthRepository
     public async Task<UserAuthDto?> GetUserByIdForTokenAsync(Guid userId, CancellationToken ct)
     {
         using var connection = context.CreateConnection();
-        // Refolosim User_GetByEmail cu email = null nu merge, dar putem folosi User_GetById
-        // care returnează datele necesare. Alternativ, facem un query prin GetByEmail
-        // cu email-ul userului. Mai simplu: folosim GetById SP dar el cere ClinicId.
-        // Soluție: query direct cu userId — SP-ul User_GetByEmail presupune email.
-        // Cea mai simplă abordare: găsim userul prin Id folosind un query pe User_GetById,
-        // dar acel DTO e diferit. Facem un SP nou? Nu — refolosim User_GetByEmail
-        // prin email-ul userului, dar nu-l avem. O abordare practică: citim direct.
         return await connection.QueryFirstOrDefaultAsync<UserAuthDto>(
             new CommandDefinition(
-                "SELECT u.Id, u.ClinicId, u.RoleId, r.Name AS RoleName, r.Code AS RoleCode, " +
-                "u.DoctorId, u.MedicalStaffId, u.Username, u.Email, u.PasswordHash, " +
-                "u.FirstName, u.LastName, u.IsActive, u.LastLoginAt, " +
-                "u.FailedLoginAttempts, u.LockoutEnd " +
-                "FROM Users u INNER JOIN Roles r ON r.Id = u.RoleId " +
-                "WHERE u.Id = @UserId AND u.IsDeleted = 0",
-                new { UserId = userId },
+                UserProcedures.GetByIdForAuth,
+                new { Id = userId },
+                commandType: CommandType.StoredProcedure,
                 cancellationToken: ct));
     }
 
