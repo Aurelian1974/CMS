@@ -55,6 +55,12 @@ const makeDrug = (overrides: Partial<CnasDrugDto> = {}): CnasDrugDto => ({
   isActive: true,
   isCompensated: false,
   company: 'Antibiotice SA',
+  anmAuthorizationCode: null,
+  anmCommercialName: null,
+  anmCountry: null,
+  anmDispenseMode: null,
+  isInAnm: false,
+  copaymentLists: null,
   ...overrides,
 })
 
