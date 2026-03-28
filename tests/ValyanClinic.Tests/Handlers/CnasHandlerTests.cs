@@ -38,11 +38,14 @@ public sealed class CnasHandlerTests
         PrescriptionMode: "P-RF",
         AtcCode: "A01AB01",
         PricePerPackage: 25.50m,
-        IsNarcotic: false,
-        IsBrand: false,
         IsActive: true,
-        IsCompensated: false,
-        Company: "Laborator SRL"
+        Company: "Laborator SRL",
+        AnmAuthorizationCode: code,
+        AnmCommercialName: $"Medicament Commercial {code}",
+        AnmCountry: "Romania",
+        AnmDispenseMode: "Cu reteta",
+        IsInAnm: true,
+        CopaymentLists: "A, C1"
     );
 
     private static CnasCompensatedDrugDto MakeCompDrug(int id = 1) => new(
@@ -262,6 +265,8 @@ public sealed class CnasHandlerTests
         Assert.Equal("P-RF", dto.PrescriptionMode);
         Assert.Equal("COMPRIMATE", dto.PharmaceuticalForm);
         Assert.Equal("Laborator SRL", dto.Company);
+        Assert.True(dto.IsInAnm);
+        Assert.Equal("A, C1", dto.CopaymentLists);
     }
 
     [Fact]
@@ -277,16 +282,21 @@ public sealed class CnasHandlerTests
             PrescriptionMode: null,
             AtcCode: null,
             PricePerPackage: null,
-            IsNarcotic: false,
-            IsBrand: false,
             IsActive: true,
-            IsCompensated: false,
-            Company: null
+            Company: null,
+            AnmAuthorizationCode: null,
+            AnmCommercialName: null,
+            AnmCountry: null,
+            AnmDispenseMode: null,
+            IsInAnm: false,
+            CopaymentLists: null
         );
 
         Assert.Null(dto.PresentationMode);
         Assert.Null(dto.Company);
         Assert.Null(dto.Concentration);
         Assert.True(dto.IsActive);
+        Assert.False(dto.IsInAnm);
+        Assert.Null(dto.CopaymentLists);
     }
 }

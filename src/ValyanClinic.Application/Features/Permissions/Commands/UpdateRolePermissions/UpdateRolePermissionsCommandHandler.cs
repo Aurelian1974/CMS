@@ -1,6 +1,7 @@
 using System.Text.Json;
 using MediatR;
 using Microsoft.Extensions.Caching.Memory;
+using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Interfaces;
 using ValyanClinic.Application.Common.Models;
 
@@ -16,7 +17,8 @@ public sealed class UpdateRolePermissionsCommandHandler(
     /// Versiune globală incrementată la fiecare modificare de permisiuni pe rol.
     /// Authorization handler-ul verifică această versiune și reîncarcă cache-ul dacă e diferită.
     /// </summary>
-    public static readonly string CacheVersionKey = "permissions:version";
+    // Păstrat public pentru compatibilitate cu teste existente
+    public static readonly string CacheVersionKey = PermissionCacheKeys.Version;
 
     public async Task<Result<int>> Handle(
         UpdateRolePermissionsCommand request, CancellationToken ct)

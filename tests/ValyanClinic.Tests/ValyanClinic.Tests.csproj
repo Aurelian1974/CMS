@@ -16,6 +16,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="NSubstitute" Version="5.*" />
+    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="10.*" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.*" />
     <PackageReference Include="coverlet.collector" Version="6.*">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
@@ -25,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\ValyanClinic.Application\ValyanClinic.Application.csproj" />
+    <ProjectReference Include="..\..\src\ValyanClinic.Infrastructure\ValyanClinic.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

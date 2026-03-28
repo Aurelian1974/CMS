@@ -63,10 +63,13 @@ export interface CnasDrugDto {
   atcCode: string | null
   company: string | null
   pricePerPackage: number | null
-  isNarcotic: boolean
-  isBrand: boolean
   isActive: boolean
-  isCompensated: boolean
+  anmAuthorizationCode: string | null
+  anmCommercialName: string | null
+  anmCountry: string | null
+  anmDispenseMode: string | null
+  isInAnm: boolean
+  copaymentLists: string | null
 }
 
 export interface CnasCompensatedDrugDto {

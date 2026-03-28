@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Interfaces;
@@ -10,12 +11,14 @@ namespace ValyanClinic.Application.Features.Auth.Commands.RefreshToken;
 
 /// <summary>
 /// Handler pentru refresh token — validează token-ul vechi, generează pereche nouă (rotație).
+/// Permisiunile sunt citite din cache dacă disponibile, evitând un DB call redundant.
 /// </summary>
 public sealed class RefreshTokenCommandHandler(
     IAuthRepository authRepository,
     ITokenService tokenService,
     IPermissionRepository permissionRepository,
-    IOptions<JwtOptions> jwtOptions)
+    IOptions<JwtOptions> jwtOptions,
+    IMemoryCache cache)
     : IRequestHandler<RefreshTokenCommand, Result<LoginResponseDto>>
 {
     public async Task<Result<LoginResponseDto>> Handle(
@@ -51,9 +54,23 @@ public sealed class RefreshTokenCommandHandler(
         var accessToken = tokenService.GenerateAccessToken(
             user.Id, user.ClinicId, user.Email, fullName, user.RoleCode, user.RoleId);
 
-        // 6. Încărcare permisiuni efective
-        var effectivePermissions = await permissionRepository.GetEffectiveByUserAsync(
-            user.Id, user.RoleId, ct);
+        // 6. Încărcare permisiuni efective — din cache dacă disponibile, altfel din DB
+        var cacheVersion = cache.Get<long>(PermissionCacheKeys.Version);
+        var dtoCacheKey = PermissionCacheKeys.DtoForUser(user.Id, cacheVersion);
+
+        if (!cache.TryGetValue(dtoCacheKey, out IReadOnlyList<UserModulePermissionDto>? effectivePermissions)
+            || effectivePermissions is null)
+        {
+            effectivePermissions = await permissionRepository.GetEffectiveByUserAsync(
+                user.Id, user.RoleId, ct);
+
+            // Populăm ambele cache-uri (auth + DTO) pentru viitoarele request-uri
+            cache.Set(
+                PermissionCacheKeys.ForUser(user.Id, cacheVersion),
+                effectivePermissions.ToDictionary(p => p.ModuleCode, p => p.AccessLevel),
+                PermissionCacheKeys.Ttl);
+            cache.Set(dtoCacheKey, effectivePermissions, PermissionCacheKeys.Ttl);
+        }
 
         var permissions = effectivePermissions
             .Select(p => new ModulePermissionDto

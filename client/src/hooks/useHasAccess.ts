@@ -26,6 +26,7 @@ export const MODULE = {
   Users: 'users',
   Clinic: 'clinic',
   Cnas: 'cnas',
+  Anm: 'anm',
 } as const;
 
 export type ModuleCode = (typeof MODULE)[keyof typeof MODULE];

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Memory;
+using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Enums;
 using ValyanClinic.Application.Common.Interfaces;
 
@@ -7,15 +8,14 @@ namespace ValyanClinic.Infrastructure.Authentication;
 
 /// <summary>
 /// ASP.NET Core authorization handler care verifică permisiunile efective ale utilizatorului.
-/// Permisiunile sunt cachuite 5 minute per utilizator pentru performanță.
+/// Permisiunile sunt cachuite per utilizator și versiune globală pentru performanță.
+/// Cache-ul este pre-populat la login, evitând un DB call la primul request post-autentificare.
 /// </summary>
 public sealed class ModuleAccessAuthorizationHandler(
     IPermissionRepository permissionRepository,
     IMemoryCache cache)
     : AuthorizationHandler<ModuleAccessRequirement>
 {
-    private const int CacheMinutes = 5;
-
     protected override async Task HandleRequirementAsync(
         AuthorizationHandlerContext context,
         ModuleAccessRequirement requirement)
@@ -30,11 +30,11 @@ public sealed class ModuleAccessAuthorizationHandler(
         var userId = Guid.Parse(userIdClaim);
         var roleId = Guid.Parse(roleIdClaim);
 
-        // Caută permisiunile în cache sau le încarcă din DB
-        // Cache-ul e invalidat la modificarea permisiunilor (prin cache version key)
-        var cacheVersionKey = "permissions:version";
-        var currentVersion = cache.Get<long>(cacheVersionKey);
-        var cacheKey = $"permissions:{userId}:v{currentVersion}";
+        // Caută permisiunile în cache sau le încarcă din DB.
+        // Cache-ul e pre-populat de LoginCommandHandler/RefreshTokenCommandHandler
+        // și invalidat prin incrementarea versiunii globale la orice modificare de permisiuni.
+        var currentVersion = cache.Get<long>(PermissionCacheKeys.Version);
+        var cacheKey = PermissionCacheKeys.ForUser(userId, currentVersion);
 
         if (!cache.TryGetValue(cacheKey, out Dictionary<string, int>? permissions))
         {
@@ -45,7 +45,7 @@ public sealed class ModuleAccessAuthorizationHandler(
                 p => p.ModuleCode,
                 p => p.AccessLevel);
 
-            cache.Set(cacheKey, permissions, TimeSpan.FromMinutes(CacheMinutes));
+            cache.Set(cacheKey, permissions, PermissionCacheKeys.Ttl);
         }
 
         // Verificare: nivelul efectiv >= nivelul minim cerut

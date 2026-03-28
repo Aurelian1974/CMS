@@ -26,4 +26,19 @@ public sealed class User
     public Guid? CreatedBy { get; init; }
     public DateTime? UpdatedAt { get; set; }
     public Guid? UpdatedBy { get; set; }
+
+    // ── Comportament de domeniu ───────────────────────────────────────────────
+
+    /// <summary>
+    /// Verifică dacă utilizatorul este blocat temporar (lockout activ).
+    /// </summary>
+    public bool IsLockedOut(DateTime? now = null)
+        => LockoutEnd.HasValue && LockoutEnd.Value > (now ?? DateTime.Now);
+
+    /// <summary>
+    /// Verifică dacă utilizatorul poate iniția o sesiune autentificată:
+    /// trebuie să fie activ, neșters și neblocat.
+    /// </summary>
+    public bool CanLogin(DateTime? now = null)
+        => IsActive && !IsDeleted && !IsLockedOut(now);
 }

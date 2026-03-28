@@ -19,9 +19,6 @@ import {
   LogOut,
   Clock,
   Pill,
-  ListFilter,
-  FlaskConical,
-  GitBranch,
 } from 'lucide-react';
 import { useUiStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
@@ -86,13 +83,9 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    section: 'Nomenclatoare CNAS',
+    section: 'Nomenclatoare',
     items: [
-      { to: '/cnas/drugs',             label: 'Medicamente',         icon: <Pill         size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'cnas' },
-      { to: '/cnas/compensated',       label: 'Liste Compensate',    icon: <ListFilter   size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'cnas' },
-      { to: '/cnas/active-substances', label: 'Substanțe Active',   icon: <FlaskConical size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'cnas' },
-      { to: '/cnas/atc',              label: 'Clasificare ATC',     icon: <GitBranch    size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'cnas' },
-      { to: '/cnas/icd10',            label: 'Diagnostice ICD-10',  icon: <Stethoscope  size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'cnas' },
+      { to: '/medicamente', label: 'Medicamente', icon: <Pill size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'anm' },
     ],
   },
 ];

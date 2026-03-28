@@ -99,28 +99,56 @@ public sealed class CnasSyncRepository(DapperContext context) : ICnasSyncReposit
         string? search, bool? isActive, bool? isCompensated, int page, int pageSize, CancellationToken ct)
     {
         const string sql = """
+            WITH CopaymentAgg AS (
+                SELECT DrugCode,
+                       STRING_AGG(CopaymentListType, ', ') WITHIN GROUP (ORDER BY CopaymentListType) AS CopaymentLists
+                FROM (
+                    SELECT DISTINCT DrugCode, CopaymentListType
+                    FROM dbo.Cnas_CopaymentListDrug
+                    WHERE IsActive = 1
+                ) x
+                GROUP BY DrugCode
+            )
             SELECT d.Code, d.Name, d.ActiveSubstanceCode, d.PharmaceuticalForm,
                    d.PresentationMode, d.Concentration, d.PrescriptionMode, d.AtcCode, d.PricePerPackage,
-                   d.IsNarcotic, d.IsBrand, d.IsActive,
-                   CAST(IIF(EXISTS (SELECT 1 FROM dbo.Cnas_CopaymentListDrug c
-                                    WHERE c.DrugCode = d.Code AND c.IsActive = 1), 1, 0) AS BIT) AS IsCompensated,
-                   d.Company
+                   d.IsActive, d.Company,
+                   a.AuthorizationCode AS AnmAuthorizationCode,
+                   a.CommercialName    AS AnmCommercialName,
+                   a.Country           AS AnmCountry,
+                   a.DispenseMode      AS AnmDispenseMode,
+                   CAST(IIF(a.AuthorizationCode IS NOT NULL, 1, 0) AS BIT) AS IsInAnm,
+                   ca.CopaymentLists
             FROM dbo.Cnas_Drug d
-            WHERE (@Term IS NULL OR d.Name LIKE @Term OR d.Code LIKE @Term OR d.ActiveSubstanceCode LIKE @Term)
+            LEFT JOIN dbo.Anm_Drug a ON d.Code = a.AuthorizationCode
+            LEFT JOIN CopaymentAgg ca ON d.Code = ca.DrugCode
+            WHERE d.ValidTo IS NULL
+              AND (@Term IS NULL OR d.Name LIKE @Term OR d.Code LIKE @Term OR d.ActiveSubstanceCode LIKE @Term)
               AND (@IsActive IS NULL OR d.IsActive = @IsActive)
               AND (@IsCompensated IS NULL
-                   OR (@IsCompensated = 1 AND EXISTS (SELECT 1 FROM dbo.Cnas_CopaymentListDrug c WHERE c.DrugCode = d.Code AND c.IsActive = 1))
-                   OR (@IsCompensated = 0 AND NOT EXISTS (SELECT 1 FROM dbo.Cnas_CopaymentListDrug c WHERE c.DrugCode = d.Code AND c.IsActive = 1)))
+                   OR (@IsCompensated = 1 AND ca.CopaymentLists IS NOT NULL)
+                   OR (@IsCompensated = 0 AND ca.CopaymentLists IS NULL))
             ORDER BY d.Name
             OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;
 
+            WITH CopaymentAgg AS (
+                SELECT DrugCode,
+                       STRING_AGG(CopaymentListType, ', ') WITHIN GROUP (ORDER BY CopaymentListType) AS CopaymentLists
+                FROM (
+                    SELECT DISTINCT DrugCode, CopaymentListType
+                    FROM dbo.Cnas_CopaymentListDrug
+                    WHERE IsActive = 1
+                ) x
+                GROUP BY DrugCode
+            )
             SELECT COUNT(*)
             FROM dbo.Cnas_Drug d
-            WHERE (@Term IS NULL OR d.Name LIKE @Term OR d.Code LIKE @Term OR d.ActiveSubstanceCode LIKE @Term)
+            LEFT JOIN CopaymentAgg ca ON d.Code = ca.DrugCode
+            WHERE d.ValidTo IS NULL
+              AND (@Term IS NULL OR d.Name LIKE @Term OR d.Code LIKE @Term OR d.ActiveSubstanceCode LIKE @Term)
               AND (@IsActive IS NULL OR d.IsActive = @IsActive)
               AND (@IsCompensated IS NULL
-                   OR (@IsCompensated = 1 AND EXISTS (SELECT 1 FROM dbo.Cnas_CopaymentListDrug c WHERE c.DrugCode = d.Code AND c.IsActive = 1))
-                   OR (@IsCompensated = 0 AND NOT EXISTS (SELECT 1 FROM dbo.Cnas_CopaymentListDrug c WHERE c.DrugCode = d.Code AND c.IsActive = 1)));
+                   OR (@IsCompensated = 1 AND ca.CopaymentLists IS NOT NULL)
+                   OR (@IsCompensated = 0 AND ca.CopaymentLists IS NULL));
             """;
 
         var offset = (page - 1) * pageSize;

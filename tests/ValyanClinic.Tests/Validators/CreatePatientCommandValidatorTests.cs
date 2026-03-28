@@ -18,7 +18,7 @@ public sealed class CreatePatientCommandValidatorTests
     private static CreatePatientCommand MinimalValid() => new(
         FirstName: "Ion",
         LastName: "Popescu",
-        Cnp: "1900101123456",
+        Cnp: "1900101123457",
         BirthDate: null,
         GenderId: null,
         BloodTypeId: null,
@@ -88,9 +88,9 @@ public sealed class CreatePatientCommandValidatorTests
     // ── CNP ───────────────────────────────────────────────────────────────
 
     [Theory]
-    [InlineData("1900101123456")]   // valid — starts with 1
-    [InlineData("2850202234567")]   // valid — starts with 2 (F)
-    [InlineData("9010101999999")]   // valid — starts with 9
+    [InlineData("1900101123457")]   // valid — starts with 1
+    [InlineData("2850202234568")]   // valid — starts with 2 (F)
+    [InlineData("9010101999995")]   // valid — starts with 9
     public void Cnp_WhenValidFormat_ShouldNotHaveError(string cnp)
     {
         var cmd = MinimalValid() with { Cnp = cnp };
@@ -108,7 +108,7 @@ public sealed class CreatePatientCommandValidatorTests
         var cmd = MinimalValid() with { Cnp = cnp };
         _validator.TestValidate(cmd)
                   .ShouldHaveValidationErrorFor(x => x.Cnp)
-                  .WithErrorMessage("CNP-ul trebuie să aibă 13 cifre valide.");
+                  .WithErrorMessage("CNP-ul nu este valid (verificați formatul și cifra de control)."); 
     }
 
     [Fact]

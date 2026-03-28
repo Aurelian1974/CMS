@@ -77,11 +77,14 @@ public sealed record CnasDrugDto(
     string? PrescriptionMode,
     string? AtcCode,
     decimal? PricePerPackage,
-    bool IsNarcotic,
-    bool IsBrand,
     bool IsActive,
-    bool IsCompensated,
-    string? Company
+    string? Company,
+    string? AnmAuthorizationCode,
+    string? AnmCommercialName,
+    string? AnmCountry,
+    string? AnmDispenseMode,
+    bool IsInAnm,
+    string? CopaymentLists
 );
 
 public sealed record CnasCompensatedDrugDto(

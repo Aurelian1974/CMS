@@ -10,16 +10,17 @@ IF EXISTS (
     WHERE TABLE_NAME = 'Clinics' AND COLUMN_NAME = 'CaenCode'
 )
 BEGIN
-    INSERT INTO ClinicCaenCodes (ClinicId, CaenCodeId, IsPrimary)
-    SELECT c.Id, cc.Id, 1   -- marcat ca primar
-    FROM Clinics c
-    INNER JOIN CaenCodes cc ON cc.Code = c.CaenCode AND cc.IsActive = 1
-    WHERE c.CaenCode IS NOT NULL
-      AND NOT EXISTS (
-          SELECT 1 FROM ClinicCaenCodes ccc
-          WHERE ccc.ClinicId = c.Id AND ccc.CaenCodeId = cc.Id
-      );
-
+    EXEC(N'
+        INSERT INTO ClinicCaenCodes (ClinicId, CaenCodeId, IsPrimary)
+        SELECT c.Id, cc.Id, 1
+        FROM Clinics c
+        INNER JOIN CaenCodes cc ON cc.Code = c.CaenCode AND cc.IsActive = 1
+        WHERE c.CaenCode IS NOT NULL
+          AND NOT EXISTS (
+              SELECT 1 FROM ClinicCaenCodes ccc
+              WHERE ccc.ClinicId = c.Id AND ccc.CaenCodeId = cc.Id
+          );
+    ');
     PRINT '0022 — date CaenCode migrate din Clinics → ClinicCaenCodes.';
 END;
 GO

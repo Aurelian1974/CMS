@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using ValyanClinic.Application.Common.Configuration;
@@ -18,6 +19,7 @@ public sealed class LoginCommandHandlerTests
     private readonly IPasswordHasher _passwordHasher = Substitute.For<IPasswordHasher>();
     private readonly ITokenService _tokenService = Substitute.For<ITokenService>();
     private readonly IPermissionRepository _permissionRepo = Substitute.For<IPermissionRepository>();
+    private readonly IMemoryCache _cache = new MemoryCache(Options.Create(new MemoryCacheOptions()));
 
     private readonly JwtOptions _jwtOptions = new() { RefreshTokenExpiryDays = 7 };
     private readonly RateLimitingOptions _rateLimitOptions = new() { LoginMaxAttempts = 5, LoginWindowMinutes = 15 };
@@ -28,7 +30,8 @@ public sealed class LoginCommandHandlerTests
         _tokenService,
         _permissionRepo,
         Options.Create(_jwtOptions),
-        Options.Create(_rateLimitOptions));
+        Options.Create(_rateLimitOptions),
+        _cache);
 
     /// Construiește un UserAuthDto valid cu valorile implicite.
     private static UserAuthDto BuildUser(

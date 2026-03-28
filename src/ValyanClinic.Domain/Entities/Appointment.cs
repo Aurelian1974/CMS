@@ -20,4 +20,22 @@ public sealed class Appointment
     public Guid CreatedBy { get; init; }
     public DateTime? UpdatedAt { get; set; }
     public Guid? UpdatedBy { get; set; }
+
+    // ── Comportament de domeniu ───────────────────────────────────────────────
+
+    /// <summary>Durata efectivă a programării.</summary>
+    public TimeSpan Duration => EndTime - StartTime;
+
+    /// <summary>
+    /// Verifică dacă programarea a trecut deja (ora de start este în trecut).
+    /// </summary>
+    public bool IsInThePast(DateTime? now = null)
+        => StartTime < (now ?? DateTime.UtcNow);
+
+    /// <summary>
+    /// Verifică dacă intervalul dat se suprapune cu această programare.
+    /// Suprapunere există dacă: start &lt; EndTime AND end &gt; StartTime.
+    /// </summary>
+    public bool OverlapsWith(DateTime start, DateTime end)
+        => start < EndTime && end > StartTime;
 }

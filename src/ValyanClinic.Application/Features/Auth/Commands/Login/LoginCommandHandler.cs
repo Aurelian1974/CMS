@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Interfaces;
@@ -9,7 +10,7 @@ namespace ValyanClinic.Application.Features.Auth.Commands.Login;
 
 /// <summary>
 /// Handler pentru login — verifică credențialele, gestionează lockout,
-/// generează access + refresh token.
+/// generează access + refresh token și pre-populează cache-ul de permisiuni.
 /// </summary>
 public sealed class LoginCommandHandler(
     IAuthRepository authRepository,
@@ -17,7 +18,8 @@ public sealed class LoginCommandHandler(
     ITokenService tokenService,
     IPermissionRepository permissionRepository,
     IOptions<JwtOptions> jwtOptions,
-    IOptions<RateLimitingOptions> rateLimitingOptions)
+    IOptions<RateLimitingOptions> rateLimitingOptions,
+    IMemoryCache cache)
     : IRequestHandler<LoginCommand, Result<LoginResponseDto>>
 {
     public async Task<Result<LoginResponseDto>> Handle(
@@ -69,6 +71,18 @@ public sealed class LoginCommandHandler(
         // 8. Încărcare permisiuni efective (rol + override-uri)
         var effectivePermissions = await permissionRepository.GetEffectiveByUserAsync(
             user.Id, user.RoleId, ct);
+
+        // Pre-populăm cache-ul de autorizare (Dictionary<string,int>) și cache-ul de DTO-uri,
+        // astfel primul request API după login nu mai necesită un DB call suplimentar.
+        var cacheVersion = cache.Get<long>(PermissionCacheKeys.Version);
+        cache.Set(
+            PermissionCacheKeys.ForUser(user.Id, cacheVersion),
+            effectivePermissions.ToDictionary(p => p.ModuleCode, p => p.AccessLevel),
+            PermissionCacheKeys.Ttl);
+        cache.Set(
+            PermissionCacheKeys.DtoForUser(user.Id, cacheVersion),
+            effectivePermissions,
+            PermissionCacheKeys.Ttl);
 
         var permissions = effectivePermissions
             .Select(p => new ModulePermissionDto

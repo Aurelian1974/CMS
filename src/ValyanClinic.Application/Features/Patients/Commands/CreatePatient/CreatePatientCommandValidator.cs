@@ -1,6 +1,7 @@
 using FluentValidation;
+using ValyanClinic.Domain.ValueObjects;
 
-namespace ValyanClinic.Application.Features.Patients.Commands.CreatePatient;
+namespace ValyanClinic.Application.Features.Patients.Commands.CreatePatient;    
 
 public sealed class CreatePatientCommandValidator : AbstractValidator<CreatePatientCommand>
 {
@@ -15,7 +16,8 @@ public sealed class CreatePatientCommandValidator : AbstractValidator<CreatePati
             .MaximumLength(100).WithMessage("Numele nu poate depăși 100 de caractere.");
 
         RuleFor(x => x.Cnp)
-            .Matches(@"^[1-9]\d{12}$").WithMessage("CNP-ul trebuie să aibă 13 cifre valide.")
+            .Must(cnp => Cnp.IsValid(cnp))
+            .WithMessage("CNP-ul nu este valid (verificați formatul și cifra de control).")
             .When(x => !string.IsNullOrWhiteSpace(x.Cnp));
 
         RuleFor(x => x.Email)

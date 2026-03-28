@@ -91,6 +91,9 @@ export default defineConfig({
       scss: {
         // Permite import @/styles/variables în orice SCSS fără a-l importa manual
         additionalData: `@use "@/styles/variables" as *;`,
+        // Suprimă warning-uri de deprecare din node_modules (ex: Syncfusion if() syntax)
+        silenceDeprecations: ['if-function', 'import', 'global-builtin', 'color-functions'],
+        quietDeps: true,
       },
     },
   },

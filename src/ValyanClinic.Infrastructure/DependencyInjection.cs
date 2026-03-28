@@ -35,6 +35,7 @@ public static class DependencyInjection
         services.Configure<SecurityOptions>(configuration.GetSection(SecurityOptions.SectionName));
         services.Configure<RateLimitingOptions>(configuration.GetSection(RateLimitingOptions.SectionName));
         services.Configure<CnasOptions>(configuration.GetSection(CnasOptions.SectionName));
+        services.Configure<AnmOptions>(configuration.GetSection(AnmOptions.SectionName));
 
         // ===== Baza de date =====
         services.AddSingleton<DapperContext>();
@@ -58,16 +59,26 @@ public static class DependencyInjection
         services.AddScoped<IPermissionRepository, PermissionRepository>();
         services.AddScoped<IScheduleRepository, ScheduleRepository>();
         services.AddScoped<ICnasSyncRepository, CnasSyncRepository>();
+        services.AddScoped<IAnmSyncRepository, AnmSyncRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 
         // ===== Servicii =====
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<ICnasNomenclatorService, CnasNomenclatorService>();
+        services.AddScoped<IAnmNomenclatorService, AnmNomenclatorService>();
         services.AddHostedService<CnasSyncHostedService>();
+        services.AddHostedService<AnmSyncHostedService>();
 
         // ===== HttpClient CNAS (URL-uri permise doar pe cnas.ro) =====
         services.AddHttpClient("CnasClient", client =>
+        {
+            client.DefaultRequestHeaders.Add("User-Agent", "ValyanClinic/1.0");
+            client.Timeout = TimeSpan.FromMinutes(10);
+        });
+
+        // ===== HttpClient ANM (URL-uri permise doar pe nomenclator.anm.ro) =====
+        services.AddHttpClient("AnmClient", client =>
         {
             client.DefaultRequestHeaders.Add("User-Agent", "ValyanClinic/1.0");
             client.Timeout = TimeSpan.FromMinutes(10);

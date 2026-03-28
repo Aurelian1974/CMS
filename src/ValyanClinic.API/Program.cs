@@ -19,6 +19,7 @@ using ValyanClinic.API.Filters;
 using ValyanClinic.API.Middleware;
 using ValyanClinic.Application.Common.Behaviors;
 using ValyanClinic.Infrastructure;
+using ValyanClinic.Infrastructure.Data;
 using ValyanClinic.Application.Common.Configuration;
 using ValyanClinic.Infrastructure.Configuration;
 
@@ -183,6 +184,17 @@ try
 
     // ===== Build app =====
     var app = builder.Build();
+
+    // ===== Migrate mode — rulat de migrate.ps1, fără HTTP server =====
+    // Exemplu: dotnet run --project ... -- --migrate
+    if (args.Contains("--migrate"))
+    {
+        var connectionString = app.Configuration.GetConnectionString("DefaultConnection")
+                               ?? throw new InvalidOperationException("ConnectionString 'DefaultConnection' lipsă.");
+        var migratorLogger = app.Services.GetRequiredService<ILogger<DatabaseMigrator>>();
+        var migrator = new DatabaseMigrator(connectionString, migratorLogger);
+        return migrator.Run() ? 0 : 1;
+    }
 
     // ===== Schema export mode — fără HTTP, folosit de generate-openapi.ps1 =====
     // Exemplu: dotnet run --project ... -- --export-openapi --output ../../openapi/openapi-v1.json
