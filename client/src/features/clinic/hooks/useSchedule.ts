@@ -17,7 +17,7 @@ export const useClinicSchedule = () =>
   useQuery({
     queryKey: scheduleKeys.clinic(),
     queryFn: () => scheduleApi.getClinicSchedule(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: Infinity,
   })
 
 export const useUpsertClinicDay = () => {
@@ -36,7 +36,7 @@ export const useDoctorSchedules = () =>
   useQuery({
     queryKey: scheduleKeys.doctors(),
     queryFn: () => scheduleApi.getDoctorScheduleByClinic(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: Infinity,
   })
 
 export const useDoctorSchedule = (doctorId: string | null) =>
@@ -44,7 +44,7 @@ export const useDoctorSchedule = (doctorId: string | null) =>
     queryKey: scheduleKeys.doctor(doctorId ?? ''),
     queryFn: () => scheduleApi.getDoctorSchedule(doctorId!),
     enabled: !!doctorId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: Infinity,
   })
 
 export const useUpsertDoctorDay = () => {

@@ -34,6 +34,7 @@ public class ClinicsController : BaseApiController
 
     [HttpGet("current")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<ClinicDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCurrentClinic(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetCurrentClinicQuery(), ct);
@@ -42,6 +43,7 @@ public class ClinicsController : BaseApiController
 
     [HttpPut("current")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateCurrentClinic(
         [FromBody] UpdateClinicCommand command, CancellationToken ct)
     {
@@ -51,6 +53,7 @@ public class ClinicsController : BaseApiController
 
     [HttpPut("current/caen-codes")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> SyncCaenCodes(
         [FromBody] SyncClinicCaenCodesCommand command, CancellationToken ct)
     {
@@ -62,6 +65,7 @@ public class ClinicsController : BaseApiController
 
     [HttpGet("current/locations")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IEnumerable<ClinicLocationDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLocations(
         [FromQuery] bool? isActive, CancellationToken ct)
     {
@@ -71,6 +75,7 @@ public class ClinicsController : BaseApiController
 
     [HttpPost("current/locations")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<Guid>>(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateLocation(
         [FromBody] CreateClinicLocationCommand command, CancellationToken ct)
     {
@@ -80,6 +85,7 @@ public class ClinicsController : BaseApiController
 
     [HttpPut("current/locations/{id:guid}")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateLocation(
         Guid id, [FromBody] UpdateClinicLocationRequest request, CancellationToken ct)
     {
@@ -93,6 +99,7 @@ public class ClinicsController : BaseApiController
 
     [HttpDelete("current/locations/{id:guid}")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Full)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteLocation(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new DeleteClinicLocationCommand(id), ct);
@@ -103,6 +110,7 @@ public class ClinicsController : BaseApiController
 
     [HttpPost("current/bank-accounts")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<Guid>>(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateBankAccount(
         [FromBody] CreateClinicBankAccountCommand command, CancellationToken ct)
     {
@@ -112,6 +120,7 @@ public class ClinicsController : BaseApiController
 
     [HttpPut("current/bank-accounts/{id:guid}")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateBankAccount(
         Guid id, [FromBody] UpdateClinicBankAccountRequest request, CancellationToken ct)
     {
@@ -123,6 +132,7 @@ public class ClinicsController : BaseApiController
 
     [HttpDelete("current/bank-accounts/{id:guid}")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Full)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteBankAccount(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new DeleteClinicBankAccountCommand(id), ct);
@@ -133,6 +143,7 @@ public class ClinicsController : BaseApiController
 
     [HttpPost("current/addresses")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<Guid>>(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateAddress(
         [FromBody] CreateClinicAddressCommand command, CancellationToken ct)
     {
@@ -142,6 +153,7 @@ public class ClinicsController : BaseApiController
 
     [HttpPut("current/addresses/{id:guid}")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateAddress(
         Guid id, [FromBody] UpdateClinicAddressRequest request, CancellationToken ct)
     {
@@ -154,6 +166,7 @@ public class ClinicsController : BaseApiController
 
     [HttpDelete("current/addresses/{id:guid}")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Full)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteAddress(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new DeleteClinicAddressCommand(id), ct);
@@ -164,6 +177,7 @@ public class ClinicsController : BaseApiController
 
     [HttpPost("current/contacts")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<Guid>>(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateContact(
         [FromBody] CreateClinicContactCommand command, CancellationToken ct)
     {
@@ -173,6 +187,7 @@ public class ClinicsController : BaseApiController
 
     [HttpPut("current/contacts/{id:guid}")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateContact(
         Guid id, [FromBody] UpdateClinicContactRequest request, CancellationToken ct)
     {
@@ -184,6 +199,7 @@ public class ClinicsController : BaseApiController
 
     [HttpDelete("current/contacts/{id:guid}")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Full)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteContact(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new DeleteClinicContactCommand(id), ct);
@@ -194,6 +210,7 @@ public class ClinicsController : BaseApiController
 
     [HttpPost("current/contact-persons")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<Guid>>(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateContactPerson(
         [FromBody] CreateClinicContactPersonCommand command, CancellationToken ct)
     {
@@ -203,6 +220,7 @@ public class ClinicsController : BaseApiController
 
     [HttpPut("current/contact-persons/{id:guid}")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateContactPerson(
         Guid id, [FromBody] UpdateClinicContactPersonRequest request, CancellationToken ct)
     {
@@ -214,6 +232,7 @@ public class ClinicsController : BaseApiController
 
     [HttpDelete("current/contact-persons/{id:guid}")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Full)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteContactPerson(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new DeleteClinicContactPersonCommand(id), ct);

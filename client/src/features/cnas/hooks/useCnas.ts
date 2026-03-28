@@ -58,7 +58,8 @@ export const useTriggerCnasSync = () => {
   return useMutation({
     mutationFn: () => cnasApi.triggerSync(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: cnasKeys.history() })
+      // Invalidează tot cache-ul CNAS — sincronizarea schimbă nomenclatoarele și istoricul
+      queryClient.invalidateQueries({ queryKey: cnasKeys.all })
     },
   })
 }
@@ -70,7 +71,7 @@ export const useCnasDrugs = (params: GetCnasDrugsParams) =>
     queryKey: cnasKeys.drug(params),
     queryFn: () => cnasApi.getDrugs(params),
     placeholderData: keepPreviousData,
-    staleTime: 10 * 60 * 1000,
+    staleTime: Infinity,
   })
 
 export const useCnasCompensated = (params: GetCnasCompensatedParams) =>
@@ -78,7 +79,7 @@ export const useCnasCompensated = (params: GetCnasCompensatedParams) =>
     queryKey: cnasKeys.compensatedList(params),
     queryFn: () => cnasApi.getCompensated(params),
     placeholderData: keepPreviousData,
-    staleTime: 10 * 60 * 1000,
+    staleTime: Infinity,
   })
 
 export const useCnasActiveSubstances = (params: GetCnasPagedParams) =>
@@ -86,7 +87,7 @@ export const useCnasActiveSubstances = (params: GetCnasPagedParams) =>
     queryKey: cnasKeys.activeSubst(params),
     queryFn: () => cnasApi.getActiveSubstances(params),
     placeholderData: keepPreviousData,
-    staleTime: 10 * 60 * 1000,
+    staleTime: Infinity,
   })
 
 export const useCnasAtcCodes = (params: GetCnasPagedParams) =>
@@ -94,7 +95,7 @@ export const useCnasAtcCodes = (params: GetCnasPagedParams) =>
     queryKey: cnasKeys.atcList(params),
     queryFn: () => cnasApi.getAtcCodes(params),
     placeholderData: keepPreviousData,
-    staleTime: 10 * 60 * 1000,
+    staleTime: Infinity,
   })
 
 export const useCnasIcd10Codes = (params: GetCnasPagedParams) =>
@@ -102,5 +103,5 @@ export const useCnasIcd10Codes = (params: GetCnasPagedParams) =>
     queryKey: cnasKeys.icd10List(params),
     queryFn: () => cnasApi.getIcd10Codes(params),
     placeholderData: keepPreviousData,
-    staleTime: 10 * 60 * 1000,
+    staleTime: Infinity,
   })

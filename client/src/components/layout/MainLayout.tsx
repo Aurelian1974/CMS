@@ -4,6 +4,7 @@ import { Sidebar } from './Sidebar'
 import { AppHeader } from './AppHeader'
 import { PageTabs } from './PageTabs'
 import { usePageHistoryStore } from '@/store/pageHistoryStore'
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import styles from './MainLayout.module.scss'
 
 export const MainLayout = () => {
@@ -17,12 +18,16 @@ export const MainLayout = () => {
 
   return (
     <div className={styles.layout}>
-      <Sidebar />
+      <ErrorBoundary variant="section" label="sidebar">
+        <Sidebar />
+      </ErrorBoundary>
       <div className={styles.content}>
         <AppHeader />
         <PageTabs />
         <main className={styles.main}>
-          <Outlet />
+          <ErrorBoundary key={location.pathname} variant="page" label="pagină">
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>

@@ -84,6 +84,18 @@ BEGIN
         VALUES (@ClinicId, @RoleId, @DoctorId, @MedicalStaffId, @Username, @Email, @PasswordHash,
                 @FirstName, @LastName, @IsActive, @CreatedBy, GETDATE(), 0);
 
+        -- Audit: captează valorile create (fără PasswordHash — informație sensibilă)
+        DECLARE @NewUserId UNIQUEIDENTIFIER = (SELECT Id FROM @OutputIds);
+        DECLARE @NewValues NVARCHAR(MAX);
+        SELECT @NewValues = (
+            SELECT Username, Email, FirstName, LastName, RoleId, DoctorId, MedicalStaffId, IsActive
+            FROM Users WHERE Id = @NewUserId
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
+        INSERT INTO dbo.AuditLogs (ClinicId, EntityType, EntityId, Action, OldValues, NewValues, ChangedBy)
+        VALUES (@ClinicId, N'User', @NewUserId, N'Create', NULL, @NewValues, @CreatedBy);
+
         COMMIT TRANSACTION;
         SELECT Id FROM @OutputIds;
     END TRY

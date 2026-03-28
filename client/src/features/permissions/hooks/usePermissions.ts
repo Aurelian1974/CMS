@@ -18,7 +18,7 @@ export const useModulesAndLevels = () =>
   useQuery({
     queryKey: permissionKeys.modulesAndLevels(),
     queryFn: () => permissionsApi.getModulesAndLevels(),
-    staleTime: 30 * 60 * 1000, // 30 min — se schimbă rar
+    staleTime: Infinity, // definiții de sistem — nu se schimbă
   })
 
 /// Permisiuni default per rol.

@@ -22,7 +22,7 @@ export const useDoctors = (params: GetDoctorsParams) =>
     queryKey: doctorKeys.list(params),
     queryFn: () => doctorsApi.getAll(params),
     placeholderData: keepPreviousData,
-    staleTime: 3 * 60 * 1000,
+    staleTime: 30_000,
   })
 
 // ── Detaliu doctor ────────────────────────────────────────────────────────────
@@ -38,7 +38,7 @@ export const useDoctorLookup = (options?: { enabled?: boolean }) =>
   useQuery({
     queryKey: doctorKeys.lookup(),
     queryFn: () => doctorsApi.getLookup(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: Infinity,
     enabled: options?.enabled ?? true,
   })
 

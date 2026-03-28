@@ -20,6 +20,7 @@ public class PatientsController : BaseApiController
     /// <summary>Listare paginată pacienți cu filtre și statistici.</summary>
     [HttpGet]
     [HasAccess(ModuleCodes.Patients, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<PatientsPagedResponse>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? search,
         [FromQuery] Guid? genderId,
@@ -43,6 +44,7 @@ public class PatientsController : BaseApiController
     /// <summary>Obținere pacient complet după Id (date + alergii + doctori + contacte urgență).</summary>
     [HttpGet("{id:guid}")]
     [HasAccess(ModuleCodes.Patients, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<PatientFullDetailDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetPatientByIdQuery(id), ct);
@@ -52,6 +54,7 @@ public class PatientsController : BaseApiController
     /// <summary>Listare simplificată pacienți (pentru dropdown-uri).</summary>
     [HttpGet("lookup")]
     [HasAccess(ModuleCodes.Patients, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IEnumerable<PatientLookupDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLookup(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetPatientsLookupQuery(), ct);
@@ -61,6 +64,7 @@ public class PatientsController : BaseApiController
     /// <summary>Creare pacient nou cu colecții opționale.</summary>
     [HttpPost]
     [HasAccess(ModuleCodes.Patients, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<Guid>>(StatusCodes.Status201Created)]
     public async Task<IActionResult> Create(
         [FromBody] CreatePatientCommand command, CancellationToken ct)
     {
@@ -71,6 +75,7 @@ public class PatientsController : BaseApiController
     /// <summary>Actualizare pacient existent cu sincronizare colecții.</summary>
     [HttpPut("{id:guid}")]
     [HasAccess(ModuleCodes.Patients, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Update(
         Guid id, [FromBody] UpdatePatientRequest request, CancellationToken ct)
     {
@@ -107,6 +112,7 @@ public class PatientsController : BaseApiController
     /// <summary>Soft delete pacient.</summary>
     [HttpDelete("{id:guid}")]
     [HasAccess(ModuleCodes.Patients, AccessLevel.Full)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new DeletePatientCommand(id), ct);

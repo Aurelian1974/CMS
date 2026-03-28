@@ -17,6 +17,7 @@ public class ScheduleController : BaseApiController
 
     [HttpGet("clinic")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IEnumerable<ClinicScheduleDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetClinicSchedule(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetClinicScheduleQuery(), ct);
@@ -25,6 +26,7 @@ public class ScheduleController : BaseApiController
 
     [HttpPut("clinic/day")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> UpsertClinicDay(
         [FromBody] UpsertClinicDayCommand command, CancellationToken ct)
     {
@@ -36,6 +38,7 @@ public class ScheduleController : BaseApiController
 
     [HttpGet("doctors")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IEnumerable<DoctorScheduleDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDoctorScheduleByClinic(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetDoctorScheduleByClinicQuery(), ct);
@@ -46,6 +49,7 @@ public class ScheduleController : BaseApiController
 
     [HttpGet("doctors/{doctorId:guid}")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IEnumerable<DoctorDayDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDoctorSchedule(Guid doctorId, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetDoctorScheduleQuery(doctorId), ct);
@@ -54,6 +58,7 @@ public class ScheduleController : BaseApiController
 
     [HttpPut("doctors/{doctorId:guid}/day")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> UpsertDoctorDay(
         Guid doctorId, [FromBody] UpsertDoctorDayRequest request, CancellationToken ct)
     {
@@ -64,6 +69,7 @@ public class ScheduleController : BaseApiController
 
     [HttpDelete("doctors/{doctorId:guid}/day/{dayOfWeek:int}")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> DeleteDoctorDay(Guid doctorId, byte dayOfWeek, CancellationToken ct)
     {
         var result = await Mediator.Send(new DeleteDoctorDayCommand(doctorId, dayOfWeek), ct);

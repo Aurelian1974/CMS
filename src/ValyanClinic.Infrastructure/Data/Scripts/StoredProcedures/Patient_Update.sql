@@ -55,6 +55,17 @@ BEGIN
             ;THROW 50001, N'Un pacient cu acest CNP există deja.', 1;
         END;
 
+        -- Audit: captează valorile vechi ÎNAINTE de update
+        DECLARE @OldValues NVARCHAR(MAX);
+        SELECT @OldValues = (
+            SELECT FirstName, LastName, Cnp, BirthDate, GenderId, BloodTypeId,
+                   PhoneNumber, SecondaryPhone, Email, Address, City, County, PostalCode,
+                   InsuranceNumber, InsuranceExpiry, IsInsured, ChronicDiseases, FamilyDoctorName,
+                   Notes, IsActive
+            FROM Patients WHERE Id = @Id AND ClinicId = @ClinicId AND IsDeleted = 0
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
         UPDATE Patients
         SET FirstName        = @FirstName,
             LastName         = @LastName,
@@ -79,6 +90,20 @@ BEGIN
             UpdatedAt        = GETDATE(),
             UpdatedBy        = @UpdatedBy
         WHERE Id = @Id AND ClinicId = @ClinicId AND IsDeleted = 0;
+
+        -- Audit: captează valorile noi DUPĂ update
+        DECLARE @NewValues NVARCHAR(MAX);
+        SELECT @NewValues = (
+            SELECT FirstName, LastName, Cnp, BirthDate, GenderId, BloodTypeId,
+                   PhoneNumber, SecondaryPhone, Email, Address, City, County, PostalCode,
+                   InsuranceNumber, InsuranceExpiry, IsInsured, ChronicDiseases, FamilyDoctorName,
+                   Notes, IsActive
+            FROM Patients WHERE Id = @Id AND ClinicId = @ClinicId
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
+        INSERT INTO dbo.AuditLogs (ClinicId, EntityType, EntityId, Action, OldValues, NewValues, ChangedBy)
+        VALUES (@ClinicId, N'Patient', @Id, N'Update', @OldValues, @NewValues, @UpdatedBy);
 
         COMMIT TRANSACTION;
     END TRY

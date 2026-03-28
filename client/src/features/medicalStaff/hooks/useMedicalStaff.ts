@@ -20,14 +20,14 @@ export const useMedicalStaffList = (params: GetMedicalStaffParams) =>
     queryKey: medicalStaffKeys.list(params),
     queryFn: () => medicalStaffApi.getAll(params),
     placeholderData: keepPreviousData,
-    staleTime: 3 * 60 * 1000,
+    staleTime: 30_000,
   })
 // ── Lookup (dropdown / departamente) ───────────────────────────────────────────────────
 export const useMedicalStaffLookup = (options?: { enabled?: boolean }) =>
   useQuery({
     queryKey: medicalStaffKeys.lookup(),
     queryFn: () => medicalStaffApi.getLookup(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: Infinity,
     enabled: options?.enabled ?? true,
   })
 // ── Detaliu personal medical ──────────────────────────────────────────────────

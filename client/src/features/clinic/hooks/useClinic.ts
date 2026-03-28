@@ -27,7 +27,7 @@ export const useCurrentClinic = () =>
   useQuery({
     queryKey: clinicKeys.current(),
     queryFn: () => clinicApi.getCurrentClinic(),
-    staleTime: 10 * 60 * 1000,
+    staleTime: Infinity,
   })
 
 /// Locații clinică curentă
@@ -35,7 +35,7 @@ export const useClinicLocations = (isActive?: boolean) =>
   useQuery({
     queryKey: [...clinicKeys.locations(), { isActive }] as const,
     queryFn: () => clinicApi.getLocations(isActive),
-    staleTime: 10 * 60 * 1000,
+    staleTime: Infinity,
   })
 
 /// Actualizare clinică (date generale)

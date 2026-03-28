@@ -69,6 +69,22 @@ BEGIN
             1, 0, GETDATE(), @CreatedBy
         );
 
+        DECLARE @NewPatientId UNIQUEIDENTIFIER = (SELECT Id FROM @OutputIds);
+
+        -- Audit: captează valorile create
+        DECLARE @NewValues NVARCHAR(MAX);
+        SELECT @NewValues = (
+            SELECT FirstName, LastName, Cnp, BirthDate, GenderId, BloodTypeId,
+                   PhoneNumber, SecondaryPhone, Email, Address, City, County, PostalCode,
+                   InsuranceNumber, InsuranceExpiry, IsInsured, ChronicDiseases, FamilyDoctorName,
+                   Notes, IsActive
+            FROM Patients WHERE Id = @NewPatientId
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
+        INSERT INTO dbo.AuditLogs (ClinicId, EntityType, EntityId, Action, OldValues, NewValues, ChangedBy)
+        VALUES (@ClinicId, N'Patient', @NewPatientId, N'Create', NULL, @NewValues, @CreatedBy);
+
         COMMIT TRANSACTION;
         SELECT Id FROM @OutputIds;
     END TRY

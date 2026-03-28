@@ -39,6 +39,14 @@ BEGIN
         ;THROW 50010, N'Există deja o programare în acest interval orar pentru acest doctor.', 1;
     END;
 
+    -- Audit: captează valorile vechi ÎNAINTE de update
+    DECLARE @OldValues NVARCHAR(MAX);
+    SELECT @OldValues = (
+        SELECT PatientId, DoctorId, StartTime, EndTime, StatusId, Notes
+        FROM dbo.Appointments WHERE Id = @Id AND ClinicId = @ClinicId AND IsDeleted = 0
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+    );
+
     UPDATE dbo.Appointments SET
         PatientId = @PatientId,
         DoctorId  = @DoctorId,
@@ -49,5 +57,16 @@ BEGIN
         UpdatedAt = SYSDATETIME(),
         UpdatedBy = @UpdatedBy
     WHERE Id = @Id AND ClinicId = @ClinicId;
+
+    -- Audit: captează valorile noi DUPĂ update
+    DECLARE @NewValues NVARCHAR(MAX);
+    SELECT @NewValues = (
+        SELECT PatientId, DoctorId, StartTime, EndTime, StatusId, Notes
+        FROM dbo.Appointments WHERE Id = @Id AND ClinicId = @ClinicId
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+    );
+
+    INSERT INTO dbo.AuditLogs (ClinicId, EntityType, EntityId, Action, OldValues, NewValues, ChangedBy)
+    VALUES (@ClinicId, N'Appointment', @Id, N'Update', @OldValues, @NewValues, @UpdatedBy);
 END;
 GO

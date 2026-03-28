@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using ValyanClinic.Application.Common.Models;
 using ValyanClinic.Application.Features.Auth.Commands.Login;
@@ -18,6 +19,7 @@ public class AuthController(IOptions<JwtOptions> jwtOptions) : BaseApiController
 
     /// <summary>Login cu email/username + parolă.</summary>
     [AllowAnonymous]
+    [EnableRateLimiting("login")]
     [HttpPost("login")]
     public async Task<IActionResult> Login(
         [FromBody] LoginRequest request, CancellationToken ct)
@@ -44,6 +46,7 @@ public class AuthController(IOptions<JwtOptions> jwtOptions) : BaseApiController
 
     /// <summary>Reîmprospătare access token folosind refresh token din cookie.</summary>
     [AllowAnonymous]
+    [EnableRateLimiting("login")]
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh(CancellationToken ct)
     {

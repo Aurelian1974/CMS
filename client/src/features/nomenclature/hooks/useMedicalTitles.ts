@@ -16,7 +16,7 @@ export const useMedicalTitles = (isActive?: boolean) =>
   useQuery({
     queryKey: medicalTitleKeys.list(isActive),
     queryFn: () => nomenclatureApi.getMedicalTitles(isActive),
-    staleTime: 10 * 60 * 1000, // nomenclatoare — stale la 10 min
+    staleTime: Infinity, // nomenclatoare — invalidate la mutație
   })
 
 /// Creare titulatură

@@ -18,6 +18,7 @@ public class DepartmentsController : BaseApiController
     /// <summary>Returnează departamentele clinicii. Filtre: ?isActive, ?locationId.</summary>
     [HttpGet]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IEnumerable<DepartmentDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(
         [FromQuery] bool? isActive,
         [FromQuery] Guid? locationId,
@@ -30,6 +31,7 @@ public class DepartmentsController : BaseApiController
     /// <summary>Returnează un departament după Id.</summary>
     [HttpGet("{id:guid}")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<DepartmentDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetDepartmentByIdQuery(id), ct);
@@ -39,6 +41,7 @@ public class DepartmentsController : BaseApiController
     /// <summary>Creează un departament nou.</summary>
     [HttpPost]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<Guid>>(StatusCodes.Status201Created)]
     public async Task<IActionResult> Create(
         [FromBody] CreateDepartmentCommand command, CancellationToken ct)
     {
@@ -49,6 +52,7 @@ public class DepartmentsController : BaseApiController
     /// <summary>Actualizează un departament existent.</summary>
     [HttpPut("{id:guid}")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Update(
         Guid id, [FromBody] UpdateDepartmentRequest request, CancellationToken ct)
     {
@@ -63,6 +67,7 @@ public class DepartmentsController : BaseApiController
     /// <summary>Șterge (soft delete) un departament.</summary>
     [HttpDelete("{id:guid}")]
     [HasAccess(ModuleCodes.Clinic, AccessLevel.Full)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new DeleteDepartmentCommand(id), ct);

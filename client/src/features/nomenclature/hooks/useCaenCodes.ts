@@ -19,8 +19,8 @@ export const useCaenCodes = (params: CaenCodeSearchParams = {}) =>
   useQuery({
     queryKey: caenCodeKeys.search(params),
     queryFn: () => nomenclatureApi.searchCaenCodes(params),
-    // Stale dupa 30 min — nomenclatorul CAEN se schimba rar
-    staleTime: 30 * 60 * 1000,
+    // Nomenclatorul CAEN este reglementat — nu se schimbă în timpul sesiunii
+    staleTime: Infinity,
     // Nu face request daca nu avem minim 2 caractere (pentru autocomplete)
     enabled: params.search === undefined || params.search.length === 0 || params.search.length >= 2,
   })

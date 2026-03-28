@@ -102,6 +102,20 @@ BEGIN
             @LicenseNumber, @LicenseExpiresAt, 1, 0, GETDATE(), @CreatedBy
         );
 
+        -- Audit: captează valorile create
+        DECLARE @NewDoctorId UNIQUEIDENTIFIER = (SELECT Id FROM @OutputIds);
+        DECLARE @NewValues NVARCHAR(MAX);
+        SELECT @NewValues = (
+            SELECT FirstName, LastName, Email, PhoneNumber, MedicalCode, LicenseNumber,
+                   LicenseExpiresAt, DepartmentId, SpecialtyId, SubspecialtyId,
+                   MedicalTitleId, SupervisorDoctorId, IsActive
+            FROM Doctors WHERE Id = @NewDoctorId
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
+        INSERT INTO dbo.AuditLogs (ClinicId, EntityType, EntityId, Action, OldValues, NewValues, ChangedBy)
+        VALUES (@ClinicId, N'Doctor', @NewDoctorId, N'Create', NULL, @NewValues, @CreatedBy);
+
         COMMIT TRANSACTION;
         SELECT Id FROM @OutputIds;
     END TRY

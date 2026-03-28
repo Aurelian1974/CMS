@@ -15,6 +15,10 @@ namespace ValyanClinic.API.Controllers;
 [Route("api/v{version:apiVersion}/[controller]")]
 [ApiVersion("1.0")]
 [Authorize]
+[ProducesResponseType<ApiResponse<string>>(StatusCodes.Status400BadRequest)]
+[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+[ProducesResponseType<ApiResponse<string>>(StatusCodes.Status404NotFound)]
+[ProducesResponseType<ApiResponse<string>>(StatusCodes.Status409Conflict)]
 public abstract class BaseApiController : ControllerBase
 {
     private ISender? _mediator;

@@ -18,7 +18,7 @@ export const useDepartments = (isActive?: boolean, locationId?: string) =>
   useQuery({
     queryKey: departmentKeys.list({ isActive, locationId }),
     queryFn: () => departmentsApi.getAll(isActive, locationId),
-    staleTime: 5 * 60 * 1000,
+    staleTime: Infinity,
   })
 
 /// Detaliu departament

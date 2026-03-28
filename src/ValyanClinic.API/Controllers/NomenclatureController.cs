@@ -26,6 +26,7 @@ public class NomenclatureController : BaseApiController
     /// <summary>Returnează toate specializările (flat list). ?isActive=true/false pentru filtrare.</summary>
     [HttpGet("specialties")]
     [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IEnumerable<SpecialtyDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSpecialties(
         [FromQuery] bool? isActive, CancellationToken ct)
     {
@@ -36,6 +37,7 @@ public class NomenclatureController : BaseApiController
     /// <summary>Returnează arborele ierarhic de specializări (categorii → specialități → subspecialități).</summary>
     [HttpGet("specialties/tree")]
     [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IEnumerable<SpecialtyTreeNodeDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSpecialtyTree(
         [FromQuery] bool? isActive, CancellationToken ct)
     {
@@ -61,6 +63,7 @@ public class NomenclatureController : BaseApiController
     /// <summary>Creează o specializare nouă.</summary>
     [HttpPost("specialties")]
     [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<Guid>>(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateSpecialty(
         [FromBody] CreateSpecialtyCommand command, CancellationToken ct)
     {
@@ -71,6 +74,7 @@ public class NomenclatureController : BaseApiController
     /// <summary>Actualizează o specializare existentă.</summary>
     [HttpPut("specialties/{id:guid}")]
     [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateSpecialty(
         Guid id, [FromBody] UpdateSpecialtyRequest request, CancellationToken ct)
     {
@@ -85,6 +89,7 @@ public class NomenclatureController : BaseApiController
     /// <summary>Activează sau dezactivează o specializare.</summary>
     [HttpPatch("specialties/{id:guid}/toggle")]
     [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> ToggleSpecialty(
         Guid id, [FromBody] ToggleSpecialtyRequest request, CancellationToken ct)
     {
@@ -97,6 +102,7 @@ public class NomenclatureController : BaseApiController
     /// <summary>Returnează toate titularturile medicale. ?isActive=true/false pentru filtrare.</summary>
     [HttpGet("medical-titles")]
     [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IEnumerable<MedicalTitleDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetMedicalTitles(
         [FromQuery] bool? isActive, CancellationToken ct)
     {
@@ -109,6 +115,7 @@ public class NomenclatureController : BaseApiController
     /// <summary>Returnează toate genurile (Masculin, Feminin, Nespecificat).</summary>
     [HttpGet("genders")]
     [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IEnumerable<NomenclatureLookupDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetGenders(
         [FromQuery] bool? isActive, CancellationToken ct)
     {
@@ -120,6 +127,7 @@ public class NomenclatureController : BaseApiController
     /// <summary>Returnează toate grupele sanguine.</summary>
     [HttpGet("blood-types")]
     [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IEnumerable<NomenclatureLookupDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetBloodTypes(
         [FromQuery] bool? isActive, CancellationToken ct)
     {
@@ -131,6 +139,7 @@ public class NomenclatureController : BaseApiController
     /// <summary>Returnează toate tipurile de alergii.</summary>
     [HttpGet("allergy-types")]
     [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IEnumerable<NomenclatureLookupDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllergyTypes(
         [FromQuery] bool? isActive, CancellationToken ct)
     {
@@ -142,6 +151,7 @@ public class NomenclatureController : BaseApiController
     /// <summary>Returnează toate județele active (pentru dropdown-uri geografice).</summary>
     [HttpGet("counties")]
     [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IEnumerable<CountyDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCounties(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetCountiesQuery(), ct);
@@ -151,6 +161,7 @@ public class NomenclatureController : BaseApiController
     /// <summary>Returnează localitățile unui județ (dependent dropdown).</summary>
     [HttpGet("localities")]
     [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IEnumerable<LocalityDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetLocalities([FromQuery] Guid countyId, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetLocalitiesQuery(countyId), ct);
@@ -160,6 +171,7 @@ public class NomenclatureController : BaseApiController
     /// <summary>Returnează toate severitățile alergiilor.</summary>
     [HttpGet("allergy-severities")]
     [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IEnumerable<NomenclatureLookupDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAllergySeverities(
         [FromQuery] bool? isActive, CancellationToken ct)
     {
@@ -171,6 +183,7 @@ public class NomenclatureController : BaseApiController
     /// <summary>Creează o titulatură medicală nouă.</summary>
     [HttpPost("medical-titles")]
     [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<Guid>>(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateMedicalTitle(
         [FromBody] CreateMedicalTitleCommand command, CancellationToken ct)
     {
@@ -181,6 +194,7 @@ public class NomenclatureController : BaseApiController
     /// <summary>Actualizează o titulatură medicală existentă.</summary>
     [HttpPut("medical-titles/{id:guid}")]
     [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateMedicalTitle(
         Guid id, [FromBody] UpdateMedicalTitleRequest request, CancellationToken ct)
     {
@@ -195,6 +209,7 @@ public class NomenclatureController : BaseApiController
     /// <summary>Activează sau dezactivează o titulatură medicală.</summary>
     [HttpPatch("medical-titles/{id:guid}/toggle")]
     [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> ToggleMedicalTitle(
         Guid id, [FromBody] ToggleMedicalTitleRequest request, CancellationToken ct)
     {
@@ -210,6 +225,7 @@ public class NomenclatureController : BaseApiController
     /// </summary>
     [HttpGet("caen-codes")]
     [HasAccess(ModuleCodes.Nomenclature, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IEnumerable<CaenCodeDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetCaenCodes(
         [FromQuery] string? search,
         [FromQuery] bool classesOnly = false,

@@ -16,4 +16,5 @@ public static class ModuleCodes
     public const string Users         = "users";
     public const string Clinic        = "clinic";
     public const string Cnas          = "cnas";
+    public const string Audit         = "audit";
 }

@@ -20,6 +20,7 @@ public class AppointmentsController : BaseApiController
     /// <summary>Listare paginată programări cu filtre și statistici.</summary>
     [HttpGet]
     [HasAccess(ModuleCodes.Appointments, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<AppointmentsPagedResponse>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? search,
         [FromQuery] Guid? doctorId,
@@ -42,6 +43,7 @@ public class AppointmentsController : BaseApiController
     /// <summary>Obținere programare după Id.</summary>
     [HttpGet("{id:guid}")]
     [HasAccess(ModuleCodes.Appointments, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<AppointmentDetailDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetAppointmentByIdQuery(id), ct);
@@ -51,6 +53,7 @@ public class AppointmentsController : BaseApiController
     /// <summary>Programări pentru vizualizarea scheduler.</summary>
     [HttpGet("scheduler")]
     [HasAccess(ModuleCodes.Appointments, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IEnumerable<AppointmentSchedulerDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetForScheduler(
         [FromQuery] DateTime dateFrom,
         [FromQuery] DateTime dateTo,
@@ -65,6 +68,7 @@ public class AppointmentsController : BaseApiController
     /// <summary>Creare programare nouă.</summary>
     [HttpPost]
     [HasAccess(ModuleCodes.Appointments, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<Guid>>(StatusCodes.Status201Created)]
     public async Task<IActionResult> Create(
         [FromBody] CreateAppointmentCommand command, CancellationToken ct)
     {
@@ -75,6 +79,7 @@ public class AppointmentsController : BaseApiController
     /// <summary>Actualizare programare existentă.</summary>
     [HttpPut("{id:guid}")]
     [HasAccess(ModuleCodes.Appointments, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Update(
         Guid id, [FromBody] UpdateAppointmentRequest request, CancellationToken ct)
     {
@@ -94,6 +99,7 @@ public class AppointmentsController : BaseApiController
     /// <summary>Actualizare status programare.</summary>
     [HttpPatch("{id:guid}/status")]
     [HasAccess(ModuleCodes.Appointments, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateStatus(
         Guid id, [FromBody] UpdateAppointmentStatusRequest request, CancellationToken ct)
     {
@@ -105,6 +111,7 @@ public class AppointmentsController : BaseApiController
     /// <summary>Soft delete programare.</summary>
     [HttpDelete("{id:guid}")]
     [HasAccess(ModuleCodes.Appointments, AccessLevel.Full)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var result = await Mediator.Send(new DeleteAppointmentCommand(id), ct);

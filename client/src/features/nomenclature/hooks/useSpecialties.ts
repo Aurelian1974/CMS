@@ -18,7 +18,7 @@ export const useSpecialties = (isActive?: boolean) =>
   useQuery({
     queryKey: specialtyKeys.list(isActive),
     queryFn: () => nomenclatureApi.getSpecialties(isActive),
-    staleTime: 10 * 60 * 1000, // nomenclatoare — stale la 10 min
+    staleTime: Infinity, // nomenclatoare — invalidate la mutație
   })
 
 /// Arbore ierarhic de specializări
@@ -26,7 +26,7 @@ export const useSpecialtyTree = (isActive?: boolean) =>
   useQuery({
     queryKey: specialtyKeys.tree(isActive),
     queryFn: () => nomenclatureApi.getSpecialtyTree(isActive),
-    staleTime: 10 * 60 * 1000,
+    staleTime: Infinity,
   })
 
 /// Detalii specializare

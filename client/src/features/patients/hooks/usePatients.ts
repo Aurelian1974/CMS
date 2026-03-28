@@ -22,7 +22,7 @@ export const usePatients = (params: GetPatientsParams) =>
     queryKey: patientKeys.list(params),
     queryFn: () => patientsApi.getAll(params),
     placeholderData: keepPreviousData,
-    staleTime: 3 * 60 * 1000,
+    staleTime: 30_000,
   })
 
 // ── Detaliu pacient cu sub-colecții ───────────────────────────────────────────
@@ -60,7 +60,7 @@ export const usePatientLookup = () =>
   useQuery({
     queryKey: patientKeys.lookup(),
     queryFn: () => patientsApi.getLookup(),
-    staleTime: 5 * 60 * 1000,
+    staleTime: Infinity,
   })
 
 // ── Ștergere pacient (soft delete) ────────────────────────────────────────────

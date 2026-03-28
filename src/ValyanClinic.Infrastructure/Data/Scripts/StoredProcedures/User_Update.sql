@@ -81,6 +81,14 @@ BEGIN
             ;THROW 50506, N'Acest membru al personalului medical are deja un cont de utilizator asociat.', 1;
         END;
 
+        -- Audit: captează valorile vechi ÎNAINTE de update (fără PasswordHash)
+        DECLARE @OldValues NVARCHAR(MAX);
+        SELECT @OldValues = (
+            SELECT Username, Email, FirstName, LastName, RoleId, DoctorId, MedicalStaffId, IsActive
+            FROM Users WHERE Id = @Id AND ClinicId = @ClinicId AND IsDeleted = 0
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
         UPDATE Users
         SET RoleId         = @RoleId,
             DoctorId       = @DoctorId,
@@ -93,6 +101,17 @@ BEGIN
             UpdatedBy      = @UpdatedBy,
             UpdatedAt      = GETDATE()
         WHERE Id = @Id AND ClinicId = @ClinicId AND IsDeleted = 0;
+
+        -- Audit: captează valorile noi DUPĂ update
+        DECLARE @NewValues NVARCHAR(MAX);
+        SELECT @NewValues = (
+            SELECT Username, Email, FirstName, LastName, RoleId, DoctorId, MedicalStaffId, IsActive
+            FROM Users WHERE Id = @Id AND ClinicId = @ClinicId
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
+        INSERT INTO dbo.AuditLogs (ClinicId, EntityType, EntityId, Action, OldValues, NewValues, ChangedBy)
+        VALUES (@ClinicId, N'User', @Id, N'Update', @OldValues, @NewValues, @UpdatedBy);
 
         COMMIT TRANSACTION;
         SELECT 1 AS Success;

@@ -101,6 +101,16 @@ BEGIN
             ;THROW 50306, N'Titulatura medicală selectată nu există sau nu este activă.', 1;
         END;
 
+        -- Audit: captează valorile vechi ÎNAINTE de update
+        DECLARE @OldValues NVARCHAR(MAX);
+        SELECT @OldValues = (
+            SELECT FirstName, LastName, Email, PhoneNumber, MedicalCode, LicenseNumber,
+                   LicenseExpiresAt, DepartmentId, SpecialtyId, SubspecialtyId,
+                   MedicalTitleId, SupervisorDoctorId, IsActive
+            FROM Doctors WHERE Id = @Id AND ClinicId = @ClinicId AND IsDeleted = 0
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
         UPDATE Doctors
         SET DepartmentId       = @DepartmentId,
             SupervisorDoctorId = @SupervisorDoctorId,
@@ -118,6 +128,19 @@ BEGIN
             UpdatedAt          = GETDATE(),
             UpdatedBy          = @UpdatedBy
         WHERE Id = @Id AND ClinicId = @ClinicId AND IsDeleted = 0;
+
+        -- Audit: captează valorile noi DUPĂ update
+        DECLARE @NewValues NVARCHAR(MAX);
+        SELECT @NewValues = (
+            SELECT FirstName, LastName, Email, PhoneNumber, MedicalCode, LicenseNumber,
+                   LicenseExpiresAt, DepartmentId, SpecialtyId, SubspecialtyId,
+                   MedicalTitleId, SupervisorDoctorId, IsActive
+            FROM Doctors WHERE Id = @Id AND ClinicId = @ClinicId
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
+        INSERT INTO dbo.AuditLogs (ClinicId, EntityType, EntityId, Action, OldValues, NewValues, ChangedBy)
+        VALUES (@ClinicId, N'Doctor', @Id, N'Update', @OldValues, @NewValues, @UpdatedBy);
 
         COMMIT TRANSACTION;
     END TRY

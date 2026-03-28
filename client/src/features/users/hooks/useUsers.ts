@@ -22,7 +22,7 @@ export const useRoles = (options?: { enabled?: boolean }) =>
   useQuery({
     queryKey: userKeys.roles(),
     queryFn: () => usersApi.getRoles(),
-    staleTime: 10 * 60 * 1000,
+    staleTime: Infinity,
     enabled: options?.enabled ?? true,
   })
 
@@ -32,7 +32,7 @@ export const useUsersList = (params: GetUsersParams, options?: { enabled?: boole
     queryKey: userKeys.list(params),
     queryFn: () => usersApi.getAll(params),
     placeholderData: keepPreviousData,
-    staleTime: 3 * 60 * 1000,
+    staleTime: 30_000,
     enabled: options?.enabled ?? true,
   })
 

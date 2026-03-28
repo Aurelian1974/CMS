@@ -41,6 +41,17 @@ BEGIN
     INSERT INTO dbo.Appointments (Id, ClinicId, PatientId, DoctorId, StartTime, EndTime, StatusId, Notes, CreatedBy)
     VALUES (@NewId, @ClinicId, @PatientId, @DoctorId, @StartTime, @EndTime, @StatusId, @Notes, @CreatedBy);
 
+    -- Audit: captează valorile create
+    DECLARE @NewValues NVARCHAR(MAX);
+    SELECT @NewValues = (
+        SELECT PatientId, DoctorId, StartTime, EndTime, StatusId, Notes
+        FROM dbo.Appointments WHERE Id = @NewId
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+    );
+
+    INSERT INTO dbo.AuditLogs (ClinicId, EntityType, EntityId, Action, OldValues, NewValues, ChangedBy)
+    VALUES (@ClinicId, N'Appointment', @NewId, N'Create', NULL, @NewValues, @CreatedBy);
+
     SELECT @NewId;
 END;
 GO

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { nomenclatureApi } from '@/api/endpoints/nomenclature.api'
 
 /// Hook-uri pentru nomenclatoare simple (lookups) — Genders, BloodTypes, AllergyTypes, AllergySeverities.
-/// Datele se schimbă rar → staleTime mare (10 min).
+/// Datele sunt statice → staleTime: Infinity. Se re-fetch-uiesc doar la invalidare explicită (mutații admin).
 
 // ── Query keys ────────────────────────────────────────────────────────────────
 export const lookupKeys = {
@@ -17,7 +17,7 @@ export const useGenders = (isActive?: boolean) =>
   useQuery({
     queryKey: lookupKeys.genders(isActive),
     queryFn: () => nomenclatureApi.getGenders(isActive),
-    staleTime: 10 * 60 * 1000,
+    staleTime: Infinity,
   })
 
 // ── Grupe sanguine ────────────────────────────────────────────────────────────
@@ -25,7 +25,7 @@ export const useBloodTypes = (isActive?: boolean) =>
   useQuery({
     queryKey: lookupKeys.bloodTypes(isActive),
     queryFn: () => nomenclatureApi.getBloodTypes(isActive),
-    staleTime: 10 * 60 * 1000,
+    staleTime: Infinity,
   })
 
 // ── Tipuri alergii ────────────────────────────────────────────────────────────
@@ -33,7 +33,7 @@ export const useAllergyTypes = (isActive?: boolean) =>
   useQuery({
     queryKey: lookupKeys.allergyTypes(isActive),
     queryFn: () => nomenclatureApi.getAllergyTypes(isActive),
-    staleTime: 10 * 60 * 1000,
+    staleTime: Infinity,
   })
 
 // ── Severități alergii ────────────────────────────────────────────────────────
@@ -41,7 +41,7 @@ export const useAllergySeverities = (isActive?: boolean) =>
   useQuery({
     queryKey: lookupKeys.allergySeverities(isActive),
     queryFn: () => nomenclatureApi.getAllergySeverities(isActive),
-    staleTime: 10 * 60 * 1000,
+    staleTime: Infinity,
   })
 
 // ── Județe ───────────────────────────────────────────────────────────────────
@@ -60,5 +60,5 @@ export const useLocalities = (countyId: string) =>
     queryKey: ['nomenclature', 'localities', countyId] as const,
     queryFn: () => nomenclatureApi.getLocalities(countyId),
     enabled: !!countyId,
-    staleTime: 30 * 60 * 1000, // 30 min
+    staleTime: Infinity,
   })

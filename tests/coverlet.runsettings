@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <!-- Format suportat de ReportGenerator și codecov -->
+          <Format>opencover</Format>
+          <!-- Prag minim de acoperire pe linii — CI eșuează dacă nu e atins -->
+          <Threshold>90</Threshold>
+          <ThresholdType>line</ThresholdType>
+          <ThresholdStat>Total</ThresholdStat>
+          <!-- Exclude proiectele care nu conțin logică de business -->
+          <Exclude>[ValyanClinic.Tests]*,[ValyanClinic.IntegrationTests]*,[ValyanClinic.API]*</Exclude>
+          <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
+          <SingleHit>false</SingleHit>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

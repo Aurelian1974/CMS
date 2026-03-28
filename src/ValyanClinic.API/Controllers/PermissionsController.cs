@@ -19,6 +19,7 @@ public class PermissionsController : BaseApiController
     /// <summary>Returnează modulele și nivelurile de acces disponibile (pentru dropdowns UI).</summary>
     [HttpGet("modules-and-levels")]
     [HasAccess(ModuleCodes.Users, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<ModulesAndLevelsDto>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetModulesAndLevels(CancellationToken ct)
     {
         var result = await Mediator.Send(new GetModulesAndLevelsQuery(), ct);
@@ -28,6 +29,7 @@ public class PermissionsController : BaseApiController
     /// <summary>Returnează permisiunile default ale unui rol.</summary>
     [HttpGet("roles/{roleId:guid}")]
     [HasAccess(ModuleCodes.Users, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IReadOnlyList<RoleModulePermissionDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetRolePermissions(Guid roleId, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetRolePermissionsQuery(roleId), ct);
@@ -37,6 +39,7 @@ public class PermissionsController : BaseApiController
     /// <summary>Actualizează permisiunile default ale unui rol (replace all).</summary>
     [HttpPut("roles/{roleId:guid}")]
     [HasAccess(ModuleCodes.Users, AccessLevel.Full)]
+    [ProducesResponseType<ApiResponse<int>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateRolePermissions(
         Guid roleId,
         [FromBody] UpdateRolePermissionsRequest request,
@@ -50,6 +53,7 @@ public class PermissionsController : BaseApiController
     /// <summary>Returnează override-urile de permisiuni ale unui utilizator.</summary>
     [HttpGet("users/{userId:guid}/overrides")]
     [HasAccess(ModuleCodes.Users, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IReadOnlyList<UserOverrideDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUserOverrides(Guid userId, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetUserOverridesQuery(userId), ct);
@@ -59,6 +63,7 @@ public class PermissionsController : BaseApiController
     /// <summary>Returnează permisiunile efective ale unui utilizator (rol + override-uri).</summary>
     [HttpGet("users/{userId:guid}/effective")]
     [HasAccess(ModuleCodes.Users, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IReadOnlyList<UserModulePermissionDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUserEffectivePermissions(
         Guid userId, Guid roleId, CancellationToken ct)
     {
@@ -70,6 +75,7 @@ public class PermissionsController : BaseApiController
     /// <summary>Actualizează override-urile de permisiuni ale unui utilizator (replace all).</summary>
     [HttpPut("users/{userId:guid}/overrides")]
     [HasAccess(ModuleCodes.Users, AccessLevel.Full)]
+    [ProducesResponseType<ApiResponse<int>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateUserOverrides(
         Guid userId,
         [FromBody] UpdateUserOverridesRequest request,

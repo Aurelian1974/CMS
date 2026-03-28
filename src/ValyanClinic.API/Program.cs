@@ -1,14 +1,21 @@
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using System.Globalization;
+using System.IO.Compression;
 using System.Reflection;
+using System.Threading.RateLimiting;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Writers;
 using Serilog;
+using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using ValyanClinic.API.Configuration;
+using ValyanClinic.API.Filters;
 using ValyanClinic.API.Middleware;
 using ValyanClinic.Application.Common.Behaviors;
 using ValyanClinic.Infrastructure;
@@ -43,6 +50,7 @@ try
     {
         cfg.RegisterServicesFromAssembly(
             typeof(ValyanClinic.Application.Common.Models.Result<>).Assembly);
+        cfg.AddOpenBehavior(typeof(LoggingBehavior<,>));
         cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
     });
 
@@ -99,17 +107,119 @@ try
     // ===== Swagger/OpenAPI =====
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
-    builder.Services.AddSwaggerGen();
+    builder.Services.AddSwaggerGen(options =>
+    {
+        options.OperationFilter<IdempotencyHeaderOperationFilter>();
+    });
+
+    // ===== Response Compression (Brotli preferred, Gzip fallback) =====
+    builder.Services.AddResponseCompression(options =>
+    {
+        // EnableForHttps: BREACH nu este un risc pentru acest API — nu reflectăm
+        // input de utilizator în răspunsuri neautentificate, toate endpoint-urile cer JWT.
+        options.EnableForHttps = true;
+        options.Providers.Add<BrotliCompressionProvider>();
+        options.Providers.Add<GzipCompressionProvider>();
+        options.MimeTypes = ResponseCompressionDefaults.MimeTypes
+            .Concat(["application/json"]);
+    });
+    builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+        options.Level = CompressionLevel.Fastest);
+    builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+        options.Level = CompressionLevel.Fastest);
 
     // ===== Controllers =====
     builder.Services.AddControllers();
 
+    // ===== Rate Limiting (built-in ASP.NET Core, .NET 7+) =====
+    {
+        var rlSection   = builder.Configuration.GetSection(RateLimitingOptions.SectionName);
+        var loginMax    = rlSection.GetValue<int>("LoginMaxAttempts",    5);
+        var loginWindow = rlSection.GetValue<int>("LoginWindowMinutes", 15);
+        var apiMax      = rlSection.GetValue<int>("GeneralMaxRequests", 100);
+        var apiWindow   = rlSection.GetValue<int>("GeneralWindowSeconds", 60);
+
+        builder.Services.AddRateLimiter(rl =>
+        {
+            // Limită globală per IP — sliding window pe toate request-urile
+            rl.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(ctx =>
+                RateLimitPartition.GetSlidingWindowLimiter(
+                    partitionKey: ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    factory: _ => new SlidingWindowRateLimiterOptions
+                    {
+                        PermitLimit          = apiMax,
+                        Window               = TimeSpan.FromSeconds(apiWindow),
+                        SegmentsPerWindow    = 4,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit           = 0
+                    }));
+
+            // Policy strictă per IP — fixed window pentru login/refresh (anti brute-force)
+            rl.AddPolicy("login", ctx =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit          = loginMax,
+                        Window               = TimeSpan.FromMinutes(loginWindow),
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit           = 0
+                    }));
+
+            rl.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            rl.OnRejected = async (ctx, ct) =>
+            {
+                ctx.HttpContext.Response.StatusCode  = StatusCodes.Status429TooManyRequests;
+                ctx.HttpContext.Response.ContentType = "application/json";
+                if (ctx.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+                    ctx.HttpContext.Response.Headers.RetryAfter =
+                        ((int)retryAfter.TotalSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture);
+                await ctx.HttpContext.Response.WriteAsync(
+                    "{\"success\":false,\"data\":null,\"errors\":[\"Prea multe cereri. Vă rugăm să așteptați.\"],\"meta\":null}",
+                    ct);
+            };
+        });
+    }
+
     // ===== Build app =====
     var app = builder.Build();
 
+    // ===== Schema export mode — fără HTTP, folosit de generate-openapi.ps1 =====
+    // Exemplu: dotnet run --project ... -- --export-openapi --output ../../openapi/openapi-v1.json
+    if (args.Contains("--export-openapi"))
+    {
+        var outputPath = args.SkipWhile(a => a != "--output").Skip(1).FirstOrDefault()
+                         ?? "openapi-v1.json";
+
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outputPath))!);
+
+        var swaggerProvider = app.Services.GetRequiredService<ISwaggerProvider>();
+        var document = swaggerProvider.GetSwagger("v1");
+
+        using var stream = File.Create(outputPath);
+        using var writer = new StreamWriter(stream);
+        document.SerializeAsV3(new OpenApiJsonWriter(writer));
+
+        Log.Information("Schema OpenAPI exportat la: {Path}", Path.GetFullPath(outputPath));
+        return 0;
+    }
+
     // ===== Middleware Pipeline =====
     app.UseMiddleware<CorrelationIdMiddleware>();
+    app.UseResponseCompression();
+    app.UseMiddleware<IdempotencyMiddleware>();
     app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
+
+    // ===== Security Headers =====
+    app.Use(async (context, next) =>
+    {
+        context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        context.Response.Headers["X-Frame-Options"]        = "DENY";
+        context.Response.Headers["Content-Security-Policy"] = "default-src 'none'";
+        if (!app.Environment.IsDevelopment())
+            context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+        await next();
+    });
 
     app.UseSerilogRequestLogging();
 
@@ -136,6 +246,8 @@ try
     {
         app.UseHttpsRedirection();
     }
+
+    app.UseRateLimiter();
 
     app.UseCors("ValyanClinicCors");
 
@@ -190,9 +302,12 @@ try
 catch (Exception ex)
 {
     Log.Fatal(ex, "Aplicația a eșuat la pornire.");
+    return 1;
 }
 finally
 {
     Log.CloseAndFlush();
 }
+
+return 0;
 
