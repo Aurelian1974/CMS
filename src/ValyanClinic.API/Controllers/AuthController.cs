@@ -80,7 +80,7 @@ public class AuthController(IOptions<JwtOptions> jwtOptions) : BaseApiController
     }
 
     /// <summary>Logout — revocă refresh token din cookie.</summary>
-    [AllowAnonymous]
+    [Authorize]
     [HttpPost("logout")]
     public async Task<IActionResult> Logout(CancellationToken ct)
     {
