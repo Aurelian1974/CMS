@@ -1730,6 +1730,33 @@ public static class SqlExceptionHelper
 
 ---
 
+## NU face (anti-patterns)
+
+### Backend
+
+| Greșeală | De ce e greșit | Alternativă corectă |
+|---|---|---|
+| `using Microsoft.EntityFrameworkCore` | Proiectul nu folosește EF Core — **ZERO** DbContext | Dapper + StoredProcedures |
+| `Add-Migration` / `dotnet ef migrations add` | Nu există EF în proiect | Fișier SQL în `Scripts/Migrations/` + DbUp |
+| `RAISERROR('...', 16, 1)` în SP | RAISERROR e sintaxă veche; nu populează `.Number` corect pentru catch-uri | `;THROW 50020, N'...', 1;` |
+| Validare cu `await repository.ExistsAsync()` în handler | Double round-trip la BD pentru ceva ce SP-ul verific oricum | Lasă SP-ul să arunce THROW; prinde în handler |
+| `if (result == null) throw new NotFoundException()` | Excepțiile ca flow control nu sunt folosite în acest proiect | `return Result<T>.NotFound(ErrorMessages.X.NotFound)` |
+| `services.AddTransient<DapperContext>()` | DapperContext este Singleton (o instanță per aplicație) | `services.AddSingleton<DapperContext>()` |
+| Constructor public pe `Result<T>` | Constructorul e `private` — există doar factory methods | `Result<T>.Success()`, `.Created()`, `.NotFound()`, etc. |
+
+### Frontend
+
+| Greșeală | De ce e greșit | Alternativă corectă |
+|---|---|---|
+| `localStorage.setItem('token', ...)` | Token-ul JWT **NICIODATĂ** în localStorage (XSS vulnerability) | `sessionStorage` via Zustand persist |
+| Import neutilizat (`useCallback`, `useState`, etc.) | ESLint `no-unused-vars = error` → CI pică la lint | Șterge imediat importul dacă nu îl folosești |
+| `import { GridComponent } from '@syncfusion/ej2-react-grids'` | Nu folosim GridComponent direct — avem wrapper `AppDataGrid` | `import { AppDataGrid } from '@/components/data-display/AppDataGrid'` |
+| Scriere manuală în `schema.d.ts` | Fișierul e auto-generat — orice editare manuală va fi suprascrisă | Modifică API-ul, regenerează cu `npm run gen:api` |
+| `api.get(...)` fără `.then(r => r.data.data)` | Răspunsul backend e `ApiResponse<T>` — datele sunt în `.data.data` | `api.get(...).then(r => r.data.data)` |
+| `useQuery` cu `queryKey: ['consultations']` (static) | Invalidarea nu va funcționa corect pentru filtre diferite | Folosește `consultationKeys.list(params)` din fișierul de keys |
+
+---
+
 ## CI/CD (.github/workflows/ci.yml)
 
 Trei job-uri paralele:
@@ -1741,6 +1768,161 @@ Trei job-uri paralele:
 | `contract` | `npm run check:api` (gen types din openapi + `tsc --noEmit`) |
 
 Node.js: 22 | .NET: 10.0.x | `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true`
+
+---
+
+## Frontend routing — cum se adaugă o rută nouă
+
+Fișier: `client/src/routes/AppRoutes.tsx`. Toate rutele protejate sunt sub `<ProtectedRoute>` → `<MainLayout>`.
+
+```typescript
+// Pasul 1: Lazy import în capul fișierului AppRoutes.tsx
+const DocumentsPage = lazy(() => import('../features/documents/pages/DocumentsListPage'))
+
+// Pasul 2: Adaugă ruta în blocul protejat
+<Route path="/documents" element={<DocumentsPage />} />
+
+// Rute cu parametru de ID:
+const DocumentDetailPage = lazy(() => import('../features/documents/pages/DocumentDetailPage'))
+<Route path="/documents/:id" element={<DocumentDetailPage />} />
+
+// Structura completă (pentru referință):
+export const AppRoutes = () => (
+  <Suspense fallback={<LoadingFallback />}>
+    <Routes>
+      {/* Public — fără auth */}
+      <Route path="/login" element={<LoginPage />} />
+
+      {/* Protejat — necesită auth */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<MainLayout />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard"     element={<DashboardPage />} />
+          {/* ... toate rutele existente ... */}
+          <Route path="/documents"     element={<DocumentsPage />} />    {/* ← NOU */}
+          <Route path="/documents/:id" element={<DocumentDetailPage />} /> {/* ← NOU */}
+        </Route>
+      </Route>
+
+      {/* Fallback — orice rută necunoscută → dashboard */}
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+    </Routes>
+  </Suspense>
+)
+```
+
+**Navigare din cod:**
+```typescript
+import { useNavigate } from 'react-router-dom'
+const navigate = useNavigate()
+navigate('/documents')           // go to list
+navigate(`/documents/${id}`)     // go to detail
+navigate(-1)                     // back
+```
+
+**Link în JSX:**
+```typescript
+import { Link } from 'react-router-dom'
+<Link to={`/documents/${id}`}>Deschide</Link>
+```
+
+---
+
+## Syncfusion EJ2 — cheatsheet import-uri
+
+> Syncfusion are import paths complexe. Folosim doar componentele de mai jos — **nu instala** alte pachete `@syncfusion/ej2-react-*` fără discuție.
+
+### CSS — importat o singură dată în `main.tsx`
+
+```typescript
+// Aceste CSS-uri sunt deja importate în main.tsx — NU le reimporta în componente
+import '@syncfusion/ej2-base/styles/bootstrap5.css'
+import '@syncfusion/ej2-inputs/styles/bootstrap5.css'
+import '@syncfusion/ej2-dropdowns/styles/bootstrap5.css'
+import '@syncfusion/ej2-calendars/styles/bootstrap5.css'
+import '@syncfusion/ej2-richtexteditor/styles/bootstrap5.css'
+import '@syncfusion/ej2-grids/styles/bootstrap5.css'
+// + buttons, lists, popups, navigations, splitbuttons
+```
+
+### Componente folosite — import-uri corecte
+
+```typescript
+// ─── Text input ────────────────────────────────────────────────────────────
+import { TextBoxComponent } from '@syncfusion/ej2-react-inputs'
+// Wrapper existent: FormInput — FOLSEȘTE FormInput, nu TextBoxComponent direct
+
+// ─── Dropdown ──────────────────────────────────────────────────────────────
+import { DropDownListComponent } from '@syncfusion/ej2-react-dropdowns'
+// Wrapper existent: FormSelect — FOLOSEȘTE FormSelect
+// Props uzuale:
+// dataSource={options}           — array de { label: string, value: string }
+// fields={{ text: 'label', value: 'value' }}
+// allowFiltering={true}          — search în dropdown
+// showClearButton={true}         — buton X
+// sortOrder='Ascending'          — sortare
+
+// ─── Date picker ───────────────────────────────────────────────────────────
+import { DatePickerComponent } from '@syncfusion/ej2-react-calendars'
+// Wrapper existent: FormDatePicker — FOLOSEȘTE FormDatePicker
+// Props uzuale:
+// format='dd.MM.yyyy'            — format românesc (default)
+// locale='ro'
+// firstDayOfWeek={1}             — luni prima zi
+// min={new Date()}               — data minimă
+// max={new Date(2099, 11, 31)}   — data maximă
+// showTodayButton={true}
+// strictMode={false}             — permite editare manuală
+// Returnează Date object în args.value → convertit la string cu toLocalDateISO()
+
+// ─── Rich Text Editor ──────────────────────────────────────────────────────
+import {
+  RichTextEditorComponent,
+  Inject,
+  Toolbar, Link, Image, HtmlEditor, Count, QuickToolbar,
+  ToolbarType
+} from '@syncfusion/ej2-react-richtexteditor'
+// Wrapper existent: FormRichText — FOLOSEȘTE FormRichText
+// OBLIGATORIU: <Inject services={[Toolbar, Link, Image, HtmlEditor, Count, QuickToolbar]} />
+// Fără <Inject> → toolbar nu apare (eroare silențioasă!)
+// Toolbar pattern:
+const TOOLBAR_ITEMS = [
+  'Bold', 'Italic', 'Underline', 'StrikeThrough', '|',
+  'OrderedList', 'UnorderedList', '|',
+  'Indent', 'Outdent', '|',
+  'CreateLink', '|',
+  'Undo', 'Redo',
+]
+// toolbarSettings={{ items: TOOLBAR_ITEMS, enableFloating: false, type: ToolbarType.Expand }}
+// value și onChange: folosește ref + onChange callback (nu value prop direct)
+const rteRef = useRef<RichTextEditorComponent | null>(null)
+const handleChange = useCallback(() => {
+  onChange(rteRef.current?.value ?? '')
+}, [onChange])
+<RichTextEditorComponent ref={rteRef} value={value ?? ''} change={handleChange} />
+```
+
+### Ce NU există / NU folosim din Syncfusion
+
+```typescript
+// NU folosim GridComponent direct — avem AppDataGrid custom
+// import { GridComponent, ColumnsDirective, ColumnDirective } from '@syncfusion/ej2-react-grids'  ← NU
+import { AppDataGrid } from '@/components/data-display/AppDataGrid'  // ← DA
+
+// NU avem MultiSelectComponent, AutoCompleteComponent,
+// DateRangePickerComponent, DateTimePickerComponent,
+// ScheduleComponent, ChartComponent — nu sunt instalate
+// Dacă ai nevoie → discuție înainte de instalare
+```
+
+### License registration — deja configurat în `main.tsx`
+
+```typescript
+// Deja setat în client/src/main.tsx — NU duplica în componente
+import { registerLicense } from '@syncfusion/ej2-base'
+registerLicense(import.meta.env.VITE_SYNCFUSION_LICENSE_KEY)
+// Fără licență → watermark în producție
+```
 
 ---
 
@@ -1901,5 +2083,9 @@ git add -A ; git commit -m "feat: ..." ; git push origin main
 | Zustand | 4.x |
 | Zod | 4.x |
 | react-hook-form | 7.x |
-| Axios | 1.x |
+| Axios | **1.13.5 (pinned)** |
 | Syncfusion EJ2 | 32.x |
+
+> ⚠️ **Axios — NU face upgrade fără verificare manuală.**  
+> Pe 31 martie 2025 pachetul `axios@1.14.1` a conținut malware (supply chain attack).  
+> Versiunea sigură confirmată: `1.13.5`. Verifică înainte de orice `npm update axios`.
