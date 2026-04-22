@@ -15,6 +15,8 @@ import { AppButton } from '@/components/ui/AppButton'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { IconPlus } from '@/components/ui/Icons'
 import { useFeedback } from '@/hooks/useFeedback'
+import { ConfirmDeleteDialog } from '@/components/ui/ConfirmDeleteDialog'
+import { FeedbackAlerts } from '@/components/ui/FeedbackAlerts'
 import { DoctorViewModal } from '@/features/doctors/components'
 import { MedicalStaffViewModal } from '@/features/medicalStaff/components'
 import type { DepartmentDto, CreateDepartmentPayload } from '../types/department.types'
@@ -224,21 +226,14 @@ const DepartmentsPage = () => {
     <div className={styles.page}>
       <PageHeader title="Departamente" subtitle={`${departments.length} departamente`} />
 
-      {/* Mesaj succes */}
-      {successMsg && (
-        <div className="alert alert-success alert-dismissible fade show mb-0" role="alert">
-          {successMsg}
-          <button type="button" className="btn-close" onClick={() => setSuccessMsg(null)} />
-        </div>
-      )}
-
-      {/* Mesaj eroare */}
-      {errorMsg && (
-        <div className="alert alert-danger alert-dismissible fade show mb-0" role="alert">
-          {errorMsg}
-          <button type="button" className="btn-close" onClick={() => setErrorMsg(null)} />
-        </div>
-      )}
+      <FeedbackAlerts
+        successMsg={successMsg}
+        errorMsg={errorMsg}
+        onDismissSuccess={() => setSuccessMsg(null)}
+        onDismissError={() => setErrorMsg(null)}
+        successClass="mb-0"
+        errorClass="mb-0"
+      />
 
       {/* ======= SECȚIUNE: Departamente ======= */}
       <div className={styles.section}>
@@ -453,35 +448,17 @@ const DepartmentsPage = () => {
         doctors={doctors}
       />
 
-      {/* ===== Dialog confirmare ștergere ===== */}
-      {deleteTarget && (
-        <div className={styles.confirmOverlay} onClick={() => setDeleteTarget(null)}>
-          <div className={styles.confirmDialog} onClick={(e) => e.stopPropagation()}>
-            <h5>Confirmare ștergere</h5>
-            <p>
-              Ești sigur că vrei să ștergi departamentul <strong>{deleteTarget.name}</strong>?
-              Această acțiune nu poate fi anulată.
-            </p>
-            <div className={styles.confirmActions}>
-              <AppButton
-                variant="outline-secondary"
-                onClick={() => setDeleteTarget(null)}
-                disabled={deleteDepartment.isPending}
-              >
-                Anulează
-              </AppButton>
-              <AppButton
-                variant="danger"
-                onClick={handleConfirmDelete}
-                isLoading={deleteDepartment.isPending}
-                loadingText="Se șterge..."
-              >
-                Șterge
-              </AppButton>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDeleteDialog
+        name={deleteTarget?.name}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        isLoading={deleteDepartment.isPending}
+        message={
+          deleteTarget ? (
+            <>Ești sigur că vrei să ștergi departamentul <strong>{deleteTarget.name}</strong>? Această acțiune nu poate fi anulată.</>
+          ) : null
+        }
+      />
     </div>
   )
 }

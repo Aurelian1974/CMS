@@ -10,10 +10,11 @@ import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
 import { MedicalStaffFormModal } from '../components/MedicalStaffFormModal/MedicalStaffFormModal'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { AppBadge, ActiveBadge } from '@/components/ui/AppBadge'
-import { AppButton } from '@/components/ui/AppButton'
 import { formatDate, toLocalDateISO, getInitials } from '@/utils/format'
 import { phoneCellTemplate } from '@/components/data-display/PhoneCell'
 import { useFeedback } from '@/hooks/useFeedback'
+import { ConfirmDeleteDialog } from '@/components/ui/ConfirmDeleteDialog'
+import { FeedbackAlerts } from '@/components/ui/FeedbackAlerts'
 import { IconPlus, IconExcel, IconSearch } from '@/components/ui/Icons'
 import styles from './MedicalStaffListPage.module.scss'
 
@@ -441,13 +442,10 @@ export const MedicalStaffListPage = () => {
       />
       </div>
 
-      {/* Mesaj succes */}
-      {successMsg && (
-        <div className="alert alert-success alert-dismissible fade show mt-3" role="alert">
-          {successMsg}
-          <button type="button" className="btn-close" onClick={() => setSuccessMsg(null)} />
-        </div>
-      )}
+      <FeedbackAlerts
+        successMsg={successMsg}
+        onDismissSuccess={() => setSuccessMsg(null)}
+      />
 
       {/* Modal creare / editare */}
       <MedicalStaffFormModal
@@ -462,31 +460,12 @@ export const MedicalStaffListPage = () => {
         serverError={modalOpen ? errorMsg : null}
       />
 
-      {/* Dialog confirmare ștergere */}
-      {deleteTarget && (
-        <div className={styles.confirmOverlay} onClick={() => setDeleteTarget(null)}>
-          <div className={styles.confirmDialog} onClick={(e) => e.stopPropagation()}>
-            <h6 className={styles.confirmTitle}>Confirmare ștergere</h6>
-            <p className={styles.confirmText}>
-              Sigur dorești să ștergi pe <strong>{deleteTarget.fullName}</strong>?
-            </p>
-            <div className={styles.confirmActions}>
-              <AppButton variant="outline-secondary" size="sm" onClick={() => setDeleteTarget(null)}>
-                Anulează
-              </AppButton>
-              <AppButton
-                variant="danger"
-                size="sm"
-                onClick={handleConfirmDelete}
-                isLoading={deleteStaff.isPending}
-                loadingText="Se șterge..."
-              >
-                Șterge
-              </AppButton>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDeleteDialog
+        name={deleteTarget?.fullName}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleConfirmDelete}
+        isLoading={deleteStaff.isPending}
+      />
 
     </div>
   )
