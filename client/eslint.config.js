@@ -30,6 +30,7 @@ export default defineConfig([
       // This project does not use the React Compiler, so disable them.
       'react-hooks/refs': 'off',
       'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/preserve-manual-memoization': 'off',
       // Downgrade from error to warn — having utility exports alongside components
       // is intentional in the custom AppDataGrid library files.
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
