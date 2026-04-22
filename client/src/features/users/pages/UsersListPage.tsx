@@ -11,23 +11,18 @@ import { useHasAccess, MODULE, ACCESS_LEVEL } from '@/hooks/useHasAccess'
 import { UserFormModal } from '../components/UserFormModal/UserFormModal'
 import { ChangePasswordModal } from '../components/ChangePasswordModal/ChangePasswordModal'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
-import { AppBadge, type BadgeVariant } from '@/components/ui/AppBadge'
+import { AppBadge, ActiveBadge, type BadgeVariant } from '@/components/ui/AppBadge'
 import { AppButton } from '@/components/ui/AppButton'
-import { formatDate, toLocalDateISO } from '@/utils/format'
+import { formatDate, toLocalDateISO, getInitials } from '@/utils/format'
+import { useFeedback } from '@/hooks/useFeedback'
+import { IconPlus, IconExcel, IconSearch } from '@/components/ui/Icons'
 import styles from './UsersListPage.module.scss'
 
-// ── Icoane SVG inline ─────────────────────────────────────────────────────────
-const IconPlus    = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-const IconExcel   = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-
-const IconSearch  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+// \u2500\u2500 Icoane specifice paginii \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 const IconUsers   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
 const IconKey     = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 010-7.778zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-const getInitials = (first?: string | null, last?: string | null) =>
-  `${(first ?? '').charAt(0)}${(last ?? '').charAt(0)}`.toUpperCase() || '?'
-
+// \u2500\u2500 Helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 type StatusFilter = 'all' | 'active' | 'inactive'
 
 // Mapare culoare per rol
@@ -71,8 +66,7 @@ export const UsersListPage = () => {
   const [deleteTarget, setDeleteTarget] = useState<UserDto | null>(null)
 
   // Mesaje feedback
-  const [successMsg, setSuccessMsg] = useState<string | null>(null)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const { successMsg, errorMsg, showSuccess, showError, setSuccessMsg, setErrorMsg } = useFeedback()
 
   // Date reale din API
   const { data: usersResp, isLoading, isError } = useUsersList({
@@ -167,11 +161,7 @@ export const UsersListPage = () => {
     return <span style={{ color: '#C9D3DC', fontSize: '0.78rem' }}>—</span>
   }, [])
 
-  const statusTemplate = useCallback((row: UserDto) => (
-    <AppBadge variant={row.isActive ? 'success' : 'neutral'} withDot>
-      {row.isActive ? 'Activ' : 'Inactiv'}
-    </AppBadge>
-  ), [])
+  const statusTemplate = useCallback((row: UserDto) => <ActiveBadge isActive={row.isActive} />, [])
 
   const lastLoginTemplate = useCallback((row: UserDto) =>
     row.lastLoginAt
@@ -284,19 +274,6 @@ export const UsersListPage = () => {
   // Statistici
   const totalActive   = userList.filter(u => u.isActive).length
   const totalInactive = userList.filter(u => !u.isActive).length
-
-  // Funcții helper — mesaje feedback
-  const showSuccess = (msg: string) => {
-    setErrorMsg(null)
-    setSuccessMsg(msg)
-    setTimeout(() => setSuccessMsg(null), 3000)
-  }
-
-  const showError = (err: unknown) => {
-    setSuccessMsg(null)
-    const message = err instanceof Error ? err.message : 'A apărut o eroare neașteptată.'
-    setErrorMsg(message)
-  }
 
   // ── Modal handlers ─────────────────────────────────────────────────────────
   const handleOpenCreate = () => {

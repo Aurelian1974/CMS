@@ -14,6 +14,7 @@ import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { AppButton } from '@/components/ui/AppButton'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { IconPlus } from '@/components/ui/Icons'
+import { useFeedback } from '@/hooks/useFeedback'
 import { DoctorViewModal } from '@/features/doctors/components'
 import { MedicalStaffViewModal } from '@/features/medicalStaff/components'
 import type { DepartmentDto, CreateDepartmentPayload } from '../types/department.types'
@@ -94,8 +95,7 @@ const DepartmentsPage = () => {
   const [viewStaffId, setViewStaffId] = useState<string | null>(null)
 
   // State mesaje feedback
-  const [successMsg, setSuccessMsg] = useState<string | null>(null)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const { successMsg, errorMsg, showSuccess, showError, setSuccessMsg, setErrorMsg } = useFeedback()
 
   const departments = departmentsResp?.data ?? []
   const locations = locationsResp?.data ?? []
@@ -137,19 +137,6 @@ const DepartmentsPage = () => {
       else next.add(deptId)
       return next
     })
-  }
-
-  // Funcții helper — afișare mesaje feedback
-  const showSuccess = (msg: string) => {
-    setErrorMsg(null)
-    setSuccessMsg(msg)
-    setTimeout(() => setSuccessMsg(null), 3000)
-  }
-
-  const showError = (err: unknown) => {
-    setSuccessMsg(null)
-    const message = err instanceof Error ? err.message : 'A apărut o eroare neașteptată.'
-    setErrorMsg(message)
   }
 
   // ===== Handlers =====

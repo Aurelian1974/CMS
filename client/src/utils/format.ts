@@ -47,3 +47,7 @@ export const formatMonthYear = (date: string | Date): string =>
     month: 'long',
     year: 'numeric',
   }).format(new Date(date))
+
+/// Inițiale din prenume + nume: "Ion Popescu" → "IP"
+export const getInitials = (first?: string | null, last?: string | null): string =>
+  `${(first ?? '').charAt(0)}${(last ?? '').charAt(0)}`.toUpperCase() || '?'
