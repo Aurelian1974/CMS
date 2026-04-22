@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useMemo } from 'react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import type { ColDef, GridApi } from '@/components/data-display/AppDataGrid'
 import { AppDataGrid } from '@/components/data-display/AppDataGrid'
 import type { UserDto } from '../types/user.types'
@@ -373,20 +374,20 @@ export const UsersListPage = () => {
     <div className={styles.page}>
 
       {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.pageTitle}>Utilizatori</h1>
-          <p className={styles.pageSubtitle}>Gestionare conturi de acces — fiecare utilizator este asociat unui doctor sau personal medical</p>
-        </div>
-        <div className={styles.headerActions}>
-          <button className={styles.btnSecondary} onClick={handleExcelExport}>
-            <IconExcel /> Export Excel
-          </button>
-          <button className={styles.btnPrimary} onClick={handleOpenCreate}>
-            <IconPlus /> Utilizator nou
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Utilizatori"
+        subtitle="Gestionare conturi de acces — fiecare utilizator este asociat unui doctor sau personal medical"
+        actions={
+          <>
+            <button className={styles.btnSecondary} onClick={handleExcelExport}>
+              <IconExcel /> Export Excel
+            </button>
+            <button className={styles.btnPrimary} onClick={handleOpenCreate}>
+              <IconPlus /> Utilizator nou
+            </button>
+          </>
+        }
+      />
 
       {/* Stats */}
       <div className={styles.statsBar}>

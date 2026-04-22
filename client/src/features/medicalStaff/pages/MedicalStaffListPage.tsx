@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useMemo } from 'react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import type { ColDef, GridApi } from '@/components/data-display/AppDataGrid'
 import { AppDataGrid } from '@/components/data-display/AppDataGrid'
 import type { MedicalStaffDto, MedicalStaffStatusFilter } from '../types/medicalStaff.types'
@@ -302,20 +303,20 @@ export const MedicalStaffListPage = () => {
     <div className={styles.page}>
 
       {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.pageTitle}>Personal Medical</h1>
-          <p className={styles.pageSubtitle}>Gestionare asistenți, infirmieri, moașe, farmaciști și alt personal</p>
-        </div>
-        <div className={styles.headerActions}>
-          <button className={styles.btnSecondary} onClick={handleExcelExport}>
-            <IconExcel /> Export Excel
-          </button>
-          <button className={styles.btnPrimary} onClick={handleOpenCreate}>
-            <IconPlus /> Personal nou
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Personal Medical"
+        subtitle="Gestionare asistenți, infirmieri, moașe, farmaciști și alt personal"
+        actions={
+          <>
+            <button className={styles.btnSecondary} onClick={handleExcelExport}>
+              <IconExcel /> Export Excel
+            </button>
+            <button className={styles.btnPrimary} onClick={handleOpenCreate}>
+              <IconPlus /> Personal nou
+            </button>
+          </>
+        }
+      />
 
       {/* Stats */}
       <div className={styles.statsBar}>

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useMemo } from 'react'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { AppDataGrid } from '@/components/data-display/AppDataGrid'
@@ -286,23 +287,23 @@ export const AppointmentsListPage = () => {
     <div className={styles.page}>
 
       {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.pageTitle}>Programări</h1>
-          <p className={styles.pageSubtitle}>Gestionare programări pacienți, confirmare și anulare</p>
-        </div>
-        <div className={styles.headerActions}>
-          <button className={styles.btnSecondary} onClick={() => navigate('/appointments/scheduler')}>
-            <IconScheduler /> Scheduler
-          </button>
-          <button className={styles.btnSecondary} onClick={handleExcelExport}>
-            <IconExcel /> Export Excel
-          </button>
-          <button className={styles.btnPrimary} onClick={handleOpenCreate}>
-            <IconPlus /> Programare nouă
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Programări"
+        subtitle="Gestionare programări pacienți, confirmare și anulare"
+        actions={
+          <>
+            <button className={styles.btnSecondary} onClick={() => navigate('/appointments/scheduler')}>
+              <IconScheduler /> Scheduler
+            </button>
+            <button className={styles.btnSecondary} onClick={handleExcelExport}>
+              <IconExcel /> Export Excel
+            </button>
+            <button className={styles.btnPrimary} onClick={handleOpenCreate}>
+              <IconPlus /> Programare nouă
+            </button>
+          </>
+        }
+      />
 
       {/* Stats */}
       <div className={styles.statsBar}>
