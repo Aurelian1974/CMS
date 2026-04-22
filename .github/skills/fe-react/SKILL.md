@@ -219,7 +219,19 @@ export const PatientForm = ({ onSubmit, isLoading }: PatientFormProps) => {
 }
 ```
 
-**Use wrapped Syncfusion form components** (`FormInput`, `FormSelect`, `FormDatePicker`) — never raw Syncfusion `TextBoxComponent` directly in feature code.
+**Use wrapped Syncfusion form components** (`FormInput`, `FormSelect`, `FormDatePicker`, `FormRichText`) — never raw Syncfusion `TextBoxComponent` directly in feature code.
+
+**CRITICAL: Never import hooks/functions you don't use in the component file.** ESLint rule `no-unused-vars` causes CI failure. If adding a hook at the top of the file, only import it when you actually use it.
+
+```tsx
+// WRONG — CI fails with: 'useCallback' is defined but never used
+import { useState, useEffect, useMemo, useCallback } from 'react'
+
+// CORRECT — only import what you use
+import { useState, useEffect, useMemo } from 'react'
+```
+
+Allowed unused vars must match pattern `/^_/u` — prefix with `_` if intentionally unused: `const _unused = ...`
 
 ---
 
@@ -266,6 +278,16 @@ export const useUpdatePatient = () => {
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: patientKeys.lists() })
       queryClient.invalidateQueries({ queryKey: patientKeys.detail(id) })
+    },
+  })
+}
+
+export const useDeletePatient = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => patientsApi.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: patientKeys.lists() })
     },
   })
 }
@@ -369,3 +391,5 @@ export const PageNamePage = () => (
 - [ ] Auth token stored in sessionStorage, not localStorage
 - [ ] Page has `height: 100%; overflow-y: auto` in SCSS if it needs scroll
 - [ ] No nomenclature values hardcoded in frontend — fetched from API
+- [ ] Only import React hooks/utilities you actually USE — unused imports fail ESLint `no-unused-vars`
+- [ ] `useDeleteXxx` hook invalidates the `lists()` key on success

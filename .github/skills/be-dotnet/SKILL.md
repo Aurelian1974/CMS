@@ -123,11 +123,22 @@ public sealed class Result<T>
     }
 
     public static Result<T> Success(T value)                      => new(true, value, null, 200);
+    public static Result<T> Created(T value)                      => new(true, value, null, 201); // POST → 201
     public static Result<T> Failure(string error, int code = 400) => new(false, default, error, code);
     public static Result<T> NotFound(string error)                => new(false, default, error, 404);
     public static Result<T> Conflict(string error)                => new(false, default, error, 409);
 }
 ```
+
+**Factory selection:**
+| Handler type | Factory | HTTP status |
+|---|---|---|
+| Create (returns new Id) | `Result<Guid>.Created(id)` | 201 |
+| Get/Query | `Result<T>.Success(value)` | 200 |
+| Update/Delete (bool) | `Result<bool>.Success(true)` | 200 |
+| Not found | `Result<T>.NotFound(msg)` | 404 |
+| Duplicate/conflict | `Result<T>.Conflict(msg)` | 409 |
+| Business rule violation | `Result<T>.Failure(msg)` | 400 |
 
 ---
 
@@ -194,7 +205,7 @@ public sealed class PatientRepository(DapperContext context) : IPatientRepositor
                 cancellationToken: ct));
     }
 
-    // Paged: QueryMultipleAsync — first result set = items, second = total count
+    // Paged (2 result sets): items + total count
     public async Task<PagedResult<PatientListDto>> GetPagedAsync(
         GetPatientsQuery query, Guid clinicId, CancellationToken ct)
     {
@@ -206,10 +217,40 @@ public sealed class PatientRepository(DapperContext context) : IPatientRepositor
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct));
 
-        var items = (await multi.ReadAsync<PatientListDto>()).ToList();
+        var items      = (await multi.ReadAsync<PatientListDto>()).ToList();
         var totalCount = await multi.ReadSingleAsync<int>();
 
         return new PagedResult<PatientListDto>(items, totalCount, query.Page, query.PageSize);
+    }
+
+    // Paged with stats (3 result sets): items + count + stats DTO
+    public async Task<ConsultationPagedResult> GetPagedAsync(
+        Guid clinicId, GetPagedParams p, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        using var multi = await connection.QueryMultipleAsync(
+            new CommandDefinition(ConsultationProcedures.GetPaged,
+                new { ClinicId = clinicId, p.Search, p.Page, p.PageSize },
+                commandType: CommandType.StoredProcedure, cancellationToken: ct));
+
+        var items      = (await multi.ReadAsync<ConsultationListDto>()).ToList();
+        var totalCount = await multi.ReadSingleAsync<int>();
+        var stats      = await multi.ReadSingleAsync<ConsultationStatsDto>(); // 3rd result set
+
+        return new ConsultationPagedResult(
+            new PagedResult<ConsultationListDto>(items, totalCount, p.Page, p.PageSize),
+            stats);
+    }
+
+    // Update: ExecuteAsync — returns Task (void), throws if not found
+    public async Task UpdateAsync(Guid id, Guid clinicId, /* ... params */, Guid updatedBy, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        await connection.ExecuteAsync(
+            new CommandDefinition(ConsultationProcedures.Update,
+                new { Id = id, ClinicId = clinicId, /* ... */, UpdatedBy = updatedBy },
+                commandType: CommandType.StoredProcedure, cancellationToken: ct));
+        // SP does THROW 5xxxx if not found — caught by handler → Result.NotFound
     }
 
     // Write: ExecuteScalarAsync<Guid> — returns new ID from OUTPUT clause
@@ -285,17 +326,35 @@ public abstract class BaseApiController : ControllerBase
 }
 
 // Controller — thin, delegates to MediatR
-[HttpPost]
-public async Task<IActionResult> Create(CreatePatientRequest request, CancellationToken ct)
+// IMPORTANT: Command IS the request body directly ([FromBody] command) — no separate Request DTO
+[ApiController]
+[ApiVersion("1")]
+[Route("api/v{v:apiVersion}/[controller]")]
+public sealed class ConsultationsController : BaseApiController
 {
-    var command = new CreatePatientCommand(
-        request.FirstName, request.LastName, request.Cnp,
-        request.PhoneNumber, request.Email);
+    [HttpPost]
+    [HasAccess(ModuleCodes.Consultations, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<Guid>>(StatusCodes.Status201Created)]
+    public async Task<IActionResult> Create(
+        [FromBody] CreateConsultationCommand command, CancellationToken ct)
+        => HandleResult(await Mediator.Send(command, ct));
 
-    var result = await Mediator.Send(command, ct);
-    return HandleResult(result);
+    [HttpPut("{id:guid}")]
+    [HasAccess(ModuleCodes.Consultations, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Update(
+        Guid id, [FromBody] UpdateConsultationCommand command, CancellationToken ct)
+        => HandleResult(await Mediator.Send(command with { Id = id }, ct));
+
+    [HttpDelete("{id:guid}")]
+    [HasAccess(ModuleCodes.Consultations, AccessLevel.Delete)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+        => HandleResult(await Mediator.Send(new DeleteConsultationCommand(id), ct));
 }
 ```
+
+**Key rule:** The Command record IS the `[FromBody]` parameter — no separate DTO class needed.
 
 ---
 
@@ -368,10 +427,15 @@ public static class AppointmentStatusIds
 - [ ] One class per file, file name matches class name
 - [ ] All C# identifiers in English without diacritics
 - [ ] Handler returns `Result<T>`, no uncaught business exceptions
+- [ ] POST handler returns `Result<T>.Created(id)` (201), GET returns `Success`, UPDATE/DELETE returns `Success(true)`
 - [ ] Repository uses SP constants, `CommandDefinition`, `CommandType.StoredProcedure`
 - [ ] No inline SQL anywhere in C#
 - [ ] `ClinicId` passed on every repository call
-- [ ] SqlException from SP (50000–59999) caught and mapped to `Result.Conflict/Failure`
+- [ ] SqlException from SP (50000–59999) caught and mapped to `Result.Conflict/Failure/NotFound`
 - [ ] FluentValidation validator registered (via assembly scan in DI)
 - [ ] Controller extends `BaseApiController`, calls `HandleResult(result)`
+- [ ] Command IS the `[FromBody]` parameter — no separate Request DTO
+- [ ] UpdateAsync returns `Task` (void) — errors via SP THROW, not return value
+- [ ] CreateAsync returns `Task<Guid>` via `ExecuteScalarAsync<Guid>`
 - [ ] All PKs and FKs are `Guid`, never `int`
+- [ ] New repository registered in `DependencyInjection.cs` as `services.AddScoped<IXxxRepo, XxxRepo>()`

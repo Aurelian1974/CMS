@@ -112,6 +112,10 @@ BEGIN
 
         COMMIT TRANSACTION;
         SELECT Id FROM @OutputIds;    -- Return new ID to C#
+        -- ALTERNATIVE (simpler, used in most SPs): skip OUTPUT table, use local variable
+        -- DECLARE @NewId UNIQUEIDENTIFIER = NEWID();
+        -- INSERT INTO ... VALUES (@NewId, ...);
+        -- SELECT @NewId;
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
