@@ -17,7 +17,8 @@ import { formatDate, toLocalDateISO, getInitials } from '@/utils/format'
 import { useFeedback } from '@/hooks/useFeedback'
 import { ConfirmDeleteDialog } from '@/components/ui/ConfirmDeleteDialog'
 import { FeedbackAlerts } from '@/components/ui/FeedbackAlerts'
-import { IconPlus, IconExcel, IconSearch } from '@/components/ui/Icons'
+import { ListPageToolbar } from '@/components/ui/ListPageToolbar'
+import { IconPlus, IconExcel } from '@/components/ui/Icons'
 import styles from './UsersListPage.module.scss'
 
 // \u2500\u2500 Icoane specifice paginii \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
@@ -428,48 +429,33 @@ export const UsersListPage = () => {
       </div>
 
       {/* Toolbar filtrare */}
-      <div className={styles.toolbar}>
-        <div className={styles.searchWrap}>
-          <span className={styles.searchIcon}><IconSearch /></span>
-          <input
-            type="text"
-            className={styles.searchInput}
-            placeholder="Caută după nume, username, email..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-        </div>
-
-        <div className={styles.filterGroup}>
-          <span className={styles.filterLabel}>Rol:</span>
-          <select
-            className={styles.filterSelect}
-            value={roleFilter}
-            onChange={e => setRoleFilter(e.target.value)}
-          >
-            <option value="">Toate</option>
-            {roles.map(r => (
-              <option key={r.id} value={r.id}>{r.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className={styles.toolbarDivider} />
-
-        <div className={styles.statusPills}>
-          {(['all', 'active', 'inactive'] as StatusFilter[]).map(s => (
-            <button
-              key={s}
-              className={`${styles.pill} ${statusFilter === s ? styles.active : ''}`}
-              onClick={() => setStatusFilter(s)}
+      <ListPageToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Caută după nume, username, email..."
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        statusOptions={[
+          { value: 'all' as StatusFilter, label: 'Toți' },
+          { value: 'active' as StatusFilter, label: 'Activi' },
+          { value: 'inactive' as StatusFilter, label: 'Inactivi' },
+        ]}
+        filters={
+          <div className={styles.filterGroup}>
+            <span className={styles.filterLabel}>Rol:</span>
+            <select
+              className={styles.filterSelect}
+              value={roleFilter}
+              onChange={e => setRoleFilter(e.target.value)}
             >
-              {s === 'all' ? 'Toți' : s === 'active' ? 'Activi' : 'Inactivi'}
-            </button>
-          ))}
-        </div>
-
-
-      </div>
+              <option value="">Toate</option>
+              {roles.map(r => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+          </div>
+        }
+      />
 
       {/* Grid */}
       <div className={styles.gridWrapper}>

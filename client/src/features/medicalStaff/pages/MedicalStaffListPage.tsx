@@ -16,7 +16,8 @@ import { phoneCellTemplate } from '@/components/data-display/PhoneCell'
 import { useFeedback } from '@/hooks/useFeedback'
 import { ConfirmDeleteDialog } from '@/components/ui/ConfirmDeleteDialog'
 import { FeedbackAlerts } from '@/components/ui/FeedbackAlerts'
-import { IconPlus, IconExcel, IconSearch } from '@/components/ui/Icons'
+import { ListPageToolbar } from '@/components/ui/ListPageToolbar'
+import { IconPlus, IconExcel } from '@/components/ui/Icons'
 import styles from './MedicalStaffListPage.module.scss'
 
 // \u2500\u2500 Icoane specifice paginii \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
@@ -357,48 +358,33 @@ export const MedicalStaffListPage = () => {
       </div>
 
       {/* Toolbar filtrare */}
-      <div className={styles.toolbar}>
-        <div className={styles.searchWrap}>
-          <span className={styles.searchIcon}><IconSearch /></span>
-          <input
-            type="text"
-            className={styles.searchInput}
-            placeholder="Caută după nume, email, titulatură..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-        </div>
-
-        <div className={styles.filterGroup}>
-          <span className={styles.filterLabel}>Departament:</span>
-          <select
-            className={styles.filterSelect}
-            value={departmentFilter}
-            onChange={e => setDepartmentFilter(e.target.value)}
-          >
-            <option value="">Toate</option>
-            {departmentNames.map(d => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className={styles.toolbarDivider} />
-
-        <div className={styles.statusPills}>
-          {(['all', 'active', 'inactive'] as MedicalStaffStatusFilter[]).map(s => (
-            <button
-              key={s}
-              className={`${styles.pill} ${statusFilter === s ? styles.active : ''}`}
-              onClick={() => setStatusFilter(s)}
+      <ListPageToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Caută după nume, email, titulatură..."
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        statusOptions={[
+          { value: 'all' as MedicalStaffStatusFilter, label: 'Toți' },
+          { value: 'active' as MedicalStaffStatusFilter, label: 'Activi' },
+          { value: 'inactive' as MedicalStaffStatusFilter, label: 'Inactivi' },
+        ]}
+        filters={
+          <div className={styles.filterGroup}>
+            <span className={styles.filterLabel}>Departament:</span>
+            <select
+              className={styles.filterSelect}
+              value={departmentFilter}
+              onChange={e => setDepartmentFilter(e.target.value)}
             >
-              {s === 'all' ? 'Toți' : s === 'active' ? 'Activi' : 'Inactivi'}
-            </button>
-          ))}
-        </div>
-
-
-      </div>
+              <option value="">Toate</option>
+              {departmentNames.map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
+        }
+      />
 
       {/* Grid */}
       <div className={styles.gridWrapper}>

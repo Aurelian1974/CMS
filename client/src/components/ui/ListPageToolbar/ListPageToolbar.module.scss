@@ -1,0 +1,88 @@
+@use '@/styles/variables' as *;
+
+.toolbar {
+  background: $card-bg;
+  border: 1px solid rgba($primary, 0.1);
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  box-shadow: 0 1px 4px rgba($primary-dark, 0.05);
+}
+
+.searchWrap {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+  max-width: 360px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: $gray-400;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.searchInput {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px 0 34px;
+  background: $body-bg;
+  border: 1.5px solid $gray-200;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  color: $gray-700;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+
+  &::placeholder { color: $gray-300; }
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+    background: $card-bg;
+  }
+}
+
+.toolbarDivider {
+  width: 1px;
+  height: 24px;
+  background: $gray-200;
+  flex-shrink: 0;
+}
+
+.statusPills {
+  display: flex;
+  background: $body-bg;
+  border: 1.5px solid $gray-200;
+  border-radius: 9px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.pill {
+  padding: 4px 12px;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: $gray-500;
+  transition: all 0.15s;
+
+  &.active {
+    background: $card-bg;
+    color: $primary-dark;
+    box-shadow: 0 1px 4px rgba($primary-dark, 0.1);
+  }
+
+  &:hover:not(.active) { color: $gray-700; }
+}

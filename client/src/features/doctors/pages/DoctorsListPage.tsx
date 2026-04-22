@@ -16,7 +16,8 @@ import { phoneCellTemplate } from '@/components/data-display/PhoneCell'
 import { useFeedback } from '@/hooks/useFeedback'
 import { ConfirmDeleteDialog } from '@/components/ui/ConfirmDeleteDialog'
 import { FeedbackAlerts } from '@/components/ui/FeedbackAlerts'
-import { IconPlus, IconExcel, IconSearch } from '@/components/ui/Icons'
+import { ListPageToolbar } from '@/components/ui/ListPageToolbar'
+import { IconPlus, IconExcel } from '@/components/ui/Icons'
 import styles from './DoctorsListPage.module.scss'
 
 // \u2500\u2500 Icoane specifice paginii \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
@@ -425,48 +426,33 @@ export const DoctorsListPage = () => {
       </div>
 
       {/* Toolbar filtrare */}
-      <div className={styles.toolbar}>
-        <div className={styles.searchWrap}>
-          <span className={styles.searchIcon}><IconSearch /></span>
-          <input
-            type="text"
-            className={styles.searchInput}
-            placeholder="Caută după nume, email, parafă, specialitate..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-        </div>
-
-        <div className={styles.filterGroup}>
-          <span className={styles.filterLabel}>Specialitate:</span>
-          <select
-            className={styles.filterSelect}
-            value={specialtyFilter}
-            onChange={e => setSpecialtyFilter(e.target.value)}
-          >
-            <option value="">Toate</option>
-            {specialties.map(s => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className={styles.toolbarDivider} />
-
-        <div className={styles.statusPills}>
-          {(['all', 'active', 'inactive'] as DoctorStatusFilter[]).map(s => (
-            <button
-              key={s}
-              className={`${styles.pill} ${statusFilter === s ? styles.active : ''}`}
-              onClick={() => setStatusFilter(s)}
+      <ListPageToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Caută după nume, email, parafă, specialitate..."
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        statusOptions={[
+          { value: 'all' as DoctorStatusFilter, label: 'Toți' },
+          { value: 'active' as DoctorStatusFilter, label: 'Activi' },
+          { value: 'inactive' as DoctorStatusFilter, label: 'Inactivi' },
+        ]}
+        filters={
+          <div className={styles.filterGroup}>
+            <span className={styles.filterLabel}>Specialitate:</span>
+            <select
+              className={styles.filterSelect}
+              value={specialtyFilter}
+              onChange={e => setSpecialtyFilter(e.target.value)}
             >
-              {s === 'all' ? 'Toți' : s === 'active' ? 'Activi' : 'Inactivi'}
-            </button>
-          ))}
-        </div>
-
-
-      </div>
+              <option value="">Toate</option>
+              {specialties.map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+        }
+      />
 
       {/* Grid */}
       <div className={styles.gridWrapper}>

@@ -16,9 +16,10 @@ import { phoneCellTemplate } from '@/components/data-display/PhoneCell'
 import { useFeedback } from '@/hooks/useFeedback'
 import { ConfirmDeleteDialog } from '@/components/ui/ConfirmDeleteDialog'
 import { FeedbackAlerts } from '@/components/ui/FeedbackAlerts'
+import { ListPageToolbar } from '@/components/ui/ListPageToolbar'
 import { AppointmentFormModal } from '../components/AppointmentFormModal/AppointmentFormModal'
 import { AppointmentDetailModal } from '../components/AppointmentDetailModal/AppointmentDetailModal'
-import { IconPlus, IconExcel, IconSearch } from '@/components/ui/Icons'
+import { IconPlus, IconExcel } from '@/components/ui/Icons'
 import styles from './AppointmentsListPage.module.scss'
 
 // \u2500\u2500 Icoane specifice paginii \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
@@ -345,78 +346,63 @@ export const AppointmentsListPage = () => {
       </div>
 
       {/* Toolbar filtrare */}
-      <div className={styles.toolbar}>
-        <div className={styles.searchWrap}>
-          <span className={styles.searchIcon}><IconSearch /></span>
-          <input
-            type="text"
-            className={styles.searchInput}
-            placeholder="Caută după pacient, doctor, observații..."
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1) }}
-          />
-        </div>
+      <ListPageToolbar
+        search={search}
+        onSearchChange={v => { setSearch(v); setPage(1) }}
+        searchPlaceholder="Caută după pacient, doctor, observații..."
+        statusFilter={statusFilter}
+        onStatusChange={s => { setStatusFilter(s); setPage(1) }}
+        statusOptions={[
+          { value: 'all' as AppointmentStatusFilter, label: 'Toate' },
+          { value: 'scheduled' as AppointmentStatusFilter, label: 'Programate' },
+          { value: 'confirmed' as AppointmentStatusFilter, label: 'Confirmate' },
+          { value: 'completed' as AppointmentStatusFilter, label: 'Finalizate' },
+          { value: 'cancelled' as AppointmentStatusFilter, label: 'Anulate' },
+        ]}
+        filters={
+          <>
+            <div className={styles.filterGroup}>
+              <span className={styles.filterLabel}>Doctor:</span>
+              <select
+                className={styles.filterSelect}
+                value={doctorId ?? ''}
+                onChange={e => { setDoctorId(e.target.value || undefined); setPage(1) }}
+              >
+                <option value="">Toți</option>
+                {doctorLookup.map(d => (
+                  <option key={d.id} value={d.id}>{d.fullName}</option>
+                ))}
+              </select>
+            </div>
 
-        <div className={styles.filterGroup}>
-          <span className={styles.filterLabel}>Doctor:</span>
-          <select
-            className={styles.filterSelect}
-            value={doctorId ?? ''}
-            onChange={e => { setDoctorId(e.target.value || undefined); setPage(1) }}
-          >
-            <option value="">Toți</option>
-            {doctorLookup.map(d => (
-              <option key={d.id} value={d.id}>{d.fullName}</option>
-            ))}
-          </select>
-        </div>
+            <FormDatePicker<{ dateFrom: string; dateTo: string }>
+              name="dateFrom"
+              control={filterDateControl}
+              label="De la"
+              className={styles.filterDatePicker}
+              showClearButton
+              showTodayButton={false}
+              onValueChange={(date) => {
+                setDateFrom(date ? toLocalDateISO(date) : undefined)
+                setPage(1)
+              }}
+            />
 
-        <FormDatePicker<{ dateFrom: string; dateTo: string }>
-          name="dateFrom"
-          control={filterDateControl}
-          label="De la"
-          className={styles.filterDatePicker}
-          showClearButton
-          showTodayButton={false}
-          onValueChange={(date) => {
-            setDateFrom(date ? toLocalDateISO(date) : undefined)
-            setPage(1)
-          }}
-        />
-
-        <FormDatePicker<{ dateFrom: string; dateTo: string }>
-          name="dateTo"
-          control={filterDateControl}
-          label="Până la"
-          className={styles.filterDatePicker}
-          showClearButton
-          showTodayButton={false}
-          onValueChange={(date) => {
-            setDateTo(date ? toLocalDateISO(date) : undefined)
-            setPage(1)
-          }}
-        />
-
-        <div className={styles.toolbarDivider} />
-
-        <div className={styles.statusPills}>
-          {(['all', 'scheduled', 'confirmed', 'completed', 'cancelled'] as AppointmentStatusFilter[]).map(s => (
-            <button
-              key={s}
-              className={`${styles.pill} ${statusFilter === s ? styles.active : ''}`}
-              onClick={() => { setStatusFilter(s); setPage(1) }}
-            >
-              {{
-                all: 'Toate',
-                scheduled: 'Programate',
-                confirmed: 'Confirmate',
-                completed: 'Finalizate',
-                cancelled: 'Anulate',
-              }[s]}
-            </button>
-          ))}
-        </div>
-      </div>
+            <FormDatePicker<{ dateFrom: string; dateTo: string }>
+              name="dateTo"
+              control={filterDateControl}
+              label="Până la"
+              className={styles.filterDatePicker}
+              showClearButton
+              showTodayButton={false}
+              onValueChange={(date) => {
+                setDateTo(date ? toLocalDateISO(date) : undefined)
+                setPage(1)
+              }}
+            />
+          </>
+        }
+      />
 
       {/* Grid — mod server-side: paginare + sortare + filtrare la API */}
       <div className={styles.gridWrapper}>

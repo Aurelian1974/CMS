@@ -11,11 +11,12 @@ import { PatientFormModal } from '../components/PatientFormModal/PatientFormModa
 import { PatientDetailModal } from '../components/PatientDetailModal/PatientDetailModal'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { AppBadge, ActiveBadge, type BadgeVariant } from '@/components/ui/AppBadge'
-import { IconPlus, IconExcel, IconSearch } from '@/components/ui/Icons'
+import { IconPlus, IconExcel } from '@/components/ui/Icons'
 import { formatDate, getInitials } from '@/utils/format'
 import { useFeedback } from '@/hooks/useFeedback'
 import { ConfirmDeleteDialog } from '@/components/ui/ConfirmDeleteDialog'
 import { FeedbackAlerts } from '@/components/ui/FeedbackAlerts'
+import { ListPageToolbar } from '@/components/ui/ListPageToolbar'
 import { phoneCellTemplate } from '@/components/data-display/PhoneCell'
 import styles from './PatientsListPage.module.scss'
 
@@ -421,79 +422,66 @@ export const PatientsListPage = () => {
       </div>
 
       {/* Toolbar filtrare */}
-      <div className={styles.toolbar}>
-        <div className={styles.searchWrap}>
-          <span className={styles.searchIcon}><IconSearch /></span>
-          <input
-            type="text"
-            className={styles.searchInput}
-            placeholder="Caută după nume, CNP, telefon, email..."
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1) }}
-          />
-        </div>
+      <ListPageToolbar
+        search={search}
+        onSearchChange={v => { setSearch(v); setPage(1) }}
+        searchPlaceholder="Caută după nume, CNP, telefon, email..."
+        statusFilter={statusFilter}
+        onStatusChange={s => { setStatusFilter(s); setPage(1) }}
+        statusOptions={[
+          { value: 'all' as PatientStatusFilter, label: 'Toți' },
+          { value: 'active' as PatientStatusFilter, label: 'Activi' },
+          { value: 'inactive' as PatientStatusFilter, label: 'Inactivi' },
+        ]}
+        filters={
+          <>
+            <div className={styles.filterGroup}>
+              <span className={styles.filterLabel}>Gen:</span>
+              <select
+                className={styles.filterSelect}
+                value={genderId ?? ''}
+                onChange={e => { setGenderId(e.target.value || undefined); setPage(1) }}
+              >
+                <option value="">Toate</option>
+                {genders.map(g => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
+                ))}
+              </select>
+            </div>
 
-        <div className={styles.filterGroup}>
-          <span className={styles.filterLabel}>Gen:</span>
-          <select
-            className={styles.filterSelect}
-            value={genderId ?? ''}
-            onChange={e => { setGenderId(e.target.value || undefined); setPage(1) }}
-          >
-            <option value="">Toate</option>
-            {genders.map(g => (
-              <option key={g.id} value={g.id}>{g.name}</option>
-            ))}
-          </select>
-        </div>
+            <div className={styles.filterGroup}>
+              <span className={styles.filterLabel}>Grupă sang.:</span>
+              <select
+                className={styles.filterSelect}
+                value={bloodTypeId ?? ''}
+                onChange={e => { setBloodTypeId(e.target.value || undefined); setPage(1) }}
+              >
+                <option value="">Toate</option>
+                {bloodTypes.map(bt => (
+                  <option key={bt.id} value={bt.id}>{bt.name}</option>
+                ))}
+              </select>
+            </div>
 
-        <div className={styles.filterGroup}>
-          <span className={styles.filterLabel}>Grupă sang.:</span>
-          <select
-            className={styles.filterSelect}
-            value={bloodTypeId ?? ''}
-            onChange={e => { setBloodTypeId(e.target.value || undefined); setPage(1) }}
-          >
-            <option value="">Toate</option>
-            {bloodTypes.map(bt => (
-              <option key={bt.id} value={bt.id}>{bt.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className={styles.filterGroup}>
-          <span className={styles.filterLabel}>Alergii:</span>
-          <select
-            className={styles.filterSelect}
-            value={hasAllergies === undefined ? '' : hasAllergies ? '1' : '0'}
-            onChange={e => {
-              const v = e.target.value
-              setHasAllergies(v === '' ? undefined : v === '1')
-              setPage(1)
-            }}
-          >
-            <option value="">Toate</option>
-            <option value="1">Cu alergii</option>
-            <option value="0">Fără alergii</option>
-          </select>
-        </div>
-
-        <div className={styles.toolbarDivider} />
-
-        <div className={styles.statusPills}>
-          {(['all', 'active', 'inactive'] as PatientStatusFilter[]).map(s => (
-            <button
-              key={s}
-              className={`${styles.pill} ${statusFilter === s ? styles.active : ''}`}
-              onClick={() => { setStatusFilter(s); setPage(1) }}
-            >
-              {s === 'all' ? 'Toți' : s === 'active' ? 'Activi' : 'Inactivi'}
-            </button>
-          ))}
-        </div>
-
-
-      </div>
+            <div className={styles.filterGroup}>
+              <span className={styles.filterLabel}>Alergii:</span>
+              <select
+                className={styles.filterSelect}
+                value={hasAllergies === undefined ? '' : hasAllergies ? '1' : '0'}
+                onChange={e => {
+                  const v = e.target.value
+                  setHasAllergies(v === '' ? undefined : v === '1')
+                  setPage(1)
+                }}
+              >
+                <option value="">Toate</option>
+                <option value="1">Cu alergii</option>
+                <option value="0">Fără alergii</option>
+              </select>
+            </div>
+          </>
+        }
+      />
 
       {/* Grid — mod server-side: paginare + sortare + filtrare la API */}
       <div className={styles.gridWrapper}>
