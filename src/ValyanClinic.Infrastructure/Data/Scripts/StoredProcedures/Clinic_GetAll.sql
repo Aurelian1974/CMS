@@ -13,7 +13,7 @@ BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
-    SELECT c.Id, c.Name, c.FiscalCode, c.TradeRegisterNumber, c.CaenCode,
+    SELECT c.Id, c.Name, c.FiscalCode, c.TradeRegisterNumber,
            c.LegalRepresentative, c.ContractCNAS,
            c.Address, c.City, c.County, c.PostalCode,
            c.BankName, c.BankAccount,

@@ -20,6 +20,7 @@ import '@syncfusion/ej2-calendars/styles/bootstrap5.css'
 import '@syncfusion/ej2-dropdowns/styles/bootstrap5.css'
 import '@syncfusion/ej2-splitbuttons/styles/bootstrap5.css'
 import '@syncfusion/ej2-grids/styles/bootstrap5.css'
+import '@syncfusion/ej2-richtexteditor/styles/bootstrap5.css'
 
 import App from './App.tsx'
 import './styles/main.scss'

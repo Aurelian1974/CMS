@@ -7,8 +7,8 @@ public sealed class UpsertClinicDayCommandValidator : AbstractValidator<UpsertCl
     public UpsertClinicDayCommandValidator()
     {
         RuleFor(x => x.DayOfWeek)
-            .InclusiveBetween((byte)0, (byte)6)
-            .WithMessage("Ziua săptămânii trebuie să fie între 0 (Luni) și 6 (Duminică).");
+            .InclusiveBetween((byte)1, (byte)7)
+            .WithMessage("Ziua săptămânii trebuie să fie între 1 (Luni) și 7 (Duminică).");
 
         When(x => x.IsOpen, () =>
         {
@@ -33,8 +33,8 @@ public sealed class UpsertDoctorDayCommandValidator : AbstractValidator<UpsertDo
             .NotEmpty().WithMessage("Id-ul doctorului este obligatoriu.");
 
         RuleFor(x => x.DayOfWeek)
-            .InclusiveBetween((byte)0, (byte)6)
-            .WithMessage("Ziua săptămânii trebuie să fie între 0 (Luni) și 6 (Duminică).");
+            .InclusiveBetween((byte)1, (byte)7)
+            .WithMessage("Ziua săptămânii trebuie să fie între 1 (Luni) și 7 (Duminică).");
 
         RuleFor(x => x.StartTime)
             .NotEmpty().WithMessage("Ora de start este obligatorie.")
@@ -56,7 +56,7 @@ public sealed class DeleteDoctorDayCommandValidator : AbstractValidator<DeleteDo
             .NotEmpty().WithMessage("Id-ul doctorului este obligatoriu.");
 
         RuleFor(x => x.DayOfWeek)
-            .InclusiveBetween((byte)0, (byte)6)
-            .WithMessage("Ziua săptămânii trebuie să fie între 0 (Luni) și 6 (Duminică).");
+            .InclusiveBetween((byte)1, (byte)7)
+            .WithMessage("Ziua săptămânii trebuie să fie între 1 (Luni) și 7 (Duminică).");
     }
 }

@@ -24,8 +24,8 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // ===== Dapper — DateTime marcat ca UTC =====
-        SqlMapper.AddTypeHandler(new UtcDateTimeTypeHandler());
+        // ===== Dapper — DateTime marcat ca Local (ora României) =====
+        SqlMapper.AddTypeHandler(new LocalDateTimeTypeHandler());
 
         // ===== Opțiuni strongly-typed =====
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
@@ -51,6 +51,7 @@ public static class DependencyInjection
         services.AddScoped<IMedicalStaffRepository, MedicalStaffRepository>();
         services.AddScoped<IPatientRepository, PatientRepository>();
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+        services.AddScoped<IConsultationRepository, ConsultationRepository>();
         services.AddScoped<INomenclatureLookupRepository, NomenclatureLookupRepository>();
         services.AddScoped<IGeographyRepository, GeographyRepository>();
         services.AddScoped<ICaenCodeRepository, CaenCodeRepository>();
@@ -61,6 +62,7 @@ public static class DependencyInjection
         services.AddScoped<ICnasSyncRepository, CnasSyncRepository>();
         services.AddScoped<IAnmSyncRepository, AnmSyncRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+        services.AddScoped<IICD10Repository, ICD10Repository>();
 
         // ===== Servicii =====
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();

@@ -6,7 +6,7 @@ export interface FormInputProps<T extends FieldValues> {
   /** Control object din useForm() */
   control: Control<T>
   /** Textul label-ului */
-  label: string
+  label?: string
   /** Placeholder input */
   placeholder?: string
   /** Tipul inputului HTML */

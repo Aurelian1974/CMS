@@ -38,7 +38,7 @@ public sealed class RefreshTokenCommandHandler(
             request.Token, newRefreshToken, ct);
 
         // 3. Salvăm noul refresh token
-        var refreshExpiry = DateTime.UtcNow.AddDays(jwtOptions.Value.RefreshTokenExpiryDays);
+        var refreshExpiry = DateTime.Now.AddDays(jwtOptions.Value.RefreshTokenExpiryDays);
         await authRepository.CreateRefreshTokenAsync(
             existingToken.UserId, newRefreshToken, refreshExpiry, request.IpAddress, ct);
 
@@ -93,6 +93,7 @@ public sealed class RefreshTokenCommandHandler(
                 Role = user.RoleCode,
                 RoleId = user.RoleId.ToString(),
                 ClinicId = user.ClinicId.ToString(),
+                DoctorId = user.DoctorId?.ToString(),
             },
             Permissions = permissions
         };

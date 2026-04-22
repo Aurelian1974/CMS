@@ -337,7 +337,7 @@
   justify-content: center;
   gap: 2px;
   overflow: hidden;
-  cursor: pointer;
+  cursor: grab;
   transition: box-shadow 0.15s, transform 0.1s;
   z-index: 2;
   min-width: 60px;

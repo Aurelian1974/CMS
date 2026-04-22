@@ -32,4 +32,5 @@ public sealed record AuthUserDto
     public string Role { get; init; } = string.Empty;
     public string RoleId { get; init; } = string.Empty;
     public string ClinicId { get; init; } = string.Empty;
+    public string? DoctorId { get; init; }
 }

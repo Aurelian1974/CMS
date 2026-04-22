@@ -66,5 +66,5 @@ public sealed record RefreshTokenDto
     public string? CreatedByIp { get; init; }
 
     /// <summary>Token-ul e activ dacă nu e revocat și nu e expirat.</summary>
-    public bool IsActive => RevokedAt is null && ExpiresAt > DateTime.UtcNow;
+    public bool IsActive => RevokedAt is null && ExpiresAt > DateTime.Now;
 }

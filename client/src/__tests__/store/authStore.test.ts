@@ -16,6 +16,7 @@ const mockUser: AuthUser = {
   role: 'admin',
   roleId: 'b2c3d4e5-f6a7-8901-bcde-f12345678901',
   clinicId: 'c3d4e5f6-a7b8-9012-cdef-123456789012',
+  doctorId: null,
 };
 
 const mockPermissions: ModulePermission[] = [

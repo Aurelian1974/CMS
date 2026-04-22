@@ -12,6 +12,7 @@ export interface AuthUser {
   role: 'admin' | 'doctor' | 'nurse' | 'receptionist' | 'clinic_manager';
   roleId: string;
   clinicId: string;
+  doctorId: string | null;
 }
 
 /// Permisiune pe modul primită de la backend la login/refresh.

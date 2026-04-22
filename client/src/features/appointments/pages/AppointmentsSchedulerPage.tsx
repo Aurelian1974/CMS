@@ -275,8 +275,9 @@ export const AppointmentsSchedulerPage = () => {
   const [serverError, setServerError] = useState<string | null>(null)
 
   // Drag & drop state
-  const dragInfoRef = useRef<{ apt: AppointmentSchedulerDto; offsetMinutes: number } | null>(null)
+  const dragInfoRef = useRef<{ apt: AppointmentSchedulerDto; offsetMinutes: number; durationMin: number } | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
+  const wasDraggingRef = useRef(false)
 
   // Date din API — intervalul variază cu modul de vizualizare
   const { rangeFrom, rangeTo, weekDays, monthDays } = useMemo(() => {
@@ -384,6 +385,8 @@ export const AppointmentsSchedulerPage = () => {
 
   /** Click pe un slot gol din timeline — deschide formularul de creare pre-completat */
   const handleSlotClick = useCallback((e: React.MouseEvent<HTMLDivElement>, doctorId: string) => {
+    // Ignoră click-urile imediat după drag & drop
+    if (wasDraggingRef.current) return
     // Ignoră click-urile pe event bars (propagate din copil)
     if ((e.target as HTMLElement).closest('[data-event-bar]')) return
     const rect = e.currentTarget.getBoundingClientRect()
@@ -405,6 +408,8 @@ export const AppointmentsSchedulerPage = () => {
   /** Click pe o programare existentă — deschide formularul de editare */
   const handleEventClick = useCallback((e: React.MouseEvent, apt: AppointmentSchedulerDto) => {
     e.stopPropagation()
+    // Ignoră click-urile imediat după drag & drop
+    if (wasDraggingRef.current) return
     setTooltip(null)
     setEditingSchedulerApt(apt)
     setFormCreateDefaults(undefined)
@@ -436,18 +441,21 @@ export const AppointmentsSchedulerPage = () => {
   const handleDragStart = useCallback((e: React.DragEvent, apt: AppointmentSchedulerDto) => {
     e.stopPropagation()
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    const durationMin = (new Date(apt.endTime).getTime() - new Date(apt.startTime).getTime()) / 60000
+    const durationMin = Math.round((new Date(apt.endTime).getTime() - new Date(apt.startTime).getTime()) / 60000)
     // offset în minute de la început event = fracţia din event bar înmulţită cu durata
     const offsetMinutes = (e.clientX - rect.left) / rect.width * durationMin
-    dragInfoRef.current = { apt, offsetMinutes }
+    dragInfoRef.current = { apt, offsetMinutes, durationMin }
     setDraggingId(apt.id)
+    wasDraggingRef.current = true
     e.dataTransfer.effectAllowed = 'move'
-    // Vizibil drag image (browser default)
+    e.dataTransfer.setData('text/plain', apt.id)
   }, [])
 
   const handleDragEnd = useCallback(() => {
     setDraggingId(null)
     dragInfoRef.current = null
+    // Permite click-urile din nou după un mic delay (previne click imediat după drag)
+    setTimeout(() => { wasDraggingRef.current = false }, 100)
   }, [])
 
   const handleTimelineDragOver = useCallback((e: React.DragEvent) => {
@@ -458,11 +466,10 @@ export const AppointmentsSchedulerPage = () => {
   const handleTimelineDrop = useCallback((e: React.DragEvent<HTMLDivElement>, doctorId: string) => {
     e.preventDefault()
     if (!dragInfoRef.current) return
-    const { apt, offsetMinutes } = dragInfoRef.current
+    const { apt, offsetMinutes, durationMin } = dragInfoRef.current
     const rect = e.currentTarget.getBoundingClientRect()
     const relX = e.clientX - rect.left
     const droppedMin = tlStart + (relX / rect.width) * (tlEnd - tlStart)
-    const durationMin = (new Date(apt.endTime).getTime() - new Date(apt.startTime).getTime()) / 60000
     const newStart = Math.max(tlStart, Math.min(
       roundToNearest15(droppedMin - offsetMinutes),
       tlEnd - Math.ceil(durationMin / 15) * 15,
@@ -476,14 +483,22 @@ export const AppointmentsSchedulerPage = () => {
     }
     const newEnd = newStart + durationMin
     const dateStr = formatDateISO(currentDate)
+    const startH = Math.floor(newStart / 60)
+    const startM = Math.round(newStart % 60)
+    const endH   = Math.floor(newEnd / 60)
+    const endM   = Math.round(newEnd % 60)
     updateAppointment.mutate({
       id:        apt.id,
       patientId: apt.patientId,
       doctorId,
-      startTime: `${dateStr}T${pad2(Math.floor(newStart / 60))}:${pad2(newStart % 60)}:00`,
-      endTime:   `${dateStr}T${pad2(Math.floor(newEnd / 60))}:${pad2(newEnd % 60)}:00`,
+      startTime: `${dateStr}T${pad2(startH)}:${pad2(startM)}:00`,
+      endTime:   `${dateStr}T${pad2(endH)}:${pad2(endM)}:00`,
       statusId:  apt.statusId,
       notes:     apt.notes,
+    }, {
+      onError: (err) => {
+        console.error('[Scheduler DnD] Eroare la mutarea programării:', err)
+      },
     })
     dragInfoRef.current = null
     setDraggingId(null)

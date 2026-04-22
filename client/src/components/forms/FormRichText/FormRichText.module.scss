@@ -1,0 +1,155 @@
+@import '@/styles/variables';
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  width: 100%;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: $gray-600;
+  line-height: 1.4;
+}
+
+.required {
+  color: $danger;
+  margin-left: 0.15rem;
+}
+
+.error {
+  font-size: 0.78rem;
+  color: $danger;
+  margin-top: 0.1rem;
+}
+
+.rteWrap {
+  width: 100%;
+
+  :global {
+    /* ── Root container ── */
+    .e-richtexteditor {
+      border: 1px solid $gray-200;
+      border-radius: $border-radius-sm;
+      font-family: $font-family-base;
+      width: 100% !important;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .e-richtexteditor .e-rte-container {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+
+    /* ── Toolbar — top ── */
+    .e-richtexteditor .e-rte-toolbar {
+      order: -1;
+      background: $gray-50;
+      border-bottom: 1px solid $gray-200;
+      border-top: none;
+      border-radius: $border-radius-sm $border-radius-sm 0 0;
+    }
+
+    .e-richtexteditor .e-toolbar {
+      background: transparent;
+      border: none;
+      box-shadow: none;
+    }
+
+    .e-richtexteditor .e-toolbar .e-toolbar-items {
+      background: transparent;
+    }
+
+    .e-richtexteditor .e-toolbar-item .e-tbar-btn {
+      color: $gray-500;
+      border-radius: 4px;
+      height: 28px;
+      min-width: 28px;
+      padding: 0 5px;
+
+      &:hover {
+        color: $primary;
+        background: rgba($primary, 0.08);
+      }
+
+      &.e-active {
+        color: $primary;
+        background: rgba($primary, 0.12);
+      }
+    }
+
+    .e-richtexteditor .e-separator {
+      border-color: $gray-200;
+    }
+
+    /* ── Content area ── */
+    .e-richtexteditor .e-rte-content {
+      font-family: $font-family-base;
+      font-size: $font-size-base;
+      color: $gray-700;
+      background: $card-bg;
+      border-radius: 0 0 $border-radius-sm $border-radius-sm;
+      flex: 1;
+      width: 100%;
+    }
+
+    .e-richtexteditor .e-rte-content .e-content {
+      padding: 10px 14px;
+      min-height: 80px;
+      line-height: 1.6;
+    }
+
+    /* ── Placeholder ── */
+    .e-richtexteditor .e-rte-content .rte-placeholder,
+    .e-richtexteditor .e-rte-placeholder {
+      color: $gray-400;
+      font-style: italic;
+      font-size: $font-size-base;
+      padding: 10px 14px;
+    }
+
+    /* ── Focus state ── */
+    .e-richtexteditor.e-rte-full-screen,
+    .e-richtexteditor:not(.e-rte-toolbar-enabled) {
+      border-color: $gray-200;
+    }
+
+    .e-richtexteditor.e-focused {
+      border-color: $primary;
+      box-shadow: 0 0 0 2px rgba($primary, 0.12);
+    }
+
+    /* ── Remove default unwanted borders ── */
+    .e-richtexteditor .e-rte-content,
+    .e-richtexteditor .e-source-content {
+      border: none;
+    }
+  }
+}
+
+.rteDisabled {
+  opacity: 0.6;
+  pointer-events: none;
+
+  :global {
+    .e-richtexteditor {
+      background: $gray-50;
+    }
+
+    .e-richtexteditor .e-rte-content {
+      background: $gray-50;
+    }
+  }
+}
+
+.rteError {
+  :global {
+    .e-richtexteditor {
+      border-color: $danger;
+    }
+  }
+}

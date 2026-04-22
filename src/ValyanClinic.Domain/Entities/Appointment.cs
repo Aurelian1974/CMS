@@ -30,7 +30,7 @@ public sealed class Appointment
     /// Verifică dacă programarea a trecut deja (ora de start este în trecut).
     /// </summary>
     public bool IsInThePast(DateTime? now = null)
-        => StartTime < (now ?? DateTime.UtcNow);
+        => StartTime < (now ?? DateTime.Now);
 
     /// <summary>
     /// Verifică dacă intervalul dat se suprapune cu această programare.

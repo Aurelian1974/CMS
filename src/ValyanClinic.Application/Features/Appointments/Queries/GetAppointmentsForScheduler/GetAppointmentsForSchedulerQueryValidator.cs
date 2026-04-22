@@ -12,12 +12,12 @@ public sealed class GetAppointmentsForSchedulerQueryValidator
 
         RuleFor(x => x.DateTo)
             .NotEmpty().WithMessage("Data de sfârșit este obligatorie.")
-            .GreaterThan(x => x.DateFrom)
-            .WithMessage("Data de sfârșit trebuie să fie după data de început.");
+            .GreaterThanOrEqualTo(x => x.DateFrom)
+            .WithMessage("Data de sfârșit trebuie să fie după sau egală cu data de început.");
 
         RuleFor(x => x)
             .Must(x => (x.DateTo - x.DateFrom).TotalDays <= 93)
             .WithMessage("Intervalul scheduler nu poate depăși 3 luni (93 de zile).")
-            .When(x => x.DateTo > x.DateFrom);
+            .When(x => x.DateTo >= x.DateFrom);
     }
 }

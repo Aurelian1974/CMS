@@ -64,7 +64,7 @@ public sealed class LoginCommandHandler(
 
         // 7. Generare refresh token + salvare în DB
         var refreshToken = tokenService.GenerateRefreshToken();
-        var refreshExpiry = DateTime.UtcNow.AddDays(jwtOptions.Value.RefreshTokenExpiryDays);
+        var refreshExpiry = DateTime.Now.AddDays(jwtOptions.Value.RefreshTokenExpiryDays);
         await authRepository.CreateRefreshTokenAsync(
             user.Id, refreshToken, refreshExpiry, null, ct);
 
@@ -106,6 +106,7 @@ public sealed class LoginCommandHandler(
                 Role = user.RoleCode,
                 RoleId = user.RoleId.ToString(),
                 ClinicId = user.ClinicId.ToString(),
+                DoctorId = user.DoctorId?.ToString(),
             },
             Permissions = permissions
         };

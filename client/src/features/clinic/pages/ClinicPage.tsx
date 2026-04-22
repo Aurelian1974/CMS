@@ -422,6 +422,39 @@ const ClinicPage = () => {
         </div>
       )}
 
+      {/* ======= SUMAR CLINICĂ — mereu vizibil ======= */}
+      {clinic && (
+        <div className={styles.clinicSummaryCard}>
+          <div className={styles.clinicSummaryMain}>
+            <div className={styles.clinicSummaryName}>
+              <IconCompany />
+              <h2>{clinic.name}</h2>
+            </div>
+            <span className={clinic.isActive ? styles.badgeActive : styles.badgeInactive}>
+              {clinic.isActive ? 'Activă' : 'Inactivă'}
+            </span>
+          </div>
+          <div className={styles.clinicSummaryGrid}>
+            <div className={styles.clinicSummaryItem}>
+              <span className={styles.clinicSummaryLabel}>CUI / CIF</span>
+              <span className={styles.clinicSummaryValue}>{clinic.fiscalCode}</span>
+            </div>
+            <div className={styles.clinicSummaryItem}>
+              <span className={styles.clinicSummaryLabel}>Nr. Registrul Comerțului</span>
+              <span className={styles.clinicSummaryValue}>{clinic.tradeRegisterNumber ?? '—'}</span>
+            </div>
+            <div className={styles.clinicSummaryItem}>
+              <span className={styles.clinicSummaryLabel}>Reprezentant legal</span>
+              <span className={styles.clinicSummaryValue}>{clinic.legalRepresentative ?? '—'}</span>
+            </div>
+            <div className={styles.clinicSummaryItem}>
+              <span className={styles.clinicSummaryLabel}>Nr. contract CNAS</span>
+              <span className={styles.clinicSummaryValue}>{clinic.contractCNAS ?? '—'}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ======= TAB NAV ======= */}
       <div className={styles.tabsCard}>
         <nav className={styles.tabNav}>
@@ -440,6 +473,7 @@ const ClinicPage = () => {
             </button>
           ))}
         </nav>
+        <div className={styles.tabScrollArea}>
 
         <div className={styles.tabContent}>
 
@@ -705,10 +739,9 @@ const ClinicPage = () => {
           )}
 
         </div>
-      </div>
 
-      {/* ======= LOCAȚII (secțiune separată) ======= */}
-      <div className={styles.section}>
+        {/* ======= LOCAȚII + CNAS (în zona scrollabilă) ======= */}
+        <div className={styles.section}>
         <div className={styles.sectionHeader}>
           <div className={styles.sectionTitle}>
             <IconLocation />
@@ -815,10 +848,13 @@ const ClinicPage = () => {
                   </table>
                 </div>
               )}
-      </div>
+        </div>
 
-      {/* ===== Secțiunea CNAS — Nomenclator farmacii ===== */}
-      <CnasSyncCard />
+        {/* ===== Secțiunea CNAS — Nomenclator farmacii ===== */}
+        <CnasSyncCard />
+
+        </div>{/* end tabScrollArea */}
+      </div>{/* end tabsCard */}
 
       {/* ===== Modals ===== */}
       <BankAccountFormModal

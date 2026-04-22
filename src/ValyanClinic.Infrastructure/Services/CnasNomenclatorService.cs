@@ -848,7 +848,8 @@ public sealed class CnasNomenclatorService(
             var result = await conn.QueryAsync<MergeResult>("""
                 ;WITH cte AS (SELECT _id, ROW_NUMBER() OVER (PARTITION BY CopaymentListType, DrugCode, ISNULL(NhpCode,''), ISNULL(DiseaseCode,'') ORDER BY ISNULL(ValidFrom, '1900-01-01') DESC) AS _rn FROM #ListaDrug) DELETE FROM cte WHERE _rn > 1;
                 MERGE dbo.Cnas_CopaymentListDrug AS t
-                USING #ListaDrug AS s ON t.CopaymentListType = s.CopaymentListType
+                USING (SELECT s.* FROM #ListaDrug s WHERE EXISTS (SELECT 1 FROM dbo.Cnas_Drug d WHERE d.Code = s.DrugCode)) AS s
+                    ON t.CopaymentListType = s.CopaymentListType
                     AND t.DrugCode = s.DrugCode AND ISNULL(t.NhpCode,'') = ISNULL(s.NhpCode,'')
                     AND ISNULL(t.DiseaseCode,'') = ISNULL(s.DiseaseCode,'')
                 WHEN MATCHED THEN UPDATE SET t.MaxPrice = s.MaxPrice, t.MaxPriceUT = s.MaxPriceUT,

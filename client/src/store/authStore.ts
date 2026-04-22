@@ -9,6 +9,7 @@ export interface AuthUser {
   role: 'admin' | 'doctor' | 'nurse' | 'receptionist' | 'clinic_manager'
   roleId: string
   clinicId: string
+  doctorId: string | null
 }
 
 interface AuthState {

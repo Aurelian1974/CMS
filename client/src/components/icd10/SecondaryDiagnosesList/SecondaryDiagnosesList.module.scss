@@ -1,0 +1,337 @@
+@import '@/styles/variables';
+
+// ════════════════════════════════════════════════════════════════════
+// Secondary Diagnoses List — Compact & Elegant
+// ════════════════════════════════════════════════════════════════════
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+// ── Header ──
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.headerTitle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: $gray-700;
+}
+
+.headerCounter {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: $gray-500;
+  background: $gray-100;
+  padding: 0.1rem 0.4rem;
+  border-radius: 8px;
+}
+
+.btnAdd {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  border: 1px dashed $primary;
+  background: rgba($primary, 0.04);
+  color: $primary;
+  cursor: pointer;
+  font-family: $font-family-base;
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 0.25rem 0.6rem;
+  border-radius: $border-radius-sm;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: rgba($primary, 0.1);
+    border-style: solid;
+  }
+}
+
+// ── Empty state ──
+
+.emptyState {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.75rem;
+  color: $gray-400;
+  font-size: 0.82rem;
+  border: 1px dashed $gray-200;
+  border-radius: $border-radius-sm;
+  justify-content: center;
+}
+
+// ── List ──
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+// ── Entry ──
+
+.entry {
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-sm;
+  background: $card-bg;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &.expanded {
+    border-color: $primary-lighter;
+    box-shadow: 0 1px 4px rgba($primary, 0.08);
+  }
+
+  &.invalid {
+    border-color: $danger;
+  }
+}
+
+// ── Compact Row ──
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.6rem;
+  cursor: pointer;
+  transition: background 0.1s ease;
+
+  &:hover {
+    background: $gray-50;
+  }
+}
+
+.rowNumber {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: $gray-400;
+  min-width: 22px;
+  flex-shrink: 0;
+}
+
+.rowContent {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.codesPreview {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+.codeMini {
+  display: inline-block;
+  padding: 0.08rem 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-family: 'Consolas', 'Monaco', monospace;
+  background: rgba($primary, 0.1);
+  color: $primary-dark;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.codeMore {
+  font-size: 0.68rem;
+  color: $gray-500;
+  font-weight: 500;
+}
+
+.rowDesc {
+  font-size: 0.82rem;
+  color: $gray-600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  &.placeholder {
+    color: $gray-400;
+    font-style: italic;
+  }
+}
+
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+.btnExpand,
+.btnDelete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: $border-radius-sm;
+  font-size: 0.7rem;
+  color: $gray-400;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: $gray-100;
+    color: $gray-700;
+  }
+}
+
+.btnDelete {
+  font-size: 0.75rem;
+
+  &:hover {
+    background: rgba($danger, 0.08);
+    color: $danger;
+  }
+}
+
+// ── Expanded Details Panel ──
+
+.detailsPanel {
+  padding: 0.6rem 0.75rem 0.75rem;
+  border-top: 1px solid $gray-100;
+  background: $gray-50;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.detailSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.detailLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: $gray-600;
+}
+
+.codesCount {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: $gray-400;
+}
+
+.requiredInd {
+  font-size: 0.72rem;
+  color: $danger;
+  font-weight: 400;
+}
+
+.searchCompact {
+  margin-bottom: 0.3rem;
+}
+
+// ── Code Tags ──
+
+.codeTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.codeTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: $card-bg;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-sm;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.78rem;
+  transition: border-color 0.15s ease;
+
+  &:hover {
+    border-color: $gray-300;
+  }
+}
+
+.tagCode {
+  font-weight: 600;
+  font-family: 'Consolas', 'Monaco', monospace;
+  color: $primary-dark;
+}
+
+.tagName {
+  color: $gray-600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.btnRemoveTag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: $gray-400;
+  font-size: 0.65rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: rgba($danger, 0.1);
+    color: $danger;
+  }
+}
+
+// ── RTE ──
+
+.rteContainer {
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-sm;
+  overflow: hidden;
+  background: $card-bg;
+
+  :global {
+    .e-richtexteditor {
+      border: none;
+    }
+  }
+}
+
+// ── Limit indicator ──
+
+.limitIndicator {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: $success;
+  padding: 0.35rem 0.5rem;
+  background: rgba($success, 0.06);
+  border-radius: $border-radius-sm;
+}

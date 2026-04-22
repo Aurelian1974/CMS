@@ -1,0 +1,165 @@
+@import '@/styles/variables';
+
+// ════════════════════════════════════════════════════════════════════
+// Primary Diagnosis Selector
+// ════════════════════════════════════════════════════════════════════
+
+.selector {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: $gray-700;
+}
+
+.required {
+  color: $danger;
+  font-weight: 600;
+}
+
+.btnClear {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: $danger;
+  font-size: 0.78rem;
+  font-family: $font-family-base;
+  padding: 0.2rem 0.4rem;
+  border-radius: $border-radius-sm;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: rgba($danger, 0.08);
+  }
+}
+
+// ── Validation ──
+
+.validation {
+  font-size: 0.78rem;
+  color: $danger;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+// ── Selected Code Display ──
+
+.selectedDisplay {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: $gray-50;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius;
+  padding: 0.65rem 0.75rem;
+  transition: border-color 0.15s ease;
+
+  &.validated {
+    border-color: $success;
+    background: rgba($success, 0.03);
+  }
+}
+
+.codeBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: 'Consolas', 'Monaco', monospace;
+  border-radius: $border-radius-sm;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &.principal {
+    background: rgba($primary, 0.12);
+    color: $primary-dark;
+    border: 1px solid rgba($primary, 0.2);
+  }
+}
+
+.codeInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.codeName {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: $gray-700;
+}
+
+.codeCategory {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.75rem;
+  color: $gray-500;
+  margin-top: 0.1rem;
+}
+
+.btnChange {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid $gray-200;
+  background: $card-bg;
+  cursor: pointer;
+  border-radius: $border-radius-sm;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: $gray-50;
+    border-color: $gray-300;
+  }
+}
+
+// ── Details / RTE ──
+
+.detailsField {
+  margin-top: 0.4rem;
+}
+
+.detailsLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: $gray-600;
+  margin-bottom: 0.3rem;
+}
+
+.rteContainer {
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-sm;
+  overflow: hidden;
+
+  :global {
+    .e-richtexteditor {
+      border: none;
+    }
+  }
+}
