@@ -35,11 +35,45 @@ public sealed class UpdateConsultationCommandHandlerTests
         AppointmentId: null,
         Date: DateTime.UtcNow.AddHours(1),
         Motiv: "Consult de control",
+        IstoricMedicalPersonal: null,
+        TratamentAnterior: null,
+        IstoricBoalaActuala: null,
+        IstoricFamilial: null,
+        FactoriDeRisc: null,
+        AlergiiConsultatie: null,
+        StareGenerala: null,
+        Tegumente: null,
+        Mucoase: null,
+        Greutate: null,
+        Inaltime: null,
+        TensiuneSistolica: null,
+        TensiuneDiastolica: null,
+        Puls: null,
+        FrecventaRespiratorie: null,
+        Temperatura: null,
+        SpO2: null,
+        Edeme: null,
+        Glicemie: null,
+        GanglioniLimfatici: null,
         ExamenClinic: "Normal",
+        AlteObservatiiClinice: null,
+        Investigatii: null,
+        AnalizeMedicale: null,
         Diagnostic: "Sănătos",
         DiagnosticCodes: "Z00.0",
         Recomandari: "Repaus",
         Observatii: null,
+        Concluzii: null,
+        EsteAfectiuneOncologica: false,
+        AreIndicatieInternare: false,
+        SaEliberatPrescriptie: false,
+        SeriePrescriptie: null,
+        SaEliberatConcediuMedical: false,
+        SerieConcediuMedical: null,
+        SaEliberatIngrijiriDomiciliu: false,
+        SaEliberatDispozitiveMedicale: false,
+        DataUrmatoareiVizite: null,
+        NoteUrmatoareaVizita: null,
         StatusId: null);
 
     // ── Happy path ────────────────────────────────────────────────────────────
@@ -51,11 +85,19 @@ public sealed class UpdateConsultationCommandHandlerTests
                 ConsultationId, ClinicId,
                 Arg.Any<Guid>(), Arg.Any<Guid>(),
                 Arg.Any<Guid?>(), Arg.Any<DateTime>(),
+                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
                 Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<Guid?>(), UserId,
-                Arg.Any<CancellationToken>())
+                Arg.Any<decimal?>(), Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<int?>(),
+                Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<decimal?>(), Arg.Any<int?>(),
+                Arg.Any<string?>(), Arg.Any<decimal?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<string?>(),
+                Arg.Any<bool>(), Arg.Any<string?>(), Arg.Any<bool>(), Arg.Any<bool>(),
+                Arg.Any<DateTime?>(), Arg.Any<string?>(), Arg.Any<Guid?>(),
+                Arg.Any<Guid>(), Arg.Any<CancellationToken>())
              .Returns(Task.CompletedTask);
 
         var result = await CreateHandler().Handle(ValidCommand(), default);
@@ -71,11 +113,19 @@ public sealed class UpdateConsultationCommandHandlerTests
                 Arg.Any<Guid>(), Arg.Any<Guid>(),
                 Arg.Any<Guid>(), Arg.Any<Guid>(),
                 Arg.Any<Guid?>(), Arg.Any<DateTime>(),
+                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
                 Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<Guid?>(), Arg.Any<Guid>(),
-                Arg.Any<CancellationToken>())
+                Arg.Any<decimal?>(), Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<int?>(),
+                Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<decimal?>(), Arg.Any<int?>(),
+                Arg.Any<string?>(), Arg.Any<decimal?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<string?>(),
+                Arg.Any<bool>(), Arg.Any<string?>(), Arg.Any<bool>(), Arg.Any<bool>(),
+                Arg.Any<DateTime?>(), Arg.Any<string?>(), Arg.Any<Guid?>(),
+                Arg.Any<Guid>(), Arg.Any<CancellationToken>())
              .Returns(Task.CompletedTask);
 
         await CreateHandler().Handle(ValidCommand(), default);
@@ -84,11 +134,19 @@ public sealed class UpdateConsultationCommandHandlerTests
             ConsultationId, ClinicId,
             Arg.Any<Guid>(), Arg.Any<Guid>(),
             Arg.Any<Guid?>(), Arg.Any<DateTime>(),
+            Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+            Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
             Arg.Any<string?>(), Arg.Any<string?>(),
-            Arg.Any<string?>(), Arg.Any<string?>(),
-            Arg.Any<string?>(), Arg.Any<string?>(),
-            Arg.Any<Guid?>(), UserId,
-            Arg.Any<CancellationToken>());
+            Arg.Any<decimal?>(), Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<int?>(),
+            Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<decimal?>(), Arg.Any<int?>(),
+            Arg.Any<string?>(), Arg.Any<decimal?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+            Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+            Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+            Arg.Any<string?>(),
+            Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<string?>(),
+            Arg.Any<bool>(), Arg.Any<string?>(), Arg.Any<bool>(), Arg.Any<bool>(),
+            Arg.Any<DateTime?>(), Arg.Any<string?>(), Arg.Any<Guid?>(),
+            UserId, Arg.Any<CancellationToken>());
     }
 
     // ── Not found ─────────────────────────────────────────────────────────────
@@ -100,11 +158,19 @@ public sealed class UpdateConsultationCommandHandlerTests
                 Arg.Any<Guid>(), Arg.Any<Guid>(),
                 Arg.Any<Guid>(), Arg.Any<Guid>(),
                 Arg.Any<Guid?>(), Arg.Any<DateTime>(),
+                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
                 Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<Guid?>(), Arg.Any<Guid>(),
-                Arg.Any<CancellationToken>())
+                Arg.Any<decimal?>(), Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<int?>(),
+                Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<decimal?>(), Arg.Any<int?>(),
+                Arg.Any<string?>(), Arg.Any<decimal?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<string?>(),
+                Arg.Any<bool>(), Arg.Any<string?>(), Arg.Any<bool>(), Arg.Any<bool>(),
+                Arg.Any<DateTime?>(), Arg.Any<string?>(), Arg.Any<Guid?>(),
+                Arg.Any<Guid>(), Arg.Any<CancellationToken>())
              .Throws(SqlExceptionHelper.Make(SqlErrorCodes.ConsultationNotFound));
 
         var result = await CreateHandler().Handle(ValidCommand(), default);
@@ -122,11 +188,19 @@ public sealed class UpdateConsultationCommandHandlerTests
                 Arg.Any<Guid>(), Arg.Any<Guid>(),
                 Arg.Any<Guid>(), Arg.Any<Guid>(),
                 Arg.Any<Guid?>(), Arg.Any<DateTime>(),
+                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
                 Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<Guid?>(), Arg.Any<Guid>(),
-                Arg.Any<CancellationToken>())
+                Arg.Any<decimal?>(), Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<int?>(),
+                Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<decimal?>(), Arg.Any<int?>(),
+                Arg.Any<string?>(), Arg.Any<decimal?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
+                Arg.Any<string?>(),
+                Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<string?>(),
+                Arg.Any<bool>(), Arg.Any<string?>(), Arg.Any<bool>(), Arg.Any<bool>(),
+                Arg.Any<DateTime?>(), Arg.Any<string?>(), Arg.Any<Guid?>(),
+                Arg.Any<Guid>(), Arg.Any<CancellationToken>())
              .Throws(SqlExceptionHelper.Make(50999));
 
         var result = await CreateHandler().Handle(ValidCommand(), default);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { ConsultationListDto, ConsultationStatusFilter, ConsultationDetailDto, CreateConsultationPayload, UpdateConsultationPayload } from '../types/consultation.types'
