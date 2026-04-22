@@ -173,17 +173,17 @@ export const UsersListPage = () => {
   , [])
 
   // ── Handlers referenced by actionsTemplate (must be declared before it) ──
-  const handleOpenPasswordModal = (user: UserDto) => {
+  const handleOpenPasswordModal = useCallback((user: UserDto) => {
     setPasswordTarget(user)
     setErrorMsg(null)
     setPasswordModalOpen(true)
-  }
+  }, [setErrorMsg])
 
-  const handleOpenEdit = (user: UserDto) => {
+  const handleOpenEdit = useCallback((user: UserDto) => {
     setEditingUser(user)
     setErrorMsg(null)
     setModalOpen(true)
-  }
+  }, [setErrorMsg])
 
   const actionsTemplate = useCallback((row: UserDto) => (
     <div className={styles.actionBtns}>
@@ -195,7 +195,7 @@ export const UsersListPage = () => {
         onDelete={() => setDeleteTarget(row)}
       />
     </div>
-  ), [])
+  ), [handleOpenEdit, handleOpenPasswordModal])
 
   // ── Column definitions ─────────────────────────────────────────────────────
   const columnDefs = useMemo<ColDef<UserDto>[]>(() => [

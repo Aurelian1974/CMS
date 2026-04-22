@@ -118,11 +118,11 @@ export const PatientsListPage = () => {
     setModalOpen(true)
   }
 
-  const handleOpenEdit = (patient: PatientDto) => {
+  const handleOpenEdit = useCallback((patient: PatientDto) => {
     setEditingPatient(patient)
     setErrorMsg(null)
     setModalOpen(true)
-  }
+  }, [setErrorMsg])
 
   const handleCloseModal = () => {
     setModalOpen(false)
@@ -327,7 +327,7 @@ export const PatientsListPage = () => {
       onEdit={() => handleOpenEdit(row)}
       onDelete={() => setDeleteTarget(row)}
     />
-  ), [])
+  ), [handleOpenEdit])
 
   // ── Column definitions ─────────────────────────────────────────────────────
   const columnDefs = useMemo<ColDef<PatientDto>[]>(() => [

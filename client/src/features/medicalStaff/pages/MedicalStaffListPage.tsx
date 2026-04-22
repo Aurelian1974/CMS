@@ -89,11 +89,11 @@ export const MedicalStaffListPage = () => {
     setModalOpen(true)
   }
 
-  const handleOpenEdit = (staff: MedicalStaffDto) => {
+  const handleOpenEdit = useCallback((staff: MedicalStaffDto) => {
     setEditingStaff(staff)
     setErrorMsg(null)
     setModalOpen(true)
-  }
+  }, [setErrorMsg])
 
   const handleCloseModal = () => {
     setModalOpen(false)
@@ -210,7 +210,7 @@ export const MedicalStaffListPage = () => {
       onEdit={() => handleOpenEdit(row)}
       onDelete={() => setDeleteTarget(row)}
     />
-  ), [])
+  ), [handleOpenEdit])
 
   // ── Column definitions ─────────────────────────────────────────────────────
   const columnDefs = useMemo<ColDef<MedicalStaffDto>[]>(() => [
