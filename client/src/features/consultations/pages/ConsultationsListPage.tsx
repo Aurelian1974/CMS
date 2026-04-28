@@ -22,6 +22,7 @@ import { FormDatePicker } from '@/components/forms/FormDatePicker/FormDatePicker
 import { formatDate } from '@/utils/format'
 import { consultationSchema, type ConsultationFormData } from '../schemas/consultation.schema'
 import { useQueryClient } from '@tanstack/react-query'
+import { InvestigationsStep } from '../investigations/InvestigationsStep'
 import {
   MessageSquareText, Stethoscope, Microscope, FlaskConical, ClipboardList, CheckCircle2,
   FileText, ClipboardPlus, Pill, PenLine, FileCheck, CalendarClock,
@@ -1106,14 +1107,27 @@ export const ConsultationsListPage = () => {
                     </div>
                   )}
 
-                  {/* ── Investigații ── */}
+                  {/* ── Investigații (modul nou — Faza 2) ── */}
                   {activeTab === 'investigatii' && (
                     <div className={styles.formSection}>
                       <h3 className={styles.sectionTitle}>
                         <span className={styles.sectionIcon}><Microscope size={18} /></span>
                         Investigații Paraclinice
                       </h3>
-                      <FormInput name="investigatii" control={form.control} placeholder="Radiografie, ecografie, CT, RMN, EKG, explorări funcționale..." multiline rows={10} disabled={!isEditable} maxLength={4000} />
+                      {(selectedId || isCreating) && detail ? (
+                        <InvestigationsStep
+                          consultationId={selectedId ?? ''}
+                          patientId={detail.patientId}
+                          doctorId={detail.doctorId}
+                          isEditable={isEditable && !!selectedId && !isCreating}
+                        />
+                      ) : isCreating ? (
+                        <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                          Salvează consultația ca draft pentru a putea adăuga investigații.
+                        </p>
+                      ) : (
+                        <p style={{ color: '#94a3b8' }}>Selectează o consultație.</p>
+                      )}
                     </div>
                   )}
 

@@ -20,6 +20,14 @@ public static class ErrorMessages
     public static class Consultation
     {
         public const string NotFound = "Consultația nu a fost găsită.";
+        public const string Locked   = "Consultația este blocată și nu poate fi modificată.";
+    }
+
+    public static class Investigation
+    {
+        public const string NotFound      = "Investigația nu a fost găsită.";
+        public const string TypeInvalid   = "Tipul de investigație nu este valid sau este inactiv.";
+        public const string DocumentNotFound = "Documentul atașat nu a fost găsit.";
     }
 
     public static class Prescription

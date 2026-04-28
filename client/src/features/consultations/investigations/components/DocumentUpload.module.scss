@@ -1,0 +1,23 @@
+.upload {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: #f8fafc;
+
+  input[type="file"] {
+    flex: 1;
+  }
+
+  .meta {
+    font-size: 0.75rem;
+    color: #475569;
+  }
+
+  .error {
+    color: #b91c1c;
+    font-size: 0.75rem;
+  }
+}
