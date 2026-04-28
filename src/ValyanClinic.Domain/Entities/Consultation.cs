@@ -1,7 +1,11 @@
 namespace ValyanClinic.Domain.Entities;
 
 /// <summary>
-/// Consultație medicală — înregistrare clinică cu motiv, examen, diagnostic și tratament.
+/// Consultație medicală — header (date generale).
+/// Datele clinice sunt stocate în tabele dedicate (per-tab):
+///   - <see cref="ConsultationAnamnesis"/> (Tab 1)
+///   - <see cref="ConsultationExam"/> (Tab 2)
+///   - restul tab-urilor: temporar pe coloane vechi în Consultations până la finalizarea refactor-ului.
 /// </summary>
 public sealed class Consultation
 {
@@ -11,12 +15,6 @@ public sealed class Consultation
     public Guid DoctorId { get; set; }
     public Guid? AppointmentId { get; set; }
     public DateTime Date { get; set; }
-    public string? Motiv { get; set; }
-    public string? ExamenClinic { get; set; }
-    public string? Diagnostic { get; set; }
-    public string? DiagnosticCodes { get; set; }
-    public string? Recomandari { get; set; }
-    public string? Observatii { get; set; }
     public Guid StatusId { get; set; }
     public bool IsDeleted { get; set; }
     public DateTime CreatedAt { get; init; }
@@ -32,3 +30,4 @@ public sealed class Consultation
 
     public bool IsCompleted(Guid completedStatusId) => StatusId == completedStatusId;
 }
+

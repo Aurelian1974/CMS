@@ -33,7 +33,7 @@ BEGIN
     DECLARE @OldValues NVARCHAR(MAX);
     SELECT @OldValues = (
         SELECT PatientId, DoctorId, AppointmentId, Date,
-               Motiv, ExamenClinic, Diagnostic, DiagnosticCodes,
+               Diagnostic, DiagnosticCodes,
                Recomandari, Observatii, StatusId
         FROM dbo.Consultations WHERE Id = @Id AND ClinicId = @ClinicId AND IsDeleted = 0
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER

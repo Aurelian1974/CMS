@@ -34,29 +34,6 @@ public sealed class UpdateConsultationCommandHandlerTests
         DoctorId: Guid.NewGuid(),
         AppointmentId: null,
         Date: DateTime.UtcNow.AddHours(1),
-        Motiv: "Consult de control",
-        IstoricMedicalPersonal: null,
-        TratamentAnterior: null,
-        IstoricBoalaActuala: null,
-        IstoricFamilial: null,
-        FactoriDeRisc: null,
-        AlergiiConsultatie: null,
-        StareGenerala: null,
-        Tegumente: null,
-        Mucoase: null,
-        Greutate: null,
-        Inaltime: null,
-        TensiuneSistolica: null,
-        TensiuneDiastolica: null,
-        Puls: null,
-        FrecventaRespiratorie: null,
-        Temperatura: null,
-        SpO2: null,
-        Edeme: null,
-        Glicemie: null,
-        GanglioniLimfatici: null,
-        ExamenClinic: "Normal",
-        AlteObservatiiClinice: null,
         Investigatii: null,
         AnalizeMedicale: null,
         Diagnostic: "Sănătos",
@@ -76,30 +53,9 @@ public sealed class UpdateConsultationCommandHandlerTests
         NoteUrmatoareaVizita: null,
         StatusId: null);
 
-    // ── Happy path ────────────────────────────────────────────────────────────
-
     [Fact]
     public async Task Handle_ValidCommand_ReturnsSuccess()
     {
-        _repo.UpdateAsync(
-                ConsultationId, ClinicId,
-                Arg.Any<Guid>(), Arg.Any<Guid>(),
-                Arg.Any<Guid?>(), Arg.Any<DateTime>(),
-                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<decimal?>(), Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<int?>(),
-                Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<decimal?>(), Arg.Any<int?>(),
-                Arg.Any<string?>(), Arg.Any<decimal?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(),
-                Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<string?>(),
-                Arg.Any<bool>(), Arg.Any<string?>(), Arg.Any<bool>(), Arg.Any<bool>(),
-                Arg.Any<DateTime?>(), Arg.Any<string?>(), Arg.Any<Guid?>(),
-                Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-             .Returns(Task.CompletedTask);
-
         var result = await CreateHandler().Handle(ValidCommand(), default);
 
         Assert.True(result.IsSuccess);
@@ -109,68 +65,18 @@ public sealed class UpdateConsultationCommandHandlerTests
     [Fact]
     public async Task Handle_UsesClinicIdAndUserIdFromCurrentUser()
     {
-        _repo.UpdateAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(),
-                Arg.Any<Guid>(), Arg.Any<Guid>(),
-                Arg.Any<Guid?>(), Arg.Any<DateTime>(),
-                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<decimal?>(), Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<int?>(),
-                Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<decimal?>(), Arg.Any<int?>(),
-                Arg.Any<string?>(), Arg.Any<decimal?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(),
-                Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<string?>(),
-                Arg.Any<bool>(), Arg.Any<string?>(), Arg.Any<bool>(), Arg.Any<bool>(),
-                Arg.Any<DateTime?>(), Arg.Any<string?>(), Arg.Any<Guid?>(),
-                Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-             .Returns(Task.CompletedTask);
-
         await CreateHandler().Handle(ValidCommand(), default);
 
         await _repo.Received(1).UpdateAsync(
-            ConsultationId, ClinicId,
-            Arg.Any<Guid>(), Arg.Any<Guid>(),
-            Arg.Any<Guid?>(), Arg.Any<DateTime>(),
-            Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-            Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-            Arg.Any<string?>(), Arg.Any<string?>(),
-            Arg.Any<decimal?>(), Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<int?>(),
-            Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<decimal?>(), Arg.Any<int?>(),
-            Arg.Any<string?>(), Arg.Any<decimal?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-            Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-            Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-            Arg.Any<string?>(),
-            Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<string?>(),
-            Arg.Any<bool>(), Arg.Any<string?>(), Arg.Any<bool>(), Arg.Any<bool>(),
-            Arg.Any<DateTime?>(), Arg.Any<string?>(), Arg.Any<Guid?>(),
-            UserId, Arg.Any<CancellationToken>());
+            Arg.Is<ConsultationUpdateData>(d => d.Id == ConsultationId && d.ClinicId == ClinicId),
+            UserId,
+            Arg.Any<CancellationToken>());
     }
-
-    // ── Not found ─────────────────────────────────────────────────────────────
 
     [Fact]
     public async Task Handle_ConsultationNotFound_ReturnsNotFound()
     {
-        _repo.UpdateAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(),
-                Arg.Any<Guid>(), Arg.Any<Guid>(),
-                Arg.Any<Guid?>(), Arg.Any<DateTime>(),
-                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<decimal?>(), Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<int?>(),
-                Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<decimal?>(), Arg.Any<int?>(),
-                Arg.Any<string?>(), Arg.Any<decimal?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(),
-                Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<string?>(),
-                Arg.Any<bool>(), Arg.Any<string?>(), Arg.Any<bool>(), Arg.Any<bool>(),
-                Arg.Any<DateTime?>(), Arg.Any<string?>(), Arg.Any<Guid?>(),
-                Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        _repo.UpdateAsync(Arg.Any<ConsultationUpdateData>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
              .Throws(SqlExceptionHelper.Make(SqlErrorCodes.ConsultationNotFound));
 
         var result = await CreateHandler().Handle(ValidCommand(), default);
@@ -179,28 +85,10 @@ public sealed class UpdateConsultationCommandHandlerTests
         Assert.Equal(404, result.StatusCode);
     }
 
-    // ── Generic SQL error ─────────────────────────────────────────────────────
-
     [Fact]
     public async Task Handle_GenericSqlError_ReturnsFailure()
     {
-        _repo.UpdateAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(),
-                Arg.Any<Guid>(), Arg.Any<Guid>(),
-                Arg.Any<Guid?>(), Arg.Any<DateTime>(),
-                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<decimal?>(), Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<int?>(),
-                Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<decimal?>(), Arg.Any<int?>(),
-                Arg.Any<string?>(), Arg.Any<decimal?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(),
-                Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<string?>(),
-                Arg.Any<bool>(), Arg.Any<string?>(), Arg.Any<bool>(), Arg.Any<bool>(),
-                Arg.Any<DateTime?>(), Arg.Any<string?>(), Arg.Any<Guid?>(),
-                Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+        _repo.UpdateAsync(Arg.Any<ConsultationUpdateData>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
              .Throws(SqlExceptionHelper.Make(50999));
 
         var result = await CreateHandler().Handle(ValidCommand(), default);

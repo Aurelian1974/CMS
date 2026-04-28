@@ -10,4 +10,6 @@ public static class ConsultationProcedures
     public const string Create             = "dbo.Consultation_Create";
     public const string Update             = "dbo.Consultation_Update";
     public const string Delete             = "dbo.Consultation_Delete";
+    public const string UpsertAnamnesis    = "dbo.Consultation_UpsertAnamnesis";
+    public const string UpsertExam         = "dbo.Consultation_UpsertExam";
 }

@@ -5,6 +5,8 @@ using ValyanClinic.Application.Common.Models;
 using ValyanClinic.Application.Features.Consultations.Commands.CreateConsultation;
 using ValyanClinic.Application.Features.Consultations.Commands.DeleteConsultation;
 using ValyanClinic.Application.Features.Consultations.Commands.UpdateConsultation;
+using ValyanClinic.Application.Features.Consultations.Commands.UpdateConsultationAnamnesis;
+using ValyanClinic.Application.Features.Consultations.Commands.UpdateConsultationExam;
 using ValyanClinic.Application.Features.Consultations.DTOs;
 using ValyanClinic.Application.Features.Consultations.Queries.GetConsultationById;
 using ValyanClinic.Application.Features.Consultations.Queries.GetConsultationByAppointmentId;
@@ -77,29 +79,6 @@ public class ConsultationsController : BaseApiController
             request.DoctorId,
             request.AppointmentId,
             request.Date,
-            request.Motiv,
-            request.IstoricMedicalPersonal,
-            request.TratamentAnterior,
-            request.IstoricBoalaActuala,
-            request.IstoricFamilial,
-            request.FactoriDeRisc,
-            request.AlergiiConsultatie,
-            request.StareGenerala,
-            request.Tegumente,
-            request.Mucoase,
-            request.Greutate,
-            request.Inaltime,
-            request.TensiuneSistolica,
-            request.TensiuneDiastolica,
-            request.Puls,
-            request.FrecventaRespiratorie,
-            request.Temperatura,
-            request.SpO2,
-            request.Edeme,
-            request.Glicemie,
-            request.GanglioniLimfatici,
-            request.ExamenClinic,
-            request.AlteObservatiiClinice,
             request.Investigatii,
             request.AnalizeMedicale,
             request.Diagnostic,
@@ -122,6 +101,53 @@ public class ConsultationsController : BaseApiController
         return HandleResult(result);
     }
 
+    [HttpPut("{id:guid}/anamnesis")]
+    [HasAccess(ModuleCodes.Consultations, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpdateAnamnesis(
+        Guid id, [FromBody] UpdateConsultationAnamnesisRequest request, CancellationToken ct)
+    {
+        var command = new UpdateConsultationAnamnesisCommand(
+            id,
+            request.Motiv,
+            request.IstoricMedicalPersonal,
+            request.TratamentAnterior,
+            request.IstoricBoalaActuala,
+            request.IstoricFamilial,
+            request.FactoriDeRisc,
+            request.AlergiiConsultatie);
+        var result = await Mediator.Send(command, ct);
+        return HandleResult(result);
+    }
+
+    [HttpPut("{id:guid}/exam")]
+    [HasAccess(ModuleCodes.Consultations, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> UpdateExam(
+        Guid id, [FromBody] UpdateConsultationExamRequest request, CancellationToken ct)
+    {
+        var command = new UpdateConsultationExamCommand(
+            id,
+            request.StareGenerala,
+            request.Tegumente,
+            request.Mucoase,
+            request.Greutate,
+            request.Inaltime,
+            request.TensiuneSistolica,
+            request.TensiuneDiastolica,
+            request.Puls,
+            request.FrecventaRespiratorie,
+            request.Temperatura,
+            request.SpO2,
+            request.Edeme,
+            request.Glicemie,
+            request.GanglioniLimfatici,
+            request.ExamenClinic,
+            request.AlteObservatiiClinice);
+        var result = await Mediator.Send(command, ct);
+        return HandleResult(result);
+    }
+
     [HttpDelete("{id:guid}")]
     [HasAccess(ModuleCodes.Consultations, AccessLevel.Full)]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -137,31 +163,6 @@ public sealed record UpdateConsultationRequest(
     Guid DoctorId,
     Guid? AppointmentId,
     DateTime Date,
-    // Tab 1: Anamneză
-    string? Motiv,
-    string? IstoricMedicalPersonal,
-    string? TratamentAnterior,
-    string? IstoricBoalaActuala,
-    string? IstoricFamilial,
-    string? FactoriDeRisc,
-    string? AlergiiConsultatie,
-    // Tab 2: Examen Clinic
-    string? StareGenerala,
-    string? Tegumente,
-    string? Mucoase,
-    decimal? Greutate,
-    int? Inaltime,
-    int? TensiuneSistolica,
-    int? TensiuneDiastolica,
-    int? Puls,
-    int? FrecventaRespiratorie,
-    decimal? Temperatura,
-    int? SpO2,
-    string? Edeme,
-    decimal? Glicemie,
-    string? GanglioniLimfatici,
-    string? ExamenClinic,
-    string? AlteObservatiiClinice,
     // Tab 3: Investigații
     string? Investigatii,
     // Tab 4: Analize Medicale
@@ -184,3 +185,30 @@ public sealed record UpdateConsultationRequest(
     DateTime? DataUrmatoareiVizite,
     string? NoteUrmatoareaVizita,
     Guid? StatusId);
+
+public sealed record UpdateConsultationAnamnesisRequest(
+    string? Motiv,
+    string? IstoricMedicalPersonal,
+    string? TratamentAnterior,
+    string? IstoricBoalaActuala,
+    string? IstoricFamilial,
+    string? FactoriDeRisc,
+    string? AlergiiConsultatie);
+
+public sealed record UpdateConsultationExamRequest(
+    string? StareGenerala,
+    string? Tegumente,
+    string? Mucoase,
+    decimal? Greutate,
+    int? Inaltime,
+    int? TensiuneSistolica,
+    int? TensiuneDiastolica,
+    int? Puls,
+    int? FrecventaRespiratorie,
+    decimal? Temperatura,
+    int? SpO2,
+    string? Edeme,
+    decimal? Glicemie,
+    string? GanglioniLimfatici,
+    string? ExamenClinic,
+    string? AlteObservatiiClinice);

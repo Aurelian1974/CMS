@@ -1,6 +1,13 @@
 namespace ValyanClinic.Application.Features.Consultations.DTOs;
 
-/// <summary>DTO detaliat pentru o consultație individuală.</summary>
+/// <summary>DTO detaliat pentru o consulta\u021bie individual\u0103.</summary>
+/// <remarks>
+/// Sec\u021biunile per-tab sunt expuse ca sub-obiecte (ierarhic):
+///   - <see cref="Anamnesis"/> (Tab 1)
+///   - <see cref="Exam"/> (Tab 2)
+/// Restul tab-urilor (Investiga\u021bii / Analize / Diagnostic / Concluzii) r\u0103m\u00e2n temporar
+/// pe c\u00e2mpuri flat p\u00e2n\u0103 la finalizarea refactor-ului.
+/// </remarks>
 public sealed class ConsultationDetailDto
 {
     public Guid Id { get; init; }
@@ -19,32 +26,11 @@ public sealed class ConsultationDetailDto
     public Guid? AppointmentId { get; init; }
     public DateTime Date { get; init; }
 
-    // Tab 1: Anamneză
-    public string? Motiv { get; init; }
-    public string? IstoricMedicalPersonal { get; init; }
-    public string? TratamentAnterior { get; init; }
-    public string? IstoricBoalaActuala { get; init; }
-    public string? IstoricFamilial { get; init; }
-    public string? FactoriDeRisc { get; init; }
-    public string? AlergiiConsultatie { get; init; }
+    // Tab 1: Anamneză (sub-obiect, null dacă nu există secțiune)
+    public ConsultationAnamnesisDto? Anamnesis { get; init; }
 
-    // Tab 2: Examen Clinic
-    public string? StareGenerala { get; init; }
-    public string? Tegumente { get; init; }
-    public string? Mucoase { get; init; }
-    public decimal? Greutate { get; init; }
-    public int? Inaltime { get; init; }
-    public int? TensiuneSistolica { get; init; }
-    public int? TensiuneDiastolica { get; init; }
-    public int? Puls { get; init; }
-    public int? FrecventaRespiratorie { get; init; }
-    public decimal? Temperatura { get; init; }
-    public int? SpO2 { get; init; }
-    public string? Edeme { get; init; }
-    public decimal? Glicemie { get; init; }
-    public string? GanglioniLimfatici { get; init; }
-    public string? ExamenClinic { get; init; }
-    public string? AlteObservatiiClinice { get; init; }
+    // Tab 2: Examen Clinic (sub-obiect, null dacă nu există secțiune)
+    public ConsultationExamDto? Exam { get; init; }
 
     // Tab 3: Investigații
     public string? Investigatii { get; init; }

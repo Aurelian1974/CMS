@@ -4,7 +4,10 @@ GO
 
 -- ============================================================================
 -- SP: Consultation_Create
--- Descriere: Creează o consultație nouă; default status = În lucru
+-- Descriere: Creează o consultație nouă (header). Sub-secțiunile (Anamneză,
+-- Examen Clinic) se inserează ulterior prin SP-uri dedicate Upsert*.
+-- Tab-urile încă necefactorizate (Investigații/Analize/Diagnostic/Concluzii)
+-- rămân pe coloane în Consultations.
 -- ============================================================================
 CREATE OR ALTER PROCEDURE dbo.Consultation_Create
     @ClinicId                   UNIQUEIDENTIFIER,
@@ -12,31 +15,6 @@ CREATE OR ALTER PROCEDURE dbo.Consultation_Create
     @DoctorId                   UNIQUEIDENTIFIER,
     @AppointmentId              UNIQUEIDENTIFIER = NULL,
     @Date                       DATETIME2(0),
-    -- Tab 1: Anamneză
-    @Motiv                      NVARCHAR(MAX)    = NULL,
-    @IstoricMedicalPersonal     NVARCHAR(MAX)    = NULL,
-    @TratamentAnterior          NVARCHAR(MAX)    = NULL,
-    @IstoricBoalaActuala        NVARCHAR(MAX)    = NULL,
-    @IstoricFamilial            NVARCHAR(MAX)    = NULL,
-    @FactoriDeRisc              NVARCHAR(MAX)    = NULL,
-    @AlergiiConsultatie         NVARCHAR(MAX)    = NULL,
-    -- Tab 2: Examen Clinic
-    @StareGenerala              NVARCHAR(50)     = NULL,
-    @Tegumente                  NVARCHAR(50)     = NULL,
-    @Mucoase                    NVARCHAR(50)     = NULL,
-    @Greutate                   DECIMAL(5,1)     = NULL,
-    @Inaltime                   INT              = NULL,
-    @TensiuneSistolica          INT              = NULL,
-    @TensiuneDiastolica         INT              = NULL,
-    @Puls                       INT              = NULL,
-    @FrecventaRespiratorie      INT              = NULL,
-    @Temperatura                DECIMAL(4,1)     = NULL,
-    @SpO2                       INT              = NULL,
-    @Edeme                      NVARCHAR(50)     = NULL,
-    @Glicemie                   DECIMAL(6,1)     = NULL,
-    @GanglioniLimfatici         NVARCHAR(100)    = NULL,
-    @ExamenClinic               NVARCHAR(MAX)    = NULL,
-    @AlteObservatiiClinice      NVARCHAR(MAX)    = NULL,
     -- Tab 3: Investigații
     @Investigatii               NVARCHAR(MAX)    = NULL,
     -- Tab 4: Analize Medicale
@@ -72,12 +50,6 @@ BEGIN
 
     INSERT INTO dbo.Consultations
         (Id, ClinicId, PatientId, DoctorId, AppointmentId, Date,
-         Motiv, IstoricMedicalPersonal, TratamentAnterior, IstoricBoalaActuala,
-         IstoricFamilial, FactoriDeRisc, AlergiiConsultatie,
-         StareGenerala, Tegumente, Mucoase, Greutate, Inaltime,
-         TensiuneSistolica, TensiuneDiastolica, Puls, FrecventaRespiratorie,
-         Temperatura, SpO2, Edeme, Glicemie, GanglioniLimfatici,
-         ExamenClinic, AlteObservatiiClinice,
          Investigatii, AnalizeMedicale,
          Diagnostic, DiagnosticCodes, Recomandari, Observatii,
          Concluzii, EsteAfectiuneOncologica, AreIndicatieInternare,
@@ -88,12 +60,6 @@ BEGIN
          StatusId, CreatedBy)
     VALUES
         (@NewId, @ClinicId, @PatientId, @DoctorId, @AppointmentId, @Date,
-         @Motiv, @IstoricMedicalPersonal, @TratamentAnterior, @IstoricBoalaActuala,
-         @IstoricFamilial, @FactoriDeRisc, @AlergiiConsultatie,
-         @StareGenerala, @Tegumente, @Mucoase, @Greutate, @Inaltime,
-         @TensiuneSistolica, @TensiuneDiastolica, @Puls, @FrecventaRespiratorie,
-         @Temperatura, @SpO2, @Edeme, @Glicemie, @GanglioniLimfatici,
-         @ExamenClinic, @AlteObservatiiClinice,
          @Investigatii, @AnalizeMedicale,
          @Diagnostic, @DiagnosticCodes, @Recomandari, @Observatii,
          @Concluzii, @EsteAfectiuneOncologica, @AreIndicatieInternare,

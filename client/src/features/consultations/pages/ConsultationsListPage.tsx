@@ -450,6 +450,71 @@ export const ConsultationsListPage = () => {
     }
   }
 
+  /**
+   * La trecerea pe alt tab: salvează DOAR datele tabului de pe care plecăm,
+   * apelând endpoint-ul dedicat (anamnesis / exam) sau update-ul de header
+   * (pentru tab-urile 3-6). În modul "creare" delegăm către handleSaveDraft
+   * care face POST complet. Eșuarea NU blochează navigarea.
+   */
+  const handleTabChange = async (newTab: Tab) => {
+    if (newTab === activeTab) return
+    const previousTab = activeTab
+
+    // În modul "creare" sau dacă încă nu există ID → POST complet prin handleSaveDraft
+    if (isCreating) {
+      try { await handleSaveDraft() } catch { /* setat în handleSaveDraft */ }
+      setActiveTab(newTab)
+      return
+    }
+
+    // Pentru consultație existentă, salvăm doar dacă e editabilă și avem ID
+    if (selectedId && !isLocked && !isFinalized
+        && !createConsultation.isPending && !updateConsultation.isPending) {
+      const v = form.getValues()
+      try {
+        if (previousTab === 'anamneza') {
+          await consultationsApi.updateAnamnesis(selectedId, {
+            motiv: v.motiv || null,
+            istoricMedicalPersonal: v.istoricMedicalPersonal || null,
+            tratamentAnterior: v.tratamentAnterior || null,
+            istoricBoalaActuala: v.istoricBoalaActuala || null,
+            istoricFamilial: v.istoricFamilial || null,
+            factoriDeRisc: v.factoriDeRisc || null,
+            alergiiConsultatie: v.alergiiConsultatie || null,
+          })
+          qc.invalidateQueries({ queryKey: consultationKeys.detail(selectedId) })
+        } else if (previousTab === 'examen') {
+          await consultationsApi.updateExam(selectedId, {
+            stareGenerala: v.stareGenerala || null,
+            tegumente: v.tegumente || null,
+            mucoase: v.mucoase || null,
+            greutate: v.greutate ?? null,
+            inaltime: v.inaltime ?? null,
+            tensiuneSistolica: v.tensiuneSistolica ?? null,
+            tensiuneDiastolica: v.tensiuneDiastolica ?? null,
+            puls: v.puls ?? null,
+            frecventaRespiratorie: v.frecventaRespiratorie ?? null,
+            temperatura: v.temperatura ?? null,
+            spO2: v.spO2 ?? null,
+            edeme: v.edeme || null,
+            glicemie: v.glicemie ?? null,
+            ganglioniLimfatici: v.ganglioniLimfatici || null,
+            examenClinic: v.examenClinic || null,
+            alteObservatiiClinice: v.alteObservatiiClinice || null,
+          })
+          qc.invalidateQueries({ queryKey: consultationKeys.detail(selectedId) })
+        } else {
+          // Tab-urile 3-6 ţin de Consultations (header) → folosim handleSaveDraft
+          await handleSaveDraft()
+        }
+      } catch (err: unknown) {
+        setServerError(err instanceof Error ? err.message : 'Eroare la salvare automată.')
+      }
+    }
+
+    setActiveTab(newTab)
+  }
+
   const handleFinalize = async () => {
     if (!selectedId) return
 
@@ -804,7 +869,7 @@ export const ConsultationsListPage = () => {
                     <button
                       key={tab.key}
                       className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''} ${tabHasContent(tab.key, detail) && !isCreating ? styles.tabCompleted : ''}`}
-                      onClick={() => setActiveTab(tab.key)}
+                      onClick={() => handleTabChange(tab.key)}
                     >
                       <span className={styles.tabIcon}>{TAB_ICONS[tab.key]}</span>
                       <span>{tab.label}</span>

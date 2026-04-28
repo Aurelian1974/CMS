@@ -5,6 +5,7 @@ GO
 -- ============================================================================
 -- SP: Consultation_GetByAppointmentId
 -- Descriere: Returnează o consultație (dacă există) după AppointmentId și ClinicId
+-- Result sets: 1) Header, 2) Anamneză (0..1), 3) Examen Clinic (0..1)
 -- ============================================================================
 CREATE OR ALTER PROCEDURE dbo.Consultation_GetByAppointmentId
     @AppointmentId UNIQUEIDENTIFIER,
@@ -13,6 +14,12 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
+    DECLARE @Id UNIQUEIDENTIFIER;
+    SELECT @Id = Id
+    FROM dbo.Consultations
+    WHERE AppointmentId = @AppointmentId AND ClinicId = @ClinicId AND IsDeleted = 0;
+
+    -- 1) Header
     SELECT
         c.Id, c.ClinicId, c.PatientId,
         CONCAT(p.LastName, ' ', p.FirstName) AS PatientName,
@@ -27,15 +34,6 @@ BEGIN
         d.MedicalCode AS DoctorMedicalCode,
         c.AppointmentId,
         c.Date,
-        -- Tab 1: Anamneză
-        c.Motiv, c.IstoricMedicalPersonal, c.TratamentAnterior,
-        c.IstoricBoalaActuala, c.IstoricFamilial, c.FactoriDeRisc, c.AlergiiConsultatie,
-        -- Tab 2: Examen Clinic
-        c.StareGenerala, c.Tegumente, c.Mucoase,
-        c.Greutate, c.Inaltime,
-        c.TensiuneSistolica, c.TensiuneDiastolica, c.Puls, c.FrecventaRespiratorie,
-        c.Temperatura, c.SpO2, c.Edeme, c.Glicemie, c.GanglioniLimfatici,
-        c.ExamenClinic, c.AlteObservatiiClinice,
         -- Tab 3: Investigații
         c.Investigatii,
         -- Tab 4: Analize Medicale
@@ -62,8 +60,53 @@ BEGIN
     INNER JOIN dbo.ConsultationStatuses s ON s.Id = c.StatusId
     LEFT  JOIN dbo.Users cu ON cu.Id = c.CreatedBy
     LEFT  JOIN dbo.Users uu ON uu.Id = c.UpdatedBy
-    WHERE c.AppointmentId = @AppointmentId
-      AND c.ClinicId = @ClinicId
-      AND c.IsDeleted = 0;
+    WHERE c.Id = @Id;
+
+    -- Dacă header gol, returnăm 2 result sets goale (Dapper așteaptă 3 fix)
+    IF @Id IS NULL
+    BEGIN
+        SELECT TOP 0
+            CAST(NULL AS NVARCHAR(MAX)) AS Motiv,
+            CAST(NULL AS NVARCHAR(MAX)) AS IstoricMedicalPersonal,
+            CAST(NULL AS NVARCHAR(MAX)) AS TratamentAnterior,
+            CAST(NULL AS NVARCHAR(MAX)) AS IstoricBoalaActuala,
+            CAST(NULL AS NVARCHAR(MAX)) AS IstoricFamilial,
+            CAST(NULL AS NVARCHAR(MAX)) AS FactoriDeRisc,
+            CAST(NULL AS NVARCHAR(MAX)) AS AlergiiConsultatie;
+
+        SELECT TOP 0
+            CAST(NULL AS NVARCHAR(50))  AS StareGenerala,
+            CAST(NULL AS NVARCHAR(50))  AS Tegumente,
+            CAST(NULL AS NVARCHAR(50))  AS Mucoase,
+            CAST(NULL AS DECIMAL(5,1))  AS Greutate,
+            CAST(NULL AS INT)           AS Inaltime,
+            CAST(NULL AS INT)           AS TensiuneSistolica,
+            CAST(NULL AS INT)           AS TensiuneDiastolica,
+            CAST(NULL AS INT)           AS Puls,
+            CAST(NULL AS INT)           AS FrecventaRespiratorie,
+            CAST(NULL AS DECIMAL(4,1))  AS Temperatura,
+            CAST(NULL AS INT)           AS SpO2,
+            CAST(NULL AS NVARCHAR(50))  AS Edeme,
+            CAST(NULL AS DECIMAL(6,1))  AS Glicemie,
+            CAST(NULL AS NVARCHAR(100)) AS GanglioniLimfatici,
+            CAST(NULL AS NVARCHAR(MAX)) AS ExamenClinic,
+            CAST(NULL AS NVARCHAR(MAX)) AS AlteObservatiiClinice;
+        RETURN;
+    END;
+
+    -- 2) Anamneză
+    SELECT
+        a.Motiv, a.IstoricMedicalPersonal, a.TratamentAnterior,
+        a.IstoricBoalaActuala, a.IstoricFamilial, a.FactoriDeRisc, a.AlergiiConsultatie
+    FROM dbo.ConsultationAnamnesis a WHERE a.ConsultationId = @Id;
+
+    -- 3) Examen Clinic
+    SELECT
+        e.StareGenerala, e.Tegumente, e.Mucoase,
+        e.Greutate, e.Inaltime,
+        e.TensiuneSistolica, e.TensiuneDiastolica, e.Puls, e.FrecventaRespiratorie,
+        e.Temperatura, e.SpO2, e.Edeme, e.Glicemie, e.GanglioniLimfatici,
+        e.ExamenClinic, e.AlteObservatiiClinice
+    FROM dbo.ConsultationExam e WHERE e.ConsultationId = @Id;
 END;
 GO

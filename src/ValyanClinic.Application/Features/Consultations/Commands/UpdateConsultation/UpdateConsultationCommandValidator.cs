@@ -19,14 +19,6 @@ public sealed class UpdateConsultationCommandValidator : AbstractValidator<Updat
             .NotEmpty().WithMessage("Data consultației este obligatorie.")
             .GreaterThan(DateTime.MinValue).WithMessage("Data consultației nu este validă.");
 
-        RuleFor(x => x.Motiv)
-            .MaximumLength(4000).WithMessage("Motivul nu poate depăși 4000 de caractere.")
-            .When(x => !string.IsNullOrEmpty(x.Motiv));
-
-        RuleFor(x => x.ExamenClinic)
-            .MaximumLength(4000).WithMessage("Examenul clinic nu poate depăși 4000 de caractere.")
-            .When(x => !string.IsNullOrEmpty(x.ExamenClinic));
-
         RuleFor(x => x.Diagnostic)
             .MaximumLength(4000).WithMessage("Diagnosticul nu poate depăși 4000 de caractere.")
             .When(x => !string.IsNullOrEmpty(x.Diagnostic));
