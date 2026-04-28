@@ -22,6 +22,10 @@ public static class SqlErrorCodes
     public const int InvestigationTypeInvalid = 50022;
     public const int InvestigationNotFound    = 50023;
 
+    // ====== Analize medicale (recomandate) ======
+    public const int AnalysisNotFound              = 50024;
+    public const int RecommendedAnalysisNotFound  = 50025;
+
     // ====== Facturi ======
     public const int InvoiceAlreadyPaid = 50030;
     public const int InvoiceNotFound    = 50031;

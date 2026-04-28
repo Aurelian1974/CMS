@@ -7,7 +7,7 @@ public sealed class InvestigationTypeDto
     public string? DisplayNameEn { get; init; }
     public string Category { get; init; } = string.Empty;
     public string ParentTab { get; init; } = string.Empty;
-    public string UIPattern { get; init; } = string.Empty;
+    public string UiPattern { get; init; } = string.Empty;
     public string Specialties { get; init; } = string.Empty;
     public bool HasStructuredFields { get; init; }
     public bool DefaultStructuredEntry { get; init; }

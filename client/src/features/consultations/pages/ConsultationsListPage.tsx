@@ -23,6 +23,7 @@ import { formatDate } from '@/utils/format'
 import { consultationSchema, type ConsultationFormData } from '../schemas/consultation.schema'
 import { useQueryClient } from '@tanstack/react-query'
 import { InvestigationsStep } from '../investigations/InvestigationsStep'
+import { AnalizeMedicaleStep } from '../lab/AnalizeMedicaleStep'
 import {
   MessageSquareText, Stethoscope, Microscope, FlaskConical, ClipboardList, CheckCircle2,
   FileText, ClipboardPlus, Pill, PenLine, FileCheck, CalendarClock,
@@ -1138,7 +1139,20 @@ export const ConsultationsListPage = () => {
                         <span className={styles.sectionIcon}><FlaskConical size={18} /></span>
                         Analize Medicale
                       </h3>
-                      <FormInput name="analizeMedicale" control={form.control} placeholder="Hemogramă, biochimie, urină, alte analize de laborator..." multiline rows={10} disabled={!isEditable} maxLength={4000} />
+                      {(selectedId || isCreating) && detail ? (
+                        <AnalizeMedicaleStep
+                          consultationId={selectedId ?? ''}
+                          patientId={detail.patientId}
+                          doctorId={detail.doctorId}
+                          isEditable={isEditable && !!selectedId && !isCreating}
+                        />
+                      ) : isCreating ? (
+                        <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                          Salvează consultația ca draft pentru a putea adăuga analize medicale.
+                        </p>
+                      ) : (
+                        <p style={{ color: '#94a3b8' }}>Selectează o consultație.</p>
+                      )}
                     </div>
                   )}
 

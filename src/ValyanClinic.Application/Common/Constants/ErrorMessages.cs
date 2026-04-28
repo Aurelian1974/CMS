@@ -30,6 +30,12 @@ public static class ErrorMessages
         public const string DocumentNotFound = "Documentul atașat nu a fost găsit.";
     }
 
+    public static class RecommendedAnalysis
+    {
+        public const string NotFound      = "Analiza recomandată nu a fost găsită.";
+        public const string AnalysisNotInDictionary = "Analiza nu există în dicționar.";
+    }
+
     public static class Prescription
     {
         public const string NotFound = "Rețeta nu a fost găsită.";

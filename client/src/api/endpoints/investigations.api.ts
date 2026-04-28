@@ -13,19 +13,19 @@ const BASE = '/api/v1/Investigations'
 
 export const investigationsApi = {
   getByConsultation: async (consultationId: string): Promise<InvestigationDto[]> => {
-    const res = await api.get<ApiResponse<InvestigationDto[]>>(`${BASE}/by-consultation/${consultationId}`)
-    return res.data?.data ?? []
+    const resp = await (api.get(`${BASE}/by-consultation/${consultationId}`) as Promise<ApiResponse<InvestigationDto[]>>)
+    return resp.data ?? []
   },
   getByPatient: async (
     patientId: string,
     params: { type?: string; dateFrom?: string; dateTo?: string } = {},
   ): Promise<InvestigationDto[]> => {
-    const res = await api.get<ApiResponse<InvestigationDto[]>>(`${BASE}/by-patient/${patientId}`, { params })
-    return res.data?.data ?? []
+    const resp = await (api.get(`${BASE}/by-patient/${patientId}`, { params }) as Promise<ApiResponse<InvestigationDto[]>>)
+    return resp.data ?? []
   },
   getById: async (id: string): Promise<InvestigationDto> => {
-    const res = await api.get<ApiResponse<InvestigationDto>>(`${BASE}/${id}`)
-    return res.data!.data!
+    const resp = await (api.get(`${BASE}/${id}`) as Promise<ApiResponse<InvestigationDto>>)
+    return resp.data!
   },
   getTrending: async (params: {
     patientId: string
@@ -34,23 +34,23 @@ export const investigationsApi = {
     dateFrom?: string
     dateTo?: string
   }): Promise<InvestigationTrendingPointDto[]> => {
-    const res = await api.get<ApiResponse<InvestigationTrendingPointDto[]>>(`${BASE}/trending`, { params })
-    return res.data?.data ?? []
+    const resp = await (api.get(`${BASE}/trending`, { params }) as Promise<ApiResponse<InvestigationTrendingPointDto[]>>)
+    return resp.data ?? []
   },
   getTypes: async (specialty?: string): Promise<InvestigationTypeDto[]> => {
-    const res = await api.get<ApiResponse<InvestigationTypeDto[]>>(`${BASE}/types`, {
+    const resp = await (api.get(`${BASE}/types`, {
       params: specialty ? { specialty } : undefined,
-    })
-    return res.data?.data ?? []
+    }) as Promise<ApiResponse<InvestigationTypeDto[]>>)
+    return resp.data ?? []
   },
   create: async (payload: CreateInvestigationPayload): Promise<string> => {
-    const res = await api.post<ApiResponse<string>>(BASE, payload)
-    return res.data!.data!
+    const resp = await (api.post(BASE, payload) as Promise<ApiResponse<string>>)
+    return resp.data!
   },
   update: async (payload: UpdateInvestigationPayload): Promise<boolean> => {
     const { id, ...body } = payload
-    const res = await api.put<ApiResponse<boolean>>(`${BASE}/${id}`, body)
-    return res.data?.data ?? true
+    const resp = await (api.put(`${BASE}/${id}`, body) as Promise<ApiResponse<boolean>>)
+    return resp.data ?? true
   },
   delete: async (id: string): Promise<void> => {
     await api.delete(`${BASE}/${id}`)
@@ -61,10 +61,10 @@ export const documentsApi = {
   upload: async (file: File): Promise<DocumentDto> => {
     const fd = new FormData()
     fd.append('file', file)
-    const res = await api.post<ApiResponse<DocumentDto>>('/api/v1/Documents/upload', fd, {
+    const resp = await (api.post('/api/v1/Documents/upload', fd, {
       headers: { 'Content-Type': 'multipart/form-data' },
-    })
-    return res.data!.data!
+    }) as Promise<ApiResponse<DocumentDto>>)
+    return resp.data!
   },
   downloadUrl: (id: string) => `/api/v1/Documents/${id}`,
 }

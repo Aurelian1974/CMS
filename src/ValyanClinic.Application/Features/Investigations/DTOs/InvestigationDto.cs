@@ -12,7 +12,7 @@ public sealed class InvestigationDto
 
     public string InvestigationType { get; init; } = string.Empty;
     public string InvestigationTypeDisplayName { get; init; } = string.Empty;
-    public string UIPattern { get; init; } = string.Empty;
+    public string UiPattern { get; init; } = string.Empty;
     public string ParentTab { get; init; } = string.Empty;
     public string Category { get; init; } = string.Empty;
 

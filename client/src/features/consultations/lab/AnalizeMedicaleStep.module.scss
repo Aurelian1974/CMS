@@ -1,0 +1,216 @@
+// Stiluri Analize Medicale — păstrează paritate vizuală cu InvestigationsStep
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.subTabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 0.75rem;
+
+  button {
+    padding: 0.5rem 0.875rem;
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+
+    &:hover { color: #0f172a; }
+    &.active {
+      color: #2563eb;
+      border-bottom-color: #2563eb;
+    }
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+
+  h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0;
+    color: #1e293b;
+  }
+}
+
+.empty {
+  padding: 1.5rem;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.875rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+}
+
+.uploadBar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  flex-wrap: wrap;
+}
+
+.parseTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+
+  th, td {
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0.4rem 0.6rem;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  th {
+    background: #f1f5f9;
+    font-weight: 600;
+    color: #334155;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  td input,
+  td select {
+    width: 100%;
+    padding: 0.2rem 0.35rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    background: #fff;
+  }
+
+  .sectionRow td {
+    background: #fef3c7;
+    font-weight: 600;
+    color: #92400e;
+    font-size: 0.78rem;
+    padding: 0.3rem 0.6rem;
+  }
+
+  .flagHigh { color: #b91c1c; font-weight: 600; }
+  .flagLow { color: #1d4ed8; font-weight: 600; }
+}
+
+.bulletinHeader {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #f0f9ff;
+  border-left: 3px solid #2563eb;
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+
+  div {
+    strong { color: #475569; font-weight: 500; margin-right: 0.25rem; }
+  }
+}
+
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.historyCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.85rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover { background: #f8fafc; }
+  &.selected {
+    border-color: #2563eb;
+    background: #eff6ff;
+  }
+}
+
+.compareView {
+  margin-top: 1rem;
+}
+
+.compareTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  th, td {
+    border: 1px solid #e2e8f0;
+    padding: 0.35rem 0.55rem;
+    text-align: left;
+  }
+  th {
+    background: #f1f5f9;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+  }
+  .delta-up { color: #b91c1c; }
+  .delta-down { color: #1d4ed8; }
+  .delta-same { color: #64748b; }
+}
+
+.recommendedTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  th, td {
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0.5rem 0.6rem;
+    text-align: left;
+  }
+  th {
+    background: #f1f5f9;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+  }
+  td input,
+  td select,
+  td textarea {
+    width: 100%;
+    padding: 0.25rem 0.4rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 3px;
+    font-size: 0.82rem;
+    font-family: inherit;
+  }
+}
+
+.priorityBadge {
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  &.urgent { background: #fee2e2; color: #b91c1c; }
+  &.high { background: #fef3c7; color: #92400e; }
+  &.normal { background: #e0f2fe; color: #075985; }
+  &.low { background: #f1f5f9; color: #475569; }
+}

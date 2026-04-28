@@ -53,6 +53,8 @@ public static class DependencyInjection
         services.AddScoped<IAppointmentRepository, AppointmentRepository>();
         services.AddScoped<IConsultationRepository, ConsultationRepository>();
         services.AddScoped<IInvestigationRepository, InvestigationRepository>();
+        services.AddScoped<IRecommendedAnalysisRepository, RecommendedAnalysisRepository>();
+        services.AddScoped<IAnalysisDictionaryRepository, AnalysisDictionaryRepository>();
         services.AddScoped<IDocumentRepository, DocumentRepository>();
         services.AddScoped<INomenclatureLookupRepository, NomenclatureLookupRepository>();
         services.AddScoped<IGeographyRepository, GeographyRepository>();
@@ -71,6 +73,7 @@ public static class DependencyInjection
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddScoped<ICnasNomenclatorService, CnasNomenclatorService>();
         services.AddScoped<IAnmNomenclatorService, AnmNomenclatorService>();
+        services.AddScoped<ILabPdfParser, LabPdfParser>();
         services.AddHostedService<CnasSyncHostedService>();
         services.AddHostedService<AnmSyncHostedService>();
 
