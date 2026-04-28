@@ -11,6 +11,7 @@ import {
   formatCurrency,
   formatNumber,
   formatMonthYear,
+  getInitials,
 } from '@/utils/format';
 
 // ── toLocalDateISO ────────────────────────────────────────────────────────────
@@ -158,5 +159,42 @@ describe('formatMonthYear', () => {
   it('returnează un string non-gol', () => {
     const result = formatMonthYear(new Date(2025, 5, 1));
     expect(result.length).toBeGreaterThan(0);
+  });
+});
+
+// ── getInitials ───────────────────────────────────────────────────────────────
+
+describe('getInitials', () => {
+  it('returnează inițialele majuscule din prenume + nume', () => {
+    expect(getInitials('Ion', 'Popescu')).toBe('IP');
+  });
+
+  it('forțează majusculele', () => {
+    expect(getInitials('ion', 'popescu')).toBe('IP');
+  });
+
+  it('returnează doar inițiala primului dacă numele lipsește', () => {
+    expect(getInitials('Ion', '')).toBe('I');
+  });
+
+  it('returnează doar inițiala numelui dacă prenumele lipsește', () => {
+    expect(getInitials('', 'Popescu')).toBe('P');
+  });
+
+  it('tratează undefined ca string gol', () => {
+    expect(getInitials(undefined, 'Popescu')).toBe('P');
+    expect(getInitials('Ion', undefined)).toBe('I');
+  });
+
+  it('tratează null ca string gol', () => {
+    expect(getInitials(null, 'Popescu')).toBe('P');
+    expect(getInitials('Ion', null)).toBe('I');
+  });
+
+  it('returnează "?" când ambele sunt goale / null / undefined', () => {
+    expect(getInitials('', '')).toBe('?');
+    expect(getInitials(null, null)).toBe('?');
+    expect(getInitials(undefined, undefined)).toBe('?');
+    expect(getInitials()).toBe('?');
   });
 });
