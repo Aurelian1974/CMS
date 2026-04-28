@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { Component, type ReactNode, type ErrorInfo } from 'react'
 import styles from './ErrorBoundary.module.scss'
 

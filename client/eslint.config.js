@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  globalIgnores(['dist', 'coverage/**']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -31,6 +31,7 @@ export default defineConfig([
       'react-hooks/refs': 'off',
       'react-hooks/set-state-in-effect': 'off',
       'react-hooks/preserve-manual-memoization': 'off',
+      'react-hooks/incompatible-library': 'off',
       // Downgrade from error to warn — having utility exports alongside components
       // is intentional in the custom AppDataGrid library files.
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],

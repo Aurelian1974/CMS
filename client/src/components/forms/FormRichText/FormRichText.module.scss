@@ -27,129 +27,179 @@
 
 .rteWrap {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-sm;
+  background: $card-bg;
+  font-family: $font-family-base;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 
-  :global {
-    /* ── Root container ── */
-    .e-richtexteditor {
-      border: 1px solid $gray-200;
-      border-radius: $border-radius-sm;
-      font-family: $font-family-base;
-      width: 100% !important;
-      display: flex;
-      flex-direction: column;
+  &:focus-within {
+    border-color: $primary;
+    box-shadow: 0 0 0 2px rgba($primary, 0.12);
+  }
+}
+
+/* ── Toolbar ── */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  background: $gray-50;
+  border-bottom: 1px solid $gray-200;
+  border-radius: $border-radius-sm $border-radius-sm 0 0;
+}
+
+.tbBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  min-width: 28px;
+  padding: 0 5px;
+  border: none;
+  background: transparent;
+  color: $gray-500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+
+  &:hover:not(:disabled) {
+    color: $primary;
+    background: rgba($primary, 0.08);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+.tbBtnActive {
+  color: $primary !important;
+  background: rgba($primary, 0.12) !important;
+}
+
+.tbSep {
+  display: inline-block;
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: $gray-200;
+}
+
+/* ── Content area ── */
+.editorContent {
+  flex: 1;
+  width: 100%;
+  font-size: $font-size-base;
+  color: $gray-700;
+  border-radius: 0 0 $border-radius-sm $border-radius-sm;
+
+  :global(.ProseMirror) {
+    padding: 10px 14px;
+    min-height: inherit;
+    line-height: 1.6;
+    outline: none;
+
+    > * + * {
+      margin-top: 0.6em;
     }
 
-    .e-richtexteditor .e-rte-container {
-      display: flex;
-      flex-direction: column;
-      width: 100%;
+    p {
+      margin: 0;
     }
 
-    /* ── Toolbar — top ── */
-    .e-richtexteditor .e-rte-toolbar {
-      order: -1;
-      background: $gray-50;
-      border-bottom: 1px solid $gray-200;
-      border-top: none;
-      border-radius: $border-radius-sm $border-radius-sm 0 0;
+    ul,
+    ol {
+      padding-left: 1.4rem;
+      margin: 0;
     }
 
-    .e-richtexteditor .e-toolbar {
-      background: transparent;
-      border: none;
-      box-shadow: none;
+    a {
+      color: $primary;
+      text-decoration: underline;
+      cursor: pointer;
     }
 
-    .e-richtexteditor .e-toolbar .e-toolbar-items {
-      background: transparent;
+    code {
+      background: $gray-100;
+      padding: 0.1em 0.3em;
+      border-radius: 3px;
+      font-size: 0.9em;
     }
 
-    .e-richtexteditor .e-toolbar-item .e-tbar-btn {
-      color: $gray-500;
+    pre {
+      background: $gray-100;
+      padding: 0.6rem 0.8rem;
       border-radius: 4px;
-      height: 28px;
-      min-width: 28px;
-      padding: 0 5px;
+      overflow-x: auto;
 
-      &:hover {
-        color: $primary;
-        background: rgba($primary, 0.08);
-      }
-
-      &.e-active {
-        color: $primary;
-        background: rgba($primary, 0.12);
+      code {
+        background: transparent;
+        padding: 0;
       }
     }
 
-    .e-richtexteditor .e-separator {
-      border-color: $gray-200;
+    blockquote {
+      border-left: 3px solid $gray-200;
+      padding-left: 0.8rem;
+      color: $gray-600;
+      margin: 0.4rem 0;
     }
 
-    /* ── Content area ── */
-    .e-richtexteditor .e-rte-content {
-      font-family: $font-family-base;
-      font-size: $font-size-base;
-      color: $gray-700;
-      background: $card-bg;
-      border-radius: 0 0 $border-radius-sm $border-radius-sm;
-      flex: 1;
-      width: 100%;
-    }
-
-    .e-richtexteditor .e-rte-content .e-content {
-      padding: 10px 14px;
-      min-height: 80px;
-      line-height: 1.6;
-    }
-
-    /* ── Placeholder ── */
-    .e-richtexteditor .e-rte-content .rte-placeholder,
-    .e-richtexteditor .e-rte-placeholder {
-      color: $gray-400;
-      font-style: italic;
-      font-size: $font-size-base;
-      padding: 10px 14px;
-    }
-
-    /* ── Focus state ── */
-    .e-richtexteditor.e-rte-full-screen,
-    .e-richtexteditor:not(.e-rte-toolbar-enabled) {
-      border-color: $gray-200;
-    }
-
-    .e-richtexteditor.e-focused {
-      border-color: $primary;
-      box-shadow: 0 0 0 2px rgba($primary, 0.12);
-    }
-
-    /* ── Remove default unwanted borders ── */
-    .e-richtexteditor .e-rte-content,
-    .e-richtexteditor .e-source-content {
+    hr {
       border: none;
+      border-top: 1px solid $gray-200;
+      margin: 0.8rem 0;
     }
+  }
+
+  /* Placeholder (TipTap Placeholder extension) */
+  :global(.ProseMirror p.is-editor-empty:first-child::before) {
+    content: attr(data-placeholder);
+    float: left;
+    color: $gray-400;
+    font-style: italic;
+    pointer-events: none;
+    height: 0;
   }
 }
 
+.isEmpty {
+  /* class added on the editor when empty; placeholder pseudo handled above */
+}
+
+/* ── Disabled state ── */
 .rteDisabled {
-  opacity: 0.6;
-  pointer-events: none;
+  opacity: 0.65;
+  background: $gray-50;
 
-  :global {
-    .e-richtexteditor {
-      background: $gray-50;
-    }
+  .toolbar {
+    pointer-events: none;
+    opacity: 0.6;
+  }
 
-    .e-richtexteditor .e-rte-content {
-      background: $gray-50;
-    }
+  .editorContent :global(.ProseMirror) {
+    background: $gray-50;
+    cursor: not-allowed;
+  }
+
+  &:focus-within {
+    border-color: $gray-200;
+    box-shadow: none;
   }
 }
 
+/* ── Error state ── */
 .rteError {
-  :global {
-    .e-richtexteditor {
-      border-color: $danger;
-    }
+  border-color: $danger;
+
+  &:focus-within {
+    border-color: $danger;
+    box-shadow: 0 0 0 2px rgba($danger, 0.12);
   }
 }
