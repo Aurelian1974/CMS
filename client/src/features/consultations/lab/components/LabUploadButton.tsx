@@ -40,7 +40,7 @@ export const LabUploadButton = ({ onPick, isLoading, disabled }: Props) => {
         Încarcă buletin PDF
       </AppButton>
       <span style={{ color: '#64748b', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-        <FileText size={12} /> Doar PDF digital (text nativ). PDF-urile scanate necesită introducere manuală.
+        <FileText size={12} /> PDF digital sau scanat (OCR Tesseract ron+eng).
       </span>
     </>
   )

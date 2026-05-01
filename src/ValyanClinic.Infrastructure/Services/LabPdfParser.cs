@@ -2,21 +2,29 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using PDFtoImage;
+using SkiaSharp;
+using Tesseract;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.Content;
 using ValyanClinic.Application.Common.Interfaces;
 using ValyanClinic.Application.Features.Lab.DTOs;
 
+using PdfPigPage = UglyToad.PdfPig.Content.Page;
+
 namespace ValyanClinic.Infrastructure.Services;
 
 /// <summary>
 /// Parser pentru buletine de analize medicale (PDF).
-/// Folosește UglyToad.PdfPig pentru extragerea textului din PDF-uri digitale.
-/// PDF-urile scanate (imagini) returnează IsScannedPdf=true și un avertisment;
-/// OCR (Tesseract) poate fi adăugat ulterior fără modificări de contract.
+/// Folosește UglyToad.PdfPig pentru PDF-uri digitale; pentru PDF-uri scanate
+/// foloseste PDFtoImage (PDFium) pentru randare și Tesseract OCR (ron+eng).
 /// </summary>
 public sealed partial class LabPdfParser(ILogger<LabPdfParser> logger) : ILabPdfParser
 {
+    private const int OcrDpi = 300;
+    private const string OcrLanguages = "ron+eng";
+    private static readonly string TessDataPath = Path.Combine(AppContext.BaseDirectory, "tessdata");
+
     // Antete cunoscute de secțiuni (RO + EN)
     private static readonly string[] KnownSections =
     [
@@ -57,17 +65,29 @@ public sealed partial class LabPdfParser(ILogger<LabPdfParser> logger) : ILabPdf
 
         // Heuristică PDF scanat: foarte puțin text per pagină
         var isScannedPdf = pageCount > 0 && (totalChars / Math.Max(pageCount, 1)) < 100;
+        string? ocrWarning = null;
         if (isScannedPdf)
         {
-            logger.LogWarning(
-                "PDF scanat detectat (file={File}, pages={Pages}, chars={Chars}). OCR nu este disponibil.",
-                fileName, pageCount, totalChars);
-            return new LabParseResultDto
+            logger.LogInformation(
+                "PDF scanat detectat (file={File}, pages={Pages}). Pornesc OCR (Tesseract {Lang}, {Dpi} DPI).",
+                fileName, pageCount, OcrLanguages, OcrDpi);
+            try
             {
-                IsScannedPdf = true,
-                ParseWarning = "PDF-ul pare scanat (text insuficient). Introduceți manual rezultatele sau folosiți un PDF digital.",
-                RawText = rawText
-            };
+#pragma warning disable CA1416 // Server target = Windows
+                rawText = OcrPdf(bytes, ct);
+#pragma warning restore CA1416
+                ocrWarning = "PDF scanat — rezultate extrase prin OCR. Verificați cu atenție valorile (in special unități de măsură, separator zecimal, simboluri î/â/ă/ş/ț).";
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "OCR eşuat pentru {File}", fileName);
+                return new LabParseResultDto
+                {
+                    IsScannedPdf = true,
+                    ParseWarning = $"OCR eşuat: {ex.Message}. Introduceți manual rezultatele.",
+                    RawText = rawText
+                };
+            }
         }
 
         var laboratory = DetectLaboratory(rawText);
@@ -87,8 +107,48 @@ public sealed partial class LabPdfParser(ILogger<LabPdfParser> logger) : ILabPdf
             Doctor = doctor,
             Results = results,
             RawText = rawText,
-            IsScannedPdf = false
+            IsScannedPdf = isScannedPdf,
+            ParseWarning = ocrWarning
         };
+    }
+
+    // ── OCR pipeline (PDFium randare + Tesseract) ───────────────────────────
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    private string OcrPdf(byte[] pdfBytes, CancellationToken ct)
+    {
+        if (!Directory.Exists(TessDataPath))
+        {
+            throw new InvalidOperationException(
+                $"Director tessdata lipsă: {TessDataPath}. Asigurați-vă că *.traineddata sunt copiate în output.");
+        }
+
+        using var engine = new TesseractEngine(TessDataPath, OcrLanguages, EngineMode.LstmOnly);
+        // Optimizări pentru tabele de analize: PSM Auto, păstrează spațiile interword.
+        engine.DefaultPageSegMode = PageSegMode.Auto;
+        engine.SetVariable("preserve_interword_spaces", "1");
+
+        var sb = new StringBuilder();
+        var pageIdx = 0;
+        foreach (var bitmap in PDFtoImage.Conversion.ToImages(pdfBytes, options: new RenderOptions(Dpi: OcrDpi)))
+        {
+            ct.ThrowIfCancellationRequested();
+            pageIdx++;
+            using (bitmap)
+            using (var pngStream = new MemoryStream())
+            {
+                bitmap.Encode(pngStream, SKEncodedImageFormat.Png, 100);
+                pngStream.Position = 0;
+                using var pix = Pix.LoadFromMemory(pngStream.ToArray());
+                using var page = engine.Process(pix);
+                var pageText = page.GetText() ?? string.Empty;
+                sb.AppendLine(pageText);
+                sb.AppendLine();
+                logger.LogDebug(
+                    "OCR pagina {Page}: {Chars} caractere (confidence={Conf:F1}%)",
+                    pageIdx, pageText.Length, page.GetMeanConfidence() * 100);
+            }
+        }
+        return sb.ToString();
     }
 
     // ── Extragere text ─────────────────────────────────────────────────────
@@ -99,7 +159,7 @@ public sealed partial class LabPdfParser(ILogger<LabPdfParser> logger) : ILabPdf
         pageCount = 0;
 
         using var document = PdfDocument.Open(bytes);
-        foreach (Page page in document.GetPages())
+        foreach (PdfPigPage page in document.GetPages())
         {
             pageCount++;
             var text = page.Text ?? string.Empty;

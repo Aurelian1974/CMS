@@ -89,10 +89,15 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
   const handleParse = async (file: File) => {
     try {
       const result = await parseMut.mutateAsync(file)
-      if (result.isScannedPdf) {
-        alert(result.parseWarning ?? 'PDF-ul pare scanat. Introdu manual rezultatele.')
+      // Daca OCR a esuat fara rezultate, fallback la draft gol
+      if (result.isScannedPdf && result.results.length === 0) {
+        alert(result.parseWarning ?? 'PDF-ul pare scanat și OCR nu a putut extrage date. Introdu manual rezultatele.')
         setDraft(emptyBulletin())
         return
+      }
+      // Atentionare daca OCR a fost folosit (verificare obligatorie)
+      if (result.isScannedPdf && result.parseWarning) {
+        alert(result.parseWarning)
       }
       setDraft({
         laboratory: result.laboratory,
