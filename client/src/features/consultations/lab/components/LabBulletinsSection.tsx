@@ -16,6 +16,8 @@ import { LabBulletinHeader } from './LabBulletinHeader'
 import { LabComparisonView } from './LabComparisonView'
 import type { LabBulletinPayload, LabResultRowDto } from '../types/lab.types'
 import styles from '../AnalizeMedicaleStep.module.scss'
+import { usePatientLookup } from '@/features/patients/hooks/usePatients'
+import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
 
 interface Props {
   consultationId: string
@@ -44,6 +46,18 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
   const updateMut = useUpdateInvestigation(consultationId)
   const deleteMut = useDeleteInvestigation(consultationId)
   const parseMut = useParseLabPdf()
+
+  // Rezolvare nume pacient si medic din lookup-uri (staleTime=Infinity, date deja incarcate)
+  const { data: patientLookupResp } = usePatientLookup()
+  const { data: doctorLookupResp } = useDoctorLookup()
+  const defaultPatientName = useMemo(
+    () => (patientLookupResp?.data ?? []).find((p) => p.id === patientId)?.fullName ?? null,
+    [patientLookupResp, patientId],
+  )
+  const defaultDoctorName = useMemo(
+    () => (doctorLookupResp?.data ?? []).find((d) => d.id === doctorId)?.fullName ?? null,
+    [doctorLookupResp, doctorId],
+  )
 
   // Buletinele salvate (toate cu type=LabResults)
   const savedBulletins = useMemo(
@@ -108,8 +122,8 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
         bulletinNumber: result.bulletinNumber,
         collectionDate: result.collectionDate?.substring(0, 10) ?? todayISO(),
         resultDate: result.resultDate?.substring(0, 10) ?? null,
-        patientName: result.patientName,
-        doctor: result.doctor,
+        patientName: result.patientName ?? defaultPatientName,
+        doctor: result.doctor ?? defaultDoctorName,
         results: result.results,
       })
     } catch (err) {
@@ -188,7 +202,11 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
       <div className={styles.uploadBar}>
         <LabUploadButton onPick={handleParse} isLoading={parseMut.isPending} disabled={!isEditable} />
         {!draft && isEditable && (
-          <AppButton size="sm" variant="secondary" onClick={() => setDraft(emptyBulletin())}>
+          <AppButton
+            size="sm"
+            variant="secondary"
+            onClick={() => setDraft({ ...emptyBulletin(), patientName: defaultPatientName, doctor: defaultDoctorName })}
+          >
             + Adaugă manual
           </AppButton>
         )}

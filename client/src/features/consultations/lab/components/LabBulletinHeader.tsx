@@ -1,4 +1,6 @@
+import { DatePickerComponent } from '@syncfusion/ej2-react-calendars'
 import type { LabBulletinPayload } from '../types/lab.types'
+import { toLocalDateISO } from '@/utils/format'
 import styles from '../AnalizeMedicaleStep.module.scss'
 
 interface Props {
@@ -33,24 +35,32 @@ export const LabBulletinHeader = ({ data, onChange, readOnly }: Props) => {
         <strong>Nr. buletin:</strong>
         <input type="text" {...inputProps('bulletinNumber')} />
       </div>
-      <div>
+      <div className={styles.bulletinDateField}>
         <strong>Data recoltare:</strong>
-        <input
-          type="date"
-          value={(data.collectionDate as string)?.substring(0, 10) ?? ''}
-          disabled={readOnly}
-          onChange={(e) => onChange({ collectionDate: e.target.value || null })}
-          style={{ padding: '0.2rem 0.4rem', border: '1px solid #cbd5e1', borderRadius: 3, fontSize: '0.82rem', background: '#fff', width: '100%' }}
+        <DatePickerComponent
+          value={data.collectionDate ? new Date(data.collectionDate) : undefined}
+          change={(args) => onChange({ collectionDate: args.value ? toLocalDateISO(args.value) : null })}
+          format="dd.MM.yyyy"
+          locale="ro"
+          placeholder="zz.ll.aaaa"
+          enabled={!readOnly}
+          showClearButton={!readOnly}
+          showTodayButton
+          firstDayOfWeek={1}
         />
       </div>
-      <div>
+      <div className={styles.bulletinDateField}>
         <strong>Data rezultat:</strong>
-        <input
-          type="date"
-          value={(data.resultDate as string)?.substring(0, 10) ?? ''}
-          disabled={readOnly}
-          onChange={(e) => onChange({ resultDate: e.target.value || null })}
-          style={{ padding: '0.2rem 0.4rem', border: '1px solid #cbd5e1', borderRadius: 3, fontSize: '0.82rem', background: '#fff', width: '100%' }}
+        <DatePickerComponent
+          value={data.resultDate ? new Date(data.resultDate) : undefined}
+          change={(args) => onChange({ resultDate: args.value ? toLocalDateISO(args.value) : null })}
+          format="dd.MM.yyyy"
+          locale="ro"
+          placeholder="zz.ll.aaaa"
+          enabled={!readOnly}
+          showClearButton={!readOnly}
+          showTodayButton
+          firstDayOfWeek={1}
         />
       </div>
       <div>
