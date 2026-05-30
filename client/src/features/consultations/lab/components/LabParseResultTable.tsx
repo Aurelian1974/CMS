@@ -139,8 +139,6 @@ const FlagRadio = ({ flag, onChange }: FlagRadioProps) => (
  * - Coloana Flag: radio buttons — normal (—) / Crescut ▲ / Scăzut ▼.
  */
 export const LabParseResultTable = ({ rows, onChange, readOnly }: Props) => {
-  const [newSection, setNewSection] = useState('')
-
   const grouped = useMemo(() => {
     const map = new Map<string, { row: LabResultRowDto; idx: number }[]>()
     rows.forEach((row, idx) => {
@@ -177,12 +175,6 @@ export const LabParseResultTable = ({ rows, onChange, readOnly }: Props) => {
         subcategory: null,
       },
     ])
-  }
-
-  const handleAddSection = () => {
-    const s = newSection.trim().toUpperCase() || 'GENERAL'
-    addRow(s)
-    setNewSection('')
   }
 
   if (rows.length === 0) {
@@ -336,12 +328,12 @@ export const LabParseResultTable = ({ rows, onChange, readOnly }: Props) => {
           ))}
         </tbody>
       </table>
-      {/* ── Adaugă rând / secțiune nouă ────────────────────────────────── */}
+      {/* ── Adaugă rând ────────────────────────────────── */}
       {!readOnly && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
           <button
             type="button"
-            onClick={() => addRow(rows.length > 0 ? (rows[rows.length - 1].section || 'GENERAL') : 'GENERAL')}
+            onClick={() => addRow('GENERAL')}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 4,
               padding: '0.25rem 0.6rem', background: '#eff6ff',
@@ -350,29 +342,6 @@ export const LabParseResultTable = ({ rows, onChange, readOnly }: Props) => {
             }}
           >
             <Plus size={13} /> Adaugă rând
-          </button>
-          <input
-            type="text"
-            value={newSection}
-            onChange={(e) => setNewSection(e.target.value)}
-            placeholder="Secțiune nouă (ex: HEMATOLOGIE)"
-            style={{
-              padding: '0.25rem 0.5rem', border: '1px solid #cbd5e1', borderRadius: 4,
-              fontSize: '0.8rem', flex: 1, maxWidth: 260,
-            }}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSection() } }}
-          />
-          <button
-            type="button"
-            onClick={handleAddSection}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 4,
-              padding: '0.25rem 0.6rem', background: '#f1f5f9',
-              border: '1px solid #cbd5e1', borderRadius: 4,
-              cursor: 'pointer', fontSize: '0.8rem', color: '#334155',
-            }}
-          >
-            <Plus size={13} /> Adaugă secțiune
           </button>
         </div>
       )}
