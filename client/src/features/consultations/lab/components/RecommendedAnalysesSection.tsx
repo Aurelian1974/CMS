@@ -1,11 +1,10 @@
-import { useEffect, useState } from 'react'
-import { Plus, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import { Plus, Search, Trash2 } from 'lucide-react'
 import { AppButton } from '@/components/ui/AppButton'
 import {
   useCreateRecommendedAnalysis,
   useDeleteRecommendedAnalysis,
   useRecommendedAnalyses,
-  useSearchAnalyses,
   useUpdateRecommendedAnalysis,
 } from '../hooks/useLab'
 import {
@@ -15,6 +14,7 @@ import {
   type AnalysisPriority,
   type RecommendedAnalysisStatus,
 } from '../types/lab.types'
+import { AnalysisPicker } from './AnalysisPicker'
 import styles from '../AnalizeMedicaleStep.module.scss'
 
 interface Props {
@@ -29,30 +29,26 @@ export const RecommendedAnalysesSection = ({ consultationId, patientId, isEditab
   const updateMut = useUpdateRecommendedAnalysis(consultationId)
   const deleteMut = useDeleteRecommendedAnalysis(consultationId)
 
-  // Add row state
+  // Stare formular adăugare
   const [showAdd, setShowAdd] = useState(false)
-  const [searchQ, setSearchQ] = useState('')
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [picked, setPicked] = useState<AnalysisDictionaryDto | null>(null)
   const [priority, setPriority] = useState<AnalysisPriority>(1)
   const [notes, setNotes] = useState('')
   const [status, setStatus] = useState<RecommendedAnalysisStatus>(0)
-  const [debouncedQ, setDebouncedQ] = useState('')
-
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedQ(searchQ), 250)
-    return () => clearTimeout(t)
-  }, [searchQ])
-
-  const { data: suggestions = [], isFetching } = useSearchAnalyses(debouncedQ, showAdd && !picked)
 
   const reset = () => {
     setShowAdd(false)
-    setSearchQ('')
+    setPickerOpen(false)
     setPicked(null)
     setPriority(1)
     setNotes('')
     setStatus(0)
-    setDebouncedQ('')
+  }
+
+  const handlePick = (item: AnalysisDictionaryDto) => {
+    setPicked(item)
+    setPickerOpen(false)
   }
 
   const handleSave = async () => {
@@ -83,42 +79,35 @@ export const RecommendedAnalysesSection = ({ consultationId, patientId, isEditab
         <div style={{ padding: '0.75rem', background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: 6, marginBottom: '0.5rem' }}>
           {!picked ? (
             <div>
-              <label style={{ fontSize: '0.82rem', fontWeight: 600, color: '#075985' }}>Caută analiză din dicționar:</label>
-              <input
-                type="text"
-                autoFocus
-                value={searchQ}
-                onChange={(e) => setSearchQ(e.target.value)}
-                placeholder="ex: hemogramă, glicemie, TSH..."
-                style={{ width: '100%', padding: '0.4rem 0.6rem', border: '1px solid #cbd5e1', borderRadius: 4, marginTop: 4 }}
-              />
-              {isFetching && <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: 4 }}>Se caută...</div>}
-              {suggestions.length > 0 && (
-                <ul style={{
-                  listStyle: 'none', margin: '4px 0 0', padding: 0, maxHeight: 240, overflowY: 'auto',
-                  border: '1px solid #cbd5e1', borderRadius: 4, background: '#fff',
-                }}>
-                  {suggestions.map((s) => (
-                    <li
-                      key={s.id}
-                      onClick={() => setPicked(s)}
-                      style={{ padding: '0.4rem 0.6rem', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', fontSize: '0.85rem' }}
-                    >
-                      <strong>{s.name}</strong>
-                      {s.category && <span style={{ marginLeft: 6, color: '#64748b', fontSize: '0.75rem' }}>· {s.category}</span>}
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <label style={{ fontSize: '0.82rem', fontWeight: 600, color: '#075985' }}>
+                Selectează analiză din catalog:
+              </label>
+              <div style={{ marginTop: 6 }}>
+                <button
+                  type="button"
+                  className={styles.pickerTrigger}
+                  onClick={() => setPickerOpen(true)}
+                >
+                  <Search size={13} aria-hidden="true" style={{ flexShrink: 0 }} />
+                  <span className={styles.pickerTriggerText}>Caută sau tastează o analiză…</span>
+                </button>
+              </div>
               <div style={{ marginTop: 8 }}>
                 <AppButton size="sm" variant="secondary" onClick={reset}>Anulează</AppButton>
               </div>
             </div>
           ) : (
             <div>
-              <div style={{ marginBottom: 8, fontSize: '0.88rem' }}>
-                <strong>{picked.name}</strong>
-                {picked.category && <span style={{ color: '#64748b' }}> · {picked.category}</span>}
+              <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <strong style={{ fontSize: '0.88rem' }}>{picked.name}</strong>
+                {picked.category && <span style={{ color: '#64748b', fontSize: '0.78rem' }}>· {picked.category}</span>}
+                <button
+                  type="button"
+                  style={{ marginLeft: 'auto', background: 'transparent', border: '1px solid #cbd5e1', borderRadius: 4, cursor: 'pointer', fontSize: '0.78rem', padding: '2px 8px', color: '#475569' }}
+                  onClick={() => setPicked(null)}
+                >
+                  Schimbă
+                </button>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 <div>
@@ -148,13 +137,19 @@ export const RecommendedAnalysesSection = ({ consultationId, patientId, isEditab
               </div>
               <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
                 <AppButton size="sm" variant="primary" onClick={handleSave} isLoading={createMut.isPending}>Salvează</AppButton>
-                <AppButton size="sm" variant="secondary" onClick={() => setPicked(null)}>Schimbă analiza</AppButton>
                 <AppButton size="sm" variant="ghost" onClick={reset}>Anulează</AppButton>
               </div>
             </div>
           )}
         </div>
       )}
+
+      {/* AnalysisPicker — folosit pentru selectarea analizei în formularul de adăugare */}
+      <AnalysisPicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onSelect={handlePick}
+      />
 
       {isLoading && <p>Se încarcă...</p>}
 

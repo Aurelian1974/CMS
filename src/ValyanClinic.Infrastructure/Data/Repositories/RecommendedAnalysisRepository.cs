@@ -86,4 +86,15 @@ public sealed class AnalysisDictionaryRepository(DapperContext context) : IAnaly
                 cancellationToken: ct));
         return rows.ToList();
     }
+
+    public async Task<IReadOnlyList<AnalysisDictionaryDto>> GetAllAsync(CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        var rows = await connection.QueryAsync<AnalysisDictionaryDto>(
+            new CommandDefinition(
+                AnalysisProcedures.GetAll,
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+        return rows.ToList();
+    }
 }

@@ -11,4 +11,5 @@ public static class RecommendedAnalysisProcedures
 public static class AnalysisProcedures
 {
     public const string Search = "dbo.Analysis_Search";
+    public const string GetAll = "dbo.Analysis_GetAll";
 }

@@ -48,4 +48,8 @@ export const analysesDictApi = {
     const resp = await (api.get(`${ANA}/search`, { params: { q, top } }) as Promise<ApiResponse<AnalysisDictionaryDto[]>>)
     return resp.data ?? []
   },
+  getAll: async (): Promise<AnalysisDictionaryDto[]> => {
+    const resp = await (api.get(`${ANA}/all`) as Promise<ApiResponse<AnalysisDictionaryDto[]>>)
+    return resp.data ?? []
+  },
 }

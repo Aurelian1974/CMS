@@ -17,6 +17,7 @@ export const recommendedKeys = {
 }
 
 export const analysesDictKeys = {
+  all:    ['analyses-dict', 'all'] as const,
   search: (q: string) => ['analyses-dict', 'search', q] as const,
 }
 
@@ -65,4 +66,13 @@ export const useSearchAnalyses = (q: string, enabled = true) =>
     queryFn: () => analysesDictApi.search(q),
     enabled: enabled && q.trim().length >= 2,
     staleTime: 60_000,
+  })
+
+// ── Analyses dictionary — tot catalogul (pentru picker cu categorii) ────────
+export const useAnalysesAll = () =>
+  useQuery({
+    queryKey: analysesDictKeys.all,
+    queryFn: () => analysesDictApi.getAll(),
+    staleTime: Infinity,   // dicționarul Synevo nu se modifică frecvent
+    gcTime: 30 * 60_000,   // 30 min in cache
   })

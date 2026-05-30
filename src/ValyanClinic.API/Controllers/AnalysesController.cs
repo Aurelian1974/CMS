@@ -3,6 +3,7 @@ using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Enums;
 using ValyanClinic.Application.Common.Models;
 using ValyanClinic.Application.Features.RecommendedAnalyses.DTOs;
+using ValyanClinic.Application.Features.RecommendedAnalyses.Queries.GetAllAnalyses;
 using ValyanClinic.Application.Features.RecommendedAnalyses.Queries.SearchAnalyses;
 using ValyanClinic.Infrastructure.Authentication;
 
@@ -19,4 +20,15 @@ public class AnalysesController : BaseApiController
         var result = await Mediator.Send(new SearchAnalysesQuery(q, top), ct);
         return HandleResult(result);
     }
+
+    /// <summary>Dicționar complet de analize — pentru picker cu browse pe categorii.</summary>
+    [HttpGet("all")]
+    [HasAccess(ModuleCodes.Consultations, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IReadOnlyList<AnalysisDictionaryDto>>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAll(CancellationToken ct = default)
+    {
+        var result = await Mediator.Send(new GetAllAnalysesQuery(), ct);
+        return HandleResult(result);
+    }
 }
+

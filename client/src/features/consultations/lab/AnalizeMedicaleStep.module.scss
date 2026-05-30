@@ -254,3 +254,392 @@
   &.normal { background: #e0f2fe; color: #075985; }
   &.low { background: #f1f5f9; color: #475569; }
 }
+
+// ── AnalysisPicker modal ──────────────────────────────────────────────────────
+
+// Trigger cell în tabelul de analize (înlocuiește input-ul text)
+.pickerTrigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px dashed #93c5fd;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  color: #2563eb;
+  font-size: 0.82rem;
+  text-align: left;
+  transition: background 0.12s, border-color 0.12s;
+
+  &:hover {
+    background: #eff6ff;
+    border-color: #2563eb;
+  }
+
+  &.hasValue {
+    border-style: solid;
+    border-color: #cbd5e1;
+    color: #1e293b;
+    background: #fff;
+
+    &:hover {
+      border-color: #2563eb;
+      background: #f8fafc;
+    }
+  }
+}
+
+.pickerTriggerText {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pickerTriggerClear {
+  flex-shrink: 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 0;
+  display: flex;
+  align-items: center;
+
+  &:hover { color: #475569; }
+}
+
+// Overlay modal
+.pickerOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.35);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+// Containerul modal
+.pickerModal {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  width: 700px;
+  max-width: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
+}
+
+// Header: search + buton anulează
+.pickerHeader {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.pickerSearchWrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0 10px;
+  height: 36px;
+
+  &:focus-within {
+    border-color: #93c5fd;
+    background: #fff;
+  }
+}
+
+.pickerSearchIcon {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.pickerSearchInput {
+  border: none;
+  background: transparent;
+  flex: 1;
+  font-size: 13.5px;
+  color: #1e293b;
+  outline: none;
+
+  &::placeholder { color: #94a3b8; }
+}
+
+.pickerSearchClear {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 0;
+  display: flex;
+  align-items: center;
+
+  &:hover { color: #475569; }
+}
+
+.pickerCancelBtn {
+  padding: 6px 12px;
+  font-size: 13px;
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  cursor: pointer;
+  color: #475569;
+
+  &:hover { background: #f8fafc; border-color: #cbd5e1; }
+}
+
+// Body: 2 coloane
+.pickerBody {
+  display: flex;
+  height: 440px;
+  overflow: hidden;
+}
+
+// Panou stânga — categorii
+.pickerLeftPanel {
+  width: 220px;
+  border-right: 1px solid #f1f5f9;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.pickerCatItem {
+  width: 100%;
+  text-align: left;
+  padding: 8px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #475569;
+  border: 0;
+  border-left: 2px solid transparent;
+  background: transparent;
+  transition: background 0.1s, color 0.1s;
+
+  &:hover {
+    background: #f8fafc;
+    color: #1e293b;
+  }
+
+  &.pickerCatActive {
+    color: #185fa5;
+    border-left-color: #185fa5;
+    background: #eff6ff;
+    font-weight: 500;
+  }
+}
+
+.pickerCatBadge {
+  font-size: 11px;
+  background: #f1f5f9;
+  border-radius: 10px;
+  padding: 1px 6px;
+  color: #94a3b8;
+  flex-shrink: 0;
+
+  .pickerCatActive & {
+    background: #bfdbfe;
+    color: #1e40af;
+  }
+}
+
+// Panou dreapta — teste
+.pickerRightPanel {
+  flex: 1;
+  overflow-y: auto;
+
+  &.pickerRightFull {
+    // modul search — ocupă toată lățimea
+  }
+}
+
+.pickerSubcatHeader {
+  padding: 8px 14px 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 4px;
+}
+
+.pickerTestRow {
+  padding: 7px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  gap: 8px;
+
+  &:hover { background: #f8fafc; }
+
+  &.pickerTestSelected {
+    background: #eff6ff;
+
+    .pickerTestUnit {
+      background: #bfdbfe;
+      color: #1e40af;
+    }
+  }
+}
+
+.pickerTestName {
+  color: #1e293b;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pickerTestCatHint {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-left: 6px;
+}
+
+.pickerTestUnit {
+  font-size: 11px;
+  font-family: 'Consolas', 'Fira Mono', monospace;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pickerHighlight {
+  background: #fef3c7;
+  border-radius: 2px;
+  color: inherit;
+  padding: 0 1px;
+}
+
+.pickerResultCount {
+  font-size: 12px;
+  color: #94a3b8;
+  padding: 8px 14px 4px;
+}
+
+.pickerEmpty {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.pickerEmptyIcon {
+  color: #cbd5e1;
+}
+
+.pickerFreeTextBtn {
+  margin-top: 4px;
+  padding: 5px 12px;
+  font-size: 12px;
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #2563eb;
+
+  &:hover { background: #eff6ff; border-color: #93c5fd; }
+}
+
+.pickerLoading {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+// Footer: preview + confirmare
+.pickerFooter {
+  padding: 10px 16px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.pickerFooterPreview {
+  font-size: 13px;
+  color: #475569;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+
+  strong { color: #1e293b; }
+}
+
+.pickerFooterCat {
+  color: #94a3b8;
+}
+
+.pickerFooterUnit {
+  font-size: 11.5px;
+  font-family: 'Consolas', 'Fira Mono', monospace;
+  color: #64748b;
+  background: #e2e8f0;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+
+.pickerFooterPlaceholder {
+  color: #94a3b8;
+}
+
+.pickerFooterActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.pickerKeyHint {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.pickerConfirmBtn {
+  padding: 6px 16px;
+  font-size: 13px;
+  background: #2563eb;
+  color: #fff;
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.12s, opacity 0.12s;
+
+  &:hover:not(:disabled) { background: #1d4ed8; }
+  &:disabled { opacity: 0.4; cursor: default; }
+}

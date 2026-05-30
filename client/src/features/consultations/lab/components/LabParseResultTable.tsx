@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react'
-import { Trash2, Plus } from 'lucide-react'
+import { useCallback, useMemo, useState } from 'react'
+import { Search, Trash2, Plus, X } from 'lucide-react'
 import type { LabResultRowDto } from '../types/lab.types'
-import { useSearchAnalyses } from '../hooks/useLab'
+import { AnalysisPicker } from './AnalysisPicker'
 import styles from '../AnalizeMedicaleStep.module.scss'
 
 interface Props {
@@ -10,7 +10,7 @@ interface Props {
   readOnly?: boolean
 }
 
-// ── Autocomplete pentru coloana Test ────────────────────────────────────────
+// ── Trigger cell + AnalysisPicker pentru coloana Test ───────────────────────
 
 interface LabTestNameCellProps {
   value: string
@@ -20,110 +20,58 @@ interface LabTestNameCellProps {
 }
 
 const LabTestNameCell = ({ value, onChange, onPickUnit, disabled }: LabTestNameCellProps) => {
-  const [searchQ, setSearchQ] = useState(value)
-  const [showDropdown, setShowDropdown] = useState(false)
-  const [debouncedQ, setDebouncedQ] = useState('')
-  const wrapperRef = useRef<HTMLDivElement>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
 
-  // Sincronizează valoarea locală dacă se schimbă din exterior (reset)
-  useEffect(() => { setSearchQ(value) }, [value])
-
-  // Debounce 250ms
-  useEffect(() => {
-    const t = setTimeout(() => setDebouncedQ(searchQ), 250)
-    return () => clearTimeout(t)
-  }, [searchQ])
-
-  const { data: suggestions = [], isFetching } = useSearchAnalyses(
-    debouncedQ,
-    showDropdown && !disabled,
-  )
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value
-    setSearchQ(v)
-    onChange(v)
-    setShowDropdown(true)
-  }
-
-  const handlePick = useCallback(
-    (name: string, unit: string | null) => {
-      setSearchQ(name)
-      onChange(name)
-      onPickUnit(unit)
-      setShowDropdown(false)
+  const handleSelect = useCallback(
+    (item: { name: string; unit: string | null }) => {
+      onChange(item.name)
+      onPickUnit(item.unit ?? null)
     },
     [onChange, onPickUnit],
   )
 
-  // Închide dropdown la click în afară
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
-        setShowDropdown(false)
-      }
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [])
+  const handleClear = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation()
+      onChange('')
+      onPickUnit(null)
+    },
+    [onChange, onPickUnit],
+  )
+
+  if (disabled) {
+    return <span>{value}</span>
+  }
 
   return (
-    <div ref={wrapperRef} style={{ position: 'relative' }}>
-      <input
-        type="text"
-        value={searchQ}
-        onChange={handleChange}
-        onFocus={() => { if (searchQ.trim().length >= 2) setShowDropdown(true) }}
-        disabled={disabled}
-        placeholder="Caută sau tastează..."
-        style={{ width: '100%' }}
+    <>
+      <button
+        type="button"
+        className={`${styles.pickerTrigger} ${value ? styles.hasValue : ''}`}
+        onClick={() => setPickerOpen(true)}
+        title={value || 'Caută sau selectează o analiză din catalog'}
+      >
+        {!value && <Search size={13} aria-hidden="true" style={{ flexShrink: 0 }} />}
+        <span className={styles.pickerTriggerText}>
+          {value || 'Caută sau tastează o analiză…'}
+        </span>
+        {value && (
+          <button
+            type="button"
+            className={styles.pickerTriggerClear}
+            onClick={handleClear}
+            title="Șterge"
+          >
+            <X size={11} aria-hidden="true" />
+          </button>
+        )}
+      </button>
+      <AnalysisPicker
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onSelect={handleSelect}
       />
-      {showDropdown && !disabled && (
-        <>
-          {isFetching && debouncedQ.trim().length >= 2 && (
-            <div style={{
-              position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
-              background: '#fff', border: '1px solid #cbd5e1', borderRadius: 4,
-              padding: '4px 8px', fontSize: '0.78rem', color: '#64748b',
-            }}>
-              Se caută...
-            </div>
-          )}
-          {!isFetching && suggestions.length > 0 && (
-            <ul style={{
-              position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
-              listStyle: 'none', margin: 0, padding: 0,
-              maxHeight: 220, overflowY: 'auto',
-              background: '#fff', border: '1px solid #cbd5e1', borderRadius: 4,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-            }}>
-              {suggestions.map((s) => (
-                <li
-                  key={s.id}
-                  onMouseDown={(e) => { e.preventDefault(); handlePick(s.name, s.unit) }}
-                  style={{
-                    padding: '0.3rem 0.6rem', cursor: 'pointer', fontSize: '0.82rem',
-                    borderBottom: '1px solid #f1f5f9',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = '#f0f9ff')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = '')}
-                >
-                  <span style={{ fontWeight: 500 }}>{s.name}</span>
-                  {s.unit && (
-                    <span style={{ color: '#475569', marginLeft: 6 }}>{s.unit}</span>
-                  )}
-                  {s.category && (
-                    <span style={{ color: '#94a3b8', marginLeft: 6, fontSize: '0.75rem' }}>
-                      {s.category}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
-      )}
-    </div>
+    </>
   )
 }
 

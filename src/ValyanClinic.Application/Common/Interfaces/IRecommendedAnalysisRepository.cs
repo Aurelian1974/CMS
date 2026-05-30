@@ -31,4 +31,5 @@ public sealed record RecommendedAnalysisUpdateData(
 public interface IAnalysisDictionaryRepository
 {
     Task<IReadOnlyList<AnalysisDictionaryDto>> SearchAsync(string query, int top, CancellationToken ct);
+    Task<IReadOnlyList<AnalysisDictionaryDto>> GetAllAsync(CancellationToken ct);
 }
