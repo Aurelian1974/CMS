@@ -137,7 +137,7 @@
 .bulletinDateField {
   display: flex;
   align-items: center;
-  flex: 1;
+  width: 220px;
 
   // Syncfusion DatePicker compact
   :global(.e-date-wrapper) {
