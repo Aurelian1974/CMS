@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Bump semantic version pentru ValyanClinic.
 
