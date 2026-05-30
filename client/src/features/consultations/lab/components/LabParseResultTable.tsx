@@ -242,51 +242,45 @@ export const LabParseResultTable = ({ rows, onChange, readOnly }: Props) => {
                   )}
                 </td>
               </tr>
-              {items.map(({ row, idx }) => (
+              {items.reduce<React.ReactNode[]>((acc, { row, idx }, i) => {
+                // Inserează header de categorie când categoria se schimbă (sau la primul rând cu categorie)
+                const prevCategory = i > 0 ? items[i - 1].row.category : undefined
+                if (row.category && row.category !== prevCategory) {
+                  acc.push(
+                    <tr key={`cat-${idx}`}>
+                      <td
+                        colSpan={readOnly ? 6 : 7}
+                        style={{
+                          background: '#fef9c3',
+                          color: '#713f12',
+                          fontWeight: 600,
+                          fontSize: '0.78rem',
+                          letterSpacing: '0.03em',
+                          padding: '4px 10px',
+                          borderTop: '1px solid #fde68a',
+                          borderBottom: '1px solid #fde68a',
+                        }}
+                      >
+                        {row.category}
+                      </td>
+                    </tr>,
+                  )
+                }
+                acc.push(
                 <tr key={`r-${idx}`}>
                   <td>
                     {readOnly ? (
-                      <div>
-                        <span>{row.testName}</span>
-                        {row.category && (
-                          <div style={{ marginTop: 2 }}>
-                            <span style={{
-                              display: 'inline-block',
-                              fontSize: '0.68rem', fontWeight: 500,
-                              padding: '1px 6px', borderRadius: 10,
-                              background: '#e0f2fe', color: '#0369a1',
-                              border: '1px solid #bae6fd',
-                            }}>
-                              {row.category}
-                            </span>
-                          </div>
-                        )}
-                      </div>
+                      <span>{row.testName}</span>
                     ) : (
-                      <>
-                        <LabTestNameCell
-                          value={row.testName}
-                          onChange={(name) => updateRow(idx, { testName: name })}
-                          onPickUnit={(unit) => updateRow(idx, { unit })}
-                          onSelectAnalysis={(name, unit, category, subcategory) =>
-                            updateRow(idx, { testName: name, unit, category, subcategory })
-                          }
-                          disabled={false}
-                        />
-                        {row.category && (
-                          <div style={{ marginTop: 2 }}>
-                            <span style={{
-                              display: 'inline-block',
-                              fontSize: '0.68rem', fontWeight: 500,
-                              padding: '1px 6px', borderRadius: 10,
-                              background: '#e0f2fe', color: '#0369a1',
-                              border: '1px solid #bae6fd',
-                            }}>
-                              {row.category}
-                            </span>
-                          </div>
-                        )}
-                      </>
+                      <LabTestNameCell
+                        value={row.testName}
+                        onChange={(name) => updateRow(idx, { testName: name })}
+                        onPickUnit={(unit) => updateRow(idx, { unit })}
+                        onSelectAnalysis={(name, unit, category, subcategory) =>
+                          updateRow(idx, { testName: name, unit, category, subcategory })
+                        }
+                        disabled={false}
+                      />
                     )}
                   </td>
                   <td>
@@ -353,7 +347,9 @@ export const LabParseResultTable = ({ rows, onChange, readOnly }: Props) => {
                     </td>
                   )}
                 </tr>
-              ))}
+                )
+                return acc
+              }, [])}
             </React.Fragment>
           ))}
         </tbody>
