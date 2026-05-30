@@ -89,7 +89,7 @@ interface FlagRadioProps {
 }
 
 const FLAG_OPTIONS: { value: FlagValue; label: string }[] = [
-  { value: null,   label: '—' },
+  { value: null,   label: 'Normal' },
   { value: 'HIGH', label: 'Crescut ▲' },
   { value: 'LOW',  label: 'Scăzut ▼' },
 ]
@@ -288,7 +288,7 @@ export const LabParseResultTable = ({ rows, onChange, readOnly }: Props) => {
                           row.flag === 'LOW'  ? styles.flagLow : undefined
                         }
                       >
-                        {row.flag ?? '—'}
+                        {row.flag === 'HIGH' ? 'Crescut ▲' : row.flag === 'LOW' ? 'Scăzut ▼' : 'Normal'}
                       </span>
                     ) : (
                       <FlagRadio
