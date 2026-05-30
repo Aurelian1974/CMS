@@ -64,6 +64,8 @@ export const ICD10SearchBox = ({
   // ── Refs ──
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const favPanelRef = useRef<HTMLDivElement>(null)
+  const resultsDropdownRef = useRef<HTMLDivElement>(null)
 
   // ── Debounce search ──
   const debouncedSearch = useDebounce(searchTerm, 300)
@@ -145,7 +147,11 @@ export const ICD10SearchBox = ({
   // ── Click outside → close dropdowns ──
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      const inContainer = containerRef.current?.contains(target)
+      const inFavPanel = favPanelRef.current?.contains(target)
+      const inResultsDropdown = resultsDropdownRef.current?.contains(target)
+      if (!inContainer && !inFavPanel && !inResultsDropdown) {
         setShowResults(false)
         setIsFavPanelOpen(false)
       }
@@ -341,7 +347,7 @@ export const ICD10SearchBox = ({
 
       {/* ── Inline Favorites Panel ── */}
       {isFavPanelOpen && createPortal(
-        <div className={styles.favPanel} style={{ top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width }}>
+        <div ref={favPanelRef} className={styles.favPanel} style={{ top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width }}>
           {/* Panel Header */}
           <div className={styles.favPanelHeader}>
             <div className={styles.favHeaderTitle}>
@@ -434,7 +440,7 @@ export const ICD10SearchBox = ({
 
       {/* ── Search Results Dropdown ── */}
       {showResults && results.length > 0 && createPortal(
-        <div className={styles.resultsDropdown} style={{ top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width }}>
+        <div ref={resultsDropdownRef} className={styles.resultsDropdown} style={{ top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width }}>
           {/* Results Header */}
           <div className={styles.resultsHeader}>
             <span className={styles.resultsCount}>📋 {results.length} rezultate</span>

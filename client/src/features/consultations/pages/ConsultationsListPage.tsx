@@ -33,9 +33,11 @@ import {
   NotebookPen, Users, AlertTriangle, ShieldAlert,
   Lock, User, Cake, Phone, Mail, Calendar, MapPin,
 } from 'lucide-react'
+import { ScrisoareMedicalaModal } from '../components/ScrisoareMedicalaModal/ScrisoareMedicalaModal'
 import styles from './ConsultationsListPage.module.scss'
 
 // ── SVG Icons ─────────────────────────────────────────────────────────────────
+const IconLetter  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
 const IconPlus    = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
 const IconPrint   = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
 const IconTrash   = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
@@ -53,6 +55,27 @@ const getAppointmentStatusVariant = (code: string | null): BadgeVariant => {
     case 'ANULAT':     return 'danger'
     default:           return 'neutral'
   }
+}
+
+const getConsultationStatusVariant = (code: string | null): BadgeVariant => {
+  if (!code) return 'neutral'
+  switch (code.toUpperCase()) {
+    case 'INLUCRU':    return 'warning'
+    case 'FINALIZATA': return 'success'
+    case 'BLOCATA':    return 'danger'
+    default:           return 'neutral'
+  }
+}
+
+function parseDiagnosticLabel(raw: string | null): string {
+  if (!raw) return '—'
+  try {
+    const data = JSON.parse(raw)
+    if (data?.primaryCode?.code) {
+      return `${data.primaryCode.code} — ${data.primaryCode.shortDescriptionRo ?? ''}`
+    }
+  } catch { /* not JSON */ }
+  return raw.length > 55 ? raw.substring(0, 55) + '…' : raw
 }
 
 const CONSULTATION_STATUS_IDS: Record<Exclude<ConsultationStatusFilter, 'all'>, string> = {
@@ -163,11 +186,25 @@ export const ConsultationsListPage = () => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [serverError, setServerError] = useState<string | null>(null)
   const [showFinalizeConfirm, setShowFinalizeConfirm] = useState(false)
+  const [showScrisoareMedicala, setShowScrisoareMedicala] = useState(false)
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentDto | null>(null)
+
+  // ── History sidebar state ───────────────────────────────────────────────────
+  const [openDoctorGroups, setOpenDoctorGroups] = useState<Record<string, boolean>>({})
+  const toggleDoctorGroup = (name: string) =>
+    setOpenDoctorGroups(prev => ({ ...prev, [name]: prev[name] === false ? true : false }))
 
   // ── Queries ─────────────────────────────────────────────────────────────────
   const { data: consultationsResp } = useConsultations({
     page, pageSize: 50, search: search || undefined,
+    sortBy: 'date', sortDir: 'desc',
+  })
+
+  // Sidebar history: admin → filtrat opțional pe medic (grouped), doctor → proprii
+  const historyDoctorId = isAdmin ? appointmentDoctorFilter : (user?.doctorId ?? undefined)
+  const { data: historyResp } = useConsultations({
+    page: 1, pageSize: 50,
+    doctorId: historyDoctorId,
     sortBy: 'date', sortDir: 'desc',
   })
 
@@ -192,6 +229,21 @@ export const ConsultationsListPage = () => {
 
   const doctorLookup  = useMemo(() => (doctorLookupResp?.data ?? []).map(d => ({ value: d.id, label: d.fullName })), [doctorLookupResp])
   const patientLookup = useMemo(() => (patientLookupResp?.data ?? []).map(p => ({ value: p.id, label: `${p.fullName} (${p.cnp})` })), [patientLookupResp])
+
+  // ── History computed ─────────────────────────────────────────────────────────
+  const historyItems = useMemo(() => historyResp?.data?.pagedResult?.items ?? [], [historyResp])
+  // Grupăm pe medic doar când admin fără filtru selectat
+  const shouldGroup = isAdmin && !appointmentDoctorFilter
+  const groupedHistory = useMemo(() => {
+    if (!shouldGroup) return null
+    const groups: Record<string, ConsultationListDto[]> = {}
+    historyItems.forEach(c => {
+      const key = c.doctorName || 'Necunoscut'
+      if (!groups[key]) groups[key] = []
+      groups[key].push(c)
+    })
+    return groups
+  }, [shouldGroup, historyItems])
 
   // ── Form ────────────────────────────────────────────────────────────────────
   const form = useForm<ConsultationFormData>({
@@ -287,6 +339,14 @@ export const ConsultationsListPage = () => {
   }, [detail, isCreating]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Handlers ────────────────────────────────────────────────────────────────
+  const handleSelectHistoryConsultation = (consultation: ConsultationListDto) => {
+    setSelectedId(consultation.id)
+    setIsCreating(false)
+    setSelectedAppointment(null)
+    setServerError(null)
+    setActiveTab('anamneza')
+  }
+
   const handleSelectAppointment = async (appointment: AppointmentDto) => {
     setSelectedAppointment(appointment)
     setServerError(null)
@@ -674,32 +734,108 @@ export const ConsultationsListPage = () => {
         {/* Today's appointments label */}
         <div className={styles.dateGroupLabel}>Programări azi</div>
 
-        {/* Appointment card list */}
-        <div className={styles.cardList}>
-          {isAppointmentsError && <div className={styles.listError}>Eroare la încărcarea programărilor.</div>}
+        {/* ── Scrollable area: programări + consultații anterioare ── */}
+        <div className={styles.sidebarScroll}>
+          {/* Appointment card list */}
+          <div className={styles.cardList}>
+            {isAppointmentsError && <div className={styles.listError}>Eroare la încărcarea programărilor.</div>}
 
-          {todayAppointments.map(apt => (
+            {todayAppointments.map(apt => (
+              <button
+                key={apt.id}
+                className={`${styles.card} ${selectedAppointment?.id === apt.id ? styles.cardActive : ''}`}
+                onClick={() => handleSelectAppointment(apt)}
+              >
+                <div className={styles.cardTop}>
+                  <span className={styles.cardPatient}>{apt.patientName}</span>
+                  <span className={styles.cardTime}>{formatTimeRange(apt.startTime, apt.endTime)}</span>
+                </div>
+                <div className={styles.cardMiddle}>
+                  {apt.doctorName}{apt.specialtyName ? ` · ${apt.specialtyName}` : ''}
+                </div>
+                <div className={styles.cardBottom}>
+                  <AppBadge variant={getAppointmentStatusVariant(apt.statusCode)} withDot>{apt.statusName}</AppBadge>
+                </div>
+              </button>
+            ))}
+
+            {!isAppointmentsError && todayAppointments.length === 0 && (
+              <div className={styles.listEmpty}>Nicio programare pentru azi.</div>
+            )}
+          </div>
+
+          {/* ── Consultații anterioare ── */}
+          <div className={styles.historySeparator} />
+          <div className={styles.dateGroupLabel}>
+            {shouldGroup ? 'Consultații anterioare' : 'Consultații recente'}
+          </div>
+
+          {historyItems.length === 0 && (
+            <div className={styles.listEmpty}>Nicio consultație anterioară.</div>
+          )}
+
+          {/* Admin fără filtru → grupat pe medic */}
+          {shouldGroup && groupedHistory && Object.entries(groupedHistory).map(([doctorName, cons]) => {
+            const isOpen = openDoctorGroups[doctorName] !== false
+            return (
+              <div key={doctorName} className={styles.historyDoctorGroup}>
+                <button
+                  type="button"
+                  className={styles.historyDoctorHeader}
+                  onClick={() => toggleDoctorGroup(doctorName)}
+                >
+                  <span className={styles.historyDoctorName}>Dr. {doctorName}</span>
+                  <span className={styles.historyDoctorCount}>{cons.length}</span>
+                  <span className={styles.historyChevron}>{isOpen ? '▾' : '▸'}</span>
+                </button>
+                {isOpen && (
+                  <div className={styles.historyDoctorItems}>
+                    {cons.map(c => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className={`${styles.card} ${styles.cardHistory} ${selectedId === c.id && !isCreating ? styles.cardActive : ''}`}
+                        onClick={() => handleSelectHistoryConsultation(c)}
+                      >
+                        <div className={styles.cardTop}>
+                          <span className={styles.cardPatient}>{c.patientName}</span>
+                          <span className={styles.cardTime}>{formatDate(c.date)}</span>
+                        </div>
+                        <div className={styles.cardMiddle}>{parseDiagnosticLabel(c.diagnostic)}</div>
+                        <div className={styles.cardBottom}>
+                          <AppBadge variant={getConsultationStatusVariant(c.statusCode)} withDot>{c.statusName}</AppBadge>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+
+          {/* Admin cu filtru sau medic logat → lista plată */}
+          {!shouldGroup && historyItems.map(c => (
             <button
-              key={apt.id}
-              className={`${styles.card} ${selectedAppointment?.id === apt.id ? styles.cardActive : ''}`}
-              onClick={() => handleSelectAppointment(apt)}
+              key={c.id}
+              type="button"
+              className={`${styles.card} ${styles.cardHistory} ${selectedId === c.id && !isCreating ? styles.cardActive : ''}`}
+              onClick={() => handleSelectHistoryConsultation(c)}
             >
               <div className={styles.cardTop}>
-                <span className={styles.cardPatient}>{apt.patientName}</span>
-                <span className={styles.cardTime}>{formatTimeRange(apt.startTime, apt.endTime)}</span>
+                <span className={styles.cardPatient}>{c.patientName}</span>
+                <span className={styles.cardTime}>{formatDate(c.date)}</span>
               </div>
-              <div className={styles.cardMiddle}>
-                {apt.doctorName}{apt.specialtyName ? ` · ${apt.specialtyName}` : ''}
-              </div>
+              {!isAdmin && (
+                <div className={styles.cardMiddle}>{parseDiagnosticLabel(c.diagnostic)}</div>
+              )}
+              {isAdmin && (
+                <div className={styles.cardMiddle}>{c.doctorName}</div>
+              )}
               <div className={styles.cardBottom}>
-                <AppBadge variant={getAppointmentStatusVariant(apt.statusCode)} withDot>{apt.statusName}</AppBadge>
+                <AppBadge variant={getConsultationStatusVariant(c.statusCode)} withDot>{c.statusName}</AppBadge>
               </div>
             </button>
           ))}
-
-          {!isAppointmentsError && todayAppointments.length === 0 && (
-            <div className={styles.listEmpty}>Nicio programare pentru azi.</div>
-          )}
         </div>
       </aside>
 
@@ -1375,6 +1511,14 @@ export const ConsultationsListPage = () => {
                           Salvează Ciornă
                         </AppButton>
                         <AppButton
+                          variant="outline-secondary"
+                          size="sm"
+                          onClick={() => setShowScrisoareMedicala(true)}
+                          leftIcon={<IconLetter />}
+                        >
+                          Scrisoare Medicală
+                        </AppButton>
+                        <AppButton
                           variant="primary"
                           size="sm"
                           onClick={() => setShowFinalizeConfirm(true)}
@@ -1390,6 +1534,14 @@ export const ConsultationsListPage = () => {
                     <>
                       <div className={styles.footerInfo} />
                       <div className={styles.footerActions}>
+                        <AppButton
+                          variant="outline-secondary"
+                          size="sm"
+                          onClick={() => setShowScrisoareMedicala(true)}
+                          leftIcon={<IconLetter />}
+                        >
+                          Scrisoare Medicală
+                        </AppButton>
                         <AppButton variant="outline-primary" size="sm" leftIcon={<IconPrint />}>
                           Tipărește
                         </AppButton>
@@ -1422,6 +1574,14 @@ export const ConsultationsListPage = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Scrisoare Medicală modal */}
+      {showScrisoareMedicala && detail && (
+        <ScrisoareMedicalaModal
+          detail={detail}
+          onClose={() => setShowScrisoareMedicala(false)}
+        />
       )}
 
       {/* Delete confirmation modal */}

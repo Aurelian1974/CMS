@@ -32,8 +32,11 @@ public sealed class ConsultationDetailDto
     // Tab 2: Examen Clinic (sub-obiect, null dacă nu există secțiune)
     public ConsultationExamDto? Exam { get; init; }
 
-    // Tab 3: Investigații
+    // Tab 3: Investigații (câmp legacy — null în date noi)
     public string? Investigatii { get; init; }
+
+    // Tab 3: Investigații structurate (din ConsultationInvestigations)
+    public IReadOnlyList<ConsultationInvestigationDto>? Investigations { get; init; }
 
     // Tab 4: Analize Medicale
     public string? AnalizeMedicale { get; init; }

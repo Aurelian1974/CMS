@@ -1,0 +1,274 @@
+@import '@/styles/variables';
+
+// ── Overlay ───────────────────────────────────────────────────────────────────
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1070;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+// ── Dialog ────────────────────────────────────────────────────────────────────
+.dialog {
+  background: $card-bg;
+  border-radius: $border-radius-lg;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: min(1150px, 95vw);
+  height: min(92vh, 900px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+.dialogHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid $gray-200;
+  background: $gray-50;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.dialogTitleGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.dialogTitle {
+  font-weight: 700;
+  font-size: 1rem;
+  color: $gray-700;
+}
+
+.dialogSubtitle {
+  font-size: 0.82rem;
+  color: $primary-dark;
+  font-weight: 600;
+}
+
+.dialogControls {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-wrap: wrap;
+}
+
+// ── View toggle tabs ──────────────────────────────────────────────────────────
+.viewToggleGroup {
+  display: flex;
+  border: 1px solid $gray-300;
+  border-radius: $border-radius;
+  overflow: hidden;
+}
+
+.viewTab {
+  padding: 0.35rem 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: $gray-600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: $gray-100;
+    color: $gray-700;
+  }
+
+  & + & {
+    border-left: 1px solid $gray-300;
+  }
+}
+
+.viewTabActive {
+  background: $primary;
+  color: #fff;
+
+  &:hover {
+    background: $primary-dark;
+    color: #fff;
+  }
+}
+
+// ── Close button ──────────────────────────────────────────────────────────────
+.closeBtn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: $gray-500;
+  font-size: 1.1rem;
+  cursor: pointer;
+  border-radius: $border-radius-sm;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+
+  &:hover {
+    background: $gray-200;
+    color: $gray-700;
+  }
+}
+
+// ── Body ──────────────────────────────────────────────────────────────────────
+.dialogBody {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+// ── Form body ─────────────────────────────────────────────────────────────────
+.formBody {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+// ── Form section ──────────────────────────────────────────────────────────────
+.section {
+  background: $gray-50;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius;
+  padding: 1rem 1.125rem;
+}
+
+.sectionTitle {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: $primary-dark;
+  margin-bottom: 0.875rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid $gray-200;
+}
+
+// ── Grid ─────────────────────────────────────────────────────────────────────
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1.25rem;
+
+  @media (max-width: 700px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// ── Field ─────────────────────────────────────────────────────────────────────
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 0.625rem;
+}
+
+.fieldLabel {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: $gray-600;
+}
+
+.fieldHint {
+  font-size: 0.74rem;
+  color: $gray-400;
+  font-style: italic;
+}
+
+.fieldInput {
+  width: 100%;
+  padding: 0.375rem 0.625rem;
+  font-size: 0.875rem;
+  border: 1px solid $gray-300;
+  border-radius: $border-radius-sm;
+  color: $gray-700;
+  background: $card-bg;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.15);
+  }
+
+  &::placeholder {
+    color: $gray-400;
+    font-size: 0.82rem;
+  }
+}
+
+.fieldTextarea {
+  @extend .fieldInput;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+  min-height: 64px;
+}
+
+// ── Radio / checkbox groups ───────────────────────────────────────────────────
+.radioRow {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.25rem;
+}
+
+.radioCol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+  color: $gray-600;
+  cursor: pointer;
+  line-height: 1.4;
+
+  input[type='radio'] {
+    margin-top: 2px;
+    flex-shrink: 0;
+    accent-color: $primary;
+  }
+}
+
+// ── Preview wrapper ───────────────────────────────────────────────────────────
+.previewWrapper {
+  flex: 1;
+  background: $gray-100;
+  padding: 2rem;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+}
+
+// ── Letter page (A4-like white paper) ────────────────────────────────────────
+.letterPage {
+  background: #fff;
+  width: 100%;
+  max-width: 780px;
+  min-height: 1100px;
+  padding: 28mm 22mm 20mm;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.15);
+  border-radius: 2px;
+  box-sizing: border-box;
+
+  @media (max-width: 680px) {
+    padding: 16px;
+  }
+}

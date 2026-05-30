@@ -73,6 +73,7 @@ public sealed class ConsultationRepository(DapperContext context) : IConsultatio
 
         var anamnesis = await multi.ReadFirstOrDefaultAsync<ConsultationAnamnesisDto>();
         var exam = await multi.ReadFirstOrDefaultAsync<ConsultationExamDto>();
+        var investigations = (await multi.ReadAsync<ConsultationInvestigationDto>()).ToList();
 
         return new ConsultationDetailDto
         {
@@ -94,6 +95,7 @@ public sealed class ConsultationRepository(DapperContext context) : IConsultatio
             Anamnesis = anamnesis,
             Exam = exam,
             Investigatii = header.Investigatii,
+            Investigations = investigations,
             AnalizeMedicale = header.AnalizeMedicale,
             Diagnostic = header.Diagnostic,
             DiagnosticCodes = header.DiagnosticCodes,

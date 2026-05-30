@@ -7,16 +7,16 @@ namespace ValyanClinic.Application.Features.Clinics.DTOs;
 /// </summary>
 public sealed class ClinicDto
 {
-    public Guid Id { get; init; }
-    public string Name { get; init; } = string.Empty;
-    public string FiscalCode { get; init; } = string.Empty;
-    public string? TradeRegisterNumber { get; init; }
-    public string? LegalRepresentative { get; init; }
-    public string? ContractCNAS { get; init; }
-    public string? LogoPath { get; init; }
-    public bool IsActive { get; init; }
-    public DateTime CreatedAt { get; init; }
-    public DateTime? UpdatedAt { get; init; }
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string FiscalCode { get; set; } = string.Empty;
+    public string? TradeRegisterNumber { get; set; }
+    public string? LegalRepresentative { get; set; }
+    public string? ContractCNAS { get; set; }
+    public string? LogoPath { get; set; }
+    public bool IsActive { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 
     /// <summary>Coduri CAEN — setat după result set 2.</summary>
     public IReadOnlyList<ClinicCaenCodeDto> CaenCodes { get; set; } = [];

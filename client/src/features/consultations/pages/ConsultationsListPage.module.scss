@@ -185,17 +185,99 @@
 
 // ── Card list ─────────────────────────────────────────────────────────────────
 .cardList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+// ── Sidebar scroll area (programări + consultații anterioare) ─────────────────
+.sidebarScroll {
   flex: 1;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 2px;
   margin: 0 -4px;
-  padding: 0 4px;
+  padding: 0 4px 8px;
 
   &::-webkit-scrollbar { width: 5px; }
   &::-webkit-scrollbar-track { background: transparent; }
   &::-webkit-scrollbar-thumb { background: $gray-200; border-radius: 10px; }
+}
+
+// ── History separator ─────────────────────────────────────────────────────────
+.historySeparator {
+  height: 1px;
+  background: $gray-200;
+  margin: 10px 0 2px;
+}
+
+// ── History doctor group (admin, grouped view) ────────────────────────────────
+.historyDoctorGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.historyDoctorHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 8px;
+  background: $body-bg;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+
+  &:hover { background: rgba($primary, 0.06); }
+}
+
+.historyDoctorName {
+  flex: 1;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: $primary-dark;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.historyDoctorCount {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: $primary;
+  background: rgba($primary, 0.1);
+  border-radius: 10px;
+  padding: 1px 6px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.historyChevron {
+  font-size: 0.72rem;
+  color: $gray-400;
+}
+
+.historyDoctorItems {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding-left: 8px;
+  border-left: 2px solid rgba($primary, 0.15);
+  margin-left: 8px;
+}
+
+// ── History consultation card (slight variation of .card) ─────────────────────
+.cardHistory {
+  background: rgba($gray-100, 0.5);
+
+  &:hover {
+    background: rgba($primary, 0.05);
+    border-color: rgba($primary, 0.15);
+  }
 }
 
 .dateGroup {

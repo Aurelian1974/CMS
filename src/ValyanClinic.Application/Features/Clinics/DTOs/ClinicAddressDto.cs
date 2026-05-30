@@ -2,15 +2,15 @@ namespace ValyanClinic.Application.Features.Clinics.DTOs;
 
 public sealed class ClinicAddressDto
 {
-    public Guid Id { get; init; }
-    public Guid ClinicId { get; init; }
-    public string AddressType { get; init; } = string.Empty;
-    public string Street { get; init; } = string.Empty;
-    public string City { get; init; } = string.Empty;
-    public string County { get; init; } = string.Empty;
-    public string? PostalCode { get; init; }
-    public string Country { get; init; } = "România";
-    public bool IsMain { get; init; }
-    public DateTime CreatedAt { get; init; }
-    public DateTime? UpdatedAt { get; init; }
+    public Guid Id { get; set; }
+    public Guid ClinicId { get; set; }
+    public string AddressType { get; set; } = string.Empty;
+    public string Street { get; set; } = string.Empty;
+    public string City { get; set; } = string.Empty;
+    public string County { get; set; } = string.Empty;
+    public string? PostalCode { get; set; }
+    public string Country { get; set; } = "România";
+    public bool IsMain { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }

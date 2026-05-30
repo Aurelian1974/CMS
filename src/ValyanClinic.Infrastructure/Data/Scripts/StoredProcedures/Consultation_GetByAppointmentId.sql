@@ -5,7 +5,7 @@ GO
 -- ============================================================================
 -- SP: Consultation_GetByAppointmentId
 -- Descriere: Returnează o consultație (dacă există) după AppointmentId și ClinicId
--- Result sets: 1) Header, 2) Anamneză (0..1), 3) Examen Clinic (0..1)
+-- Result sets: 1) Header, 2) Anamneză (0..1), 3) Examen Clinic (0..1), 4) Investigații (0..N)
 -- ============================================================================
 CREATE OR ALTER PROCEDURE dbo.Consultation_GetByAppointmentId
     @AppointmentId UNIQUEIDENTIFIER,
@@ -91,6 +91,19 @@ BEGIN
             CAST(NULL AS NVARCHAR(100)) AS GanglioniLimfatici,
             CAST(NULL AS NVARCHAR(MAX)) AS ExamenClinic,
             CAST(NULL AS NVARCHAR(MAX)) AS AlteObservatiiClinice;
+
+        SELECT TOP 0
+            CAST(NULL AS UNIQUEIDENTIFIER) AS Id,
+            CAST(NULL AS NVARCHAR(100))    AS InvestigationType,
+            CAST(NULL AS NVARCHAR(200))    AS InvestigationTypeDisplayName,
+            CAST(NULL AS NVARCHAR(50))     AS ParentTab,
+            CAST(NULL AS NVARCHAR(50))     AS Category,
+            CAST(NULL AS DATETIME2)        AS InvestigationDate,
+            CAST(NULL AS NVARCHAR(MAX))    AS Narrative,
+            CAST(NULL AS NVARCHAR(MAX))    AS StructuredData,
+            CAST(NULL AS BIT)              AS IsExternal,
+            CAST(NULL AS NVARCHAR(200))    AS ExternalSource,
+            CAST(NULL AS TINYINT)          AS Status;
         RETURN;
     END;
 
@@ -108,5 +121,23 @@ BEGIN
         e.Temperatura, e.SpO2, e.Edeme, e.Glicemie, e.GanglioniLimfatici,
         e.ExamenClinic, e.AlteObservatiiClinice
     FROM dbo.ConsultationExam e WHERE e.ConsultationId = @Id;
+
+    -- 4) Investigații structurate (per consultație)
+    SELECT
+        i.Id,
+        i.InvestigationType,
+        td.DisplayName   AS InvestigationTypeDisplayName,
+        td.ParentTab,
+        td.Category,
+        i.InvestigationDate,
+        i.Narrative,
+        i.StructuredData,
+        i.IsExternal,
+        i.ExternalSource,
+        i.Status
+    FROM dbo.ConsultationInvestigations i
+    INNER JOIN dbo.InvestigationTypeDefinitions td ON td.TypeCode = i.InvestigationType
+    WHERE i.ConsultationId = @Id AND i.IsDeleted = 0
+    ORDER BY i.InvestigationDate DESC, i.CreatedAt DESC;
 END;
 GO

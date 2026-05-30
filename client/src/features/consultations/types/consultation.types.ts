@@ -1,5 +1,19 @@
 /// Tipuri pentru feature-ul Consultații
 
+export interface ConsultationInvestigationDto {
+  id: string
+  investigationType: string
+  investigationTypeDisplayName: string
+  parentTab: string
+  category: string
+  investigationDate: string
+  narrative: string | null
+  structuredData: string | null
+  isExternal: boolean
+  externalSource: string | null
+  status: number
+}
+
 export interface ConsultationListDto {
   id: string
   clinicId: string
@@ -54,6 +68,8 @@ export interface ConsultationDetailDto extends ConsultationListDto {
   alteObservatiiClinice: string | null
   // Tab 3: Investigații
   investigatii: string | null
+  // Tab 3: Investigații structurate (din ConsultationInvestigations)
+  investigations: ConsultationInvestigationDto[] | null
   // Tab 4: Analize Medicale
   analizeMedicale: string | null
   // Tab 5: Diagnostic & Tratament
