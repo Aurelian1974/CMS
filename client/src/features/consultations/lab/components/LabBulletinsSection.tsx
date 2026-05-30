@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useFeedback } from '@/hooks/useFeedback'
 import { Save, History as HistoryIcon, GitCompare, X } from 'lucide-react'
 import { AppButton } from '@/components/ui/AppButton'
 import {
@@ -46,6 +47,7 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
   const updateMut = useUpdateInvestigation(consultationId)
   const deleteMut = useDeleteInvestigation(consultationId)
   const parseMut = useParseLabPdf()
+  const { errorMsg, showError, clearMessages } = useFeedback()
 
   // Rezolvare nume pacient si medic din lookup-uri (staleTime=Infinity, date deja incarcate)
   const { data: patientLookupResp } = usePatientLookup()
@@ -141,42 +143,43 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
 
   const handleSave = async () => {
     if (!draft) return
-    if (draft.results.length === 0) {
-      alert('Adaugă cel puțin un rezultat înainte de salvare.')
-      return
-    }
+    clearMessages()
     const structuredData = JSON.stringify(draft)
-    if (editingId) {
-      await updateMut.mutateAsync({
-        id: editingId,
-        investigationType: LAB_TYPE,
-        investigationDate: draft.collectionDate ?? todayISO(),
-        structuredData,
-        narrative: null,
-        isExternal: !!draft.laboratory,
-        externalSource: draft.laboratory ?? null,
-        status: 2 as const,
-        attachedDocumentId: null,
-        hasStructuredData: true,
-      })
-      setEditingId(null)
-    } else {
-      await createMut.mutateAsync({
-        consultationId,
-        patientId,
-        doctorId,
-        investigationType: LAB_TYPE,
-        investigationDate: draft.collectionDate ?? todayISO(),
-        structuredData,
-        narrative: null,
-        isExternal: !!draft.laboratory,
-        externalSource: draft.laboratory ?? null,
-        status: 2 as const,
-        attachedDocumentId: null,
-        hasStructuredData: true,
-      })
+    try {
+      if (editingId) {
+        await updateMut.mutateAsync({
+          id: editingId,
+          investigationType: LAB_TYPE,
+          investigationDate: draft.collectionDate ?? todayISO(),
+          structuredData,
+          narrative: null,
+          isExternal: !!draft.laboratory,
+          externalSource: draft.laboratory ?? null,
+          status: 2 as const,
+          attachedDocumentId: null,
+          hasStructuredData: true,
+        })
+        setEditingId(null)
+      } else {
+        await createMut.mutateAsync({
+          consultationId,
+          patientId,
+          doctorId,
+          investigationType: LAB_TYPE,
+          investigationDate: draft.collectionDate ?? todayISO(),
+          structuredData,
+          narrative: null,
+          isExternal: !!draft.laboratory,
+          externalSource: draft.laboratory ?? null,
+          status: 2 as const,
+          attachedDocumentId: null,
+          hasStructuredData: true,
+        })
+      }
+      setDraft(null)
+    } catch (err) {
+      showError(err)
     }
-    setDraft(null)
   }
 
   const handleDeleteSaved = async (id: string) => {
@@ -234,11 +237,26 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
             readOnly={!isEditable}
           />
           {isEditable && (
-            <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              <AppButton variant="ghost" size="sm" onClick={() => { setDraft(null); setEditingId(null) }}>Anulează</AppButton>
-              <AppButton variant="primary" size="sm" leftIcon={<Save size={14} />} onClick={handleSave} isLoading={editingId ? updateMut.isPending : createMut.isPending}>
-                {editingId ? 'Actualizează buletin' : 'Salvează buletin'}
-              </AppButton>
+            <div style={{ marginTop: '0.75rem' }}>
+              {errorMsg && (
+                <div className="alert alert-danger py-2 mb-2" role="alert" style={{ fontSize: '0.85rem' }}>
+                  {errorMsg}
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <AppButton variant="ghost" size="sm" onClick={() => { setDraft(null); setEditingId(null) }}>Anulează</AppButton>
+                <AppButton
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<Save size={14} />}
+                  onClick={handleSave}
+                  isLoading={editingId ? updateMut.isPending : createMut.isPending}
+                  disabled={draft.results.length === 0}
+                  title={draft.results.length === 0 ? 'Adaugă cel puțin un rezultat înainte de salvare' : undefined}
+                >
+                  {editingId ? 'Actualizează buletin' : 'Salvează buletin'}
+                </AppButton>
+              </div>
             </div>
           )}
         </div>

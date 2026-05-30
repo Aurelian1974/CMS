@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import { Search, Trash2, Plus, X } from 'lucide-react'
 import type { LabResultRowDto } from '../types/lab.types'
 import { AnalysisPicker } from './AnalysisPicker'
@@ -16,18 +16,21 @@ interface LabTestNameCellProps {
   value: string
   onChange: (name: string) => void
   onPickUnit: (unit: string | null) => void
+  /** Callback combinat pentru selecție din picker — face un singur updateRow cu name+unit */
+  onSelectAnalysis: (name: string, unit: string | null) => void
   disabled: boolean
 }
 
-const LabTestNameCell = ({ value, onChange, onPickUnit, disabled }: LabTestNameCellProps) => {
+const LabTestNameCell = ({ value, onChange, onPickUnit, onSelectAnalysis, disabled }: LabTestNameCellProps) => {
   const [pickerOpen, setPickerOpen] = useState(false)
 
   const handleSelect = useCallback(
     (item: { name: string; unit: string | null }) => {
-      onChange(item.name)
-      onPickUnit(item.unit ?? null)
+      // Un singur update combinat evită problema de React batching
+      // (două setState separate cu valori ar duce la suprascrierea primului)
+      onSelectAnalysis(item.name, item.unit ?? null)
     },
-    [onChange, onPickUnit],
+    [onSelectAnalysis],
   )
 
   const handleClear = useCallback(
@@ -215,8 +218,8 @@ export const LabParseResultTable = ({ rows, onChange, readOnly }: Props) => {
         </thead>
         <tbody>
           {grouped.map(([section, items]) => (
-            <>
-              <tr key={`h-${section}`} className={styles.sectionRow}>
+            <React.Fragment key={section}>
+              <tr className={styles.sectionRow}>
                 <td colSpan={readOnly ? 6 : 7}>
                   {section}
                   {!readOnly && (
@@ -244,6 +247,7 @@ export const LabParseResultTable = ({ rows, onChange, readOnly }: Props) => {
                         value={row.testName}
                         onChange={(name) => updateRow(idx, { testName: name })}
                         onPickUnit={(unit) => updateRow(idx, { unit })}
+                        onSelectAnalysis={(name, unit) => updateRow(idx, { testName: name, unit })}
                         disabled={false}
                       />
                     )}
@@ -313,7 +317,7 @@ export const LabParseResultTable = ({ rows, onChange, readOnly }: Props) => {
                   )}
                 </tr>
               ))}
-            </>
+            </React.Fragment>
           ))}
         </tbody>
       </table>
