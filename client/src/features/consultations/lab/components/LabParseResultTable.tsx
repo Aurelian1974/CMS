@@ -224,24 +224,6 @@ export const LabParseResultTable = ({ rows, onChange, readOnly }: Props) => {
         <tbody>
           {grouped.map(([section, items]) => (
             <React.Fragment key={section}>
-              <tr className={styles.sectionRow}>
-                <td colSpan={readOnly ? 6 : 7}>
-                  {section}
-                  {!readOnly && (
-                    <button
-                      type="button"
-                      onClick={() => addRow(section)}
-                      style={{
-                        marginLeft: 8, background: 'transparent', border: 0,
-                        cursor: 'pointer', color: '#92400e',
-                      }}
-                      title="Adaugă rând"
-                    >
-                      <Plus size={12} />
-                    </button>
-                  )}
-                </td>
-              </tr>
               {items.reduce<React.ReactNode[]>((acc, { row, idx }, i) => {
                 // Inserează header de categorie când categoria se schimbă (sau la primul rând cu categorie)
                 const prevCategory = i > 0 ? items[i - 1].row.category : undefined
