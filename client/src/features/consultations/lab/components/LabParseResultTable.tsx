@@ -95,34 +95,37 @@ const FLAG_OPTIONS: { value: FlagValue; label: string }[] = [
 ]
 
 const FlagRadio = ({ idx, flag, onChange }: FlagRadioProps) => (
-  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-    {FLAG_OPTIONS.map((opt) => (
-      <label
-        key={opt.value ?? 'null'}
-        style={{
-          display: 'flex', alignItems: 'center', gap: 3,
-          fontSize: '0.73rem', cursor: 'pointer', whiteSpace: 'nowrap',
-        }}
-      >
-        <input
-          type="radio"
-          name={`flag-${idx}`}
-          checked={flag === opt.value}
-          onChange={() => onChange(opt.value)}
-          style={{ cursor: 'pointer' }}
-        />
-        <span
+  <div style={{ display: 'flex', flexDirection: 'row', gap: 3, flexWrap: 'nowrap' }}>
+    {FLAG_OPTIONS.map((opt) => {
+      const isSelected = flag === opt.value
+      const color =
+        opt.value === 'HIGH' ? { bg: '#fef2f2', border: '#fca5a5', text: '#b91c1c', activeBg: '#fee2e2', activeBorder: '#ef4444' }
+      : opt.value === 'LOW'  ? { bg: '#eff6ff', border: '#93c5fd', text: '#1d4ed8', activeBg: '#dbeafe', activeBorder: '#3b82f6' }
+      :                        { bg: '#f8fafc', border: '#cbd5e1', text: '#64748b', activeBg: '#e2e8f0', activeBorder: '#94a3b8' }
+      return (
+        <button
+          key={opt.value ?? 'null'}
+          type="button"
+          title={opt.label}
+          onClick={() => onChange(isSelected && opt.value !== null ? null : opt.value)}
           style={{
-            color: opt.value === 'HIGH' ? '#b91c1c'
-                 : opt.value === 'LOW'  ? '#1d4ed8'
-                 : '#64748b',
-            fontWeight: opt.value !== null ? 500 : undefined,
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            padding: '2px 6px',
+            fontSize: '0.72rem', fontWeight: isSelected ? 600 : 400,
+            whiteSpace: 'nowrap', cursor: 'pointer',
+            borderRadius: 4,
+            border: `1px solid ${isSelected ? color.activeBorder : color.border}`,
+            background: isSelected ? color.activeBg : color.bg,
+            color: isSelected ? color.text : '#94a3b8',
+            transition: 'all 0.15s ease',
+            outline: 'none',
+            boxShadow: isSelected ? `0 0 0 2px ${color.border}` : 'none',
           }}
         >
           {opt.label}
-        </span>
-      </label>
-    ))}
+        </button>
+      )
+    })}
   </div>
 )
 
