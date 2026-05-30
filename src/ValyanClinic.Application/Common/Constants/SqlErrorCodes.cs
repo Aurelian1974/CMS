@@ -26,6 +26,9 @@ public static class SqlErrorCodes
     public const int AnalysisNotFound              = 50024;
     public const int RecommendedAnalysisNotFound  = 50025;
 
+    // ====== Buletine analize (AnalysesResults) ======
+    public const int AnalysesResultNotFound = 50401;
+
     // ====== Facturi ======
     public const int InvoiceAlreadyPaid = 50030;
     public const int InvoiceNotFound    = 50031;

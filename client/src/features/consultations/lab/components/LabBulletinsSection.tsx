@@ -3,19 +3,19 @@ import { useFeedback } from '@/hooks/useFeedback'
 import { Save, History as HistoryIcon, GitCompare, X } from 'lucide-react'
 import { AppButton } from '@/components/ui/AppButton'
 import {
-  useInvestigationsByConsultation,
-  useCreateInvestigation,
-  useUpdateInvestigation,
-  useDeleteInvestigation,
-} from '@/features/consultations/investigations/hooks/useInvestigations'
-import { investigationsApi } from '@/api/endpoints/investigations.api'
-import { useQuery } from '@tanstack/react-query'
+  useAnalysesResultsByConsultation,
+  useAnalysesResultDetail,
+  useCreateAnalysesResult,
+  useUpdateAnalysesResult,
+  useDeleteAnalysesResult,
+} from '../hooks/useAnalysesResults'
 import { useParseLabPdf } from '../hooks/useLab'
 import { LabUploadButton } from './LabUploadButton'
 import { LabParseResultTable } from './LabParseResultTable'
 import { LabBulletinHeader } from './LabBulletinHeader'
 import { LabComparisonView } from './LabComparisonView'
 import type { LabBulletinPayload, LabResultRowDto } from '../types/lab.types'
+import type { AnalysesResultDetailDto } from '../types/analysesResults.types'
 import styles from '../AnalizeMedicaleStep.module.scss'
 import { usePatientLookup } from '@/features/patients/hooks/usePatients'
 import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
@@ -26,8 +26,6 @@ interface Props {
   doctorId: string
   isEditable: boolean
 }
-
-const LAB_TYPE = 'LabResults'
 
 const todayISO = () => new Date().toISOString().substring(0, 10)
 
@@ -42,10 +40,10 @@ const emptyBulletin = (): LabBulletinPayload => ({
 })
 
 export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEditable }: Props) => {
-  const { data: investigations = [], isLoading } = useInvestigationsByConsultation(consultationId)
-  const createMut = useCreateInvestigation(consultationId)
-  const updateMut = useUpdateInvestigation(consultationId)
-  const deleteMut = useDeleteInvestigation(consultationId)
+  const { data: savedBulletins = [], isLoading } = useAnalysesResultsByConsultation(consultationId)
+  const createMut = useCreateAnalysesResult(consultationId)
+  const updateMut = useUpdateAnalysesResult(consultationId)
+  const deleteMut = useDeleteAnalysesResult(consultationId)
   const parseMut = useParseLabPdf()
   const { errorMsg, showError, clearMessages } = useFeedback()
 
@@ -61,12 +59,6 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
     [doctorLookupResp, doctorId],
   )
 
-  // Buletinele salvate (toate cu type=LabResults)
-  const savedBulletins = useMemo(
-    () => investigations.filter((i) => i.investigationType === LAB_TYPE),
-    [investigations],
-  )
-
   // Buletin în lucru (din parsare PDF, adăugare manuală sau editare buletin existent)
   const [draft, setDraft] = useState<LabBulletinPayload | null>(null)
   // ID-ul buletinului existent care se editează (null = creare nouă)
@@ -78,33 +70,30 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
   const [showHistory, setShowHistory] = useState(true)
 
   // Detail loader pentru bulletin selectat / comparație
-  const { data: selectedDetail } = useQuery({
-    queryKey: ['investigation-detail', selectedHistoryId],
-    queryFn: () => investigationsApi.getById(selectedHistoryId!),
-    enabled: !!selectedHistoryId,
-  })
+  const { data: selectedDetail } = useAnalysesResultDetail(selectedHistoryId)
+  const { data: compareA } = useAnalysesResultDetail(compareIds[0] ?? null)
+  const { data: compareB } = useAnalysesResultDetail(compareIds[1] ?? null)
 
-  const { data: compareA } = useQuery({
-    queryKey: ['investigation-detail', compareIds[0]],
-    queryFn: () => investigationsApi.getById(compareIds[0]!),
-    enabled: compareIds.length === 2,
+  const draftFromDetail = (detail: AnalysesResultDetailDto): LabBulletinPayload => ({
+    laboratory: detail.laboratory,
+    bulletinNumber: detail.bulletinNumber,
+    collectionDate: detail.collectionDate,
+    resultDate: detail.resultDate !== detail.collectionDate ? detail.resultDate : null,
+    patientName: detail.patientName,
+    doctor: detail.doctorName,
+    results: detail.details.map((d) => ({
+      section: d.section,
+      testName: d.testName,
+      value: d.value,
+      unit: d.unit,
+      referenceRange: d.referenceRange,
+      refMin: d.refMin,
+      refMax: d.refMax,
+      flag: d.flag,
+      method: d.method,
+      notes: d.notes,
+    })),
   })
-
-  const { data: compareB } = useQuery({
-    queryKey: ['investigation-detail', compareIds[1]],
-    queryFn: () => investigationsApi.getById(compareIds[1]!),
-    enabled: compareIds.length === 2,
-  })
-
-  const parseDraftFromInvestigation = (sd: string | null): LabBulletinPayload => {
-    if (!sd) return emptyBulletin()
-    try {
-      const parsed = JSON.parse(sd) as Partial<LabBulletinPayload>
-      return { ...emptyBulletin(), ...parsed, results: parsed.results ?? [] }
-    } catch {
-      return emptyBulletin()
-    }
-  }
 
   const handleParse = async (file: File) => {
     try {
@@ -135,8 +124,7 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
 
   const handleEditSaved = () => {
     if (!selectedDetail) return
-    const parsed = parseDraftFromInvestigation(selectedDetail.structuredData)
-    setDraft(parsed)
+    setDraft(draftFromDetail(selectedDetail))
     setEditingId(selectedDetail.id)
     setSelectedHistoryId(null)
   }
@@ -144,36 +132,42 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
   const handleSave = async () => {
     if (!draft) return
     clearMessages()
-    const structuredData = JSON.stringify(draft)
+    const details = draft.results.map((r) => ({
+      section: r.section ?? 'GENERAL',
+      testName: r.testName,
+      value: r.value,
+      unit: r.unit ?? null,
+      referenceRange: r.referenceRange ?? null,
+      refMin: r.refMin ?? null,
+      refMax: r.refMax ?? null,
+      flag: r.flag ?? null,
+      method: r.method ?? null,
+      notes: r.notes ?? null,
+    }))
     try {
       if (editingId) {
         await updateMut.mutateAsync({
           id: editingId,
-          investigationType: LAB_TYPE,
-          investigationDate: draft.collectionDate ?? todayISO(),
-          structuredData,
-          narrative: null,
-          isExternal: !!draft.laboratory,
-          externalSource: draft.laboratory ?? null,
-          status: 2 as const,
-          attachedDocumentId: null,
-          hasStructuredData: true,
+          payload: {
+            laboratory: draft.laboratory,
+            bulletinNumber: draft.bulletinNumber,
+            collectionDate: draft.collectionDate ?? todayISO(),
+            resultDate: draft.resultDate ?? null,
+            doctorName: draft.doctor,
+            details,
+          },
         })
         setEditingId(null)
       } else {
         await createMut.mutateAsync({
-          consultationId,
           patientId,
-          doctorId,
-          investigationType: LAB_TYPE,
-          investigationDate: draft.collectionDate ?? todayISO(),
-          structuredData,
-          narrative: null,
-          isExternal: !!draft.laboratory,
-          externalSource: draft.laboratory ?? null,
-          status: 2 as const,
-          attachedDocumentId: null,
-          hasStructuredData: true,
+          consultationId,
+          laboratory: draft.laboratory,
+          bulletinNumber: draft.bulletinNumber,
+          collectionDate: draft.collectionDate ?? todayISO(),
+          resultDate: draft.resultDate ?? null,
+          doctorName: draft.doctor,
+          details,
         })
       }
       setDraft(null)
@@ -298,8 +292,8 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
                     onClick={() => setSelectedHistoryId(isSelected ? null : inv.id)}
                   >
                     <div>
-                      <strong>{new Date(inv.investigationDate).toLocaleDateString('ro-RO')}</strong>
-                      {inv.externalSource && <span style={{ marginLeft: 8, color: '#64748b' }}>· {inv.externalSource}</span>}
+                      <strong>{new Date(inv.collectionDate).toLocaleDateString('ro-RO')}</strong>
+                      {inv.laboratory && <span style={{ marginLeft: 8, color: '#64748b' }}>· {inv.laboratory}</span>}
                       <span style={{ marginLeft: 8, fontSize: '0.78rem', color: '#64748b' }}>· {inv.doctorName}</span>
                     </div>
                     <div style={{ display: 'flex', gap: 6 }} onClick={(e) => e.stopPropagation()}>
@@ -337,7 +331,7 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
               <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: '#f8fafc', border: '1px solid #cbd5e1', borderRadius: 6 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                   <strong style={{ fontSize: '0.9rem' }}>
-                    Detalii buletin · {new Date(selectedDetail.investigationDate).toLocaleDateString('ro-RO')}
+                    Detalii buletin · {new Date(selectedDetail.collectionDate).toLocaleDateString('ro-RO')}
                   </strong>
                   <div style={{ display: 'flex', gap: 8 }}>
                     {isEditable && (
@@ -351,7 +345,7 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
                   </div>
                 </div>
                 {(() => {
-                  const data = parseDraftFromInvestigation(selectedDetail.structuredData)
+                  const data = draftFromDetail(selectedDetail)
                   return (
                     <>
                       <LabBulletinHeader data={data} onChange={() => {}} readOnly />
@@ -366,12 +360,12 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
             {isComparing && (
               <LabComparisonView
                 bulletinA={{
-                  date: compareA!.investigationDate,
-                  data: parseDraftFromInvestigation(compareA!.structuredData),
+                  date: compareA!.collectionDate,
+                  data: draftFromDetail(compareA!),
                 }}
                 bulletinB={{
-                  date: compareB!.investigationDate,
-                  data: parseDraftFromInvestigation(compareB!.structuredData),
+                  date: compareB!.collectionDate,
+                  data: draftFromDetail(compareB!),
                 }}
               />
             )}

@@ -36,6 +36,11 @@ public static class ErrorMessages
         public const string AnalysisNotInDictionary = "Analiza nu există în dicționar.";
     }
 
+    public static class AnalysesResult
+    {
+        public const string NotFound = "Buletinul de analize nu a fost găsit.";
+    }
+
     public static class Prescription
     {
         public const string NotFound = "Rețeta nu a fost găsită.";

@@ -55,6 +55,7 @@ public static class DependencyInjection
         services.AddScoped<IInvestigationRepository, InvestigationRepository>();
         services.AddScoped<IRecommendedAnalysisRepository, RecommendedAnalysisRepository>();
         services.AddScoped<IAnalysisDictionaryRepository, AnalysisDictionaryRepository>();
+        services.AddScoped<IAnalysesResultRepository, AnalysesResultRepository>();
         services.AddScoped<IDocumentRepository, DocumentRepository>();
         services.AddScoped<INomenclatureLookupRepository, NomenclatureLookupRepository>();
         services.AddScoped<IGeographyRepository, GeographyRepository>();
