@@ -336,9 +336,21 @@ export const LabParseResultTable = ({ rows, onChange, readOnly }: Props) => {
           ))}
         </tbody>
       </table>
-      {/* ── Adaugă secțiune nouă ────────────────────────────────── */}
+      {/* ── Adaugă rând / secțiune nouă ────────────────────────────────── */}
       {!readOnly && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
+          <button
+            type="button"
+            onClick={() => addRow(rows.length > 0 ? (rows[rows.length - 1].section || 'GENERAL') : 'GENERAL')}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              padding: '0.25rem 0.6rem', background: '#eff6ff',
+              border: '1px solid #93c5fd', borderRadius: 4,
+              cursor: 'pointer', fontSize: '0.8rem', color: '#1d4ed8',
+            }}
+          >
+            <Plus size={13} /> Adaugă rând
+          </button>
           <input
             type="text"
             value={newSection}
