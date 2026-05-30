@@ -9,7 +9,7 @@ import type {
 
 export const analysesResultsApi = {
   getByConsultation: (consultationId: string): Promise<AnalysesResultListDto[]> =>
-    api.get(`/api/v1/AnalysesResults/by-consultation/${consultationId}`).then((r) => r.data.data),
+    api.get(`/api/v1/AnalysesResults/by-consultation/${consultationId}`).then((r) => r.data),
 
   getByPatient: (
     patientId: string,
@@ -20,17 +20,17 @@ export const analysesResultsApi = {
       .get(`/api/v1/AnalysesResults/by-patient/${patientId}`, {
         params: { dateFrom, dateTo },
       })
-      .then((r) => r.data.data),
+      .then((r) => r.data),
 
   getById: (id: string): Promise<AnalysesResultDetailDto> =>
-    api.get(`/api/v1/AnalysesResults/${id}`).then((r) => r.data.data),
+    api.get(`/api/v1/AnalysesResults/${id}`).then((r) => r.data),
 
   create: (payload: CreateAnalysesResultPayload): Promise<string> =>
-    api.post('/api/v1/AnalysesResults', payload).then((r) => r.data.data),
+    api.post('/api/v1/AnalysesResults', payload).then((r) => r.data),
 
   update: (id: string, payload: UpdateAnalysesResultPayload): Promise<boolean> =>
-    api.put(`/api/v1/AnalysesResults/${id}`, payload).then((r) => r.data.data),
+    api.put(`/api/v1/AnalysesResults/${id}`, payload).then((r) => r.data),
 
   delete: (id: string): Promise<boolean> =>
-    api.delete(`/api/v1/AnalysesResults/${id}`).then((r) => r.data.data),
+    api.delete(`/api/v1/AnalysesResults/${id}`).then((r) => r.data),
 }

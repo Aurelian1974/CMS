@@ -27,6 +27,10 @@ public static class DependencyInjection
         // ===== Dapper — DateTime marcat ca Local (ora României) =====
         SqlMapper.AddTypeHandler(new LocalDateTimeTypeHandler());
 
+        // ===== Dapper — DateOnly / DateOnly? (SQL DATE → DateOnly) =====
+        SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());
+        SqlMapper.AddTypeHandler(new NullableDateOnlyTypeHandler());
+
         // ===== Opțiuni strongly-typed =====
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.Configure<StorageOptions>(configuration.GetSection(StorageOptions.SectionName));
