@@ -66,6 +66,7 @@ export interface AnalysisDictionaryDto {
   category: string | null
   subcategory: string | null
   slug: string | null
+  unit: string | null
 }
 
 export interface CreateRecommendedAnalysisPayload {

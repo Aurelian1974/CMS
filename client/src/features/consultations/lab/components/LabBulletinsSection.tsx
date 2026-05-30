@@ -4,6 +4,7 @@ import { AppButton } from '@/components/ui/AppButton'
 import {
   useInvestigationsByConsultation,
   useCreateInvestigation,
+  useUpdateInvestigation,
   useDeleteInvestigation,
 } from '@/features/consultations/investigations/hooks/useInvestigations'
 import { investigationsApi } from '@/api/endpoints/investigations.api'
@@ -40,6 +41,7 @@ const emptyBulletin = (): LabBulletinPayload => ({
 export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEditable }: Props) => {
   const { data: investigations = [], isLoading } = useInvestigationsByConsultation(consultationId)
   const createMut = useCreateInvestigation(consultationId)
+  const updateMut = useUpdateInvestigation(consultationId)
   const deleteMut = useDeleteInvestigation(consultationId)
   const parseMut = useParseLabPdf()
 
@@ -49,8 +51,10 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
     [investigations],
   )
 
-  // Buletin în lucru (din parsare PDF sau adăugare manuală)
+  // Buletin în lucru (din parsare PDF, adăugare manuală sau editare buletin existent)
   const [draft, setDraft] = useState<LabBulletinPayload | null>(null)
+  // ID-ul buletinului existent care se editează (null = creare nouă)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   // Selecție pentru istoric & comparație
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null)
@@ -113,27 +117,51 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
     }
   }
 
+  const handleEditSaved = () => {
+    if (!selectedDetail) return
+    const parsed = parseDraftFromInvestigation(selectedDetail.structuredData)
+    setDraft(parsed)
+    setEditingId(selectedDetail.id)
+    setSelectedHistoryId(null)
+  }
+
   const handleSave = async () => {
     if (!draft) return
     if (draft.results.length === 0) {
       alert('Adaugă cel puțin un rezultat înainte de salvare.')
       return
     }
-    const payload = {
-      consultationId,
-      patientId,
-      doctorId,
-      investigationType: LAB_TYPE,
-      investigationDate: draft.collectionDate ?? todayISO(),
-      structuredData: JSON.stringify(draft),
-      narrative: null,
-      isExternal: !!draft.laboratory,
-      externalSource: draft.laboratory,
-      status: 2 as const,    // Completed
-      attachedDocumentId: null,
-      hasStructuredData: true,
+    const structuredData = JSON.stringify(draft)
+    if (editingId) {
+      await updateMut.mutateAsync({
+        id: editingId,
+        investigationType: LAB_TYPE,
+        investigationDate: draft.collectionDate ?? todayISO(),
+        structuredData,
+        narrative: null,
+        isExternal: !!draft.laboratory,
+        externalSource: draft.laboratory ?? null,
+        status: 2 as const,
+        attachedDocumentId: null,
+        hasStructuredData: true,
+      })
+      setEditingId(null)
+    } else {
+      await createMut.mutateAsync({
+        consultationId,
+        patientId,
+        doctorId,
+        investigationType: LAB_TYPE,
+        investigationDate: draft.collectionDate ?? todayISO(),
+        structuredData,
+        narrative: null,
+        isExternal: !!draft.laboratory,
+        externalSource: draft.laboratory ?? null,
+        status: 2 as const,
+        attachedDocumentId: null,
+        hasStructuredData: true,
+      })
     }
-    await createMut.mutateAsync(payload)
     setDraft(null)
   }
 
@@ -165,7 +193,7 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
           </AppButton>
         )}
         {draft && (
-          <AppButton size="sm" variant="ghost" leftIcon={<X size={14} />} onClick={() => setDraft(null)}>
+          <AppButton size="sm" variant="ghost" leftIcon={<X size={14} />} onClick={() => { setDraft(null); setEditingId(null) }}>
             Renunță la draft
           </AppButton>
         )}
@@ -175,7 +203,7 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
       {draft && (
         <div style={{ marginTop: '0.75rem', padding: '0.75rem', background: '#fff', border: '1px solid #2563eb', borderRadius: 6 }}>
           <div style={{ marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: '#1e40af' }}>
-            Buletin în lucru — verifică/editează apoi salvează
+            {editingId ? 'Editare buletin salvat — modifică datele, apoi actualizează' : 'Buletin în lucru — verifică/editează apoi salvează'}
           </div>
           <LabBulletinHeader
             data={draft}
@@ -189,9 +217,9 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
           />
           {isEditable && (
             <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-              <AppButton variant="ghost" size="sm" onClick={() => setDraft(null)}>Anulează</AppButton>
-              <AppButton variant="primary" size="sm" leftIcon={<Save size={14} />} onClick={handleSave} isLoading={createMut.isPending}>
-                Salvează buletin
+              <AppButton variant="ghost" size="sm" onClick={() => { setDraft(null); setEditingId(null) }}>Anulează</AppButton>
+              <AppButton variant="primary" size="sm" leftIcon={<Save size={14} />} onClick={handleSave} isLoading={editingId ? updateMut.isPending : createMut.isPending}>
+                {editingId ? 'Actualizează buletin' : 'Salvează buletin'}
               </AppButton>
             </div>
           )}
@@ -275,9 +303,16 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
                   <strong style={{ fontSize: '0.9rem' }}>
                     Detalii buletin · {new Date(selectedDetail.investigationDate).toLocaleDateString('ro-RO')}
                   </strong>
-                  <AppButton size="sm" variant="ghost" leftIcon={<X size={12} />} onClick={() => setSelectedHistoryId(null)}>
-                    Închide
-                  </AppButton>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {isEditable && (
+                      <AppButton size="sm" variant="secondary" onClick={handleEditSaved}>
+                        Editează
+                      </AppButton>
+                    )}
+                    <AppButton size="sm" variant="ghost" leftIcon={<X size={12} />} onClick={() => setSelectedHistoryId(null)}>
+                      Închide
+                    </AppButton>
+                  </div>
                 </div>
                 {(() => {
                   const data = parseDraftFromInvestigation(selectedDetail.structuredData)

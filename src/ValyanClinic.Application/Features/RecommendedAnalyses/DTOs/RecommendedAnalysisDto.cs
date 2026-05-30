@@ -28,4 +28,5 @@ public sealed record AnalysisDictionaryDto
     public string? Category { get; init; }
     public string? Subcategory { get; init; }
     public string? Slug { get; init; }
+    public string? Unit { get; init; }
 }

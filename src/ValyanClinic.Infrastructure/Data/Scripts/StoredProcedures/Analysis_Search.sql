@@ -12,7 +12,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
     SELECT TOP (@Top)
-        Id, Name, Category, Subcategory, Slug
+        Id, Name, Category, Subcategory, Slug, Unit
     FROM dbo.Analyses
     WHERE Name LIKE '%' + @Query + '%'
        OR Slug LIKE '%' + @Query + '%'
