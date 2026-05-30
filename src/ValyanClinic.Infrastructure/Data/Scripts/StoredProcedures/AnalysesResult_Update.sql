@@ -56,7 +56,8 @@ BEGIN
         BEGIN
             INSERT INTO dbo.AnalysesResultDetails
                 (ClinicId, ResultId, Section, TestName, Value, Unit,
-                 ReferenceRange, RefMin, RefMax, Flag, Method, Notes, SortOrder, CreatedBy)
+                 ReferenceRange, RefMin, RefMax, Flag, Method, Notes,
+                 Category, Subcategory, SortOrder, CreatedBy)
             SELECT
                 @ClinicId,
                 @Id,
@@ -70,6 +71,8 @@ BEGIN
                 j.Flag,
                 j.Method,
                 j.Notes,
+                j.Category,
+                j.Subcategory,
                 ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1,
                 @UpdatedBy
             FROM OPENJSON(@DetailsJson)
@@ -83,7 +86,9 @@ BEGIN
                 RefMax         DECIMAL(18,4)  '$.refMax',
                 Flag           NVARCHAR(20)   '$.flag',
                 Method         NVARCHAR(200)  '$.method',
-                Notes          NVARCHAR(500)  '$.notes'
+                Notes          NVARCHAR(500)  '$.notes',
+                Category       NVARCHAR(200)  '$.category',
+                Subcategory    NVARCHAR(200)  '$.subcategory'
             ) j
             WHERE LTRIM(RTRIM(j.TestName)) != N'';
         END;

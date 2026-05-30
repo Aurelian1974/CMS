@@ -29,4 +29,6 @@ public sealed record AnalysesResultDetailInput(
     decimal? RefMax,
     string? Flag,
     string? Method,
-    string? Notes);
+    string? Notes,
+    string? Category,
+    string? Subcategory);

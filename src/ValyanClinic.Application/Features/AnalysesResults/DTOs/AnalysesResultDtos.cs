@@ -32,6 +32,8 @@ public sealed record AnalysesResultDetailRowDto
     public string? Flag           { get; init; }
     public string? Method         { get; init; }
     public string? Notes          { get; init; }
+    public string? Category       { get; init; }
+    public string? Subcategory    { get; init; }
     public int     SortOrder      { get; init; }
 }
 

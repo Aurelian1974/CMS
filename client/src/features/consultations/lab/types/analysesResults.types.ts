@@ -28,6 +28,8 @@ export interface AnalysesResultDetailRowDto {
   flag: string | null   // null / HIGH / LOW / CHECK
   method: string | null
   notes: string | null
+  category: string | null
+  subcategory: string | null
   sortOrder: number
 }
 
@@ -53,6 +55,8 @@ export interface AnalysesResultDetailInput {
   flag: string | null
   method: string | null
   notes: string | null
+  category: string | null
+  subcategory: string | null
 }
 
 export interface CreateAnalysesResultPayload {

@@ -16,8 +16,8 @@ interface LabTestNameCellProps {
   value: string
   onChange: (name: string) => void
   onPickUnit: (unit: string | null) => void
-  /** Callback combinat pentru selecție din picker — face un singur updateRow cu name+unit */
-  onSelectAnalysis: (name: string, unit: string | null) => void
+  /** Callback combinat pentru selecție din picker — face un singur updateRow cu name+unit+category */
+  onSelectAnalysis: (name: string, unit: string | null, category: string | null, subcategory: string | null) => void
   disabled: boolean
 }
 
@@ -25,10 +25,10 @@ const LabTestNameCell = ({ value, onChange, onPickUnit, onSelectAnalysis, disabl
   const [pickerOpen, setPickerOpen] = useState(false)
 
   const handleSelect = useCallback(
-    (item: { name: string; unit: string | null }) => {
+    (item: { name: string; unit: string | null; category: string | null; subcategory: string | null }) => {
       // Un singur update combinat evită problema de React batching
       // (două setState separate cu valori ar duce la suprascrierea primului)
-      onSelectAnalysis(item.name, item.unit ?? null)
+      onSelectAnalysis(item.name, item.unit ?? null, item.category ?? null, item.subcategory ?? null)
     },
     [onSelectAnalysis],
   )
@@ -94,7 +94,7 @@ const FLAG_OPTIONS: { value: FlagValue; label: string }[] = [
   { value: 'LOW',  label: 'Scăzut ▼' },
 ]
 
-const FlagRadio = ({ idx, flag, onChange }: FlagRadioProps) => (
+const FlagRadio = ({ flag, onChange }: FlagRadioProps) => (
   <div style={{ display: 'flex', flexDirection: 'row', gap: 3, flexWrap: 'nowrap' }}>
     {FLAG_OPTIONS.map((opt) => {
       const isSelected = flag === opt.value
@@ -173,6 +173,8 @@ export const LabParseResultTable = ({ rows, onChange, readOnly }: Props) => {
         flag: null,
         method: null,
         notes: null,
+        category: null,
+        subcategory: null,
       },
     ])
   }
@@ -244,15 +246,47 @@ export const LabParseResultTable = ({ rows, onChange, readOnly }: Props) => {
                 <tr key={`r-${idx}`}>
                   <td>
                     {readOnly ? (
-                      <span>{row.testName}</span>
+                      <div>
+                        <span>{row.testName}</span>
+                        {row.category && (
+                          <div style={{ marginTop: 2 }}>
+                            <span style={{
+                              display: 'inline-block',
+                              fontSize: '0.68rem', fontWeight: 500,
+                              padding: '1px 6px', borderRadius: 10,
+                              background: '#e0f2fe', color: '#0369a1',
+                              border: '1px solid #bae6fd',
+                            }}>
+                              {row.category}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     ) : (
-                      <LabTestNameCell
-                        value={row.testName}
-                        onChange={(name) => updateRow(idx, { testName: name })}
-                        onPickUnit={(unit) => updateRow(idx, { unit })}
-                        onSelectAnalysis={(name, unit) => updateRow(idx, { testName: name, unit })}
-                        disabled={false}
-                      />
+                      <>
+                        <LabTestNameCell
+                          value={row.testName}
+                          onChange={(name) => updateRow(idx, { testName: name })}
+                          onPickUnit={(unit) => updateRow(idx, { unit })}
+                          onSelectAnalysis={(name, unit, category, subcategory) =>
+                            updateRow(idx, { testName: name, unit, category, subcategory })
+                          }
+                          disabled={false}
+                        />
+                        {row.category && (
+                          <div style={{ marginTop: 2 }}>
+                            <span style={{
+                              display: 'inline-block',
+                              fontSize: '0.68rem', fontWeight: 500,
+                              padding: '1px 6px', borderRadius: 10,
+                              background: '#e0f2fe', color: '#0369a1',
+                              border: '1px solid #bae6fd',
+                            }}>
+                              {row.category}
+                            </span>
+                          </div>
+                        )}
+                      </>
                     )}
                   </td>
                   <td>

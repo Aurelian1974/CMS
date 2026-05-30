@@ -49,6 +49,8 @@ BEGIN
         d.Flag,
         d.Method,
         d.Notes,
+        d.Category,
+        d.Subcategory,
         d.SortOrder
     FROM dbo.AnalysesResultDetails d
     WHERE d.ResultId = @Id

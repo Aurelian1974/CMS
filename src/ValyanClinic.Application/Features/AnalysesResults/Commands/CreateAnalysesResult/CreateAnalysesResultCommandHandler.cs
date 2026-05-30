@@ -30,7 +30,9 @@ public sealed class CreateAnalysesResultCommandHandler(
                     refMax         = d.RefMax,
                     flag           = d.Flag,
                     method         = d.Method,
-                    notes          = d.Notes
+                    notes          = d.Notes,
+                    category       = d.Category,
+                    subcategory    = d.Subcategory
                 }));
 
             var data = new AnalysesResultSaveData

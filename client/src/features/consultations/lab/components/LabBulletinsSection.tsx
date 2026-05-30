@@ -92,6 +92,8 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
       flag: d.flag,
       method: d.method,
       notes: d.notes,
+      category: d.category,
+      subcategory: d.subcategory,
     })),
   })
 
@@ -143,6 +145,8 @@ export const LabBulletinsSection = ({ consultationId, patientId, doctorId, isEdi
       flag: r.flag ?? null,
       method: r.method ?? null,
       notes: r.notes ?? null,
+      category: r.category ?? null,
+      subcategory: r.subcategory ?? null,
     }))
     try {
       if (editingId) {

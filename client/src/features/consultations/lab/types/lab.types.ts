@@ -25,6 +25,8 @@ export interface LabResultRowDto {
   flag: string | null     // null / HIGH / LOW / CHECK
   method: string | null
   notes: string | null
+  category: string | null
+  subcategory: string | null
 }
 
 // ── Salvarea în DB se face prin investigations API cu type='LabResults' ────
