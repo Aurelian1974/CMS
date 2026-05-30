@@ -126,12 +126,20 @@
   }
 }
 
-// Celulele din header cu Syncfusion DatePicker — identice ca layout cu celelalte celule
+// Randul 2 din bulletinHeader — date recoltare + rezultat, span full width
+.bulletinDateRow {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 1rem;
+}
+
+// O celula de data — label inline + DatePicker
 .bulletinDateField {
   display: flex;
   align-items: center;
+  flex: 1;
 
-  // Syncfusion DatePicker compact — ocupa spatiul ramas dupa label
+  // Syncfusion DatePicker compact
   :global(.e-date-wrapper) {
     flex: 1;
     background: #fff;
