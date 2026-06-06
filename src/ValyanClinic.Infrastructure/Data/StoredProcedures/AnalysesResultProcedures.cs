@@ -9,4 +9,5 @@ public static class AnalysesResultProcedures
     public const string GetById              = "dbo.AnalysesResult_GetById";
     public const string GetByConsultation    = "dbo.AnalysesResult_GetByConsultation";
     public const string GetByPatient         = "dbo.AnalysesResult_GetByPatient";
+    public const string GetForMedicalLetter  = "dbo.MedicalLetter_GetAnalysesResults";
 }

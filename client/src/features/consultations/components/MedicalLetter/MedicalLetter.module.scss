@@ -1,0 +1,669 @@
+@import '@/styles/variables';
+
+// Medical letter brand palette — spec requires #1E88D0, distinct from the app's #5B8DB8
+$ml-brand:       #1E88D0;
+$ml-brand-light: #E3F2FD;
+$ml-brand-dark:  #0C447C;
+
+// ─── Wrapper ──────────────────────────────────────────────────────────────────
+.wrapper {
+  font-family: $font-family-base;
+  font-size: 13px;
+  color: $gray-700;
+  max-width: 680px;
+  padding: 1.5rem 0;
+}
+
+// ─── Header ───────────────────────────────────────────────────────────────────
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 2.5px solid $ml-brand;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+
+.furnizorLabel {
+  font-size: 10px;
+  color: $gray-500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 3px;
+}
+
+.clinicName {
+  font-size: 16px;
+  font-weight: 500;
+  color: $ml-brand;
+}
+
+.headerDoctor {
+  font-size: 12px;
+  color: $gray-500;
+  margin-top: 2px;
+}
+
+.headerRight {
+  text-align: right;
+  font-size: 12px;
+}
+
+.mt3 {
+  margin-top: 3px;
+}
+
+// ─── Title bar ────────────────────────────────────────────────────────────────
+.titleBar {
+  background: $ml-brand;
+  color: #fff;
+  text-align: center;
+  padding: 7px;
+  border-radius: $border-radius;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 1.5px;
+}
+
+// ─── Greeting ─────────────────────────────────────────────────────────────────
+.greeting {
+  font-size: 12px;
+  color: $gray-500;
+  margin-bottom: 14px;
+  line-height: 1.6;
+  padding: 8px 12px;
+  border-left: 2px solid $ml-brand-light;
+  background: $gray-50;
+  border-radius: 0 $border-radius $border-radius 0;
+}
+
+.highlight {
+  color: $gray-700;
+  font-weight: 500;
+}
+
+.muted {
+  color: $gray-500;
+}
+
+.italic {
+  font-style: italic;
+}
+
+.strong {
+  font-weight: 500;
+}
+
+// ─── Banner (patient meta) ────────────────────────────────────────────────────
+.banner {
+  background: $gray-50;
+  border-radius: $border-radius-lg;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.fieldLabel {
+  font-size: 10px;
+  color: $gray-500;
+  margin-bottom: 1px;
+}
+
+.fieldVal {
+  font-weight: 500;
+  font-size: 13px;
+}
+
+// ─── Section container ────────────────────────────────────────────────────────
+.section {
+  margin-bottom: 12px;
+}
+
+.secLabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: $ml-brand;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid $ml-brand-light;
+  margin-bottom: 6px;
+}
+
+.content12 {
+  font-size: 12px;
+  color: $gray-500;
+}
+
+// ─── Diagnostics ──────────────────────────────────────────────────────────────
+.diagItem {
+  margin-bottom: 8px;
+}
+
+.diagRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+
+.badgePrimary {
+  background: $ml-brand-light;
+  color: $ml-brand-dark;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-block;
+}
+
+.badgeSec {
+  background: #E8F5E9;
+  color: #1B5E20;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  display: inline-block;
+}
+
+.diagKind {
+  font-size: 10px;
+  color: $gray-400;
+}
+
+.diagDesc {
+  font-size: 11px;
+  color: $gray-500;
+  font-style: italic;
+  padding-left: 2px;
+  margin-top: 4px;
+}
+
+// ─── Paraclinic type pills ────────────────────────────────────────────────────
+.pillRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  background: $gray-50;
+  border: 0.5px solid $gray-200;
+  padding: 2px 9px;
+  border-radius: $border-radius;
+  font-size: 12px;
+}
+
+// ─── Generic content block (treatment, checkboxes) — same visual as investBlock
+.contentBlock {
+  padding: 8px 12px;
+  border-left: 2px solid $ml-brand-light;
+  background: $gray-50;
+  border-radius: 0 $border-radius $border-radius 0;
+  margin-bottom: 8px;
+}
+
+// ─── Investigation block ──────────────────────────────────────────────────────
+.investBlock {
+  padding: 8px 12px;
+  border-left: 2px solid $ml-brand;
+  background: $gray-50;
+  border-radius: 0 $border-radius $border-radius 0;
+  margin-bottom: 8px;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.investTitle {
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.investTitleBrand {
+  color: $ml-brand;
+  font-size: 13px;
+}
+
+// ─── Metric card grid (spirometry) ────────────────────────────────────────────
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.metricCard {
+  background: $card-bg;
+  border: 0.5px solid $gray-200;
+  border-radius: $border-radius;
+  padding: 6px 8px;
+}
+
+.metricCardSecondary {
+  background: $gray-50;
+}
+
+.metricName {
+  font-size: 10px;
+  color: $gray-500;
+}
+
+.metricVal {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.metricUnit {
+  font-size: 10px;
+  color: $gray-500;
+  font-weight: 400;
+}
+
+.metricSub {
+  font-size: 10px;
+  color: $gray-500;
+  margin-top: 1px;
+}
+
+.metricNotes {
+  font-size: 11px;
+  margin-top: 3px;
+}
+
+// ─── Narrative / note blocks ──────────────────────────────────────────────────
+.narrativeBlock {
+  margin-top: 6px;
+  padding: 6px 8px;
+  background: $card-bg;
+  border: 0.5px solid $gray-200;
+  border-radius: $border-radius;
+}
+
+.noteLabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: $gray-500;
+  margin-bottom: 2px;
+}
+
+.noteText {
+  font-size: 12px;
+  font-style: italic;
+}
+
+.noteMuted {
+  font-size: 12px;
+  color: $gray-400;
+}
+
+// ─── CNAS disclaimer ──────────────────────────────────────────────────────────
+.cnasMention {
+  font-size: 11px;
+  color: $gray-500;
+  font-style: italic;
+  margin-bottom: 4px;
+}
+
+// ─── Checkbox summary banner ──────────────────────────────────────────────────
+// contentBlock already provides background, border-left, border-radius, padding
+.checkboxBanner {
+  padding: 10px 14px; // slightly more padding than contentBlock default
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.checkRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  font-size: 11px;
+  color: $gray-500;
+}
+
+.spanFull {
+  grid-column: span 2;
+}
+
+// ─── Footer ───────────────────────────────────────────────────────────────────
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-top: 0.5px solid $gray-200;
+  padding-top: 12px;
+  font-size: 12px;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.footerCenter {
+  text-align: center;
+}
+
+.footerRight {
+  text-align: right;
+}
+
+.signatureLine {
+  width: 100px;
+  border-bottom: 1px solid $gray-300;
+  margin-top: 16px;
+  margin-left: auto;
+}
+
+// ─── Lab analyses results (two-column flag split) ────────────────────────────
+.labBulletin {
+  padding: 8px 12px;
+  border-left: 2px solid $ml-brand;
+  background: $gray-50;
+  border-radius: 0 $border-radius $border-radius 0;
+  margin-bottom: 8px;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.labBulletinTitle {
+  font-size: 12px;
+  font-weight: 500;
+  color: $ml-brand;
+  margin-bottom: 6px;
+}
+
+.labColumns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.labColNormal {
+  font-size: 11px;
+}
+
+.labColPatho {
+  font-size: 11px;
+}
+
+.labColLabelNormal {
+  font-size: 10px;
+  font-weight: 500;
+  color: #2E7D32;        // verde — valori normale
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid #C8E6C9;
+  margin-bottom: 4px;
+}
+
+.labColLabelPatho {
+  font-size: 10px;
+  font-weight: 500;
+  color: #E65100;        // portocaliu — valori modificate
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid #FFE0B2;
+  margin-bottom: 4px;
+}
+
+.labTestRow {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 1px 0;
+  line-height: 1.4;
+}
+
+.labTestName {
+  flex: 1;
+  color: $gray-600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.labTestValue {
+  font-weight: 500;
+  color: $gray-700;
+  white-space: nowrap;
+}
+
+.labTestUnit {
+  font-size: 10px;
+  color: $gray-400;
+  white-space: nowrap;
+}
+
+.labTestRef {
+  font-size: 10px;
+  color: $gray-400;
+  white-space: nowrap;
+}
+
+.labFlagHigh {
+  font-size: 9px;
+  font-weight: 500;
+  color: #BF360C;
+  background: #FBE9E7;
+  border-radius: 3px;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+
+.labFlagLow {
+  font-size: 9px;
+  font-weight: 500;
+  color: #1565C0;
+  background: #E3F2FD;
+  border-radius: 3px;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+
+.labFlagCheck {
+  font-size: 9px;
+  font-weight: 500;
+  color: #6A1B9A;
+  background: #F3E5F5;
+  border-radius: 3px;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+
+.labEmptyCol {
+  font-size: 11px;
+  color: $gray-400;
+  font-style: italic;
+}
+
+// ─── Atomic sections (never split across page boundaries) ─────────────────────
+.atomic {
+  break-inside: avoid;
+  page-break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+}
+
+// ─── Print ────────────────────────────────────────────────────────────────────
+@media print {
+  // Page setup
+  @page {
+    size: A4 portrait;
+    margin: 12mm 14mm;
+  }
+
+  // Base
+  .wrapper {
+    max-width: 100%;
+    padding: 0;
+    font-size: 11px;
+  }
+
+  // Atomic sections: enforce no splitting
+  .atomic {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    -webkit-column-break-inside: avoid !important;
+  }
+
+  // sec-label never orphaned at page bottom
+  .secLabel {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  // ── Coloured backgrounds must print exactly ───────────────────────────────
+  .titleBar,
+  .banner,
+  .greeting,
+  .checkboxBanner,
+  .investBlock,
+  .badgePrimary,
+  .badgeSec,
+  .pill,
+  .metricCard,
+  .metricCardSecondary,
+  .narrativeBlock {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  // ── Header ────────────────────────────────────────────────────────────────
+  .clinicName {
+    font-size: 14px;
+  }
+
+  // ── Title bar ─────────────────────────────────────────────────────────────
+  .titleBar {
+    font-size: 11px;
+    padding: 5px 7px;
+  }
+
+  // ── Greeting ──────────────────────────────────────────────────────────────
+  .greeting {
+    font-size: 10px;
+    padding: 6px 10px;
+    margin-bottom: 10px;
+  }
+
+  // ── Banner ────────────────────────────────────────────────────────────────
+  .banner {
+    padding: 7px 10px;
+    margin-bottom: 10px;
+  }
+
+  .fieldVal {
+    font-size: 11px;
+  }
+
+  // ── Badges ────────────────────────────────────────────────────────────────
+  .badgePrimary,
+  .badgeSec {
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+
+  // ── Two-column grids stay two-column ──────────────────────────────────────
+  .grid2 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+
+  .grid3 {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+
+  // ── Section ───────────────────────────────────────────────────────────────
+  .section {
+    margin-bottom: 8px;
+  }
+
+  .content12 {
+    font-size: 10px;
+  }
+
+  // ── Investigation blocks ──────────────────────────────────────────────────
+  .investBlock {
+    padding: 6px 10px;
+    margin-bottom: 6px;
+  }
+
+  .investTitle {
+    font-size: 11px;
+  }
+
+  .investTitleBrand {
+    font-size: 12px;
+  }
+
+  // ── Spirometry metric grid stays 5-column ─────────────────────────────────
+  .metricGrid {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 4px !important;
+    margin-bottom: 6px;
+  }
+
+  .metricCard {
+    padding: 4px 6px;
+  }
+
+  .metricVal {
+    font-size: 13px;
+  }
+
+  .metricName,
+  .metricUnit,
+  .metricSub,
+  .metricNotes {
+    font-size: 9px;
+  }
+
+  // ── Narrative sub-block ───────────────────────────────────────────────────
+  .narrativeBlock {
+    margin-top: 4px;
+    padding: 4px 6px;
+  }
+
+  .noteLabel {
+    font-size: 9px;
+  }
+
+  .noteText {
+    font-size: 10px;
+  }
+
+  // ── Checkbox banner ───────────────────────────────────────────────────────
+  .checkboxBanner {
+    padding: 7px 10px;
+    margin-bottom: 10px;
+  }
+
+  .checkRow {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 4px;
+    font-size: 9px;
+  }
+
+  // ── Footer ────────────────────────────────────────────────────────────────
+  .footer {
+    font-size: 10px;
+    padding-top: 8px;
+  }
+}

@@ -1,7 +1,12 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
+import type { RefObject } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import type { ConsultationDetailDto, ConsultationInvestigationDto } from '../../types/consultation.types'
 import { useCurrentClinic } from '@/features/clinic/hooks/useClinic'
 import { AppButton } from '@/components/ui/AppButton'
+import { MedicalLetter } from '../MedicalLetter'
+import type { MedicalLetterProps, LabAnalysesBulletin } from '../MedicalLetter'
+import { analysesResultsApi } from '@/api/endpoints/analysesResults.api'
 import styles from './ScrisoareMedicalaModal.module.scss'
 
 // ── Props ─────────────────────────────────────────────────────────────────────
@@ -215,13 +220,34 @@ const EKG_TYPES = new Set(['ECG', 'Holter_ECG', 'Holter_BP', 'StressTest'])
 const ECO_TYPES = new Set(['Echocardiography', 'Ultrasound', 'DopplerUS'])
 const RX_TYPES  = new Set(['XRay_Chest', 'Mammography', 'DEXA'])
 
-function buildInvestigations(detail: ConsultationDetailDto) {
-  const format = (inv: ConsultationInvestigationDto) => {
-    const text = stripHtml(inv.narrative)
-    return text
-      ? `${inv.investigationTypeDisplayName}: ${text}`
-      : inv.investigationTypeDisplayName
+function formatInvestigationEntry(inv: ConsultationInvestigationDto): string {
+  const parts: string[] = []
+
+  if (inv.structuredData) {
+    try {
+      const obj = JSON.parse(inv.structuredData) as Record<string, unknown>
+      const lines = Object.entries(obj)
+        .filter(([, v]) => v !== null && v !== undefined && v !== '')
+        .map(([k, v]) => `  ${k}: ${v}`)
+      if (lines.length > 0) {
+        parts.push(`Date structurate:\n${lines.join('\n')}`)
+      }
+    } catch {
+      parts.push(inv.structuredData)
+    }
   }
+
+  const narrativeText = stripHtml(inv.narrative)
+  if (narrativeText) {
+    parts.push(`Note clinice: ${narrativeText}`)
+  }
+
+  if (parts.length === 0) return inv.investigationTypeDisplayName
+  return `${inv.investigationTypeDisplayName}:\n${parts.join('\n')}`
+}
+
+function buildInvestigations(detail: ConsultationDetailDto) {
+  const format = formatInvestigationEntry
   const invs = detail.investigations ?? []
   const ekg    = invs.filter(i => EKG_TYPES.has(i.investigationType)).map(format).join('\n')
   const eco    = invs.filter(i => ECO_TYPES.has(i.investigationType)).map(format).join('\n')
@@ -273,189 +299,6 @@ function initFromDetail(detail: ConsultationDetailDto): ScrisoareMedicalaData {
     postaAdresa: '',
     dataScrisorii: todayRo(),
   }
-}
-
-// ── Print HTML generator ──────────────────────────────────────────────────────
-function cb(checked: boolean): string {
-  return checked ? '☑' : '☐'
-}
-
-function dotLine(val: string, placeholder = ''): string {
-  const text = val || placeholder
-  if (!text) return '<span style="border-bottom:1px dotted #666;display:block;min-height:18px;margin:2px 0 6px"></span>'
-  return `<div style="white-space:pre-wrap;word-break:break-word;padding:2px 0;margin-bottom:6px">${text}</div>`
-}
-
-function generateLetterHtml(d: ScrisoareMedicalaData): string {
-  const concediuLine = d.concediuStatus === 'eliberat'
-    ? `${cb(true)} S-a eliberat concediu medical la externare/consultația din ambulatoriu, caz în care se va înscrie seria și numărul acestuia: <strong>${d.concediuSerie || '..............'}</strong>`
-    : d.concediuStatus === 'nu_necesar'
-    ? `${cb(true)} Nu s-a eliberat concediu medical la externare deoarece nu a fost necesar`
-    : `${cb(true)} Nu s-a eliberat concediu medical la externare`
-
-  const prescriptieLine = d.prescriptieStatus === 'eliberata'
-    ? `${cb(true)} S-a eliberat prescripție medicală, caz în care se va înscrie seria și numărul acesteia: <strong>${d.prescriptieSerie || '..............'}</strong>`
-    : d.prescriptieStatus === 'nu_necesar'
-    ? `${cb(true)} Nu s-a eliberat prescripție medicală deoarece nu a fost necesar`
-    : `${cb(true)} Nu s-a eliberat prescripție medicală`
-
-  return `<!DOCTYPE html>
-<html lang="ro">
-<head>
-  <meta charset="utf-8">
-  <title>Scrisoare Medicală — ${d.patientName}</title>
-  <style>
-    * { font-family: 'Times New Roman', Times, serif; box-sizing: border-box; }
-    @page { margin: 15mm 20mm; size: A4; }
-    body { font-size: 10pt; line-height: 1.5; color: #000; margin: 0; }
-    h1 { text-align: center; font-size: 13pt; font-weight: bold; text-transform: uppercase; margin: 18px 0 14px; letter-spacing: 1px; }
-    p { margin: 4px 0 8px; }
-    .header { margin-bottom: 16px; font-size: 10pt; }
-    .header p { margin: 1px 0; }
-    .section-title { font-weight: bold; margin-top: 10px; margin-bottom: 2px; }
-    .dotline { border-bottom: 1px dotted #555; display: block; min-height: 18px; margin: 2px 0 5px; white-space: pre-wrap; word-break: break-word; padding: 1px 0; }
-    .indent { margin-left: 16px; }
-    .checkbox-row { margin: 3px 0; display: block; }
-    .footer-note { font-size: 8.5pt; font-weight: bold; margin-top: 16px; border-top: 1px solid #999; padding-top: 8px; }
-    .signature-area { margin-top: 36px; text-align: center; }
-    .transmit-section { margin-top: 10px; font-size: 9pt; }
-    hr { border: none; border-top: 1px solid #999; margin: 8px 0; }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <p>Denumire Furnizor <span style="border-bottom:1px solid #333;display:inline-block;min-width:180px;padding:0 4px">${d.furnizorNume || ''}</span></p>
-    <p>Medic <span style="border-bottom:1px solid #333;display:inline-block;min-width:220px;padding:0 4px">${d.medicNume || ''}</span></p>
-    <p>Contract/convenție nr. <span style="border-bottom:1px solid #333;display:inline-block;min-width:150px;padding:0 4px">${d.contractNr || ''}</span></p>
-    <p>CAS <span style="border-bottom:1px solid #333;display:inline-block;min-width:220px;padding:0 4px">${d.cas || ''}</span></p>
-  </div>
-
-  <h1>SCRISOARE MEDICALĂ<sup>*)</sup></h1>
-
-  <p>Stimate(ă) coleg(ă), vă informăm că <strong>${d.patientName}</strong>, născut la data de
-  <strong>${d.patientBirthDate || '.........'}</strong>, CNP/cod unic de asigurare <strong>${d.patientCnp || '.........'}</strong>,
-  a fost consultat în serviciul nostru la data de <strong>${d.dataPrezentare || '.........'}</strong>
-  nr. din Registrul de consultații <strong>${d.nrRegistru || '.........'}</strong>.</p>
-
-  <div class="section-title">Motivele prezentării:</div>
-  <span class="dotline">${d.motivePrezentare}</span>
-  <span class="dotline"></span>
-
-  <p>Pacient diagnosticat cu afecțiune oncologică &nbsp;
-    <strong>${cb(d.esteOncologic)}</strong> DA &nbsp;/&nbsp;
-    <strong>${cb(!d.esteOncologic)}</strong> NU
-  </p>
-
-  <div class="section-title">Diagnosticul și codul de diagnostic:</div>
-  <span class="dotline">${d.diagnostic.split('\n')[0] ?? ''}</span>
-  <span class="dotline">${d.diagnostic.split('\n')[1] ?? ''}</span>
-  <span class="dotline">${d.diagnostic.split('\n')[2] ?? ''}</span>
-  <span class="dotline">${d.diagnostic.split('\n')[3] ?? ''}</span>
-
-  <div class="section-title">Anamneză:</div>
-  ${dotLine(d.anamneza)}
-  <div class="section-title indent">- factori de risc</div>
-  ${dotLine(d.factoriDeRisc)}
-  <span class="dotline"></span>
-
-  <div class="section-title">Examen clinic:</div>
-  <div class="indent section-title">- general</div>
-  ${dotLine(d.examenClinicGeneral)}
-  <div class="indent section-title">- local</div>
-  ${dotLine(d.examenClinicLocal)}
-  <span class="dotline"></span>
-
-  <div class="section-title">Examene de laborator:</div>
-  <div class="indent section-title">- cu valori normale</div>
-  ${dotLine(d.labValoriNormale)}
-  <span class="dotline"></span>
-  <div class="indent section-title">- cu valori patologice</div>
-  ${dotLine(d.labValoriPatologice)}
-  <span class="dotline"></span>
-
-  <div class="section-title">Examene paraclinice:</div>
-  <div class="indent">EKG</div>
-  ${dotLine(d.ekg)}
-  <div class="indent">ECO</div>
-  ${dotLine(d.eco)}
-  <div class="indent">Rx</div>
-  ${dotLine(d.rx)}
-  <div class="indent">Altele</div>
-  ${dotLine(d.alteExamene)}
-  <span class="dotline"></span>
-
-  <div class="section-title">Tratament efectuat:</div>
-  ${dotLine(d.tratamentEfectuat)}
-  <span class="dotline"></span>
-  <span class="dotline"></span>
-
-  <div class="section-title">Alte informații referitoare la starea de sănătate a asiguratului:</div>
-  ${dotLine(d.alteInformatii)}
-  <span class="dotline"></span>
-  <span class="dotline"></span>
-
-  <div class="section-title">Tratament recomandat</div>
-  ${dotLine(d.tratamentRecomandat)}
-  <span class="dotline"></span>
-  <span class="dotline"></span>
-  <span class="dotline"></span>
-  <span class="dotline"></span>
-  <span class="dotline"></span>
-
-  <div class="footer-note">
-    <strong>Nota:</strong> Se va specifica durata pentru care se poate prescrie de medicul din ambulatoriu, inclusiv medicul de familie, fiecare dintre medicamentele recomandate.<br>
-    <strong>ATENȚIE!</strong> Nerespectarea obligației medicului de specialitate din ambulatoriul clinic de specialitate sau din spital de a iniția tratamentul prin prescrierea primei rețete pentru medicamente cu sau fără contribuție personală, astfel cum este prevăzut în protocoalele terapeutice, precum și de a elibera prescripția medicală / bilete de trimitere / concediu medical / recomandări pentru îngrijiri la domiciliu / prescripții pentru dispozitive medicale în fiecare caz pentru care este necesar, se sancționează potrivit contractului încheiat de furnizor cu casa de asigurări de sănătate!<br>
-    Valabilitatea scrisorii medicale incepe de la data eliberarii acesteia. Valabilitatea este în concordanță cu protocolul terapeutic. În cazul în care medicul de specialitate nu consemnează o valabilitate pentru conduita terapeutică recomandată, valabilitatea scrisorii medicale încetează în momentul în care medicul de familie recomanda pacientului reevaluarea stării de sănătate.
-  </div>
-
-  <div style="margin-top:12px">
-    <div class="section-title">Indicație de revenire pentru internare</div>
-    <div class="checkbox-row">&nbsp;- ${cb(d.indicatieRevenire === 'da')} da, revine pentru internare în termen de <strong>${d.termenRevenire || '............'}</strong></div>
-    <div class="checkbox-row">&nbsp;- ${cb(d.indicatieRevenire === 'nu')} nu, nu este necesară revenirea pentru internare</div>
-  </div>
-
-  <div style="margin-top:10px">
-    <div>Se completează obligatoriu una dintre cele trei informații:</div>
-    <div class="checkbox-row indent">&nbsp;- ${d.prescriptieStatus === 'eliberata' ? cb(true) : cb(false)} ${prescriptieLine}</div>
-    <div class="checkbox-row indent">&nbsp;- ${d.prescriptieStatus === 'nu_necesar' ? cb(true) : cb(false)} Nu s-a eliberat prescripție medicală deoarece nu a fost necesar</div>
-    <div class="checkbox-row indent">&nbsp;- ${d.prescriptieStatus === 'nu_eliberata' ? cb(true) : cb(false)} Nu s-a eliberat prescripție medicală</div>
-  </div>
-
-  <div style="margin-top:10px">
-    <div>Se completează obligatoriu una dintre cele trei informații:</div>
-    <div class="checkbox-row indent">&nbsp;- ${d.concediuStatus === 'eliberat' ? cb(true) : cb(false)} ${concediuLine}</div>
-    <div class="checkbox-row indent">&nbsp;- ${d.concediuStatus === 'nu_necesar' ? cb(true) : cb(false)} Nu s-a eliberat concediu medical la externare deoarece nu a fost necesar</div>
-    <div class="checkbox-row indent">&nbsp;- ${d.concediuStatus === 'nu_eliberat' ? cb(true) : cb(false)} Nu s-a eliberat concediu medical la externare</div>
-  </div>
-
-  <div style="margin-top:10px">
-    <div>Se completează obligatoriu una dintre cele două informații:</div>
-    <div class="checkbox-row indent">&nbsp;- ${cb(d.ingrijiriStatus === 'eliberata')} S-a eliberat recomandare pentru îngrijiri medicale la domiciliu/paliative la domiciliu</div>
-    <div class="checkbox-row indent">&nbsp;- ${cb(d.ingrijiriStatus === 'nu_necesar')} Nu s-a eliberat recomandare pentru îngrijiri medicale la domiciliu/paliative la domiciliu, deoarece nu a fost necesar</div>
-  </div>
-
-  <div style="margin-top:10px">
-    <div>Se completează obligatoriu una dintre cele două informații:</div>
-    <div class="checkbox-row indent">&nbsp;- ${cb(d.dispozitiveStatus === 'eliberata')} S-a eliberat prescripție medicală pentru dispozitive medicale în ambulatoriu</div>
-    <div class="checkbox-row indent">&nbsp;- ${cb(d.dispozitiveStatus === 'nu_necesar')} Nu s-a eliberat prescripție medicală pentru dispozitive medicale în ambulatoriu deoarece nu a fost necesar</div>
-  </div>
-
-  <div class="transmit-section">
-    <div>Calea de transmitere:</div>
-    <div class="indent">${cb(d.caleaTransmitere === 'asigurat')} prin asigurat</div>
-    <div class="indent">${cb(d.caleaTransmitere === 'posta')} prin poștă ${d.caleaTransmitere === 'posta' && d.postaAdresa ? `— ${d.postaAdresa}` : '...................'}</div>
-  </div>
-
-  <div class="signature-area">
-    <p style="text-align:left">Data <strong>${d.dataScrisorii}</strong></p>
-    <div style="text-align:center;margin-top:24px">
-      Semnătura și parafa medicului<br><br>
-      .............................<br>
-      <em>${d.medicNume}${d.medicParafa ? ` / ${d.medicParafa}` : ''}</em>
-    </div>
-  </div>
-</body>
-</html>`
 }
 
 // ── Small reusable field helpers ──────────────────────────────────────────────
@@ -701,190 +544,167 @@ function FormContent({ data, update }: { data: ScrisoareMedicalaData; update: Up
 }
 
 // ── Preview content ───────────────────────────────────────────────────────────
-function PreviewContent({ data }: { data: ScrisoareMedicalaData }) {
-  const row = (label: string, value: string) => (
-    <div style={{ marginBottom: 2 }}>
-      <span style={{ fontStyle: 'italic' }}>{label}</span>{' '}
-      <span style={{ borderBottom: '1px solid #333', display: 'inline-block', minWidth: 160, padding: '0 4px' }}>{value}</span>
-    </div>
-  )
-  const dotBlock = (val: string) => (
-    <div style={{ borderBottom: '1px dotted #777', minHeight: 18, marginBottom: 5, whiteSpace: 'pre-wrap', wordBreak: 'break-word', padding: '1px 0', fontSize: '9pt' }}>
-      {val}
-    </div>
-  )
-  const checkRow = (checked: boolean, label: string) => (
-    <div style={{ margin: '2px 0' }}>
-      <span style={{ marginRight: 6, fontSize: '11pt' }}>{checked ? '☑' : '☐'}</span>
-      {label}
-    </div>
-  )
-  const sectionTitle = (title: string) => (
-    <div style={{ fontWeight: 'bold', marginTop: 10, marginBottom: 2, fontSize: '9pt' }}>{title}</div>
-  )
+// ─── Diagnosis parser for MedicalLetterProps ────────────────────────────────
+function buildDiagnoses(detail: ConsultationDetailDto): MedicalLetterProps['diagnoses'] {
+  if (!detail.diagnostic) return []
+  try {
+    const parsed = JSON.parse(detail.diagnostic)
+    if (parsed?.primaryCode?.code) {
+      const result: MedicalLetterProps['diagnoses'] = []
+      const primary = parsed.primaryCode as { code: string; shortDescriptionRo?: string; shortDescriptionEn?: string }
+      result.push({
+        icdCode: primary.code,
+        description: primary.shortDescriptionRo ?? primary.shortDescriptionEn ?? '',
+        detailNotes: stripHtml(parsed.primaryDetails as string | undefined) || undefined,
+        isPrimary: true,
+      })
+      if (Array.isArray(parsed.secondaryDiagnoses)) {
+        ;(parsed.secondaryDiagnoses as SecondaryDiagnosis[]).forEach((sd) => {
+          const icdCode = sd.icd10Codes?.[0]?.code ?? ''
+          const description = sd.icd10Codes?.[0]?.shortDescriptionRo ?? ''
+          result.push({
+            icdCode,
+            description,
+            detailNotes: stripHtml(sd.description) || undefined,
+            isPrimary: false,
+          })
+        })
+      }
+      return result
+    }
+  } catch { /* not JSON */ }
+  return [{ icdCode: '', description: stripHtml(detail.diagnostic), isPrimary: true }]
+}
 
-  const diagLines = data.diagnostic.split('\n').filter(Boolean)
+// ─── Converter: ScrisoareMedicalaData + detail → MedicalLetterProps ───────────
+function buildMedicalLetterProps(
+  data: ScrisoareMedicalaData,
+  detail: ConsultationDetailDto,
+): MedicalLetterProps {
+  const invs = detail.investigations ?? []
 
+  const investigations: MedicalLetterProps['investigations'] = invs.map((inv) => {
+    let structuredData: Record<string, unknown> | null = null
+    if (inv.structuredData) {
+      try { structuredData = JSON.parse(inv.structuredData) } catch { /* ignore */ }
+    }
+    return {
+      type: inv.investigationType,
+      displayName: inv.investigationTypeDisplayName,
+      structuredData,
+      narrative: inv.narrative ? stripHtml(inv.narrative) : null,
+    }
+  })
+
+  // Derive pill labels from unique display names (capped to keep the row tidy)
+  const paraclinicTypes = Array.from(
+    new Set(invs.map((i) => i.investigationTypeDisplayName)),
+  ).slice(0, 10)
+
+  const anamnesisParts = [
+    data.anamneza,
+    data.factoriDeRisc && data.factoriDeRisc !== 'Fără'
+      ? `Factori de risc: ${data.factoriDeRisc}`
+      : null,
+  ].filter(Boolean) as string[]
+
+  return {
+    provider: {
+      name: data.furnizorNume,
+      doctorName: data.medicNume,
+      contractNumber: data.contractNr,
+      cas: data.cas || undefined,
+    },
+    patient: {
+      name: data.patientName,
+      birthDate: data.patientBirthDate,
+      cnp: data.patientCnp,
+    },
+    consultation: {
+      date: data.dataPrezentare,
+      registryNumber: data.nrRegistru || undefined,
+      isOncological: data.esteOncologic,
+    },
+    diagnoses: buildDiagnoses(detail),
+    anamnesis: anamnesisParts.join('\n\n') || undefined,
+    clinicalExam: {
+      general:
+        data.examenClinicGeneral && data.examenClinicGeneral !== 'Fără'
+          ? data.examenClinicGeneral
+          : undefined,
+      local:
+        data.examenClinicLocal && data.examenClinicLocal !== 'Fără'
+          ? data.examenClinicLocal
+          : undefined,
+    },
+    labExams: {
+      normalValues: data.labValoriNormale || undefined,
+      pathologicalValues: data.labValoriPatologice || undefined,
+    },
+    paraclinicTypes,
+    investigations,
+    treatmentAdministered: data.tratamentEfectuat || undefined,
+    additionalInfo: data.alteInformatii || undefined,
+    recommendedTreatment: data.tratamentRecomandat || undefined,
+    checkboxes: {
+      returnForHospitalization: data.indicatieRevenire === 'da',
+      prescriptionIssued:
+        data.prescriptieStatus === 'eliberata' ? 'issued'
+        : data.prescriptieStatus === 'nu_necesar' ? 'not_needed'
+        : 'not_issued',
+      medicalLeaveIssued:
+        data.concediuStatus === 'eliberat' ? 'issued'
+        : data.concediuStatus === 'nu_necesar' ? 'not_needed'
+        : 'not_issued',
+      homeCarePrescription: data.ingrijiriStatus === 'eliberata',
+      medicalDevicePrescription: data.dispozitiveStatus === 'eliberata',
+    },
+    transmission: data.caleaTransmitere === 'posta' ? 'by_mail' : 'through_patient',
+    issueDate: data.dataScrisorii,
+    doctorSignature: `${data.medicNume}${data.medicParafa ? ` / ${data.medicParafa}` : ''}`,
+  }
+}
+
+// ─── Preview uses the new MedicalLetter component ─────────────────────────────
+function PreviewContent({
+  data,
+  detail,
+  letterRef,
+}: {
+  data: ScrisoareMedicalaData
+  detail: ConsultationDetailDto
+  letterRef: RefObject<HTMLDivElement | null>
+}) {
+  // Fetch analyses results pentru aceasta consultatie (null-safe: da [] cand consultationId lipseste)
+  const { data: analysesResponse } = useQuery({
+    queryKey: ['analysesResults', 'for-medical-letter', detail.id],
+    queryFn: () => analysesResultsApi.getForMedicalLetter(detail.id),
+    enabled: !!detail.id,
+    staleTime: 5 * 60 * 1000,
+  })
+
+  // Mapeaza raspunsul API la LabAnalysesBulletin[] asteptat de MedicalLetter
+  const analysesResults: LabAnalysesBulletin[] = (analysesResponse?.bulletins ?? []).map(b => ({
+    id: b.id,
+    laboratory: b.laboratory,
+    bulletinNumber: b.bulletinNumber,
+    collectionDate: b.collectionDate,
+    details: b.details.map(d => ({
+      id: d.id,
+      section: d.section,
+      testName: d.testName,
+      value: d.value,
+      unit: d.unit,
+      referenceRange: d.referenceRange,
+      flag: d.flag,
+    })),
+  }))
+
+  const letterProps = buildMedicalLetterProps(data, detail)
   return (
     <div className={styles.previewWrapper}>
-      <div className={styles.letterPage} style={{ fontFamily: '"Times New Roman", Times, serif', fontSize: '9.5pt', lineHeight: 1.5, color: '#000' }}>
-
-        {/* Antet */}
-        <div style={{ marginBottom: 16, fontSize: '9pt' }}>
-          {row('Denumire Furnizor', data.furnizorNume)}
-          {row('Medic', data.medicNume)}
-          {row('Contract/convenție nr.', data.contractNr)}
-          {row('CAS', data.cas)}
-        </div>
-
-        <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '12pt', textTransform: 'uppercase', letterSpacing: 1, margin: '16px 0 12px' }}>
-          SCRISOARE MEDICALĂ<sup style={{ fontSize: '7pt' }}>*)</sup>
-        </div>
-
-        {/* Intro */}
-        <p style={{ margin: '0 0 8px', textAlign: 'justify' }}>
-          Stimate(ă) coleg(ă), vă informăm că <strong>{data.patientName}</strong>, născut la data de{' '}
-          <strong>{data.patientBirthDate || '.........'}</strong>, CNP/cod unic de asigurare{' '}
-          <strong>{data.patientCnp || '.........'}</strong>, a fost consultat în serviciul nostru la data de{' '}
-          <strong>{data.dataPrezentare || '.........'}</strong> nr. din Registrul de consultații{' '}
-          <strong>{data.nrRegistru || '.........'}</strong>.
-        </p>
-
-        {sectionTitle('Motivele prezentării:')}
-        {dotBlock(data.motivePrezentare)}
-        {dotBlock('')}
-
-        <div style={{ margin: '6px 0' }}>
-          Pacient diagnosticat cu afecțiune oncologică &nbsp;
-          <strong>{data.esteOncologic ? '☑' : '☐'}</strong> DA &nbsp;/&nbsp;
-          <strong>{!data.esteOncologic ? '☑' : '☐'}</strong> NU
-        </div>
-
-        {sectionTitle('Diagnosticul și codul de diagnostic:')}
-        {(diagLines.length > 0 ? diagLines : ['']).map((ln, i) => <div key={i}>{dotBlock(ln)}</div>)}
-        {diagLines.length < 3 && Array.from({ length: 3 - diagLines.length }).map((_, i) => <div key={`empty-${i}`}>{dotBlock('')}</div>)}
-
-        {sectionTitle('Anamneză:')}
-        {dotBlock(data.anamneza)}
-        <div style={{ marginLeft: 14, fontWeight: 'bold', fontSize: '9pt' }}>- factori de risc</div>
-        {dotBlock(data.factoriDeRisc)}
-        {dotBlock('')}
-
-        {sectionTitle('Examen clinic:')}
-        <div style={{ marginLeft: 14, fontWeight: 'bold', fontSize: '9pt' }}>- general</div>
-        {dotBlock(data.examenClinicGeneral)}
-        {dotBlock('')}
-        <div style={{ marginLeft: 14, fontWeight: 'bold', fontSize: '9pt' }}>- local</div>
-        {dotBlock(data.examenClinicLocal)}
-        {dotBlock('')}
-
-        {sectionTitle('Examene de laborator:')}
-        <div style={{ marginLeft: 14, fontWeight: 'bold', fontSize: '9pt' }}>- cu valori normale</div>
-        {dotBlock(data.labValoriNormale)}
-        {dotBlock('')}
-        <div style={{ marginLeft: 14, fontWeight: 'bold', fontSize: '9pt' }}>- cu valori patologice</div>
-        {dotBlock(data.labValoriPatologice)}
-        {dotBlock('')}
-
-        {sectionTitle('Examene paraclinice:')}
-        <div style={{ marginLeft: 14, fontSize: '9pt' }}>EKG</div>{dotBlock(data.ekg)}
-        <div style={{ marginLeft: 14, fontSize: '9pt' }}>ECO</div>{dotBlock(data.eco)}
-        <div style={{ marginLeft: 14, fontSize: '9pt' }}>Rx</div>{dotBlock(data.rx)}
-        <div style={{ marginLeft: 14, fontSize: '9pt' }}>Altele</div>{dotBlock(data.alteExamene)}
-        {dotBlock('')}
-
-        {sectionTitle('Tratament efectuat:')}
-        {dotBlock(data.tratamentEfectuat)}
-        {dotBlock('')}
-        {dotBlock('')}
-
-        {sectionTitle('Alte informații referitoare la starea de sănătate a asiguratului:')}
-        {dotBlock(data.alteInformatii)}
-        {dotBlock('')}
-        {dotBlock('')}
-
-        {sectionTitle('Tratament recomandat')}
-        {dotBlock(data.tratamentRecomandat)}
-        {dotBlock('')}
-        {dotBlock('')}
-        {dotBlock('')}
-        {dotBlock('')}
-
-        {/* Nota + Atentie */}
-        <div style={{ fontSize: '8pt', fontWeight: 'bold', marginTop: 12, borderTop: '1px solid #999', paddingTop: 6 }}>
-          <strong>Nota:</strong> Se va specifica durata pentru care se poate prescrie de medicul din ambulatoriu, inclusiv medicul de familie, fiecare dintre medicamentele recomandate.<br />
-          <strong>ATENȚIE!</strong> Nerespectarea obligației medicului de specialitate din ambulatoriul clinic de specialitate sau din spital de a iniția tratamentul prin prescrierea primei rețete... se sancționează potrivit contractului încheiat de furnizor cu casa de asigurări de sănătate!<br />
-          Valabilitatea scrisorii medicale incepe de la data eliberarii acesteia.
-        </div>
-
-        {/* Indicatie revenire */}
-        <div style={{ marginTop: 10 }}>
-          <div style={{ fontWeight: 'bold', fontSize: '9pt' }}>Indicație de revenire pentru internare</div>
-          {checkRow(data.indicatieRevenire === 'da', `da, revine pentru internare în termen de ${data.termenRevenire || '............'}`)}
-          {checkRow(data.indicatieRevenire === 'nu', 'nu, nu este necesară revenirea pentru internare')}
-        </div>
-
-        {/* Prescriptie */}
-        <div style={{ marginTop: 10, fontSize: '9pt' }}>
-          <div>Se completează obligatoriu una dintre cele trei informații:</div>
-          <div style={{ marginLeft: 14 }}>
-            {checkRow(data.prescriptieStatus === 'eliberata', `S-a eliberat prescripție medicală, seria și numărul: ${data.prescriptieSerie || '..............'}`)}
-            {checkRow(data.prescriptieStatus === 'nu_necesar', 'Nu s-a eliberat prescripție medicală deoarece nu a fost necesar')}
-            {checkRow(data.prescriptieStatus === 'nu_eliberata', 'Nu s-a eliberat prescripție medicală')}
-          </div>
-        </div>
-
-        {/* Concediu */}
-        <div style={{ marginTop: 10, fontSize: '9pt' }}>
-          <div>Se completează obligatoriu una dintre cele trei informații:</div>
-          <div style={{ marginLeft: 14 }}>
-            {checkRow(data.concediuStatus === 'eliberat', `S-a eliberat concediu medical la externare, seria și numărul: ${data.concediuSerie || '..............'}`)}
-            {checkRow(data.concediuStatus === 'nu_necesar', 'Nu s-a eliberat concediu medical la externare deoarece nu a fost necesar')}
-            {checkRow(data.concediuStatus === 'nu_eliberat', 'Nu s-a eliberat concediu medical la externare')}
-          </div>
-        </div>
-
-        {/* Ingrijiri */}
-        <div style={{ marginTop: 10, fontSize: '9pt' }}>
-          <div>Se completează obligatoriu una dintre cele două informații:</div>
-          <div style={{ marginLeft: 14 }}>
-            {checkRow(data.ingrijiriStatus === 'eliberata', 'S-a eliberat recomandare pentru îngrijiri medicale la domiciliu / paliative la domiciliu')}
-            {checkRow(data.ingrijiriStatus === 'nu_necesar', 'Nu s-a eliberat recomandare pentru îngrijiri medicale la domiciliu / paliative la domiciliu, deoarece nu a fost necesar')}
-          </div>
-        </div>
-
-        {/* Dispozitive */}
-        <div style={{ marginTop: 10, fontSize: '9pt' }}>
-          <div>Se completează obligatoriu una dintre cele două informații:</div>
-          <div style={{ marginLeft: 14 }}>
-            {checkRow(data.dispozitiveStatus === 'eliberata', 'S-a eliberat prescripție medicală pentru dispozitive medicale în ambulatoriu')}
-            {checkRow(data.dispozitiveStatus === 'nu_necesar', 'Nu s-a eliberat prescripție medicală pentru dispozitive medicale în ambulatoriu deoarece nu a fost necesar')}
-          </div>
-        </div>
-
-        {/* Transmitere */}
-        <div style={{ marginTop: 10, fontSize: '9pt', borderTop: '1px solid #ccc', paddingTop: 4 }}>
-          <div>Calea de transmitere:</div>
-          <div style={{ marginLeft: 14 }}>
-            {checkRow(data.caleaTransmitere === 'asigurat', 'prin asigurat')}
-            {checkRow(data.caleaTransmitere === 'posta', `prin poștă ${data.caleaTransmitere === 'posta' && data.postaAdresa ? `— ${data.postaAdresa}` : '...................'}`)}
-          </div>
-        </div>
-
-        {/* Semnatura */}
-        <div style={{ marginTop: 36, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-          <div style={{ fontSize: '9pt' }}>Data <strong>{data.dataScrisorii}</strong></div>
-          <div style={{ textAlign: 'center', minWidth: 200, fontSize: '9pt' }}>
-            Semnătura și parafa medicului<br /><br />
-            .............................<br />
-            <em>{data.medicNume}{data.medicParafa ? ` / ${data.medicParafa}` : ''}</em>
-          </div>
-        </div>
-
-        {/* Footer note */}
-        <div style={{ marginTop: 30, fontSize: '8pt', borderTop: '1px dashed #ccc', paddingTop: 6, color: '#555' }}>
-          <strong>*)</strong> Scrisoarea medicală se întocmește în două exemplare, din care un exemplar rămâne la medicul care a efectuat consultația/serviciul în ambulatoriul de specialitate, iar un exemplar este transmis medicului de familie/medicului de specialitate din ambulatoriul de specialitate.
-        </div>
+      <div className={styles.letterPage} ref={letterRef}>
+        <MedicalLetter {...letterProps} analysesResults={analysesResults} />
       </div>
     </div>
   )
@@ -894,6 +714,7 @@ function PreviewContent({ data }: { data: ScrisoareMedicalaData }) {
 export function ScrisoareMedicalaModal({ detail, onClose }: Props) {
   const [view, setView] = useState<'form' | 'preview'>('form')
   const [data, setData] = useState<ScrisoareMedicalaData>(() => initFromDetail(detail))
+  const letterRef = useRef<HTMLDivElement>(null)
   // Populate clinic fields from DB (already cached via staleTime: Infinity)
   const { data: clinicResponse } = useCurrentClinic()
   const clinic = clinicResponse?.data
@@ -909,18 +730,49 @@ export function ScrisoareMedicalaModal({ detail, onClose }: Props) {
     setData(prev => ({ ...prev, [key]: val }))
 
   const handlePrint = () => {
-    const win = window.open('', '_blank', 'width=900,height=780,scrollbars=yes')
+    // Switch to preview first so the letter is rendered in the DOM
+    if (view !== 'preview') {
+      setView('preview')
+      setTimeout(handlePrint, 150)
+      return
+    }
+
+    const letterEl = letterRef.current
+    if (!letterEl) return
+
+    const win = window.open('', '_blank', 'width=960,height=820,scrollbars=yes')
     if (!win) {
       alert('Browserul a blocat fereastra nouă. Permiteți pop-up-uri pentru acest site.')
       return
     }
-    win.document.write(generateLetterHtml(data))
+
+    // Collect all compiled CSS rules from the current page (includes hashed CSS-module classes)
+    const allCss = Array.from(document.styleSheets)
+      .flatMap((sheet) => {
+        try {
+          return Array.from(sheet.cssRules).map((r) => r.cssText)
+        } catch {
+          // Cross-origin sheet — link it by URL instead
+          return sheet.href ? [`@import url("${sheet.href}");`] : []
+        }
+      })
+      .join('\n')
+
+    win.document.write(`<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <title>Scrisoare Medicală — ${data.patientName}</title>
+  <style>${allCss}</style>
+  <style>body { margin: 0; padding: 0; background: #fff; }</style>
+</head>
+<body>${letterEl.outerHTML}</body>
+</html>`)
     win.document.close()
-    // Use timeout as fallback for browsers where onload fires inconsistently
     setTimeout(() => {
       win.focus()
       win.print()
-    }, 500)
+    }, 600)
   }
 
   return (
@@ -962,7 +814,7 @@ export function ScrisoareMedicalaModal({ detail, onClose }: Props) {
         {/* Body */}
         <div className={styles.dialogBody}>
           {view === 'form'    && <FormContent data={data} update={update} />}
-          {view === 'preview' && <PreviewContent data={data} />}
+          {view === 'preview' && <PreviewContent data={data} detail={detail} letterRef={letterRef} />}
         </div>
 
       </div>

@@ -78,3 +78,19 @@ export interface UpdateAnalysesResultPayload {
   doctorName: string | null
   details: AnalysesResultDetailInput[]
 }
+
+// ─── For Medical Letter ───────────────────────────────────────────────────────
+
+export interface AnalysesResultForLetterHeaderDto {
+  id: string
+  laboratory: string | null
+  bulletinNumber: string | null
+  collectionDate: string   // 'YYYY-MM-DD'
+  resultDate: string       // 'YYYY-MM-DD'
+  doctorName: string | null
+  details: AnalysesResultDetailRowDto[]
+}
+
+export interface AnalysesResultsForLetterResponse {
+  bulletins: AnalysesResultForLetterHeaderDto[]
+}

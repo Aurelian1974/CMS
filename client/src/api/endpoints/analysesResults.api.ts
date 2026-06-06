@@ -3,6 +3,7 @@ import type {
   AnalysesResultListDto,
   AnalysesResultDetailDto,
   AnalysesResultsByPatientResponse,
+  AnalysesResultsForLetterResponse,
   CreateAnalysesResultPayload,
   UpdateAnalysesResultPayload,
 } from '@/features/consultations/lab/types/analysesResults.types'
@@ -10,6 +11,9 @@ import type {
 export const analysesResultsApi = {
   getByConsultation: (consultationId: string): Promise<AnalysesResultListDto[]> =>
     api.get(`/api/v1/AnalysesResults/by-consultation/${consultationId}`).then((r) => r.data),
+
+  getForMedicalLetter: (consultationId: string): Promise<AnalysesResultsForLetterResponse> =>
+    api.get(`/api/v1/AnalysesResults/for-medical-letter/${consultationId}`).then((r) => r.data),
 
   getByPatient: (
     patientId: string,

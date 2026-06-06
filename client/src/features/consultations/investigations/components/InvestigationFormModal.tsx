@@ -60,8 +60,6 @@ interface FormState {
   externalSource: string
   narrative: string
   structured: Record<string, unknown>
-  /** Mod de input pentru tipuri Structured cu hasStructuredFields=true. */
-  structuredMode: boolean
   attachedDocumentId: string | null
   attachedDocumentName: string | null
 }
@@ -109,7 +107,6 @@ export const InvestigationFormModal = ({
         externalSource: existing.externalSource ?? '',
         narrative: existing.narrative ?? '',
         structured: parsedStructured,
-        structuredMode: existing.hasStructuredData,
         attachedDocumentId: existing.attachedDocumentId,
         attachedDocumentName: existing.attachedDocumentName,
       })
@@ -126,7 +123,6 @@ export const InvestigationFormModal = ({
         externalSource: '',
         narrative: '',
         structured: {},
-        structuredMode: pickedType.defaultStructuredEntry,
         attachedDocumentId: null,
         attachedDocumentName: null,
       })
@@ -146,76 +142,95 @@ export const InvestigationFormModal = ({
   }
 
   const renderUIPattern = () => {
-    // Pentru tipuri Structured cu hasStructuredFields=true, permitem toggle Structured/Narrative.
-    const showStructured =
-      state.uiPattern === 'Structured' && state.hasStructuredFields && state.structuredMode
-    const showQuestionnaire = state.uiPattern === 'Questionnaire'
-    const showNarrativeOnly = state.uiPattern === 'Narrative' || state.uiPattern === 'LabTable'
-    const showNarrativeForStructured =
-      state.uiPattern === 'Structured' && state.hasStructuredFields && !state.structuredMode
+    const isQuestionnaire = state.uiPattern === 'Questionnaire'
+    const isStructuredWithFields = state.uiPattern === 'Structured' && state.hasStructuredFields
 
-    if (showQuestionnaire) {
+    if (isQuestionnaire) {
       const q = QUESTIONNAIRE_SCHEMAS[state.investigationType]
       if (!q) return <div className={styles.errorBanner}>Schemă chestionar lipsă pentru {state.investigationType}.</div>
       return (
-        <QuestionnaireRenderer
-          schema={q}
-          value={state.structured}
-          onChange={(next) => update({ structured: next })}
-          disabled={disabled}
-        />
-      )
-    }
-
-    if (showStructured) {
-      const sch = STRUCTURED_SCHEMAS[state.investigationType]
-      if (!sch) {
-        return (
-          <div className={styles.errorBanner}>
-            Schemă structurată indisponibilă pentru {state.investigationType}. Folosiți modul narativ.
+        <>
+          <QuestionnaireRenderer
+            schema={q}
+            value={state.structured}
+            onChange={(next) => update({ structured: next })}
+            disabled={disabled}
+          />
+          <div className={styles.narrative}>
+            <textarea
+              value={state.narrative}
+              onChange={(e) => update({ narrative: e.target.value })}
+              disabled={disabled}
+              placeholder="Interpretare, note clinice..."
+            />
           </div>
-        )
-      }
+        </>
+      )
+    }
+
+    if (isStructuredWithFields) {
+      const sch = STRUCTURED_SCHEMAS[state.investigationType]
       return (
-        <StructuredFormRenderer
-          schema={sch}
-          value={state.structured}
-          onChange={(next) => update({ structured: next })}
+        <>
+          {sch
+            ? (
+              <StructuredFormRenderer
+                schema={sch}
+                value={state.structured}
+                onChange={(next) => update({ structured: next })}
+                disabled={disabled}
+              />
+            )
+            : (
+              <div className={styles.errorBanner}>
+                Schemă structurată indisponibilă pentru {state.investigationType}.
+              </div>
+            )
+          }
+          <div className={styles.narrative}>
+            <textarea
+              value={state.narrative}
+              onChange={(e) => update({ narrative: e.target.value })}
+              disabled={disabled}
+              placeholder="Interpretare, note clinice..."
+            />
+            <DocumentUpload
+              attachedDocumentId={state.attachedDocumentId}
+              attachedDocumentName={state.attachedDocumentName}
+              onUploaded={handleAttachment}
+              disabled={disabled}
+            />
+          </div>
+        </>
+      )
+    }
+
+    // Narrative / LabTable
+    return (
+      <div className={styles.narrative}>
+        <textarea
+          value={state.narrative}
+          onChange={(e) => update({ narrative: e.target.value })}
+          disabled={disabled}
+          placeholder="Descriere, interpretare, concluzie..."
+        />
+        <DocumentUpload
+          attachedDocumentId={state.attachedDocumentId}
+          attachedDocumentName={state.attachedDocumentName}
+          onUploaded={handleAttachment}
           disabled={disabled}
         />
-      )
-    }
-
-    if (showNarrativeOnly || showNarrativeForStructured) {
-      return (
-        <div className={styles.narrative}>
-          <textarea
-            value={state.narrative}
-            onChange={(e) => update({ narrative: e.target.value })}
-            disabled={disabled}
-            placeholder="Descriere, interpretare, concluzie..."
-          />
-          <DocumentUpload
-            attachedDocumentId={state.attachedDocumentId}
-            attachedDocumentName={state.attachedDocumentName}
-            onUploaded={handleAttachment}
-            disabled={disabled}
-          />
-        </div>
-      )
-    }
-
-    return null
+      </div>
+    )
   }
 
   const handleSave = async () => {
     setError(null)
     try {
       const isStructuredEntry =
-        state.uiPattern === 'Structured' && state.hasStructuredFields && state.structuredMode
+        state.uiPattern === 'Structured' && state.hasStructuredFields
       const isQuestionnaire = state.uiPattern === 'Questionnaire'
-      const hasStructured = isStructuredEntry || isQuestionnaire
-      const payloadStructured = hasStructured && Object.keys(state.structured).length > 0
+      const payloadStructured = (isStructuredEntry || isQuestionnaire) && Object.keys(state.structured).length > 0
         ? JSON.stringify(state.structured)
         : null
 
@@ -225,12 +240,12 @@ export const InvestigationFormModal = ({
           investigationType: state.investigationType,
           investigationDate: state.investigationDate,
           structuredData: payloadStructured,
-          narrative: hasStructured ? null : (state.narrative || null),
+          narrative: state.narrative || null,
           isExternal: state.isExternal,
           externalSource: state.externalSource || null,
           status: state.status,
           attachedDocumentId: state.attachedDocumentId,
-          hasStructuredData: hasStructured,
+          hasStructuredData: payloadStructured !== null,
         }
         await updateMut.mutateAsync(payload)
       } else {
@@ -241,12 +256,12 @@ export const InvestigationFormModal = ({
           investigationType: state.investigationType,
           investigationDate: state.investigationDate,
           structuredData: payloadStructured,
-          narrative: hasStructured ? null : (state.narrative || null),
+          narrative: state.narrative || null,
           isExternal: state.isExternal,
           externalSource: state.externalSource || null,
           status: state.status,
           attachedDocumentId: state.attachedDocumentId,
-          hasStructuredData: hasStructured,
+          hasStructuredData: payloadStructured !== null,
         }
         await createMut.mutateAsync(payload)
       }
@@ -317,24 +332,6 @@ export const InvestigationFormModal = ({
             </label>
           )}
         </div>
-
-        {/* Toggle Structured ↔ Narrative pentru tipuri cu HasStructuredFields */}
-        {state.uiPattern === 'Structured' && state.hasStructuredFields && (
-          <div className={styles.toggle}>
-            <button
-              type="button"
-              className={state.structuredMode ? styles.active : undefined}
-              onClick={() => update({ structuredMode: true })}
-              disabled={disabled}
-            >Date structurate</button>
-            <button
-              type="button"
-              className={!state.structuredMode ? styles.active : undefined}
-              onClick={() => update({ structuredMode: false })}
-              disabled={disabled}
-            >Text liber + atașament</button>
-          </div>
-        )}
 
         {renderUIPattern()}
 

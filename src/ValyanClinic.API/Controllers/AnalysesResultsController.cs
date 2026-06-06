@@ -9,6 +9,7 @@ using ValyanClinic.Application.Features.AnalysesResults.DTOs;
 using ValyanClinic.Application.Features.AnalysesResults.Queries.GetAnalysesResultById;
 using ValyanClinic.Application.Features.AnalysesResults.Queries.GetAnalysesResultsByConsultation;
 using ValyanClinic.Application.Features.AnalysesResults.Queries.GetAnalysesResultsByPatient;
+using ValyanClinic.Application.Features.AnalysesResults.Queries.GetAnalysesResultsForMedicalLetter;
 using ValyanClinic.Infrastructure.Authentication;
 
 namespace ValyanClinic.API.Controllers;
@@ -21,6 +22,15 @@ public class AnalysesResultsController : BaseApiController
     public async Task<IActionResult> GetByConsultation(Guid consultationId, CancellationToken ct)
     {
         var result = await Mediator.Send(new GetAnalysesResultsByConsultationQuery(consultationId), ct);
+        return HandleResult(result);
+    }
+
+    [HttpGet("for-medical-letter/{consultationId:guid}")]
+    [HasAccess(ModuleCodes.Consultations, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<AnalysesResultsForLetterResponse>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetForMedicalLetter(Guid consultationId, CancellationToken ct)
+    {
+        var result = await Mediator.Send(new GetAnalysesResultsForMedicalLetterQuery(consultationId), ct);
         return HandleResult(result);
     }
 

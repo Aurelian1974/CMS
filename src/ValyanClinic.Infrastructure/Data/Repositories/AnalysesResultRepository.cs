@@ -41,6 +41,29 @@ public sealed class AnalysesResultRepository(DapperContext context) : IAnalysesR
         return rows.ToList();
     }
 
+    public async Task<AnalysesResultsForLetterResponse> GetForMedicalLetterAsync(
+        Guid consultationId, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        using var multi = await connection.QueryMultipleAsync(
+            new CommandDefinition(
+                AnalysesResultProcedures.GetForMedicalLetter,
+                new { ConsultationId = consultationId },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+
+        var headers = (await multi.ReadAsync<AnalysesResultForLetterHeaderDto>()).ToList();
+        var details = (await multi.ReadAsync<AnalysesResultDetailRowDto>()).ToList();
+
+        // Grupeaza detaliile pe headere
+        var detailsByResultId = details.ToLookup(d => d.ResultId);
+        var bulletins = headers
+            .Select(h => h with { Details = detailsByResultId[h.Id].ToList() })
+            .ToList();
+
+        return new AnalysesResultsForLetterResponse { Bulletins = bulletins };
+    }
+
     public async Task<(IReadOnlyList<AnalysesResultListDto> Headers, IReadOnlyList<AnalysesResultDetailRowDto> Details)>
         GetByPatientAsync(
             Guid patientId, Guid clinicId,

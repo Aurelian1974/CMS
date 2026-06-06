@@ -57,6 +57,24 @@ public sealed record AnalysesResultDetailDto
     public IReadOnlyList<AnalysesResultDetailRowDto> Details { get; init; } = [];
 }
 
+/// <summary>Header buletin pentru scrisoarea medicala (fara date de audit/tenant).</summary>
+public sealed record AnalysesResultForLetterHeaderDto
+{
+    public Guid    Id             { get; init; }
+    public string? Laboratory     { get; init; }
+    public string? BulletinNumber { get; init; }
+    public DateOnly CollectionDate { get; init; }
+    public DateOnly ResultDate     { get; init; }
+    public string? DoctorName     { get; init; }
+    public IReadOnlyList<AnalysesResultDetailRowDto> Details { get; init; } = [];
+}
+
+/// <summary>Raspuns complet cu toate buletinele + detalii pentru o consultatie — folosit in scrisoarea medicala.</summary>
+public sealed record AnalysesResultsForLetterResponse
+{
+    public IReadOnlyList<AnalysesResultForLetterHeaderDto> Bulletins { get; init; } = [];
+}
+
 /// <summary>Date pentru crearea/actualizarea unui buletin.</summary>
 public sealed record AnalysesResultSaveData
 {

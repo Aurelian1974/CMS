@@ -11,6 +11,9 @@ public interface IAnalysesResultRepository
     Task<IReadOnlyList<AnalysesResultListDto>> GetByConsultationAsync(
         Guid consultationId, Guid clinicId, CancellationToken ct);
 
+    Task<AnalysesResultsForLetterResponse> GetForMedicalLetterAsync(
+        Guid consultationId, CancellationToken ct);
+
     Task<(IReadOnlyList<AnalysesResultListDto> Headers, IReadOnlyList<AnalysesResultDetailRowDto> Details)>
         GetByPatientAsync(
             Guid patientId, Guid clinicId,
