@@ -1,7 +1,16 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { DropDownListComponent } from '@syncfusion/ej2-react-dropdowns'
 import { useRoles } from '@/features/users/hooks/useUsers'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { AppButton } from '@/components/ui/AppButton'
+import { AppModal } from '@/components/ui/AppModal'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { FeedbackAlerts } from '@/components/ui/FeedbackAlerts'
+import { AppDataGrid } from '@/components/data-display/AppDataGrid'
+import type { ColDef } from '@/components/data-display/AppDataGrid'
+import { useFeedback } from '@/hooks/useFeedback'
+import { useHasAccess, MODULE, ACCESS_LEVEL } from '@/hooks/useHasAccess'
 import {
   useModulesAndLevels,
   useRolePermissions,
@@ -13,18 +22,30 @@ import type {
 } from '../types/permission.types'
 import styles from './RolePermissionsPage.module.scss'
 
-// ── Icoane SVG ────────────────────────────────────────────────────────────────
-const IconShield = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-  </svg>
-)
+// ── Icoane ───────────────────────────────────────────────────────────────────
 const IconSave = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-    <polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" />
+    <polyline points="17 21 17 13 7 13 7 21" />
+    <polyline points="7 3 7 8 15 8" />
   </svg>
 )
+
+const IconSearch = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="11" cy="11" r="8" />
+    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+  </svg>
+)
+
+const IconRotateCcw = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="1 4 1 10 7 10" />
+    <path d="M3.51 15a9 9 0 102.13-9.36L1 10" />
+  </svg>
+)
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 /// Mapare cod nivel → clasă CSS badge
 const levelBadgeClass = (code: string) => {
@@ -37,204 +58,390 @@ const levelBadgeClass = (code: string) => {
   }
 }
 
+/// Rând afișat în grid
+interface PermissionRow {
+  moduleId: string
+  moduleCode: string
+  moduleName: string
+  sortOrder: number
+  accessLevelId: string
+  originalAccessLevelId: string
+  isDirty: boolean
+}
+
 /// Pagina de administrare permisiuni pe rol — matrice module × niveluri de acces.
 export const RolePermissionsPage = () => {
-  const { data: rolesResp, isLoading: loadingRoles } = useRoles()
-  const { data: metaResp, isLoading: loadingMeta } = useModulesAndLevels()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { hasAccess } = useHasAccess()
+  const canEditPermissions = hasAccess(MODULE.Users, ACCESS_LEVEL.Full)
+
+  const { data: rolesResp, isLoading: loadingRoles, isError: rolesError } = useRoles()
+  const { data: metaResp, isLoading: loadingMeta, isError: metaError } = useModulesAndLevels()
 
   const roles = useMemo(() => rolesResp?.data ?? [], [rolesResp])
   const modules = useMemo(() => metaResp?.data?.modules ?? [], [metaResp])
   const accessLevels = useMemo(() => metaResp?.data?.accessLevels ?? [], [metaResp])
 
-  // Selectare rol activ — default primul din listă
-  const [selectedRoleId, setSelectedRoleId] = useState<string>('')
+  // Selectare rol activ — default primul din listă sau din URL
+  const [selectedRoleId, setSelectedRoleId] = useState<string>(() => searchParams.get('role') ?? '')
+  const [pendingRoleId, setPendingRoleId] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!selectedRoleId && roles.length > 0) {
+    const roleFromUrl = searchParams.get('role') ?? ''
+    if (roles.length > 0 && !roles.some(r => r.id === roleFromUrl)) {
       setSelectedRoleId(roles[0].id)
+      setSearchParams({ role: roles[0].id }, { replace: true })
     }
-  }, [roles, selectedRoleId])
+  }, [roles, searchParams, setSearchParams])
 
   // Permisiuni curente ale rolului selectat
-  const { data: permResp, isLoading: loadingPerms } = useRolePermissions(selectedRoleId)
+  const {
+    data: permResp,
+    isLoading: loadingPerms,
+    isError: permsError,
+  } = useRolePermissions(selectedRoleId)
   const currentPermissions = useMemo(() => permResp?.data ?? [], [permResp])
 
-  // State local pentru editare — map moduleId → accessLevelId
+  // State local pentru editare
   const [editMap, setEditMap] = useState<Record<string, string>>({})
-  const [isDirty, setIsDirty] = useState(false)
+  const [originalMap, setOriginalMap] = useState<Record<string, string>>({})
+  const [search, setSearch] = useState('')
 
-  // Sync editMap când se schimbă rolul sau se încarcă permisiunile
+  const { successMsg, errorMsg, showSuccess, showError, setSuccessMsg, setErrorMsg, clearMessages } = useFeedback()
+
+  // Sync editMap/originalMap când se schimbă rolul sau se încarcă permisiunile
   useEffect(() => {
-    if (currentPermissions.length > 0) {
+    if (selectedRoleId && currentPermissions.length >= 0) {
       const map: Record<string, string> = {}
       for (const p of currentPermissions) {
         map[p.moduleId] = p.accessLevelId
       }
       setEditMap(map)
-      setIsDirty(false)
+      setOriginalMap(map)
+      clearMessages()
     }
-  }, [currentPermissions])
+  }, [currentPermissions, selectedRoleId, clearMessages])
 
-  // Niveluri sortate
+  // Niveluri sortate (crescător după level)
   const sortedLevels = useMemo(
     () => [...accessLevels].sort((a, b) => a.level - b.level),
     [accessLevels],
   )
 
-  // Sortează modulele
+  const levelById = useMemo(() => {
+    const map = new Map<string, AccessLevelDto>()
+    for (const lvl of accessLevels) map.set(lvl.id, lvl)
+    return map
+  }, [accessLevels])
+
+  // Module sortate și filtrate
   const sortedModules = useMemo(
     () => [...modules].sort((a, b) => a.sortOrder - b.sortOrder),
     [modules],
   )
 
+  const filteredModules = useMemo(() => {
+    if (!search.trim()) return sortedModules
+    const q = search.toLowerCase()
+    return sortedModules.filter(
+      m => m.name.toLowerCase().includes(q) || m.code.toLowerCase().includes(q),
+    )
+  }, [sortedModules, search])
+
+  // Rânduri pentru grid
+  const rowData = useMemo<PermissionRow[]>(() => {
+    return filteredModules.map(m => ({
+      moduleId: m.id,
+      moduleCode: m.code,
+      moduleName: m.name,
+      sortOrder: m.sortOrder,
+      accessLevelId: editMap[m.id] ?? sortedLevels[0]?.id ?? '',
+      originalAccessLevelId: originalMap[m.id] ?? sortedLevels[0]?.id ?? '',
+      isDirty: (editMap[m.id] ?? '') !== (originalMap[m.id] ?? ''),
+    }))
+  }, [filteredModules, editMap, originalMap, sortedLevels])
+
+  const isDirty = useMemo(
+    () => rowData.some(r => r.isDirty),
+    [rowData],
+  )
+
   // Handler schimbare nivel
   const handleLevelChange = useCallback((moduleId: string, accessLevelId: string) => {
-    setEditMap((prev) => ({ ...prev, [moduleId]: accessLevelId }))
-    setIsDirty(true)
+    setEditMap(prev => ({ ...prev, [moduleId]: accessLevelId }))
   }, [])
+
+  // Acțiuni bulk
+  const handleSetAll = useCallback((accessLevelId: string) => {
+    setEditMap(prev => {
+      const next = { ...prev }
+      for (const m of sortedModules) {
+        next[m.id] = accessLevelId
+      }
+      return next
+    })
+  }, [sortedModules])
+
+  const handleReset = useCallback(() => {
+    setEditMap(originalMap)
+  }, [originalMap])
+
+  // Schimbare rol cu confirmare modificări nesalvate
+  const handleRoleTabClick = useCallback((roleId: string) => {
+    if (isDirty && roleId !== selectedRoleId) {
+      setPendingRoleId(roleId)
+      return
+    }
+    setSelectedRoleId(roleId)
+    setSearchParams({ role: roleId }, { replace: true })
+    clearMessages()
+  }, [isDirty, selectedRoleId, setSearchParams, clearMessages])
+
+  const confirmRoleChange = useCallback(() => {
+    if (pendingRoleId) {
+      setSelectedRoleId(pendingRoleId)
+      setSearchParams({ role: pendingRoleId }, { replace: true })
+      setPendingRoleId(null)
+      clearMessages()
+    }
+  }, [pendingRoleId, setSearchParams, clearMessages])
 
   // Salvare
   const updateMutation = useUpdateRolePermissions()
 
-  const [successMsg, setSuccessMsg] = useState<string | null>(null)
-  const [errorMsg, setErrorMsg] = useState<string | null>(null)
-
-  const handleSave = async () => {
-    setSuccessMsg(null)
-    setErrorMsg(null)
-
+  const handleSave = useCallback(async () => {
+    if (!selectedRoleId) return
     const permissions: RolePermissionItemPayload[] = Object.entries(editMap).map(
       ([moduleId, accessLevelId]) => ({ moduleId, accessLevelId }),
     )
 
     try {
       await updateMutation.mutateAsync({ roleId: selectedRoleId, permissions })
-      setSuccessMsg('Permisiunile au fost salvate cu succes.')
-      setIsDirty(false)
+      setOriginalMap(editMap)
+      showSuccess('Permisiunile au fost salvate cu succes.')
     } catch (err: unknown) {
-      setErrorMsg(err instanceof Error ? err.message : 'Eroare la salvare.')
+      showError(err)
     }
-  }
+  }, [selectedRoleId, editMap, updateMutation, showSuccess, showError])
 
-  // Rezolvă numele nivelului curent (pentru preview badge)
-  const getLevelForModule = (moduleId: string): AccessLevelDto | undefined => {
-    const id = editMap[moduleId]
-    return sortedLevels.find((l) => l.id === id)
-  }
+  // Avertisment înainte de închidere/reîncărcare cu modificări nesalvate
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [isDirty])
+
+  const selectedRole = useMemo(() => roles.find(r => r.id === selectedRoleId), [roles, selectedRoleId])
+
+  // ── Cell renderers pentru grid ─────────────────────────────────────────────
+  const moduleCellRenderer = useCallback(({ data }: { data: PermissionRow }) => (
+    <div className={styles.moduleCell}>
+      <span className={styles.moduleName}>{data.moduleName}</span>
+      <span className={styles.moduleCode}>{data.moduleCode}</span>
+    </div>
+  ), [])
+
+  const dropdownRef = useRef<DropDownListComponent | null>(null)
+
+  const levelCellRenderer = useCallback(({ data }: { data: PermissionRow }) => {
+    const options = sortedLevels.map(l => ({ label: `${l.name} (${l.level})`, value: l.id }))
+    return (
+      <DropDownListComponent
+        ref={dropdownRef}
+        dataSource={options as never}
+        fields={{ text: 'label', value: 'value' }}
+        value={data.accessLevelId}
+        change={(args) => {
+          if (args.value) handleLevelChange(data.moduleId, args.value as string)
+        }}
+        enabled={canEditPermissions}
+        popupHeight="220px"
+        cssClass={styles.gridDropdown}
+      />
+    )
+  }, [sortedLevels, canEditPermissions, handleLevelChange])
+
+  const previewCellRenderer = useCallback(({ data }: { data: PermissionRow }) => {
+    const level = levelById.get(data.accessLevelId)
+    if (!level) return null
+    return (
+      <span className={`${styles.levelBadge} ${levelBadgeClass(level.code)}`}>
+        {level.name}
+      </span>
+    )
+  }, [levelById])
+
+  const columnDefs = useMemo<ColDef<PermissionRow>[]>(() => [
+    {
+      field: 'moduleName',
+      headerName: 'Modul',
+      flex: 2,
+      minWidth: 220,
+      sortable: true,
+      cellRenderer: moduleCellRenderer,
+      cellClass: styles.moduleColumn,
+    },
+    {
+      colId: 'accessLevelSelect',
+      field: 'accessLevelId',
+      headerName: 'Nivel acces',
+      flex: 1,
+      minWidth: 200,
+      sortable: true,
+      cellRenderer: levelCellRenderer,
+    },
+    {
+      colId: 'accessLevelPreview',
+      field: 'previewLevel',
+      headerName: 'Preview',
+      flex: 1,
+      minWidth: 140,
+      sortable: false,
+      valueGetter: ({ data }) => data.accessLevelId,
+      cellRenderer: previewCellRenderer,
+    },
+  ], [moduleCellRenderer, levelCellRenderer, previewCellRenderer])
 
   const isLoading = loadingRoles || loadingMeta || loadingPerms
-  const selectedRole = roles.find((r) => r.id === selectedRoleId)
+  const isError = rolesError || metaError || permsError
+
+  if (isError) {
+    return (
+      <div className={styles.page}>
+        <div className="alert alert-danger m-4">
+          Nu s-au putut încărca datele. Verificați conexiunea la server.
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={styles.page}>
-      {/* Header */}
-      <div className={styles.header}>
-        <div className={styles.headerLeft}>
-          <h1 className={styles.pageTitle}>
-            <IconShield /> Permisiuni Roluri
-          </h1>
-          <p className={styles.pageSubtitle}>
-            Configurează nivelurile de acces implicite pentru fiecare rol
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Permisiuni Roluri"
+        subtitle="Configurează nivelurile de acces implicite pentru fiecare rol"
+        actions={
+          <AppButton
+            variant="primary"
+            size="sm"
+            onClick={handleSave}
+            disabled={!isDirty || !canEditPermissions}
+            isLoading={updateMutation.isPending}
+            loadingText="Se salvează..."
+            leftIcon={<IconSave />}
+          >
+            Salvează permisiuni {selectedRole?.name ?? ''}
+          </AppButton>
+        }
+      />
 
-      {/* Conținut */}
       <div className={styles.content}>
         {/* Tabs roluri */}
         <div className={styles.roleTabs}>
-          {roles.map((role) => (
+          {roles.map(role => (
             <button
               key={role.id}
               className={`${styles.roleTab}${role.id === selectedRoleId ? ` ${styles.roleTabActive}` : ''}`}
-              onClick={() => { setSelectedRoleId(role.id); setSuccessMsg(null); setErrorMsg(null) }}
+              onClick={() => handleRoleTabClick(role.id)}
             >
               {role.name}
             </button>
           ))}
         </div>
 
-        {isLoading && (
+        {/* Toolbar */}
+        <div className={styles.toolbar}>
+          <div className={styles.searchWrap}>
+            <span className={styles.searchIcon}><IconSearch /></span>
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder="Caută modul după denumire sau cod..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+
+          <div className={styles.bulkActions}>
+            {sortedLevels.map(level => (
+              <AppButton
+                key={level.id}
+                variant="outline-secondary"
+                size="sm"
+                onClick={() => handleSetAll(level.id)}
+                disabled={!canEditPermissions}
+                title={`Setează toate modulele la ${level.name}`}
+              >
+                {level.name}
+              </AppButton>
+            ))}
+            <AppButton
+              variant="ghost"
+              size="sm"
+              onClick={handleReset}
+              disabled={!isDirty}
+              leftIcon={<IconRotateCcw />}
+            >
+              Reset
+            </AppButton>
+          </div>
+        </div>
+
+        {isLoading ? (
           <div className={styles.loading}>
             <LoadingSpinner size="sm" />
             Se încarcă...
           </div>
+        ) : (
+          <div className={styles.gridWrapper}>
+            <AppDataGrid<PermissionRow>
+              rowData={rowData}
+              columnDefs={columnDefs}
+              getRowId={row => row.moduleId}
+              pagination={false}
+              loading={isLoading}
+              height={520}
+              alternateRows
+              enableHover
+              gridLines="horizontal"
+              stickyHeader
+              initialSort={[{ field: 'sortOrder', direction: 'asc' }]}
+            />
+          </div>
         )}
 
-        {!isLoading && selectedRoleId && sortedModules.length > 0 && (
-          <>
-            {/* Matrice permisiuni */}
-            <table className={styles.matrix}>
-              <thead>
-                <tr>
-                  <th style={{ width: '40%' }}>Modul</th>
-                  <th style={{ width: '30%' }}>Nivel acces</th>
-                  <th style={{ width: '30%' }}>Preview</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedModules.map((mod) => {
-                  const currentLevel = getLevelForModule(mod.id)
-                  return (
-                    <tr key={mod.id}>
-                      <td>
-                        <div className={styles.moduleCell}>
-                          <span className={styles.moduleName}>{mod.name}</span>
-                          <span className={styles.moduleCode}>{mod.code}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <select
-                          className={`form-select form-select-sm ${styles.levelSelect}`}
-                          value={editMap[mod.id] ?? ''}
-                          onChange={(e) => handleLevelChange(mod.id, e.target.value)}
-                        >
-                          {sortedLevels.map((lvl) => (
-                            <option key={lvl.id} value={lvl.id}>
-                              {lvl.name} ({lvl.level})
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td>
-                        {currentLevel && (
-                          <span className={`${styles.levelBadge} ${levelBadgeClass(currentLevel.code)}`}>
-                            {currentLevel.name}
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-
-            <div className={styles.actions}>
-              <AppButton
-                variant="primary"
-                size="sm"
-                onClick={handleSave}
-                disabled={!isDirty}
-                isLoading={updateMutation.isPending}
-                loadingText={`Salvează permisiuni ${selectedRole?.name ?? ''}`}
-              >
-                <IconSave />
-                Salvează permisiuni {selectedRole?.name ?? ''}
-              </AppButton>
-            </div>
-          </>
-        )}
-
-        {/* Feedback */}
-        {successMsg && (
-          <div className={`alert alert-success mt-3 ${styles.feedback}`}>{successMsg}</div>
-        )}
-        {errorMsg && (
-          <div className={`alert alert-danger mt-3 ${styles.feedback}`}>{errorMsg}</div>
-        )}
+        <FeedbackAlerts
+          successMsg={successMsg}
+          errorMsg={errorMsg}
+          onDismissSuccess={() => setSuccessMsg(null)}
+          onDismissError={() => setErrorMsg(null)}
+        />
       </div>
+
+      {/* Confirmare schimbare rol cu modificări nesalvate */}
+      <AppModal
+        isOpen={!!pendingRoleId}
+        onClose={() => setPendingRoleId(null)}
+        title="Modificări nesalvate"
+        footer={
+          <div className={styles.modalActions}>
+            <AppButton variant="outline-secondary" onClick={() => setPendingRoleId(null)}>
+              Rămâi pe pagină
+            </AppButton>
+            <AppButton variant="primary" onClick={confirmRoleChange}>
+              Renunță și schimbă rolul
+            </AppButton>
+          </div>
+        }
+      >
+        <p>Ai modificări nesalvate pentru rolul <strong>{selectedRole?.name ?? ''}</strong>.</p>
+        <p>Dacă continui, modificările vor fi pierdute.</p>
+      </AppModal>
     </div>
   )
 }
-
-export default RolePermissionsPage

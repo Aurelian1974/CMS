@@ -20,16 +20,23 @@ public sealed class UpdateRolePermissionsCommandHandler(
     // Păstrat public pentru compatibilitate cu teste existente
     public static readonly string CacheVersionKey = PermissionCacheKeys.Version;
 
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
+
     public async Task<Result<int>> Handle(
         UpdateRolePermissionsCommand request, CancellationToken ct)
     {
-        // Serializare JSON pentru SP (parametru TVP-like via JSON)
+        // Serializare JSON pentru SP (parametru TVP-like via JSON).
+        // SP folosește JSON_VALUE cu chei camelCase, deci forțăm policy-ul corespunzător.
         var json = JsonSerializer.Serialize(
             request.Permissions.Select(p => new
             {
                 ModuleId = p.ModuleId,
-                AccessLevelId = p.AccessLevelId
-            }));
+                AccessLevelId = p.AccessLevelId,
+            }),
+            JsonOptions);
 
         var affectedRows = await permissionRepository.SyncRolePermissionsAsync(
             request.RoleId, json, currentUser.Id, ct);

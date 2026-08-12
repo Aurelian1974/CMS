@@ -23,7 +23,7 @@ const ClinicPage         = lazy(() => import('../features/clinic/pages/ClinicPag
 const DepartmentsPage    = lazy(() => import('../features/departments/pages/DepartmentsPage'))
 const MedicalStaffPage       = lazy(() => import('../features/medicalStaff/pages/MedicalStaffListPage'))
 const MedicalStaffDetailPage = lazy(() => import('../features/medicalStaff/pages/MedicalStaffDetailPage'))
-const RolePermissionsPage = lazy(() => import('../features/permissions/pages/RolePermissionsPage'))
+const RolePermissionsPage = lazy(() => import('../features/permissions/pages/RolePermissionsPage').then(m => ({ default: m.RolePermissionsPage })))
 const UserOverridesPage   = lazy(() => import('../features/permissions/pages/UserOverridesPage'))
 const SchedulePage              = lazy(() => import('../features/clinic/pages/SchedulePage'))
 const AnmDrugsPage              = lazy(() => import('../features/anm/pages/AnmDrugsPage'))

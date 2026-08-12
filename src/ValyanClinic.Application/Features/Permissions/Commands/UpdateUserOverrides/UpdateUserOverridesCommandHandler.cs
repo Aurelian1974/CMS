@@ -13,6 +13,11 @@ public sealed class UpdateUserOverridesCommandHandler(
     IMemoryCache memoryCache)
     : IRequestHandler<UpdateUserOverridesCommand, Result<int>>
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
+
     public async Task<Result<int>> Handle(
         UpdateUserOverridesCommand request, CancellationToken ct)
     {
@@ -20,8 +25,9 @@ public sealed class UpdateUserOverridesCommandHandler(
             request.Overrides.Select(o => new
             {
                 ModuleId = o.ModuleId,
-                AccessLevelId = o.AccessLevelId
-            }));
+                AccessLevelId = o.AccessLevelId,
+            }),
+            JsonOptions);
 
         var affectedRows = await permissionRepository.SyncUserOverridesAsync(
             request.UserId, json, currentUser.Id, ct);

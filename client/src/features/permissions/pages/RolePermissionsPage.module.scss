@@ -11,33 +11,6 @@
   overflow-y: auto;
 }
 
-// ── Header ────────────────────────────────────────────────────────────────────
-.header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.headerLeft {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.pageTitle {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: $gray-800;
-  margin: 0;
-}
-
-.pageSubtitle {
-  font-size: 0.85rem;
-  color: $gray-500;
-}
-
 // ── Conținut ──────────────────────────────────────────────────────────────────
 .content {
   background: $card-bg;
@@ -46,110 +19,11 @@
   box-shadow: $box-shadow-sm;
 }
 
-// ── Selector rol ──────────────────────────────────────────────────────────────
-.roleSelector {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-}
-
-.roleLabel {
-  font-weight: 600;
-  color: $gray-700;
-  white-space: nowrap;
-}
-
-.roleSelect {
-  min-width: 250px;
-}
-
-// ── Tabel matrice permisiuni ──────────────────────────────────────────────────
-.matrix {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  border: 1px solid $gray-200;
-  border-radius: $border-radius;
-  overflow: hidden;
-}
-
-.matrix th,
-.matrix td {
-  padding: 10px 14px;
-  text-align: left;
-  border-bottom: 1px solid $gray-200;
-}
-
-.matrix th {
-  background-color: $primary-darker;
-  color: #fff;
-  font-weight: 600;
-  font-size: 0.8125rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.matrix tr:last-child td {
-  border-bottom: none;
-}
-
-.matrix tbody tr:hover {
-  background-color: rgba($primary-lighter, 0.2);
-}
-
-.moduleCell {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.moduleName {
-  font-weight: 600;
-  color: $gray-700;
-  font-size: 0.9rem;
-}
-
-.moduleCode {
-  font-size: 0.75rem;
-  color: $gray-400;
-  font-family: monospace;
-}
-
-.levelSelect {
-  width: 160px;
-}
-
-// ── Footer acțiuni ────────────────────────────────────────────────────────────
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 1.5rem;
-  padding-top: 1rem;
-  border-top: 1px solid $gray-200;
-}
-
-// ── Feedback ──────────────────────────────────────────────────────────────────
-.feedback {
-  margin-top: 1rem;
-}
-
-// ── Loading ───────────────────────────────────────────────────────────────────
-.loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem;
-  color: $gray-500;
-}
-
 // ── Tabs roluri ───────────────────────────────────────────────────────────────
 .roleTabs {
   display: flex;
   gap: 8px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   flex-wrap: wrap;
 }
 
@@ -182,6 +56,116 @@
   }
 }
 
+// ── Toolbar ───────────────────────────────────────────────────────────────────
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.searchWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 260px;
+  max-width: 360px;
+  flex: 1;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 12px;
+  color: $gray-400;
+  display: flex;
+  align-items: center;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 12px 8px 38px;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius;
+  font-size: 0.875rem;
+  color: $gray-700;
+  background: $card-bg;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &::placeholder {
+    color: $gray-400;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $primary-light;
+    box-shadow: 0 0 0 3px rgba($primary, 0.08);
+  }
+}
+
+.bulkActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+// ── Grid ──────────────────────────────────────────────────────────────────────
+.gridWrapper {
+  border: 1px solid $gray-200;
+  border-radius: $border-radius;
+  overflow: hidden;
+}
+
+.moduleColumn {
+  padding-left: 12px !important;
+}
+
+.moduleCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.moduleName {
+  font-weight: 600;
+  color: $gray-700;
+  font-size: 0.9rem;
+}
+
+.moduleCode {
+  font-size: 0.75rem;
+  color: $gray-400;
+  font-family: monospace;
+}
+
+// ── Dropdown Syncfusion în celulă ─────────────────────────────────────────────
+.gridDropdown {
+  :global(.e-input-group) {
+    border-color: $gray-200;
+    border-radius: $border-radius-sm;
+    font-size: 0.875rem;
+    height: 32px;
+    min-height: 32px;
+  }
+
+  :global(.e-input-group.e-control-wrapper) {
+    background: $card-bg;
+  }
+
+  :global(.e-input-group .e-input) {
+    color: $gray-700;
+    font-size: 0.875rem;
+    height: 30px;
+    min-height: 30px;
+  }
+
+  :global(.e-input-group-icon.e-ddl-icon) {
+    color: $gray-500;
+  }
+}
+
 // ── Badge nivel ───────────────────────────────────────────────────────────────
 .levelBadge {
   display: inline-block;
@@ -194,4 +178,47 @@
   &Read   { background: rgba($info, 0.15); color: darken($info, 18%); }
   &Write  { background: rgba($success, 0.15); color: darken($success, 18%); }
   &Full   { background: rgba($warning, 0.15); color: darken($warning, 22%); }
+}
+
+// ── Loading ───────────────────────────────────────────────────────────────────
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 3rem;
+  color: $gray-500;
+}
+
+// ── Modal acțiuni ─────────────────────────────────────────────────────────────
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  width: 100%;
+}
+
+// ── Responsive ────────────────────────────────────────────────────────────────
+@media (max-width: 768px) {
+  .page {
+    padding: 16px;
+  }
+
+  .roleTabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .searchWrap {
+    max-width: none;
+  }
+
+  .bulkActions {
+    justify-content: flex-start;
+  }
 }
