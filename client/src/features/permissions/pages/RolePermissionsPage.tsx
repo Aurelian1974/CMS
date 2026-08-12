@@ -65,8 +65,34 @@ interface PermissionRow {
   moduleName: string
   sortOrder: number
   accessLevelId: string
+  previewLevelId: string
   originalAccessLevelId: string
   isDirty: boolean
+}
+
+/// Celulă dropdown pentru selectorul de nivel — componentă separată pentru ref propriu.
+interface LevelDropdownCellProps {
+  value: string
+  options: { label: string; value: string }[]
+  enabled: boolean
+  onChange: (value: string) => void
+}
+const LevelDropdownCell = ({ value, options, enabled, onChange }: LevelDropdownCellProps) => {
+  const ref = useRef<DropDownListComponent | null>(null)
+  return (
+    <DropDownListComponent
+      ref={ref}
+      dataSource={options as never}
+      fields={{ text: 'label', value: 'value' }}
+      value={value}
+      change={(args) => {
+        if (args.value) onChange(args.value as string)
+      }}
+      enabled={enabled}
+      popupHeight="220px"
+      cssClass={styles.gridDropdown}
+    />
+  )
 }
 
 /// Pagina de administrare permisiuni pe rol — matrice module × niveluri de acces.
@@ -150,15 +176,19 @@ export const RolePermissionsPage = () => {
 
   // Rânduri pentru grid
   const rowData = useMemo<PermissionRow[]>(() => {
-    return filteredModules.map(m => ({
-      moduleId: m.id,
-      moduleCode: m.code,
-      moduleName: m.name,
-      sortOrder: m.sortOrder,
-      accessLevelId: editMap[m.id] ?? sortedLevels[0]?.id ?? '',
-      originalAccessLevelId: originalMap[m.id] ?? sortedLevels[0]?.id ?? '',
-      isDirty: (editMap[m.id] ?? '') !== (originalMap[m.id] ?? ''),
-    }))
+    return filteredModules.map(m => {
+      const accessLevelId = editMap[m.id] ?? sortedLevels[0]?.id ?? ''
+      return {
+        moduleId: m.id,
+        moduleCode: m.code,
+        moduleName: m.name,
+        sortOrder: m.sortOrder,
+        accessLevelId,
+        previewLevelId: accessLevelId,
+        originalAccessLevelId: originalMap[m.id] ?? sortedLevels[0]?.id ?? '',
+        isDirty: (editMap[m.id] ?? '') !== (originalMap[m.id] ?? ''),
+      }
+    })
   }, [filteredModules, editMap, originalMap, sortedLevels])
 
   const isDirty = useMemo(
@@ -246,28 +276,20 @@ export const RolePermissionsPage = () => {
     </div>
   ), [])
 
-  const dropdownRef = useRef<DropDownListComponent | null>(null)
-
   const levelCellRenderer = useCallback(({ data }: { data: PermissionRow }) => {
     const options = sortedLevels.map(l => ({ label: `${l.name} (${l.level})`, value: l.id }))
     return (
-      <DropDownListComponent
-        ref={dropdownRef}
-        dataSource={options as never}
-        fields={{ text: 'label', value: 'value' }}
+      <LevelDropdownCell
         value={data.accessLevelId}
-        change={(args) => {
-          if (args.value) handleLevelChange(data.moduleId, args.value as string)
-        }}
+        options={options}
         enabled={canEditPermissions}
-        popupHeight="220px"
-        cssClass={styles.gridDropdown}
+        onChange={(value) => handleLevelChange(data.moduleId, value)}
       />
     )
   }, [sortedLevels, canEditPermissions, handleLevelChange])
 
   const previewCellRenderer = useCallback(({ data }: { data: PermissionRow }) => {
-    const level = levelById.get(data.accessLevelId)
+    const level = levelById.get(data.previewLevelId)
     if (!level) return null
     return (
       <span className={`${styles.levelBadge} ${levelBadgeClass(level.code)}`}>
@@ -297,12 +319,11 @@ export const RolePermissionsPage = () => {
     },
     {
       colId: 'accessLevelPreview',
-      field: 'previewLevel',
+      field: 'previewLevelId',
       headerName: 'Preview',
       flex: 1,
       minWidth: 140,
       sortable: false,
-      valueGetter: ({ data }) => data.accessLevelId,
       cellRenderer: previewCellRenderer,
     },
   ], [moduleCellRenderer, levelCellRenderer, previewCellRenderer])
