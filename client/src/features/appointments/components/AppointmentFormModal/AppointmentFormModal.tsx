@@ -21,12 +21,18 @@ interface TimeSelectProps {
   hasError?: boolean
 }
 
+const pad = (n: number) => String(n).padStart(2, '0')
+
+const addMinutesToTime = (time: string, minutes: number): string => {
+  const [h, m] = time.split(':').map(Number)
+  const total = h * 60 + m + minutes
+  return `${pad(Math.floor(total / 60))}:${pad(total % 60)}`
+}
+
 const TimeSelect = ({ value, onChange, hasError }: TimeSelectProps) => {
   const parts   = value ? value.split(':') : ['07', '00']
   const hVal    = parseInt(parts[0], 10)
   const mVal    = parseInt(parts[1], 10)
-
-  const pad = (n: number) => String(n).padStart(2, '0')
 
   return (
     <div className={`${styles.timeSelectGroup}${hasError ? ` ${styles['timeSelectGroup--error']}` : ''}`}>
@@ -98,6 +104,8 @@ export const AppointmentFormModal = ({
     handleSubmit,
     reset,
     control,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<AppointmentFormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -107,6 +115,14 @@ export const AppointmentFormModal = ({
       statusId: DEFAULT_STATUS_ID, notes: '',
     },
   })
+
+  // Pentru programări noi, ora de sfârșit urmărește mereu ora de început (+30 min)
+  const startTimeValue = watch('startTime')
+  useEffect(() => {
+    if (!isEdit && startTimeValue) {
+      setValue('endTime', addMinutesToTime(startTimeValue, 30), { shouldValidate: true })
+    }
+  }, [isEdit, setValue, startTimeValue])
 
   // Populare la editare / reset la creare
   useEffect(() => {

@@ -157,7 +157,98 @@ const schedulerDtoToFormEditData = (apt: AppointmentSchedulerDto): AppointmentDt
 /** Rotunjește minutele la cel mai apropiat multiplu de 15 */
 const roundToNearest15 = (totalMinutes: number): number => Math.round(totalMinutes / 15) * 15
 
+/** Rotunjește minutele în sus la cel mai apropiat multiplu de step */
+const roundUpToNearestMinutes = (totalMinutes: number, step: number): number =>
+  Math.ceil(totalMinutes / step) * step
+
 const pad2 = (n: number) => String(n).padStart(2, '0')
+
+const minutesToTime = (totalMinutes: number): string => {
+  const h = Math.floor(totalMinutes / 60)
+  const m = totalMinutes % 60
+  return `${pad2(h)}:${pad2(m)}`
+}
+
+const DEFAULT_APPOINTMENT_DURATION = 30
+
+/**
+ * Calculează ora implicită de început/sfârșit pentru o programare nouă:
+ * - azi: cel mai apropiat slot liber după ora curentă;
+ * - viitor: primul slot liber al doctorului în programul său.
+ * Sfârșitul este întotdeauna începutul + 30 minute.
+ */
+const getDefaultAppointmentTimes = (
+  date: Date,
+  doctorId: string | undefined,
+  clinicSchedule: ClinicScheduleDto[],
+  doctorSchedules: DoctorScheduleDto[],
+  appointments: AppointmentSchedulerDto[],
+): { startTime: string; endTime: string } => {
+  const now = new Date()
+  const isToday =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear()
+  const dow = date.getDay() === 0 ? 7 : date.getDay()
+  const clinicEntry = clinicSchedule.find(e => e.dayOfWeek === dow)
+
+  const fallbackStart = (): number => {
+    const base = isToday ? now.getHours() * 60 + now.getMinutes() : DEFAULT_HOUR_START * 60
+    return roundUpToNearestMinutes(base, 15)
+  }
+
+  if (!doctorId || !clinicEntry?.isOpen || !clinicEntry.openTime || !clinicEntry.closeTime) {
+    const startMin = fallbackStart()
+    return { startTime: minutesToTime(startMin), endTime: minutesToTime(startMin + DEFAULT_APPOINTMENT_DURATION) }
+  }
+
+  const clinicFrom = parseTime(clinicEntry.openTime) ?? DEFAULT_HOUR_START * 60
+  const clinicTo = parseTime(clinicEntry.closeTime) ?? DEFAULT_HOUR_END * 60
+  const docDay = doctorSchedules.find(
+    e => e.doctorId === doctorId && e.dayOfWeek === dow && e.startTime && e.endTime,
+  )
+
+  if (!docDay) {
+    const startMin = Math.max(clinicFrom, fallbackStart())
+    return { startTime: minutesToTime(startMin), endTime: minutesToTime(startMin + DEFAULT_APPOINTMENT_DURATION) }
+  }
+
+  const docFrom = parseTime(docDay.startTime) ?? clinicFrom
+  const docTo = parseTime(docDay.endTime) ?? clinicTo
+  const effFrom = Math.max(clinicFrom, docFrom)
+  const effTo = Math.min(clinicTo, docTo)
+  const nowMin = now.getHours() * 60 + now.getMinutes()
+
+  let startMin = isToday
+    ? Math.max(effFrom, roundUpToNearestMinutes(nowMin, 15))
+    : effFrom
+
+  const dateStr = formatDateISO(date)
+  const dayApts = appointments.filter(a => a.doctorId === doctorId && a.startTime.startsWith(dateStr))
+  const bookedRanges = dayApts
+    .map(a => {
+      const s = new Date(a.startTime)
+      const e = new Date(a.endTime)
+      return { from: s.getHours() * 60 + s.getMinutes(), to: e.getHours() * 60 + e.getMinutes() }
+    })
+    .sort((a, b) => a.from - b.from)
+
+  while (startMin + DEFAULT_APPOINTMENT_DURATION <= effTo) {
+    const conflict = bookedRanges.some(
+      r => startMin < r.to && startMin + DEFAULT_APPOINTMENT_DURATION > r.from,
+    )
+    if (!conflict) break
+    startMin += 15
+  }
+
+  if (startMin + DEFAULT_APPOINTMENT_DURATION > effTo) {
+    startMin = isToday
+      ? Math.max(effFrom, roundUpToNearestMinutes(nowMin, 15))
+      : effFrom
+  }
+
+  return { startTime: minutesToTime(startMin), endTime: minutesToTime(startMin + DEFAULT_APPOINTMENT_DURATION) }
+}
 
 // ── Week / Month view helpers ─────────────────────────────────────────────────
 
@@ -378,10 +469,23 @@ export const AppointmentsSchedulerPage = () => {
   // ── Form modal handlers ──────────────────────────────────────────────────────
   const handleOpenCreate = useCallback(() => {
     setEditingSchedulerApt(null)
-    setFormCreateDefaults(undefined)
+    const doctorId = doctorFilter ?? doctorLookup[0]?.id
+    const { startTime, endTime } = getDefaultAppointmentTimes(
+      currentDate,
+      doctorId,
+      clinicSchedule,
+      allDoctorSchedules,
+      appointments,
+    )
+    setFormCreateDefaults({
+      doctorId,
+      date: formatDateISO(currentDate),
+      startTime,
+      endTime,
+    })
     setServerError(null)
     setFormModalOpen(true)
-  }, [])
+  }, [currentDate, doctorFilter, doctorLookup, clinicSchedule, allDoctorSchedules, appointments])
 
   /** Click pe un slot gol din timeline — deschide formularul de creare pre-completat */
   const handleSlotClick = useCallback((e: React.MouseEvent<HTMLDivElement>, doctorId: string) => {
@@ -393,7 +497,7 @@ export const AppointmentsSchedulerPage = () => {
     const relX = e.clientX - rect.left
     const totalMinutes = tlStart + (relX / rect.width) * (tlEnd - tlStart)
     const startMin = Math.max(tlStart, Math.min(roundToNearest15(totalMinutes), tlEnd - 15))
-    const endMin = Math.min(startMin + 60, tlEnd)
+    const endMin = Math.min(startMin + DEFAULT_APPOINTMENT_DURATION, tlEnd)
     setEditingSchedulerApt(null)
     setFormCreateDefaults({
       doctorId,
