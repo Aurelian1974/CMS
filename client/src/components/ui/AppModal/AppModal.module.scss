@@ -11,8 +11,8 @@
   z-index: 1050;
   padding: 1rem;
   animation: fadeIn 0.15s ease;
-  // Permite pointer events pe modal chiar dacă e pozitionat fix
-  pointer-events: none;
+  // Blochează click-urile în exteriorul modalului fără să-l închidă accidental
+  pointer-events: auto;
 
   > * { pointer-events: auto; }
 }

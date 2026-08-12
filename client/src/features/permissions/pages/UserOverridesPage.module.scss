@@ -1,6 +1,5 @@
 @import '@/styles/variables';
 
-// ── Page wrapper ──────────────────────────────────────────────────────────────
 .page {
   display: flex;
   flex-direction: column;
@@ -11,34 +10,6 @@
   overflow-y: auto;
 }
 
-// ── Header ────────────────────────────────────────────────────────────────────
-.header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.headerLeft {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.pageTitle {
-  font-size: 1.6rem;
-  font-weight: 700;
-  color: $gray-800;
-  margin: 0;
-}
-
-.pageSubtitle {
-  font-size: 0.85rem;
-  color: $gray-500;
-}
-
-// ── Conținut ──────────────────────────────────────────────────────────────────
 .content {
   background: $card-bg;
   border-radius: $border-radius-lg;
@@ -46,7 +17,6 @@
   box-shadow: $box-shadow-sm;
 }
 
-// ── Selector utilizator ──────────────────────────────────────────────────────
 .userSelector {
   display: flex;
   align-items: center;
@@ -61,11 +31,15 @@
   white-space: nowrap;
 }
 
-.userSelect {
-  min-width: 300px;
+.userSearch {
+  max-width: 280px;
 }
 
-// ── Info card utilizator ─────────────────────────────────────────────────────
+.userSelect {
+  min-width: 300px;
+  flex: 1;
+}
+
 .userInfo {
   display: flex;
   align-items: center;
@@ -75,6 +49,7 @@
   border-radius: $border-radius;
   margin-bottom: 1.5rem;
   border: 1px solid $gray-200;
+  flex-wrap: wrap;
 }
 
 .userInfoAvatar {
@@ -108,124 +83,299 @@
   color: $gray-400;
 }
 
-// ── Tabel matrice ─────────────────────────────────────────────────────────────
-.matrix {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  border: 1px solid $gray-200;
-  border-radius: $border-radius;
-  overflow: hidden;
+.summaryPills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-wrap: wrap;
 }
 
-.matrix th,
-.matrix td {
-  padding: 10px 14px;
-  text-align: left;
-  border-bottom: 1px solid $gray-200;
-}
-
-.matrix th {
-  background-color: $primary-darker;
-  color: #fff;
+.summaryPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba($primary-lighter, 0.25);
+  color: $primary-darker;
+  font-size: 0.75rem;
   font-weight: 600;
-  font-size: 0.8125rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
 }
 
-.matrix tr:last-child td {
-  border-bottom: none;
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 1rem 0 1.25rem;
+  flex-wrap: wrap;
 }
 
-.matrix tbody tr:hover {
-  background-color: rgba($primary-lighter, 0.2);
+.moduleSearch {
+  max-width: 360px;
 }
 
-.moduleCell {
+.toolbarActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.moduleGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.moduleCard {
+  background: linear-gradient(180deg, rgba($primary-lighter, 0.16), rgba($primary-lighter, 0.05));
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-lg;
+  padding: 1rem;
+  text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0.75rem;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: rgba($primary, 0.45);
+    box-shadow: 0 10px 22px rgba(42, 63, 82, 0.08);
+  }
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .moduleName {
-  font-weight: 600;
+  font-weight: 700;
   color: $gray-700;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .moduleCode {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   color: $gray-400;
   font-family: monospace;
+  margin-top: 0.2rem;
 }
 
-.levelSelect {
-  width: 160px;
-}
-
-// ── Badge nivel ───────────────────────────────────────────────────────────────
-.levelBadge {
-  display: inline-block;
-  padding: 2px 10px;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-
-  &None   { background: $gray-100; color: $gray-500; }
-  &Read   { background: rgba($info, 0.15); color: darken($info, 18%); }
-  &Write  { background: rgba($success, 0.15); color: darken($success, 18%); }
-  &Full   { background: rgba($warning, 0.15); color: darken($warning, 22%); }
-}
-
-// ── Override indicator ────────────────────────────────────────────────────────
-.overrideIndicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.75rem;
-  color: $accent;
-  font-weight: 600;
-}
-
-.defaultIndicator {
-  font-size: 0.75rem;
-  color: $gray-400;
-}
-
-// ── Checkbox override ─────────────────────────────────────────────────────────
-.overrideToggle {
+.cardBody {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
-.overrideCheckbox {
-  accent-color: $primary;
-}
-
-.overrideToggleLabel {
+.cardInfo {
   font-size: 0.8rem;
-  color: $gray-600;
-  cursor: pointer;
+  color: $gray-500;
 }
 
-// ── Footer acțiuni ────────────────────────────────────────────────────────────
-.actions {
+.cardFooter {
+  border-top: 1px solid $gray-200;
+  padding-top: 0.75rem;
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  margin-top: 1.5rem;
-  padding-top: 1rem;
+}
+
+.cardAction {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: $primary-darker;
+}
+
+.levelBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+
+  &None { background: $gray-100; color: $gray-500; }
+  &Read { background: rgba($info, 0.15); color: darken($info, 18%); }
+  &Write { background: rgba($success, 0.15); color: darken($success, 18%); }
+  &Full { background: rgba($warning, 0.15); color: darken($warning, 22%); }
+}
+
+.modalIntro {
+  font-size: 0.85rem;
+  color: $gray-500;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid $gray-200;
+}
+
+.objectsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.objectCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-lg;
+  background: $card-bg;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba($primary, 0.5);
+    box-shadow: 0 8px 18px rgba(42, 63, 82, 0.08);
+  }
+
+  &Selected {
+    border-color: $primary;
+    box-shadow: 0 0 0 2px rgba($primary, 0.15);
+  }
+
+  &KindScreen { border-top: 3px solid $primary; }
+  &KindComponent { border-top: 3px solid $info; }
+  &KindAction { border-top: 3px solid $accent; }
+  &KindModal { border-top: 3px solid $success; }
+  &KindModal-group { border-top: 3px solid $warning; }
+}
+
+.objectCardIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: $border-radius;
+  background: rgba($primary-lighter, 0.25);
+  color: $primary-darker;
+}
+
+.objectCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+}
+
+.objectCardName {
+  font-weight: 700;
+  color: $gray-700;
+  font-size: 0.92rem;
+}
+
+.objectCardDescription {
+  font-size: 0.78rem;
+  color: $gray-500;
+  line-height: 1.35;
+}
+
+.objectCardMeta {
+  font-size: 0.7rem;
+  color: $gray-400;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-top: 0.25rem;
+}
+
+.objectCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: auto;
+  padding-top: 0.75rem;
   border-top: 1px solid $gray-200;
 }
 
-// ── Feedback ──────────────────────────────────────────────────────────────────
+.objectCardSubCount {
+  font-size: 0.72rem;
+  color: $gray-400;
+}
+
+.levelSelectorGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.levelOption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 1rem;
+  border: 1px solid currentColor;
+  border-radius: $border-radius-lg;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  opacity: 0.75;
+
+  &:hover {
+    opacity: 1;
+    transform: translateY(-1px);
+  }
+
+  &Selected {
+    opacity: 1;
+    box-shadow: 0 0 0 2px currentColor;
+    font-weight: 700;
+  }
+}
+
+.levelOptionName {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.levelOptionCode {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.levelSelectorHint {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: $gray-50;
+  border-radius: $border-radius;
+  font-size: 0.85rem;
+  color: $gray-600;
+  text-align: center;
+}
+
+.nestedIntro {
+  font-size: 0.85rem;
+  color: $gray-500;
+  margin-bottom: 1rem;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
 .feedback {
   margin-top: 1rem;
 }
 
-// ── Loading ───────────────────────────────────────────────────────────────────
 .loading {
   display: flex;
   align-items: center;
@@ -234,9 +384,23 @@
   color: $gray-500;
 }
 
-// ── Empty state ───────────────────────────────────────────────────────────────
 .empty {
   text-align: center;
   padding: 3rem 1rem;
   color: $gray-400;
 }
+
+@media (max-width: 576px) {
+  .objectsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .levelSelectorGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .moduleGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
