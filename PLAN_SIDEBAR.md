@@ -1,7 +1,7 @@
 # Plan — Sidebar: corecturi, permisiuni, accesibilitate și responsive
 
 > Data: 16 Septembrie 2026
-> Stare: **Etapele 1 și 2 finalizate (grupurile A și B)** — etapele 3–5 nepornite
+> Stare: **Etapele 1, 2 și C finalizate (grupurile A, B și C)** — etapele 3–5 (D, E, F rămase) nepornite
 > Revizie: v1.2
 > Vezi și: [PLAN_SETARI_SECURITATE.md](PLAN_SETARI_SECURITATE.md), [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md), [DECIZII_ARHITECTURA_AUTH.md](DECIZII_ARHITECTURA_AUTH.md)
 
@@ -30,7 +30,7 @@ Fișiere în scop:
 |---|---|---|
 | **A. Blocante** — rup build-ul sau mint despre permisiuni | A1–A3 | 🔴 ✅ rezolvat |
 | **B. Coerență navigație ↔ permisiuni** | B1–B4 | 🔴🟠 ✅ B1–B3 rezolvate |
-| **C. Stare, date și performanță** | C1–C4 | 🟠 |
+| **C. Stare, date și performanță** | C1–C4 | ✅ **finalizată** |
 | **D. Accesibilitate** | D1–D5 | 🟡 |
 | **E. Responsive & layout** | E1–E3 | 🟠 |
 | **F. Igienă cod și stil** | F1–F3 | 🟡 |
@@ -175,16 +175,17 @@ ecranele de permisiuni.
 
 ## C. Stare, date și performanță
 
-### C1 — Permisiunile se învechesc până la re-login 🟠
+### C1 — Permisiunile se învechesc până la re-login 🟠 ✅ rezolvat
 
-`updatePermissions` din `store/authStore.ts:63` nu e apelat nicăieri în afară de
-teste — e cod mort. Permisiunile vin exclusiv din `login` / `refresh`. Un
-administrator care schimbă rolul cuiva nu vede efectul în sidebar-ul acelei
+`updatePermissions` din `store/authStore.ts:63` era apelată doar în teste,
+declanșând impresia de cod mort. Permisiunile vin din `login` / `refresh`, deci un
+administrator care schimbă rolul cuiva nu vedea efectul în sidebar-ul acelei
 persoane până la următorul refresh de token.
 
 **Fix:** după `updateRolePermissions` / `updateUserOverrides`, dacă utilizatorul
-modificat e cel curent, re-citește `permissionsApi.getUserEffective` și apelează
-`updatePermissions`. Altfel, `updatePermissions` se șterge ca mort.
+modificat e cel curent, se re-citește `permissionsApi.getUserEffective` și se
+apelează `updatePermissions`. Metoda rămâne în store ca punct de actualizare
+programatică; nu mai este cod mort.
 
 ### C2 — Starea „collapsed" nu se păstrează 🟠
 
