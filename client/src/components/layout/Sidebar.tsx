@@ -22,10 +22,17 @@ import {
   LogOut,
   Clock,
   Pill,
+  Tablets,
+  Package,
+  Percent,
+  FlaskConical,
+  Network,
+  Activity,
 } from 'lucide-react';
 import { useUiStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
-import { useHasAccess, type ModuleCode } from '@/hooks/useHasAccess';
+import { useHasAccess } from '@/hooks/useHasAccess';
+import { ROUTE_MODULES, useLandingRoute, type GuardedRoute } from '@/routes/moduleAccess';
 import { authApi } from '@/api/endpoints/auth.api';
 import styles from './Sidebar.module.scss';
 
@@ -37,16 +44,16 @@ const RedCrossIcon = () => (
 );
 
 // ===== Configurare meniu navigare =====
+/**
+ * Un item de meniu nu-și declară singur permisiunile: le ia din `ROUTE_MODULES`,
+ * aceeași hartă folosită de garda de rută. Așa meniul și garda nu se pot desincroniza,
+ * iar `to` e tipizat — o rută inexistentă în hartă e eroare de compilare, nu un item
+ * care apare tuturor.
+ */
 interface NavItem {
-  to: string;
+  to: GuardedRoute;
   label: string;
   icon: React.ReactNode;
-  /**
-   * Modulele RBAC de care depinde pagina. Elementul se afișează doar dacă user-ul
-   * are cel puțin Read pe **toate** — o pagină care citește din două module e
-   * inutilizabilă fără unul dintre ele (vezi `/medicamente`, care cere `anm` + `cnas`).
-   */
-  modules?: ModuleCode[];
 }
 
 interface NavSection {
@@ -61,42 +68,46 @@ const NAV_SECTIONS: NavSection[] = [
   {
     section: 'Principal',
     items: [
-      { to: '/dashboard',     label: 'Dashboard',     icon: <LayoutDashboard size={ICON_SIZE} strokeWidth={ICON_STROKE} />, modules: ['dashboard'] },
-      { to: '/patients',      label: 'Pacienți',      icon: <Users           size={ICON_SIZE} strokeWidth={ICON_STROKE} />, modules: ['patients'] },
-      { to: '/appointments',  label: 'Programări',    icon: <CalendarDays    size={ICON_SIZE} strokeWidth={ICON_STROKE} />, modules: ['appointments'] },
-      { to: '/consultations', label: 'Consultații',   icon: <Stethoscope     size={ICON_SIZE} strokeWidth={ICON_STROKE} />, modules: ['consultations'] },
-      { to: '/prescriptions', label: 'Prescripții',   icon: <ClipboardList   size={ICON_SIZE} strokeWidth={ICON_STROKE} />, modules: ['prescriptions'] },
+      { to: '/dashboard',     label: 'Dashboard',     icon: <LayoutDashboard size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/patients',      label: 'Pacienți',      icon: <Users           size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/appointments',  label: 'Programări',    icon: <CalendarDays    size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/consultations', label: 'Consultații',   icon: <Stethoscope     size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/prescriptions', label: 'Prescripții',   icon: <ClipboardList   size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
     ],
   },
   {
     section: 'Financiar',
     items: [
-      { to: '/invoices', label: 'Facturi', icon: <Receipt size={ICON_SIZE} strokeWidth={ICON_STROKE} />, modules: ['invoices'] },
+      { to: '/invoices', label: 'Facturi', icon: <Receipt size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
     ],
   },
   {
     section: 'Administrare',
     items: [
-      { to: '/doctors',             label: 'Doctori',              icon: <UserCheck     size={ICON_SIZE} strokeWidth={ICON_STROKE} />, modules: ['users'] },
-      { to: '/medical-staff',       label: 'Personal Medical',     icon: <HeartPulse   size={ICON_SIZE} strokeWidth={ICON_STROKE} />, modules: ['users'] },
-      { to: '/departments',         label: 'Departamente',         icon: <Building2     size={ICON_SIZE} strokeWidth={ICON_STROKE} />, modules: ['clinic'] },
-      { to: '/users',               label: 'Utilizatori',          icon: <UserCog       size={ICON_SIZE} strokeWidth={ICON_STROKE} />, modules: ['users'] },
-      { to: '/specialties',         label: 'Specializări',         icon: <BookOpen      size={ICON_SIZE} strokeWidth={ICON_STROKE} />, modules: ['nomenclature'] },
-      { to: '/medical-titles',      label: 'Titulaturi',           icon: <GraduationCap size={ICON_SIZE} strokeWidth={ICON_STROKE} />, modules: ['nomenclature'] },
-      { to: '/clinic',              label: 'Clinica',              icon: <Hospital      size={ICON_SIZE} strokeWidth={ICON_STROKE} />, modules: ['clinic'] },
-      { to: '/schedule',            label: 'Program',              icon: <Clock         size={ICON_SIZE} strokeWidth={ICON_STROKE} />, modules: ['clinic'] },
-      { to: '/permissions/roles',   label: 'Permisiuni Roluri',    icon: <ShieldCheck   size={ICON_SIZE} strokeWidth={ICON_STROKE} />, modules: ['users'] },
-      { to: '/permissions/users',   label: 'Override Utilizatori', icon: <ShieldAlert   size={ICON_SIZE} strokeWidth={ICON_STROKE} />, modules: ['users'] },
-      { to: '/settings/security',   label: 'Setări securitate',    icon: <SlidersHorizontal size={ICON_SIZE} strokeWidth={ICON_STROKE} />, modules: ['settings'] },
-      { to: '/audit/security',      label: 'Jurnal securitate',    icon: <ScrollText    size={ICON_SIZE} strokeWidth={ICON_STROKE} />, modules: ['audit'] },
+      { to: '/doctors',             label: 'Doctori',              icon: <UserCheck     size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/medical-staff',       label: 'Personal Medical',     icon: <HeartPulse   size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/departments',         label: 'Departamente',         icon: <Building2     size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/users',               label: 'Utilizatori',          icon: <UserCog       size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/specialties',         label: 'Specializări',         icon: <BookOpen      size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/medical-titles',      label: 'Titulaturi',           icon: <GraduationCap size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/clinic',              label: 'Clinica',              icon: <Hospital      size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/schedule',            label: 'Program',              icon: <Clock         size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/permissions/roles',   label: 'Permisiuni Roluri',    icon: <ShieldCheck   size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/permissions/users',   label: 'Override Utilizatori', icon: <ShieldAlert   size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/settings/security',   label: 'Setări securitate',    icon: <SlidersHorizontal size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/audit/security',      label: 'Jurnal securitate',    icon: <ScrollText    size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
     ],
   },
   {
     section: 'Nomenclatoare',
     items: [
-      // Pagina citește din ambele nomenclatoare (useAnmStats + useCnasDrugs), deci
-      // fără `cnas` jumătate din ecran ar răspunde 403.
-      { to: '/medicamente', label: 'Medicamente', icon: <Pill size={ICON_SIZE} strokeWidth={ICON_STROKE} />, modules: ['anm', 'cnas'] },
+      { to: '/medicamente',           label: 'Medicamente',        icon: <Pill         size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/anm/drugs',             label: 'Medicamente ANM',    icon: <Tablets      size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/cnas/drugs',            label: 'Medicamente CNAS',   icon: <Package      size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/cnas/compensated',      label: 'Liste compensate',   icon: <Percent      size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/cnas/active-substances',label: 'Substanțe active',   icon: <FlaskConical size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/cnas/atc',              label: 'Clasificare ATC',    icon: <Network      size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/cnas/icd10',            label: 'Diagnostice ICD-10', icon: <Activity     size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
     ],
   },
 ];
@@ -115,6 +126,7 @@ export const Sidebar = () => {
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const navigate = useNavigate();
   const { canRead } = useHasAccess();
+  const landing = useLandingRoute();
 
   const displayUser = user ?? { fullName: 'Utilizator', role: 'N/A' };
 
@@ -135,15 +147,15 @@ export const Sidebar = () => {
   const visibleSections = NAV_SECTIONS
     .map(({ section, items }) => ({
       section,
-      items: items.filter((item) => (item.modules ?? []).every(canRead)),
+      items: items.filter((item) => ROUTE_MODULES[item.to].every((m) => canRead(m))),
     }))
     .filter(({ items }) => items.length > 0);
 
   return (
     <aside className={`${styles.sidebar}${sidebarCollapsed ? ` ${styles.collapsed}` : ''}`}>
 
-      {/* Brand */}
-      <NavLink to="/dashboard" className={styles.brand}>
+      {/* Brand — duce la primul ecran permis, nu neapărat la /dashboard */}
+      <NavLink to={landing ?? '/dashboard'} className={styles.brand}>
         <div className={styles.brandIcon}>
           <RedCrossIcon />
         </div>

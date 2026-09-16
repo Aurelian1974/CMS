@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import { ProtectedRoute } from './ProtectedRoute'
+import { RequireModuleAccess, LandingRedirect } from './RequireModuleAccess'
 
 // ===== Lazy loading pentru pagini — code splitting per rută =====
 const LoginPage      = lazy(() => import('../features/auth/pages/LoginPage'))
@@ -53,7 +54,10 @@ export const AppRoutes = () => (
       {/* Rute protejate */}
       <Route element={<ProtectedRoute />}>
         <Route element={<MainLayout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
+          {/* Garda pe modul se montează o singură dată: citește calea curentă din
+              ROUTE_MODULES, deci rutele de mai jos n-au nevoie de nimic în plus. */}
+          <Route element={<RequireModuleAccess />}>
+          <Route index element={<LandingRedirect />} />
           <Route path="/dashboard"       element={<DashboardPage />} />
           <Route path="/patients"        element={<PatientsListPage />} />
           <Route path="/patients/new"    element={<PatientFormPage />} />
@@ -85,11 +89,12 @@ export const AppRoutes = () => (
           <Route path="/cnas/atc"                element={<CnasAtcPage />} />
           <Route path="/cnas/icd10"              element={<CnasIcd10Page />} />
           <Route path="/anm/drugs"               element={<AnmDrugsPage />} />
+          </Route>
         </Route>
       </Route>
 
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      {/* Fallback — primul ecran permis, nu neapărat /dashboard */}
+      <Route path="*" element={<LandingRedirect />} />
     </Routes>
   </Suspense>
 )

@@ -1,8 +1,8 @@
 # Plan — Sidebar: corecturi, permisiuni, accesibilitate și responsive
 
 > Data: 16 Septembrie 2026
-> Stare: **Etapa 1 finalizată (grupul A)** — etapele 2–5 nepornite
-> Revizie: v1.1
+> Stare: **Etapele 1 și 2 finalizate (grupurile A și B)** — etapele 3–5 nepornite
+> Revizie: v1.2
 > Vezi și: [PLAN_SETARI_SECURITATE.md](PLAN_SETARI_SECURITATE.md), [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md), [DECIZII_ARHITECTURA_AUTH.md](DECIZII_ARHITECTURA_AUTH.md)
 
 Analiză completă a sidebar-ului — frontend (funcțional + stilistic) și lanțul
@@ -29,7 +29,7 @@ Fișiere în scop:
 | Grup | # | Severitate |
 |---|---|---|
 | **A. Blocante** — rup build-ul sau mint despre permisiuni | A1–A3 | 🔴 ✅ rezolvat |
-| **B. Coerență navigație ↔ permisiuni** | B1–B4 | 🔴🟠 |
+| **B. Coerență navigație ↔ permisiuni** | B1–B4 | 🔴🟠 ✅ B1–B3 rezolvate |
 | **C. Stare, date și performanță** | C1–C4 | 🟠 |
 | **D. Accesibilitate** | D1–D5 | 🟡 |
 | **E. Responsive & layout** | E1–E3 | 🟠 |
@@ -435,18 +435,50 @@ Două observații din montaj:
 Baza a fost readusă la starea inițială după test: 16 rânduri pentru rolul admin,
 `settings` la nivel 3, un singur rând în `UserModuleOverrides` (cel preexistent).
 
-### Etapa 2 — Navigația spune adevărul 🔴🟠
+### Etapa 2 — Navigația spune adevărul 🔴🟠 ✅ **finalizată**
 
-| Ce | Fișier |
-|---|---|
-| `routes/moduleAccess.ts` — sursa unică rută → module | nou |
-| `<RequireModule>` + ecran 403 propriu | `routes/` |
-| `useLandingRoute()` pentru index și `*` | `routes/AppRoutes.tsx` |
-| Grup CNAS în „Nomenclatoare" | `Sidebar.tsx` |
+| Ce | Fișier | |
+|---|---|---|
+| `ROUTE_MODULES` — sursa unică rută → module | `routes/moduleAccess.ts` (nou) | ✅ |
+| `RequireModuleAccess` — gardă montată o dată, ca layout | `routes/RequireModuleAccess.tsx` (nou) | ✅ |
+| Ecranele „Nu ai acces" / „Contul nu are niciun modul" | `routes/AccessScreens.tsx` (nou) | ✅ |
+| `useLandingRoute()` pentru `index`, `*` și brand-ul din sidebar | `routes/moduleAccess.ts` | ✅ |
+| Grup CNAS/ANM în „Nomenclatoare" (6 ecrane) | `Sidebar.tsx` | ✅ |
 
-**Acceptare:** `/settings/security` tastat de un non-admin dă ecranul de acces
-refuzat, nu 403-uri în cascadă · un rol fără `dashboard` aterizează pe primul ecran
-permis · toate cele 6 rute CNAS/ANM sunt accesibile din meniu.
+**Cum e legată garda.** `RequireModuleAccess` se montează **o singură dată**, ca rută
+de layout în interiorul `MainLayout`, și caută calea curentă în `ROUTE_MODULES` cu
+`matchPath({ end: false })`. Nu e nimic de adăugat per rută: `/patients` acoperă și
+`/patients/new`, și `/patients/:id/edit`, iar când se potrivesc mai multe tipare
+câștigă cel mai specific. O rută nemapată rămâne deschisă — backend-ul o protejează
+oricum, iar o hartă incompletă nu trebuie să blocheze ecrane care funcționau.
+
+Sidebar-ul nu-și mai declară singur permisiunile: `NavItem.to` e tipizat ca
+`GuardedRoute`, iar modulele vin din aceeași hartă. Meniul și garda nu se mai pot
+desincroniza, iar o rută absentă din hartă e eroare de compilare, nu un item vizibil
+tuturor.
+
+**Acceptare — verificat în aplicație**, cu API + Vite pornite și sesiune de admin:
+
+| Test | Montaj | Rezultat |
+|---|---|---|
+| **B2** — ecrane orfane | — | toate cele 6 rute CNAS/ANM apar în „Nomenclatoare"; `/cnas/atc` se deschide cu 3.484 rânduri reale, `GET /api/v1/Cnas/atc → 200` ✅ |
+| **B1** — gardă de rută | override `audit = Fără acces` pe admin | „Jurnal securitate" dispare din meniu, iar `/audit/security` tastat direct dă cardul „Nu ai acces la acest ecran" cu codul `audit`, în loc de pagină + 403-uri în cascadă ✅ |
+| **B3** — aterizare | override `dashboard = Fără acces` pe admin | `/o-ruta-care-nu-exista` aterizează pe **/patients**, primul ecran permis în ordinea meniului, nu pe `/dashboard` ✅ |
+
+Ambele override-uri au fost puse și șterse din ecranul *Override Utilizatori*, deci
+prin API — cu invalidarea corectă a cache-ului de permisiuni. Baza a rămas la starea
+inițială: un singur rând în `UserModuleOverrides`, cel preexistent.
+
+**Teste noi:** `__tests__/routes/moduleAccess.test.ts` (13) și
+`__tests__/routes/RequireModuleAccess.test.tsx` (11) — potrivirea pe subrute, tiparul
+cel mai specific, semantica AND, ruta nemapată, ordinea de aterizare, contul fără
+module și starea de bootstrap. Un test verifică și că `ROUTE_MODULES` nu folosește
+niciun cod absent din `MODULE`.
+
+**Verificat:** `tsc --noEmit` curat · `npm run lint` curat · **314 teste** unitare
+(17 fișiere) · `npm run build` reușește.
+
+**Rămas din grup:** B4 (remodelarea modulului `users`) — plan separat, vezi §Decizii.
 
 ### Etapa 3 — Accesibilitate 🟡
 
