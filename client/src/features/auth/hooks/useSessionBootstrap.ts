@@ -43,7 +43,7 @@ export const useSessionBootstrap = () => {
     let cancelled = false
 
     const apply = (data: LoginResponse) => {
-      if (!cancelled) setAuth(data.user, data.accessToken, data.permissions ?? [])
+      if (!cancelled) setAuth(data.user, data.accessToken, data.permissions ?? [], data.idleTimeoutMinutes)
     }
 
     refreshOnce()

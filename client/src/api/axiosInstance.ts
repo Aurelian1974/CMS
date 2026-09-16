@@ -52,7 +52,7 @@ api.interceptors.response.use(
 
         // axios.post direct returnează AxiosResponse.data = ApiResponse<{ accessToken, user, permissions }>
         const loginData = data.data
-        useAuthStore.getState().setAuth(loginData.user, loginData.accessToken, loginData.permissions ?? [])
+        useAuthStore.getState().setAuth(loginData.user, loginData.accessToken, loginData.permissions ?? [], loginData.idleTimeoutMinutes)
 
         refreshQueue.forEach((cb) => cb(loginData.accessToken))
         refreshQueue = []

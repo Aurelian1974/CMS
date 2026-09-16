@@ -16,6 +16,13 @@ public sealed record LoginResponseDto
     public DateTime RefreshTokenExpiresAt { get; init; }
     public AuthUserDto User { get; init; } = null!;
     public IReadOnlyList<ModulePermissionDto> Permissions { get; init; } = [];
+
+    /// <summary>
+    /// Fereastra de inactivitate a rolului, in minute. Clientul o foloseste ca sa
+    /// deconecteze proactiv si sa avertizeze inainte; serverul impune acelasi prag
+    /// cu o marja, ca plasa de siguranta.
+    /// </summary>
+    public int IdleTimeoutMinutes { get; init; }
 }
 
 /// <summary>

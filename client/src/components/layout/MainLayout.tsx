@@ -7,6 +7,8 @@ import { usePageHistoryStore } from '@/store/pageHistoryStore'
 import { useUiStore } from '@/store/uiStore'
 import { useAuthStore } from '@/store/authStore'
 import { useChangeOwnPassword } from '@/features/users/hooks/useUsers'
+import { useIdleTimeout } from '@/features/auth/hooks/useIdleTimeout'
+import { IdleWarningModal } from '@/features/auth/components/IdleWarningModal'
 import { ChangeOwnPasswordModal } from '@/features/users/components/ChangeOwnPasswordModal/ChangeOwnPasswordModal'
 import type { ChangeOwnPasswordFormData } from '@/features/users/schemas/user.schema'
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
@@ -22,6 +24,10 @@ export const MainLayout = () => {
   const clearMustChangePassword = useAuthStore((s) => s.clearMustChangePassword)
   const changeOwnPassword = useChangeOwnPassword()
   const [passwordError, setPasswordError] = useState<string | null>(null)
+
+  // Deconectarea pentru inactivitate se montează aici, nu în App: are nevoie de
+  // context de rutare și privește doar zona autentificată a aplicației.
+  const { secondsLeft, staySignedIn } = useIdleTimeout()
 
   // Înregistrează fiecare navigare în istoric
   useEffect(() => {
@@ -60,6 +66,8 @@ export const MainLayout = () => {
           </ErrorBoundary>
         </main>
       </div>
+
+      <IdleWarningModal secondsLeft={secondsLeft} onStay={staySignedIn} />
 
       <ChangeOwnPasswordModal
         isOpen={modalOpen || forced}

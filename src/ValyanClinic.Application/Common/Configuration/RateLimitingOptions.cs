@@ -23,10 +23,11 @@ public sealed class RateLimitingOptions
 
     /// <summary>
     /// Limita pentru /refresh, separata de cea de login. Rotatia token-ului e o
-    /// operatie legitima si frecventa: fiecare tab deschis o declanseaza la 15
-    /// minute, deci limita de login ar fi epuizata de utilizare normala.
+    /// operatie legitima si frecventa: cu access token de 5 minute, fiecare tab activ
+    /// roteste de trei ori la 15 minute. Limita e per IP, iar o clinica intreaga poate
+    /// iesi la internet printr-un singur IP — de aceea e generoasa.
     /// </summary>
-    public int RefreshMaxRequests   { get; init; } = 60;
+    public int RefreshMaxRequests   { get; init; } = 300;
     public int RefreshWindowMinutes { get; init; } = 15;
 
     /// <summary>

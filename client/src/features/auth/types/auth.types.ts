@@ -40,4 +40,6 @@ export interface LoginResponse {
   accessToken: string;
   user: AuthUser;
   permissions: ModulePermission[];
+  /** Fereastra de inactivitate a rolului, în minute. */
+  idleTimeoutMinutes: number;
 }

@@ -46,7 +46,8 @@ public class AuthController : BaseApiController
         {
             accessToken = result.Value.AccessToken,
             user = result.Value.User,
-            permissions = result.Value.Permissions
+            permissions = result.Value.Permissions,
+            idleTimeoutMinutes = result.Value.IdleTimeoutMinutes
         };
 
         return Ok(new ApiResponse<object>(true, response, null, null));
@@ -81,7 +82,8 @@ public class AuthController : BaseApiController
         {
             accessToken = result.Value.AccessToken,
             user = result.Value.User,
-            permissions = result.Value.Permissions
+            permissions = result.Value.Permissions,
+            idleTimeoutMinutes = result.Value.IdleTimeoutMinutes
         };
 
         return Ok(new ApiResponse<object>(true, response, null, null));

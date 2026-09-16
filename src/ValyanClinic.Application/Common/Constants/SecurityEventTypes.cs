@@ -14,6 +14,8 @@ public static class SecurityEventTypes
     public const string AccountInactive    = "AccountInactive";
     public const string Logout             = "Logout";
     public const string TokenRefreshed     = "TokenRefreshed";
+    /// <summary>Sesiunea a expirat prin depasirea ferestrei de inactivitate a rolului.</summary>
+    public const string SessionExpiredIdle = "SessionExpiredIdle";
     /// <summary>Refresh token revocat, prezentat din nou — semnal de furt.</summary>
     public const string TokenReuseDetected = "TokenReuseDetected";
     public const string PasswordChanged    = "PasswordChanged";

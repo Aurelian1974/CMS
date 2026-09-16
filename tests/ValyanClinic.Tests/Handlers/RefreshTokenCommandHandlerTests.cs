@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using NSubstitute;
+using ValyanClinic.Application.Common.Configuration;
 using ValyanClinic.Application.Features.SecuritySettings.DTOs;
 using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Interfaces;
@@ -32,30 +33,38 @@ public sealed class RefreshTokenCommandHandlerTests
     private readonly ISecuritySettingsProvider _settingsProvider =
         Substitute.For<ISecuritySettingsProvider>();
 
+    private readonly JwtOptions _jwtOptions = new() { AccessTokenExpiryMinutes = 5 };
+
+    /// <summary>Fereastra de inactivitate a rolului din test.</summary>
+    private RoleSecuritySettingsDto _roleSettings =
+        new() { RefreshTokenDays = 7, IdleTimeoutMinutes = 30 };
+
     private RefreshTokenCommandHandler CreateHandler() => new(
         _authRepo,
         _tokenService,
         _permissionRepo,
         _settingsProvider,
         _securityLog,
+        Options.Create(_jwtOptions),
         _cache);
 
     public RefreshTokenCommandHandlerTests()
     {
         _settingsProvider.GetForRoleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-                         .Returns(Task.FromResult(new RoleSecuritySettingsDto { RefreshTokenDays = 7 }));
+                         .Returns(_ => Task.FromResult(_roleSettings));
     }
 
     private static RefreshTokenDto BuildToken(
         Guid userId,
         DateTime? revokedAt = null,
         DateTime? expiresAt = null,
-        bool wasReplaced = false) => new()
+        bool wasReplaced = false,
+        DateTime? createdAt = null) => new()
     {
         Id = Guid.NewGuid(),
         UserId = userId,
         ExpiresAt = expiresAt ?? DateTime.Now.AddDays(7),
-        CreatedAt = DateTime.Now.AddMinutes(-15),
+        CreatedAt = createdAt ?? DateTime.Now.AddMinutes(-1),
         RevokedAt = revokedAt,
         WasReplaced = wasReplaced,
     };
@@ -222,6 +231,76 @@ public sealed class RefreshTokenCommandHandlerTests
         await _authRepo.DidNotReceive().RotateRefreshTokenAsync(
             Arg.Any<string>(), Arg.Any<string>(), Arg.Any<Guid>(),
             Arg.Any<DateTime>(), Arg.Any<string?>(), Arg.Any<CancellationToken>());
+    }
+
+    // ── Fereastra de inactivitate ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task Handle_IdleBeyondRoleWindow_ExpiresSession()
+    {
+        // Token vechi de 40 de minute, fereastra 30 + marja de 5 = 35.
+        var userId = Guid.NewGuid();
+        SetupHappyPath(userId);
+        _authRepo.GetRefreshTokenAsync(OldToken, Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<RefreshTokenDto?>(
+                     BuildToken(userId, createdAt: DateTime.Now.AddMinutes(-40))));
+
+        var result = await CreateHandler().Handle(new RefreshTokenCommand(OldToken, null), default);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorMessages.Auth.SessionExpiredIdle, result.Error);
+
+        await _authRepo.Received(1).RevokeAllRefreshTokensAsync(userId, Arg.Any<CancellationToken>());
+        await _securityLog.Received(1).LogAsync(
+            SecurityEventTypes.SessionExpiredIdle, false, userId,
+            Arg.Any<Guid?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_IdleWithinWindow_IsAllowed()
+    {
+        var userId = Guid.NewGuid();
+        SetupHappyPath(userId);
+        _authRepo.GetRefreshTokenAsync(OldToken, Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<RefreshTokenDto?>(
+                     BuildToken(userId, createdAt: DateTime.Now.AddMinutes(-25))));
+
+        var result = await CreateHandler().Handle(new RefreshTokenCommand(OldToken, null), default);
+
+        Assert.True(result.IsSuccess, $"Handler eșuat: {result.Error}");
+    }
+
+    [Fact]
+    public async Task Handle_TokenAgedWithinAccessTokenMargin_IsAllowed()
+    {
+        // Exact la limita ferestrei: marja de un access token evită deconectarea unui
+        // utilizator care a fost activ la finalul ultimului interval de 5 minute.
+        var userId = Guid.NewGuid();
+        SetupHappyPath(userId);
+        _authRepo.GetRefreshTokenAsync(OldToken, Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<RefreshTokenDto?>(
+                     BuildToken(userId, createdAt: DateTime.Now.AddMinutes(-33))));
+
+        var result = await CreateHandler().Handle(new RefreshTokenCommand(OldToken, null), default);
+
+        Assert.True(result.IsSuccess, "marja de un access token trebuie respectată");
+    }
+
+    [Fact]
+    public async Task Handle_ShorterRoleWindow_ExpiresSooner()
+    {
+        // Rol cu fereastră de 10 minute: un token de 20 de minute depășește 10 + 5.
+        _roleSettings = new RoleSecuritySettingsDto { RefreshTokenDays = 7, IdleTimeoutMinutes = 10 };
+        var userId = Guid.NewGuid();
+        SetupHappyPath(userId);
+        _authRepo.GetRefreshTokenAsync(OldToken, Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<RefreshTokenDto?>(
+                     BuildToken(userId, createdAt: DateTime.Now.AddMinutes(-20))));
+
+        var result = await CreateHandler().Handle(new RefreshTokenCommand(OldToken, null), default);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(ErrorMessages.Auth.SessionExpiredIdle, result.Error);
     }
 
     // ── Rotație ───────────────────────────────────────────────────────────────

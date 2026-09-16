@@ -59,6 +59,8 @@ public static class ErrorMessages
         public const string AccountLocked      = "Contul este blocat temporar. Încercați din nou după {0} minute.";
         public const string AccountInactive    = "Contul este dezactivat. Contactați administratorul.";
         public const string InvalidToken       = "Token-ul de autentificare este invalid sau expirat.";
+        public const string SessionExpiredIdle =
+            "Sesiunea a expirat din lipsă de activitate. Autentificați-vă din nou.";
         public const string TokenReuseDetected = "Sesiunea a fost invalidată din motive de securitate. Autentificați-vă din nou.";
     }
 

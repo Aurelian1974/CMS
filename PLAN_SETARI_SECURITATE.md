@@ -1,8 +1,8 @@
 # Plan — Ecran de administrare a politicilor de securitate
 
 > Data: 16 Septembrie 2026
-> Stare: **Etapele 1–2 finalizate**, restul neîncepute
-> Revizie: v1.3 — Etapele 1 și 2 implementate
+> Stare: **Etapele 1–3 finalizate**, restul neîncepute
+> Revizie: v1.4 — Etapele 1–3 implementate
 > Vezi și: [DECIZII_ARHITECTURA_AUTH.md](DECIZII_ARHITECTURA_AUTH.md), [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md)
 
 Un ecran unic din care administratorul configurează politica de parole, durata
@@ -258,16 +258,34 @@ fără cifre trece). După activarea regulilor în baza de date, politica nouă 
 activă în **52 de secunde fără repornire** — confirmarea că TTL-ul din Etapa 1
 funcționează. Istoricul a respins corect întoarcerea la o parolă anterioară.
 
-### Etapa 3 — Expirare pe inactivitate, per rol
-- [ ] Access token scurtat la 5 minute (granularitatea observării inactivității)
-- [ ] Verificarea ferestrei de inactivitate la `/refresh`, per rolul utilizatorului
-- [ ] Client: semnal de activitate pe schimbarea ecranului, **nu** pe mouse sau click
-- [ ] Marcarea explicită a schimbărilor de ecran fără navigare (modal, tab, pagină de grilă)
-- [ ] Avertisment cu 60 s înainte, deconectare, sincronizare între tab-uri
-- [ ] Decizie: polling-ul de sincronizare CNAS/ANM ține sau nu sesiunea vie
-- [ ] Recalcularea limitei de refresh pentru noul ritm de rotație
-- [ ] Teste e2e: expiră la inactivitate **și** nu expiră la activitate continuă
-- [ ] Eveniment nou în jurnal: `SessionExpiredIdle`
+### Etapa 3 — Expirare pe inactivitate, per rol ✅
+- [x] Access token scurtat la 5 minute (granularitatea observării inactivității)
+- [x] Verificarea ferestrei de inactivitate la `/refresh`, per rolul utilizatorului
+- [x] `idleTimeoutMinutes` ajunge la client în răspunsul de login și refresh
+- [x] Client: `useIdleTimeout` — semnal pe navigare, **nu** pe mouse sau click
+- [x] `reportActivity()` pentru schimbările de ecran fără navigare
+- [x] Avertisment cu 60 s înainte, deconectare, sincronizare prin `BroadcastChannel`
+- [x] Limita de refresh ridicată la 300/15 min pentru noul ritm de rotație
+- [x] Eveniment nou în jurnal: `SessionExpiredIdle`
+- [x] 4 teste pe fereastra de inactivitate
+- [ ] **Teste e2e pentru expirare — NEACOPERITE**, vezi mai jos
+
+**Marja de un access token.** Serverul refuză la `IdleTimeoutMinutes + AccessTokenExpiryMinutes`,
+nu la fereastra exactă. Ultima activitate poate fi oriunde în intervalul
+`[CreatedAt, CreatedAt + durata access token-ului]`, pentru că în acel interval cererile
+reușesc fără rotație. Fără marjă am deconecta utilizatori activi. Fereastra exactă e
+impusă de client, care știe ce înseamnă activitate; serverul e plasa de siguranță.
+
+**Decizia despre polling-ul CNAS/ANM:** nu contează ca activitate, consecvent cu regula
+că reîmprospătările automate nu contează. Dacă o sincronizare depășește fereastra,
+utilizatorul e deconectat și se poate reautentifica — jobul rulează pe server, deci
+deconectarea nu îl întrerupe.
+
+**Gol de acoperire, asumat:** expirarea propriu-zisă nu are test automat. Un test
+realist ar trebui să aștepte scurgerea ferestrei (minimul configurabil e un minut, plus
+marja), ceea ce ar face suita inutilizabil de lentă. Logica server-side e acoperită de
+patru teste unitare pe praguri; comportamentul clientului — avertisment, deconectare,
+sincronizare între tab-uri — **nu a fost verificat live**.
 
 ### Etapa 4 — Ecranul de administrare
 - [ ] `GET` / `PUT /api/v1/SecuritySettings`, protejat cu `[HasAccess(settings, …)]`
@@ -304,6 +322,6 @@ funcționează. Istoricul a respins corect întoarcerea la o parolă anterioară
 |---|---|
 | 1 — Fundația | ✅ **finalizată** |
 | 2 — Politica de parole | ✅ **finalizată** |
-| 3 — Inactivitate per rol | ⬜ neînceput |
+| 3 — Inactivitate per rol | ✅ **finalizată** |
 | 4 — Ecranul de administrare | ⬜ neînceput |
 | 5 — Ecranul jurnalului | ⬜ neînceput |

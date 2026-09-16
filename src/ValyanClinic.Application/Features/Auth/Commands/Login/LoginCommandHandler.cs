@@ -177,7 +177,8 @@ public sealed class LoginCommandHandler(
                 MustChangePassword = user.MustChangePassword
                                      || IsPasswordExpired(user, settings.PasswordExpiryDays),
             },
-            Permissions = permissions
+            Permissions = permissions,
+            IdleTimeoutMinutes = roleSettings.IdleTimeoutMinutes,
         };
 
         return Result<LoginResponseDto>.Success(response);

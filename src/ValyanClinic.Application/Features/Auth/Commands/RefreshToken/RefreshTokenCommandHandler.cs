@@ -1,6 +1,8 @@
 using MediatR;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
+using ValyanClinic.Application.Common.Configuration;
+using Microsoft.Extensions.Options;
 using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Interfaces;
 using ValyanClinic.Application.Common.Models;
@@ -28,6 +30,7 @@ public sealed class RefreshTokenCommandHandler(
     IPermissionRepository permissionRepository,
     ISecuritySettingsProvider settingsProvider,
     ISecurityEventLogger securityLog,
+    IOptions<JwtOptions> jwtOptions,
     IMemoryCache cache)
     : IRequestHandler<RefreshTokenCommand, Result<LoginResponseDto>>
 {
@@ -74,9 +77,37 @@ public sealed class RefreshTokenCommandHandler(
             return Result<LoginResponseDto>.Unauthorized(ErrorMessages.Auth.AccountInactive);
         }
 
-        // 4. Rotație atomică — revocarea vechiului token și inserarea celui nou într-o
-        //    singură tranzacție. Eșuează dacă o cerere concurentă a rotit deja token-ul.
         var roleSettings = await settingsProvider.GetForRoleAsync(user.RoleId, ct);
+
+        // 4. Fereastra de inactivitate, per rol.
+        //
+        //    Token-ul de refresh se rotește la fiecare reîmprospătare, iar clientul
+        //    reîmprospătează doar când o cerere primește 401 — adică doar când
+        //    utilizatorul face ceva. `CreatedAt` al token-ului activ aproximează deci
+        //    momentul ultimei activități.
+        //
+        //    Marja de un access token: ultima activitate poate fi oriunde în intervalul
+        //    [CreatedAt, CreatedAt + durata access token-ului], pentru că în acel interval
+        //    cererile reușesc fără rotație. Fără marjă am deconecta utilizatori activi.
+        //    Serverul e plasa de siguranță; fereastra exactă e impusă de client, care
+        //    știe ce înseamnă activitate.
+        var idleLimit = TimeSpan.FromMinutes(
+            roleSettings.IdleTimeoutMinutes + jwtOptions.Value.AccessTokenExpiryMinutes);
+
+        if (DateTime.Now - existingToken.CreatedAt > idleLimit)
+        {
+            await authRepository.RevokeAllRefreshTokensAsync(user.Id, ct);
+
+            await securityLog.LogAsync(
+                SecurityEventTypes.SessionExpiredIdle, succeeded: false,
+                userId: user.Id, clinicId: user.ClinicId,
+                details: $"Inactivitate peste {roleSettings.IdleTimeoutMinutes} minute.", ct: ct);
+
+            return Result<LoginResponseDto>.Unauthorized(ErrorMessages.Auth.SessionExpiredIdle);
+        }
+
+        // 5. Rotație atomică — revocarea vechiului token și inserarea celui nou într-o
+        //    singură tranzacție. Eșuează dacă o cerere concurentă a rotit deja token-ul.
         var newRefreshToken = tokenService.GenerateRefreshToken();
         var refreshExpiry = DateTime.Now.AddDays(roleSettings.RefreshTokenDays);
 
@@ -138,7 +169,8 @@ public sealed class RefreshTokenCommandHandler(
                 DoctorId = user.DoctorId?.ToString(),
                 MustChangePassword = user.MustChangePassword,
             },
-            Permissions = permissions
+            Permissions = permissions,
+            IdleTimeoutMinutes = roleSettings.IdleTimeoutMinutes,
         };
 
         return Result<LoginResponseDto>.Success(response);

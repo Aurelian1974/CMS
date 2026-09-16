@@ -13,7 +13,16 @@ interface AuthState {
    * ProtectedRoute să nu redirecționeze greșit către /login.
    */
   isBootstrapping: boolean
-  setAuth: (user: AuthUser, token: string, permissions: ModulePermission[]) => void
+  /**
+   * Fereastra de inactivitate a rolului, în minute. Vine de la server la fiecare
+   * login și refresh, deci o modificare din ecranul de administrare se aplică la
+   * următoarea reîmprospătare, fără redeploy.
+   */
+  idleTimeoutMinutes: number
+  setAuth: (
+    user: AuthUser, token: string, permissions: ModulePermission[],
+    idleTimeoutMinutes?: number,
+  ) => void
   updateToken: (token: string) => void
   updatePermissions: (permissions: ModulePermission[]) => void
   clearMustChangePassword: () => void
@@ -38,9 +47,15 @@ export const useAuthStore = create<AuthState>()(
       permissions: [],
       isAuthenticated: false,
       isBootstrapping: true,
+      idleTimeoutMinutes: 0,
 
-      setAuth: (user, accessToken, permissions) =>
-        set({ user, accessToken, permissions, isAuthenticated: true }),
+      setAuth: (user, accessToken, permissions, idleTimeoutMinutes) =>
+        set((state) => ({
+          user, accessToken, permissions, isAuthenticated: true,
+          // Pastram valoarea anterioara daca raspunsul nu o contine, ca sa nu
+          // dezactivam accidental cronometrul.
+          idleTimeoutMinutes: idleTimeoutMinutes ?? state.idleTimeoutMinutes,
+        })),
 
       updateToken: (accessToken) =>
         set({ accessToken }),
@@ -58,7 +73,7 @@ export const useAuthStore = create<AuthState>()(
       clearAuth: () =>
         set({
           user: null, accessToken: null, permissions: [],
-          isAuthenticated: false, isBootstrapping: false,
+          isAuthenticated: false, isBootstrapping: false, idleTimeoutMinutes: 0,
         }),
     }),
     {
@@ -69,6 +84,7 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         permissions: state.permissions,
         isAuthenticated: state.isAuthenticated,
+        idleTimeoutMinutes: state.idleTimeoutMinutes,
       }),
     }
   )
