@@ -172,4 +172,41 @@ describe('Sidebar', () => {
 
     expect(screen.getByText('IP')).toBeInTheDocument()
   })
+
+  // ── Accesibilitate ──────────────────────────────────────────────────────────
+
+  it('nav-ul are etichetă semantică pentru cititoarele de ecran', () => {
+    grantRead(MODULE.Dashboard)
+    renderSidebar()
+
+    expect(screen.getByRole('navigation', { name: 'Navigare principală' })).toBeInTheDocument()
+  })
+
+  it('grupurile de navigație au role=group și aria-labelledby', () => {
+    grantRead(MODULE.Dashboard, MODULE.Patients)
+    renderSidebar()
+
+    const group = screen.getByRole('group')
+    const label = document.getElementById(group.getAttribute('aria-labelledby')!)
+
+    expect(label).toHaveTextContent('Principal')
+  })
+
+  it('butonul de collapse comunică starea prin aria-expanded', () => {
+    useUiStore.setState({ sidebarCollapsed: false })
+    grantRead(MODULE.Dashboard)
+    renderSidebar()
+
+    const btn = screen.getByRole('button', { name: 'Restrânge sidebar' })
+    expect(btn).toHaveAttribute('aria-expanded', 'true')
+    expect(btn).toHaveAttribute('aria-controls', 'main-navigation')
+  })
+
+  it('când sidebar-ul e colapsat, link-urile au title pentru tooltip', () => {
+    useUiStore.setState({ sidebarCollapsed: true })
+    grantRead(MODULE.Dashboard)
+    renderSidebar()
+
+    expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('title', 'Dashboard')
+  })
 })

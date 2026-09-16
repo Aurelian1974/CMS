@@ -31,7 +31,7 @@ Fișiere în scop:
 | **A. Blocante** — rup build-ul sau mint despre permisiuni | A1–A3 | 🔴 ✅ rezolvat |
 | **B. Coerență navigație ↔ permisiuni** | B1–B4 | 🔴🟠 ✅ B1–B3 rezolvate |
 | **C. Stare, date și performanță** | C1–C4 | ✅ **finalizată** |
-| **D. Accesibilitate** | D1–D5 | 🟡 |
+| **D. Accesibilitate** | D1–D5 | ✅ **finalizată** |
 | **E. Responsive & layout** | E1–E3 | 🟠 |
 | **F. Igienă cod și stil** | F1–F3 | 🟡 |
 
@@ -226,7 +226,7 @@ if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 
 ## D. Accesibilitate
 
-### D1 — Contrast sub WCAG AA în toată starea de repaus 🟡
+### D1 — Contrast sub WCAG AA în toată starea de repaus 🟡 ✅ rezolvat
 
 Raporturi calculate pe `$sidebar-bg: #2A3F52`:
 
@@ -245,7 +245,9 @@ Starea de repaus — 95% din timp — e sub prag peste tot. Hover și active sun
 **Fix minim, fără schimbare de aspect:** `.5 → .68` pe label (6.04:1),
 `.32 → .5` pe iconiță (4.04:1), `.3 → .5` pe section label, `.4 → .6` pe userRole.
 
-### D2 — Colapsat = invizibil pentru cititorul de ecran 🟡
+**Implementat:** opacitățile ajustate în `Sidebar.module.scss`; badge versiune redus la `0.15` pentru a îndeplini pragul WCAG.
+
+### D2 — Colapsat = invizibil pentru cititorul de ecran 🟡 ✅ rezolvat
 
 ```scss
 &.collapsed { .navLabel { display: none; } }
@@ -259,7 +261,9 @@ nume accesibil — se anunță „link", atât. Vizual, 19 iconițe fără toolt
 **Fix:** păstrează span-ul, dar cu `.visually-hidden` (`clip-path`) în loc de
 `display: none`; adaugă `title={label}` pe `NavLink` când e colapsat.
 
-### D3 — Zero stiluri de focus 🟡
+**Implementat:** clasă `.visuallyHidden` în SCSS; toate elementele ascunse la colaps folosesc `@extend .visuallyHidden`; `NavLink` primește `title` când sidebar-ul e restrâns.
+
+### D3 — Zero stiluri de focus 🟡 ✅ rezolvat
 
 Niciun `:focus-visible` în `Sidebar.module.scss` (nici în `main.scss`). Outline-ul
 implicit al browserului e negru pe fundal închis → navigarea cu tastatura prin
@@ -268,7 +272,9 @@ meniu e practic oarbă.
 **Fix:** `outline: 2px solid $active-accent; outline-offset: -2px` pe `.navItem`,
 `.iconBtn`, `.collapseBtn`.
 
-### D4 — Butonul de collapse nu-și comunică starea 🟡
+**Implementat:** `:focus-visible` adăugat pe `.navItem`, `.iconBtn`, `.collapseBtn`; outline offset ajustat per element.
+
+### D4 — Butonul de collapse nu-și comunică starea 🟡 ✅ rezolvat
 
 Lipsesc `aria-expanded={!sidebarCollapsed}` și `aria-controls`. E 24px — sub
 minimul recomandat — poziționat `top: 50%; right: -12px` cu `z-index: 101`, deci
@@ -278,6 +284,8 @@ click-uri pe un grid.
 **Fix:** `aria-expanded` + `aria-controls`; mută butonul lângă brand (ancorare
 predictibilă, fără suprapunere peste conținut).
 
+**Implementat:** butonul de collapse mutat în `.brandArea`; adăugate `aria-expanded`, `aria-controls="main-navigation"`, `title`; dimensiune mărită la 28x28 px.
+
 ### D5 — `<nav>` fără etichetă, secțiuni fără semantică 🟡
 
 `<nav>` n-are `aria-label`. Grupurile sunt `<div>`-uri cu un `<div>` titlu
@@ -285,6 +293,8 @@ deasupra — relația nu există pentru asistive tech.
 
 **Fix:** `<nav aria-label="Navigare principală">`, `.navGroup` cu `role="group"` +
 `aria-labelledby` către id-ul section label-ului.
+
+**Implementat:** `<nav>` are `aria-label`; fiecare `.navGroup` are `role="group"` și `aria-labelledby` către `sectionLabel`; id-urile sunt generate per secțiune.
 
 ---
 

@@ -156,35 +156,57 @@ export const Sidebar = () => {
   return (
     <aside className={`${styles.sidebar}${sidebarCollapsed ? ` ${styles.collapsed}` : ''}`}>
 
-      {/* Brand — duce la primul ecran permis, nu neapărat la /dashboard */}
-      <NavLink to={landing ?? '/dashboard'} className={styles.brand}>
-        <div className={styles.brandIcon}>
-          <RedCrossIcon />
-        </div>
-        <span className={styles.brandName}>
-          Valyan<span>Clinic</span>
-        </span>
-      </NavLink>
+      {/* Brand + buton collapse — ancorare predictibilă, fără suprapunere peste conținut */}
+      <div className={styles.brandArea}>
+        <NavLink to={landing ?? '/dashboard'} className={styles.brand}>
+          <div className={styles.brandIcon}>
+            <RedCrossIcon />
+          </div>
+          <span className={styles.brandName}>
+            Valyan<span>Clinic</span>
+          </span>
+        </NavLink>
+        <button
+          type="button"
+          className={`${styles.collapseBtn}${sidebarCollapsed ? ` ${styles.rotated}` : ''}`}
+          onClick={toggleSidebar}
+          aria-expanded={!sidebarCollapsed}
+          aria-controls="main-navigation"
+          aria-label={sidebarCollapsed ? 'Extinde sidebar' : 'Restrânge sidebar'}
+          title={sidebarCollapsed ? 'Extinde sidebar' : 'Restrânge sidebar'}
+        >
+          <ChevronLeft size={14} strokeWidth={2.5} />
+        </button>
+      </div>
 
       {/* Navigare — filtrat pe baza permisiunilor */}
-      <nav className={styles.nav}>
-        {visibleSections.map(({ section, items }) => (
-          <div key={section} className={styles.navGroup}>
-            <div className={styles.sectionLabel}>{section}</div>
-            {items.map(({ to, label, icon }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) =>
-                  `${styles.navItem}${isActive ? ` ${styles.active}` : ''}`
-                }
-              >
-                <span className={styles.navIcon}>{icon}</span>
-                <span className={styles.navLabel}>{label}</span>
-              </NavLink>
-            ))}
-          </div>
-        ))}
+      <nav id="main-navigation" className={styles.nav} aria-label="Navigare principală">
+        {visibleSections.map(({ section, items }) => {
+          const sectionId = `nav-section-${section}`;
+          return (
+            <div
+              key={section}
+              className={styles.navGroup}
+              role="group"
+              aria-labelledby={sectionId}
+            >
+              <div id={sectionId} className={styles.sectionLabel}>{section}</div>
+              {items.map(({ to, label, icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={({ isActive }) =>
+                    `${styles.navItem}${isActive ? ` ${styles.active}` : ''}`
+                  }
+                  title={sidebarCollapsed ? label : undefined}
+                >
+                  <span className={styles.navIcon}>{icon}</span>
+                  <span className={styles.navLabel}>{label}</span>
+                </NavLink>
+              ))}
+            </div>
+          );
+        })}
       </nav>
 
       {/* Versiune aplicație */}
@@ -200,7 +222,8 @@ export const Sidebar = () => {
           <div className={styles.userRole}>{displayUser.role}</div>
         </div>
         <button
-          className={styles.logoutBtn}
+          type="button"
+          className={styles.iconBtn}
           onClick={openOwnPasswordModal}
           aria-label="Schimbă parola"
           title="Schimbă parola"
@@ -208,7 +231,8 @@ export const Sidebar = () => {
           <KeyRound size={16} strokeWidth={1.8} />
         </button>
         <button
-          className={styles.logoutBtn}
+          type="button"
+          className={`${styles.iconBtn} ${styles.danger}`}
           onClick={handleLogout}
           aria-label="Deconectare"
           title="Deconectare"
@@ -216,15 +240,6 @@ export const Sidebar = () => {
           <LogOut size={16} strokeWidth={1.8} />
         </button>
       </div>
-
-      {/* Buton collapse/expand */}
-      <button
-        className={`${styles.collapseBtn}${sidebarCollapsed ? ` ${styles.rotated}` : ''}`}
-        onClick={toggleSidebar}
-        aria-label={sidebarCollapsed ? 'Extinde sidebar' : 'Restrânge sidebar'}
-      >
-        <ChevronLeft size={13} strokeWidth={2.5} />
-      </button>
 
     </aside>
   );
