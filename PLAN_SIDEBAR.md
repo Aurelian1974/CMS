@@ -187,29 +187,29 @@ modificat e cel curent, se re-citește `permissionsApi.getUserEffective` și se
 apelează `updatePermissions`. Metoda rămâne în store ca punct de actualizare
 programatică; nu mai este cod mort.
 
-### C2 — Starea „collapsed" nu se păstrează 🟠
+### C2 — Starea „collapsed" nu se păstrează 🟠 ✅ rezolvat
 
-`uiStore` nu are `persist`. Sidebar-ul revine expandat la fiecare reload — spre
+`uiStore` nu avea `persist`. Sidebar-ul revenea expandat la fiecare reload — spre
 deosebire de `authStore`, care persistă corect.
 
 **Fix:** `persist` cu `partialize: (s) => ({ sidebarCollapsed: s.sidebarCollapsed })`
-în `localStorage` (preferință de UI, nu date de sesiune — deci `localStorage`, nu
-`sessionStorage`).
+in `localStorage` (preferință de UI, nu date de sesiune — deci `localStorage`, nu
+`sessionStorage`). Test: `__tests__/store/uiStore.test.ts`.
 
-### C3 — Re-render la fiecare notificare 🟠
+### C3 — Re-render la fiecare notificare 🟠 ✅ rezolvat
 
 ```ts
 const { sidebarCollapsed, toggleSidebar, openOwnPasswordModal } = useUiStore();
 ```
 
-Fără selector, Zustand abonează componenta la **tot** store-ul: orice
-`setNotificationCount` re-randează sidebar-ul integral, cu toate `NavLink`-urile.
-În aceeași componentă folosești deja pattern-ul corect pentru `authStore`
+Fără selector, Zustand abona componenta la **tot** store-ul: orice
+`setNotificationCount` re-randa sidebar-ul integral, cu toate `NavLink`-urile.
+În aceeași componentă se folosea deja pattern-ul corect pentru `authStore`
 (`useAuthStore((s) => s.user)`).
 
-**Fix:** selectoare individuale.
+**Fix:** selectoare individuale în `Sidebar.tsx`.
 
-### C4 — `getInitials` se strică la spații duble 🟡
+### C4 — `getInitials` se strică la spații duble 🟡 ✅ rezolvat
 
 ```ts
 const parts = name.trim().split(' ');
@@ -219,7 +219,8 @@ if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
 `"Ion  Popescu"` → `parts = ['Ion', '', 'Popescu']` → `parts[1][0]` e `undefined`
 → avatarul afișează `IUNDEFINED`. Nu crapă, dar e vizibil.
 
-**Fix:** `name.trim().split(/\s+/).filter(Boolean)`.
+**Fix:** `name.trim().split(/\s+/).filter(Boolean)` în `Sidebar.tsx`. Test adăugat
+în `__tests__/components/layout/Sidebar.test.tsx`.
 
 ---
 
