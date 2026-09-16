@@ -27,7 +27,7 @@ export const MainLayout = () => {
 
   // Deconectarea pentru inactivitate se montează aici, nu în App: are nevoie de
   // context de rutare și privește doar zona autentificată a aplicației.
-  const { secondsLeft, staySignedIn } = useIdleTimeout()
+  const { secondsLeft, sessionSecondsLeft, staySignedIn } = useIdleTimeout()
 
   // Înregistrează fiecare navigare în istoric
   useEffect(() => {
@@ -55,7 +55,7 @@ export const MainLayout = () => {
   return (
     <div className={styles.layout}>
       <ErrorBoundary variant="section" label="sidebar">
-        <Sidebar />
+        <Sidebar sessionSecondsLeft={sessionSecondsLeft} />
       </ErrorBoundary>
       <div className={styles.content}>
         <AppHeader />

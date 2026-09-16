@@ -150,8 +150,40 @@ const NAV_ITEMS_BY_ROUTE: Partial<Record<GuardedRoute, NavItem>> = Object.fromEn
   NAV_SECTIONS.flatMap(({ items }) => items.map((item) => [item.to, item])),
 );
 
+// ===== Contor sesiune (timp rămas până la deconectarea din inactivitate) =====
+const SESSION_WARNING_THRESHOLD_SEC = 300; // 5 minute
+const SESSION_DANGER_THRESHOLD_SEC = 60;   // 1 minut
+
+const formatCountdown = (totalSeconds: number): string => {
+  const safeSeconds = Math.max(0, totalSeconds);
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
+};
+
+const getSessionTimerClass = (secondsLeft: number): string => {
+  if (secondsLeft <= SESSION_DANGER_THRESHOLD_SEC) return 'sessionTimerDanger';
+  if (secondsLeft <= SESSION_WARNING_THRESHOLD_SEC) return 'sessionTimerWarning';
+  return 'sessionTimerOk';
+};
+
+// Inelul rămâne plin (100%) peste pragul de 5 minute — abia sub el se golește
+// vizibil, ca să fie relevant indiferent de lungimea ferestrei de inactivitate.
+const SESSION_RING_RADIUS = 15.5;
+const SESSION_RING_CIRCUMFERENCE = 2 * Math.PI * SESSION_RING_RADIUS;
+
+const getSessionRingFraction = (secondsLeft: number): number => {
+  if (secondsLeft >= SESSION_WARNING_THRESHOLD_SEC) return 1;
+  return Math.max(0, secondsLeft / SESSION_WARNING_THRESHOLD_SEC);
+};
+
+interface SidebarProps {
+  /** Secunde rămase până la invalidarea sesiunii din inactivitate; `null`/`undefined` = ascuns. */
+  sessionSecondsLeft?: number | null;
+}
+
 // ===== Componenta Sidebar =====
-export const Sidebar = () => {
+export const Sidebar = ({ sessionSecondsLeft = null }: SidebarProps = {}) => {
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
   const setSidebarCollapsed = useUiStore((s) => s.setSidebarCollapsed);
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
@@ -483,6 +515,33 @@ export const Sidebar = () => {
           );
         })}
       </nav>
+
+      {/* Contor sesiune — inel care se golește vizibil în ultimele 5 minute de inactivitate */}
+      {sessionSecondsLeft != null && (
+        <div className={`${styles.sessionRingWrap}${sidebarCollapsed ? ` ${styles.collapsedRing}` : ''}`}>
+          <svg
+            viewBox="0 0 36 36"
+            className={`${styles.sessionRing} ${styles[getSessionTimerClass(sessionSecondsLeft)]}`}
+            role="img"
+            aria-label={`Sesiune activă încă ${formatCountdown(sessionSecondsLeft)}`}
+          >
+            <circle className={styles.sessionRingTrack} cx="18" cy="18" r={SESSION_RING_RADIUS} />
+            <circle
+              className={styles.sessionRingProgress}
+              cx="18" cy="18" r={SESSION_RING_RADIUS}
+              style={{
+                strokeDasharray: SESSION_RING_CIRCUMFERENCE,
+                strokeDashoffset: SESSION_RING_CIRCUMFERENCE * (1 - getSessionRingFraction(sessionSecondsLeft)),
+              }}
+            />
+          </svg>
+          {!sidebarCollapsed && (
+            <span className={styles.sessionRingLabel} title="Timp rămas până la deconectarea automată din inactivitate">
+              {formatCountdown(sessionSecondsLeft)}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Versiune aplicație */}
       <div className={styles.versionBadge}>v{__APP_VERSION__}</div>

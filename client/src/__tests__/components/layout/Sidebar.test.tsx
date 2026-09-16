@@ -53,14 +53,14 @@ function grantRead(...modules: ModuleCode[]) {
   })
 }
 
-function renderSidebar() {
+function renderSidebar(props: { sessionSecondsLeft?: number | null } = {}) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={['/dashboard']}>
-        <Sidebar />
+        <Sidebar {...props} />
       </MemoryRouter>
     </QueryClientProvider>,
   )
@@ -462,5 +462,51 @@ describe('Sidebar', () => {
 
     await screen.findByRole('link', { name: 'Dashboard' })
     expect(screen.queryByRole('button', { name: /favorite/i })).not.toBeInTheDocument()
+  })
+
+  // ── Contor sesiune (inel — timp rămas până la deconectarea din inactivitate) ─
+
+  it('nu afișează inelul de sesiune când nu i se dă valoare', () => {
+    grantRead(MODULE.Dashboard)
+    renderSidebar()
+
+    expect(screen.queryByRole('img', { name: /sesiune activă/i })).not.toBeInTheDocument()
+  })
+
+  it('afișează timpul rămas formatat mm:ss lângă inel', () => {
+    grantRead(MODULE.Dashboard)
+    renderSidebar({ sessionSecondsLeft: 754 })
+
+    expect(screen.getByText('12:34')).toBeInTheDocument()
+  })
+
+  it('inelul e verde când mai sunt peste 5 minute', () => {
+    grantRead(MODULE.Dashboard)
+    renderSidebar({ sessionSecondsLeft: 301 })
+
+    expect(screen.getByRole('img', { name: /sesiune activă/i })).toHaveClass('sessionTimerOk')
+  })
+
+  it('inelul e galben/portocaliu între 4:59 și 1:01', () => {
+    grantRead(MODULE.Dashboard)
+    renderSidebar({ sessionSecondsLeft: 180 })
+
+    expect(screen.getByRole('img', { name: /sesiune activă/i })).toHaveClass('sessionTimerWarning')
+  })
+
+  it('inelul e roșu sub 1 minut', () => {
+    grantRead(MODULE.Dashboard)
+    renderSidebar({ sessionSecondsLeft: 45 })
+
+    expect(screen.getByRole('img', { name: /sesiune activă/i })).toHaveClass('sessionTimerDanger')
+  })
+
+  it('inelul rămâne vizibil când sidebar-ul e colapsat, dar eticheta textuală dispare', () => {
+    useUiStore.setState({ sidebarCollapsed: true })
+    grantRead(MODULE.Dashboard)
+    renderSidebar({ sessionSecondsLeft: 120 })
+
+    expect(screen.getByRole('img', { name: /sesiune activă/i })).toBeInTheDocument()
+    expect(screen.queryByText('2:00')).not.toBeInTheDocument()
   })
 })

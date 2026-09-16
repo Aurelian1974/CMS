@@ -14,7 +14,7 @@ const warningSecondsFor = (windowSeconds: number) =>
   Math.max(5, Math.min(60, Math.floor(windowSeconds / 2)))
 
 /** Cât de des verificăm dacă fereastra s-a scurs. */
-const TICK_MS = 5_000
+const TICK_MS = 1_000
 
 /**
  * Canal de sincronizare între tab-uri. Fără el, un tab activ ar ține sesiunea vie
@@ -56,6 +56,12 @@ export const reportActivity = () => {
 interface IdleState {
   /** Secunde rămase până la deconectare; null cât timp nu e cazul să avertizăm. */
   secondsLeft: number | null
+  /**
+   * Secunde rămase până la invalidarea sesiunii, actualizat continuu (nu doar în
+   * fereastra de avertizare) — folosit pentru contorul permanent din sidebar.
+   * `null` când fereastra de inactivitate nu se aplică (`idleTimeoutMinutes <= 0`).
+   */
+  sessionSecondsLeft: number | null
   /** Prelungește sesiunea la cererea utilizatorului. */
   staySignedIn: () => void
 }
@@ -79,10 +85,12 @@ export const useIdleTimeout = (): IdleState => {
   // Se aseaza la montare, in efectul de mai jos.
   const lastActivity = useRef<number>(0)
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null)
+  const [sessionSecondsLeft, setSessionSecondsLeft] = useState<number | null>(null)
 
   const markActive = () => {
     lastActivity.current = Date.now()
     setSecondsLeft(null)
+    setSessionSecondsLeft(idleMinutes > 0 ? idleMinutes * 60 : null)
   }
 
   // Navigarea e cel mai clar semnal de schimbare a ecranului. Efectul ruleaza si
@@ -114,6 +122,7 @@ export const useIdleTimeout = (): IdleState => {
   useEffect(() => {
     if (!isAuthenticated || idleMinutes <= 0) {
       setSecondsLeft(null)
+      setSessionSecondsLeft(null)
       return
     }
 
@@ -133,11 +142,13 @@ export const useIdleTimeout = (): IdleState => {
         } catch {
           // Serverul poate fi deja de partea cealaltă a ferestrei; nu contează.
         }
+        setSessionSecondsLeft(0)
         clearAuth()
         navigate('/login', { replace: true })
         return
       }
 
+      setSessionSecondsLeft(remainingSec)
       setSecondsLeft(remainingSec <= warningSec ? remainingSec : null)
     }
 
@@ -145,5 +156,5 @@ export const useIdleTimeout = (): IdleState => {
     return () => window.clearInterval(id)
   }, [isAuthenticated, idleMinutes, clearAuth, navigate])
 
-  return { secondsLeft, staySignedIn: markActive }
+  return { secondsLeft, sessionSecondsLeft, staySignedIn: markActive }
 }
