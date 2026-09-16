@@ -4,8 +4,8 @@
  * Testele manipulează store-ul direct (fără React renderer) — Zustand permite getState/setState.
  */
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useAuthStore, type AuthUser } from '@/store/authStore';
-import type { ModulePermission } from '@/features/auth/types/auth.types';
+import { useAuthStore } from '@/store/authStore';
+import type { AuthUser, ModulePermission } from '@/features/auth/types/auth.types';
 
 // ── Date mock ─────────────────────────────────────────────────────────────────
 
@@ -179,6 +179,19 @@ describe('authStore', () => {
       expect(user.role).toBe('admin');
       expect(user.roleId).toBe(mockUser.roleId);
       expect(user.clinicId).toBe(mockUser.clinicId);
+    });
+
+    it('păstrează mustChangePassword prin store', () => {
+      // Câmpul a fost adăugat cândva doar într-una dintre cele două definiții
+      // AuthUser care coexistau, deci se pierdea tăcut din tipuri. Acum definiția
+      // e unică; testul păzește round-trip-ul prin store.
+      const user: AuthUser = { ...mockUser, mustChangePassword: true };
+      useAuthStore.getState().setAuth(user, MOCK_TOKEN, []);
+
+      expect(useAuthStore.getState().user?.mustChangePassword).toBe(true);
+
+      useAuthStore.getState().clearMustChangePassword();
+      expect(useAuthStore.getState().user?.mustChangePassword).toBe(false);
     });
 
     it('acceptă toate rolurile valide', () => {

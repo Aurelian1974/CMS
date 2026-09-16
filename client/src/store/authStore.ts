@@ -1,18 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type { ModulePermission } from '@/features/auth/types/auth.types'
-
-export interface AuthUser {
-  id: string
-  email: string
-  fullName: string
-  role: 'admin' | 'doctor' | 'nurse' | 'receptionist' | 'clinic_manager'
-  roleId: string
-  clinicId: string
-  doctorId: string | null
-  /** Setat după un reset administrativ — clientul forțează schimbarea parolei. */
-  mustChangePassword?: boolean
-}
+import type { AuthUser, ModulePermission } from '@/features/auth/types/auth.types'
 
 interface AuthState {
   user: AuthUser | null
