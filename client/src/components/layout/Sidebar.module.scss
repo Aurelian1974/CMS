@@ -239,11 +239,11 @@ $active-accent: $primary-light;   // culoarea indicatorului lateral activ
 }
 
 .sectionLabel {
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   white-space: nowrap;
 }
 
@@ -332,11 +332,11 @@ $active-accent: $primary-light;   // culoarea indicatorului lateral activ
 }
 
 .navSubgroupLabel {
-  font-size: 0.58rem;
+  font-size: 0.65rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.4);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   white-space: nowrap;
 }
 
@@ -564,7 +564,7 @@ $active-accent: $primary-light;   // culoarea indicatorului lateral activ
 }
 
 .userRole {
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   color: rgba(255, 255, 255, 0.6);
   white-space: nowrap;
   overflow: hidden;
@@ -605,7 +605,7 @@ $active-accent: $primary-light;   // culoarea indicatorului lateral activ
 }
 
 .sessionLabel {
-  font-size: 0.66rem;
+  font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.01em;
   color: rgba(255, 255, 255, 0.5);
@@ -640,7 +640,7 @@ $active-accent: $primary-light;   // culoarea indicatorului lateral activ
 }
 
 .sessionRingLabel {
-  font-size: 0.6rem;
+  font-size: 0.72rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
@@ -664,7 +664,7 @@ $active-accent: $primary-light;   // culoarea indicatorului lateral activ
 
 // ===== Badge versiune =====
 .versionBadge {
-  font-size: 0.6rem;
+  font-size: 0.65rem;
   color: rgba(255, 255, 255, 0.15);
   text-align: center;
   padding: 0.25rem 0;
