@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Generează schema OpenAPI din backend și tipurile TypeScript pentru frontend.
 

@@ -6,7 +6,8 @@ import type {
   GetUsersParams,
   CreateUserPayload,
   UpdateUserPayload,
-  ChangePasswordPayload,
+  ResetPasswordPayload,
+  ChangeOwnPasswordPayload,
   RoleDto,
 } from '@/features/users/types/user.types'
 
@@ -26,8 +27,14 @@ export const usersApi = {
   update: ({ id, ...data }: UpdateUserPayload): Promise<ApiResponse<boolean>> =>
     api.put(`/api/v1/Users/${id}`, data),
 
-  changePassword: (id: string, payload: ChangePasswordPayload): Promise<ApiResponse<boolean>> =>
-    api.patch(`/api/v1/Users/${id}/password`, payload),
+  /// Reset administrativ — restrâns la rolul Admin pe backend.
+  /// Contul vizat primește MustChangePassword și își pierde sesiunile.
+  resetPassword: (id: string, payload: ResetPasswordPayload): Promise<ApiResponse<boolean>> =>
+    api.post(`/api/v1/Users/${id}/password-reset`, payload),
+
+  /// Schimbarea propriei parole — contul vine din token, nu din rută.
+  changeOwnPassword: (payload: ChangeOwnPasswordPayload): Promise<ApiResponse<boolean>> =>
+    api.patch('/api/v1/Users/me/password', payload),
 
   delete: (id: string): Promise<ApiResponse<boolean>> =>
     api.delete(`/api/v1/Users/${id}`),

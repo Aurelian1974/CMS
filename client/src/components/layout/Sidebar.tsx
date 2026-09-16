@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   ShieldAlert,
   ChevronLeft,
+  KeyRound,
   LogOut,
   Clock,
   Pill,
@@ -99,7 +100,7 @@ const getInitials = (name: string): string => {
 
 // ===== Componenta Sidebar =====
 export const Sidebar = () => {
-  const { sidebarCollapsed, toggleSidebar } = useUiStore();
+  const { sidebarCollapsed, toggleSidebar, openOwnPasswordModal } = useUiStore();
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const navigate = useNavigate();
@@ -173,6 +174,14 @@ export const Sidebar = () => {
           <div className={styles.userName}>{displayUser.fullName}</div>
           <div className={styles.userRole}>{displayUser.role}</div>
         </div>
+        <button
+          className={styles.logoutBtn}
+          onClick={openOwnPasswordModal}
+          aria-label="Schimbă parola"
+          title="Schimbă parola"
+        >
+          <KeyRound size={16} strokeWidth={1.8} />
+        </button>
         <button
           className={styles.logoutBtn}
           onClick={handleLogout}

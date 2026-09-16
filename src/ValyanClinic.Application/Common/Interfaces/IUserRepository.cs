@@ -24,7 +24,14 @@ public interface IUserRepository
 
     Task DeleteAsync(Guid id, Guid clinicId, Guid deletedBy, CancellationToken ct);
 
-    Task UpdatePasswordAsync(Guid id, Guid clinicId, string passwordHash, Guid updatedBy, CancellationToken ct);
+    /// <summary>
+    /// Actualizează parola. <paramref name="mustChangePassword"/> e true la resetul
+    /// administrativ — parola e cunoscută de altcineva, deci utilizatorul trebuie să
+    /// o schimbe la următoarea autentificare.
+    /// </summary>
+    Task UpdatePasswordAsync(
+        Guid id, Guid clinicId, string passwordHash, Guid updatedBy,
+        bool mustChangePassword, CancellationToken ct);
 
     Task<IReadOnlyList<RoleDto>> GetAllRolesAsync(CancellationToken ct);
 }

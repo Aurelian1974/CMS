@@ -10,6 +10,8 @@ export interface AuthUser {
   roleId: string
   clinicId: string
   doctorId: string | null
+  /** Setat după un reset administrativ — clientul forțează schimbarea parolei. */
+  mustChangePassword?: boolean
 }
 
 interface AuthState {
@@ -20,6 +22,7 @@ interface AuthState {
   setAuth: (user: AuthUser, token: string, permissions: ModulePermission[]) => void
   updateToken: (token: string) => void
   updatePermissions: (permissions: ModulePermission[]) => void
+  clearMustChangePassword: () => void
   clearAuth: () => void
 }
 
@@ -42,6 +45,11 @@ export const useAuthStore = create<AuthState>()(
 
       updatePermissions: (permissions) =>
         set({ permissions }),
+
+      clearMustChangePassword: () =>
+        set((state) =>
+          state.user ? { user: { ...state.user, mustChangePassword: false } } : {}
+        ),
 
       clearAuth: () =>
         set({ user: null, accessToken: null, permissions: [], isAuthenticated: false }),

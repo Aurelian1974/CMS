@@ -33,4 +33,10 @@ public sealed record AuthUserDto
     public string RoleId { get; init; } = string.Empty;
     public string ClinicId { get; init; } = string.Empty;
     public string? DoctorId { get; init; }
+
+    /// <summary>
+    /// Contul trebuie sa isi schimbe parola inainte de a continua — setat dupa un
+    /// reset administrativ. Clientul forteaza ecranul de schimbare cat timp e true.
+    /// </summary>
+    public bool MustChangePassword { get; init; }
 }

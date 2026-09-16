@@ -4,7 +4,8 @@ import type {
   GetUsersParams,
   CreateUserPayload,
   UpdateUserPayload,
-  ChangePasswordPayload,
+  ResetPasswordPayload,
+  ChangeOwnPasswordPayload,
 } from '../types/user.types'
 
 // ── Query Keys ────────────────────────────────────────────────────────────────
@@ -66,17 +67,23 @@ export const useUpdateUser = () => {
   })
 }
 
-// ── Schimbare parolă ─────────────────────────────────────────────────────────
-export const useChangePassword = () => {
+// ── Reset administrativ al parolei ───────────────────────────────────────────
+export const useResetPassword = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ userId, payload }: { userId: string; payload: ChangePasswordPayload }) =>
-      usersApi.changePassword(userId, payload),
+    mutationFn: ({ userId, payload }: { userId: string; payload: ResetPasswordPayload }) =>
+      usersApi.resetPassword(userId, payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: userKeys.all })
     },
   })
 }
+
+// ── Schimbarea propriei parole ───────────────────────────────────────────────
+export const useChangeOwnPassword = () =>
+  useMutation({
+    mutationFn: (payload: ChangeOwnPasswordPayload) => usersApi.changeOwnPassword(payload),
+  })
 
 // ── Ștergere utilizator (soft delete) ────────────────────────────────────────
 export const useDeleteUser = () => {

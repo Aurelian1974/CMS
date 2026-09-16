@@ -7,7 +7,10 @@ CREATE OR ALTER PROCEDURE dbo.User_UpdatePassword
     @Id           UNIQUEIDENTIFIER,
     @ClinicId     UNIQUEIDENTIFIER,
     @PasswordHash NVARCHAR(500),
-    @UpdatedBy    UNIQUEIDENTIFIER
+    @UpdatedBy    UNIQUEIDENTIFIER,
+    -- 1 la resetul administrativ (parola e cunoscuta de altcineva), 0 cand
+    -- utilizatorul si-o schimba singur.
+    @MustChangePassword BIT = 0
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -22,9 +25,10 @@ BEGIN
         END;
 
         UPDATE Users
-        SET PasswordHash = @PasswordHash,
-            UpdatedBy    = @UpdatedBy,
-            UpdatedAt    = GETDATE()
+        SET PasswordHash       = @PasswordHash,
+            MustChangePassword = @MustChangePassword,
+            UpdatedBy          = @UpdatedBy,
+            UpdatedAt          = GETDATE()
         WHERE Id = @Id AND ClinicId = @ClinicId AND IsDeleted = 0;
 
         COMMIT TRANSACTION;

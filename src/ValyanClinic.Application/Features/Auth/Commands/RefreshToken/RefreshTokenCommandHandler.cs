@@ -116,6 +116,7 @@ public sealed class RefreshTokenCommandHandler(
                 RoleId = user.RoleId.ToString(),
                 ClinicId = user.ClinicId.ToString(),
                 DoctorId = user.DoctorId?.ToString(),
+                MustChangePassword = user.MustChangePassword,
             },
             Permissions = permissions
         };

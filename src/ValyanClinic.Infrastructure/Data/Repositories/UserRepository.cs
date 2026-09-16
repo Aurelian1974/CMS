@@ -96,13 +96,22 @@ public sealed class UserRepository(DapperContext context) : IUserRepository
                 cancellationToken: ct));
     }
 
-    public async Task UpdatePasswordAsync(Guid id, Guid clinicId, string passwordHash, Guid updatedBy, CancellationToken ct)
+    public async Task UpdatePasswordAsync(
+        Guid id, Guid clinicId, string passwordHash, Guid updatedBy,
+        bool mustChangePassword, CancellationToken ct)
     {
         using var connection = context.CreateConnection();
         await connection.ExecuteAsync(
             new CommandDefinition(
                 UserProcedures.UpdatePassword,
-                new { Id = id, ClinicId = clinicId, PasswordHash = passwordHash, UpdatedBy = updatedBy },
+                new
+                {
+                    Id = id,
+                    ClinicId = clinicId,
+                    PasswordHash = passwordHash,
+                    UpdatedBy = updatedBy,
+                    MustChangePassword = mustChangePassword
+                },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct));
     }

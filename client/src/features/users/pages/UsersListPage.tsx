@@ -4,13 +4,13 @@ import type { ColDef, GridApi } from '@/components/data-display/AppDataGrid'
 import { AppDataGrid } from '@/components/data-display/AppDataGrid'
 import type { UserDto } from '../types/user.types'
 import type { CreateUserFormData } from '../schemas/user.schema'
-import type { ChangePasswordFormData } from '../schemas/user.schema'
-import { useUsersList, useCreateUser, useUpdateUser, useDeleteUser, useChangePassword, useRoles } from '../hooks/useUsers'
+import type { ResetPasswordFormData } from '../schemas/user.schema'
+import { useUsersList, useCreateUser, useUpdateUser, useDeleteUser, useResetPassword, useRoles } from '../hooks/useUsers'
 import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
 import { useMedicalStaffLookup } from '@/features/medicalStaff/hooks/useMedicalStaff'
 import { useHasAccess, MODULE, ACCESS_LEVEL } from '@/hooks/useHasAccess'
 import { UserFormModal } from '../components/UserFormModal/UserFormModal'
-import { ChangePasswordModal } from '../components/ChangePasswordModal/ChangePasswordModal'
+import { ResetPasswordModal } from '../components/ResetPasswordModal/ResetPasswordModal'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { AppBadge, ActiveBadge, type BadgeVariant } from '@/components/ui/AppBadge'
 import { formatDate, toLocalDateISO, getInitials } from '@/utils/format'
@@ -91,7 +91,7 @@ export const UsersListPage = () => {
   const createUser = useCreateUser()
   const updateUser = useUpdateUser()
   const deleteUser = useDeleteUser()
-  const changePassword = useChangePassword()
+  const resetPassword = useResetPassword()
 
   // ── Computed data (useMemo/useCallback MUST be before any conditional return) ──
   const userList = useMemo(() => usersResp?.data?.items ?? [], [usersResp])
@@ -340,12 +340,12 @@ export const UsersListPage = () => {
     setErrorMsg(null)
   }
 
-  const handlePasswordSubmit = (formData: ChangePasswordFormData) => {
+  const handlePasswordSubmit = (formData: ResetPasswordFormData) => {
     if (!passwordTarget) return
-    changePassword.mutate(
+    resetPassword.mutate(
       { userId: passwordTarget.id, payload: { newPassword: formData.newPassword } },
       {
-        onSuccess: () => { handleClosePasswordModal(); showSuccess('Parola a fost schimbată cu succes.') },
+        onSuccess: () => { handleClosePasswordModal(); showSuccess('Parola a fost resetată. Utilizatorul va trebui să o schimbe la următoarea autentificare.') },
         onError: (err) => showError(err),
       },
     )
@@ -518,12 +518,12 @@ export const UsersListPage = () => {
         serverError={modalOpen ? errorMsg : null}
       />
 
-      {/* Modal schimbare parolă */}
-      <ChangePasswordModal
+      {/* Modal reset parolă (administrativ) */}
+      <ResetPasswordModal
         isOpen={passwordModalOpen}
         onClose={handleClosePasswordModal}
         onSubmit={handlePasswordSubmit}
-        isLoading={changePassword.isPending}
+        isLoading={resetPassword.isPending}
         userName={passwordTarget ? `${passwordTarget.lastName} ${passwordTarget.firstName}` : ''}
         serverError={passwordModalOpen ? errorMsg : null}
       />

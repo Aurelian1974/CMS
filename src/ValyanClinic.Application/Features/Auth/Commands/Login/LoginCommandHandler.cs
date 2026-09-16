@@ -22,6 +22,19 @@ public sealed class LoginCommandHandler(
     IMemoryCache cache)
     : IRequestHandler<LoginCommand, Result<LoginResponseDto>>
 {
+    /// <summary>
+    /// Hash folosit ca momeala cand utilizatorul nu exista. Fara el, ramura
+    /// „user inexistent" raspunde imediat, in timp ce una cu user existent plateste
+    /// costul BCrypt (~250 ms la work factor 12): diferenta e banal de masurat si
+    /// spune atacatorului care adrese sunt inregistrate.
+    ///
+    /// Se calculeaza o singura data, prin hasher-ul injectat, ca sa aiba exact acelasi
+    /// work factor ca hash-urile reale — un hash fix in cod ar putea diverge de
+    /// configuratie si ar reintroduce diferenta de timp pe care o eliminam.
+    /// Cursa la initializare e inofensiva: ambele fire produc un hash la fel de valabil.
+    /// </summary>
+    private static string? _dummyPasswordHash;
+
     public async Task<Result<LoginResponseDto>> Handle(
         LoginCommand request, CancellationToken ct)
     {
@@ -29,7 +42,12 @@ public sealed class LoginCommandHandler(
         var user = await authRepository.GetByEmailOrUsernameAsync(request.Email, ct);
 
         if (user is null)
+        {
+            // Consumam acelasi timp ca o verificare reala, apoi raspundem identic.
+            _dummyPasswordHash ??= passwordHasher.HashPassword(Guid.NewGuid().ToString());
+            passwordHasher.VerifyPassword(request.Password, _dummyPasswordHash);
             return Result<LoginResponseDto>.Unauthorized(ErrorMessages.Auth.InvalidCredentials);
+        }
 
         // 2. Verificare cont activ
         if (!user.IsActive)
@@ -109,6 +127,7 @@ public sealed class LoginCommandHandler(
                 RoleId = user.RoleId.ToString(),
                 ClinicId = user.ClinicId.ToString(),
                 DoctorId = user.DoctorId?.ToString(),
+                MustChangePassword = user.MustChangePassword,
             },
             Permissions = permissions
         };

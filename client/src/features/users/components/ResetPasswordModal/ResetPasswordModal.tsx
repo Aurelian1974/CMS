@@ -1,16 +1,16 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { changePasswordSchema, type ChangePasswordFormData } from '../../schemas/user.schema'
+import { resetPasswordSchema, type ResetPasswordFormData } from '../../schemas/user.schema'
 import { AppModal } from '@/components/ui/AppModal'
 import { FormInput } from '@/components/forms/FormInput'
 import { AppButton } from '@/components/ui/AppButton'
-import styles from './ChangePasswordModal.module.scss'
+import styles from './ResetPasswordModal.module.scss'
 
-interface ChangePasswordModalProps {
+interface ResetPasswordModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (data: ChangePasswordFormData) => void
+  onSubmit: (data: ResetPasswordFormData) => void
   isLoading: boolean
   /** Numele utilizatorului — afișat în titlu */
   userName: string
@@ -18,20 +18,20 @@ interface ChangePasswordModalProps {
   serverError?: string | null
 }
 
-export const ChangePasswordModal = ({
+export const ResetPasswordModal = ({
   isOpen,
   onClose,
   onSubmit,
   isLoading,
   userName,
   serverError,
-}: ChangePasswordModalProps) => {
+}: ResetPasswordModalProps) => {
   const {
     control,
     handleSubmit,
     reset,
-  } = useForm<ChangePasswordFormData>({
-    resolver: zodResolver(changePasswordSchema),
+  } = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
       newPassword: '',
       confirmPassword: '',
@@ -50,7 +50,7 @@ export const ChangePasswordModal = ({
       isOpen={isOpen}
       onClose={onClose}
       maxWidth={480}
-      title={`Schimbă parola — ${userName}`}
+      title={`Resetează parola — ${userName}`}
       as="form"
       onSubmit={handleSubmit(onSubmit)}
       bodyClassName={styles.body}
@@ -69,7 +69,7 @@ export const ChangePasswordModal = ({
             isLoading={isLoading}
             loadingText="Se salvează..."
           >
-            Schimbă parola
+            Resetează parola
           </AppButton>
         </>
       }
@@ -82,17 +82,17 @@ export const ChangePasswordModal = ({
       )}
 
       {/* Parolă nouă */}
-      <FormInput<ChangePasswordFormData>
+      <FormInput<ResetPasswordFormData>
         name="newPassword"
         control={control}
         label="Parolă nouă"
         type="password"
-        placeholder="Minim 6 caractere"
+        placeholder="Minim 12 caractere"
         required
       />
 
       {/* Confirmare parolă */}
-      <FormInput<ChangePasswordFormData>
+      <FormInput<ResetPasswordFormData>
         name="confirmPassword"
         control={control}
         label="Confirmă parola"

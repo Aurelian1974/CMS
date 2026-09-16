@@ -66,6 +66,9 @@ public sealed record UserAuthDto
     public DateTime? LastLoginAt { get; init; }
     public int FailedLoginAttempts { get; init; }
     public DateTime? LockoutEnd { get; init; }
+
+    /// <summary>Contul trebuie să își schimbe parola la următoarea autentificare.</summary>
+    public bool MustChangePassword { get; init; }
 }
 
 /// <summary>

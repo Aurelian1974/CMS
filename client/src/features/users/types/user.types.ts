@@ -70,8 +70,14 @@ export interface UpdateUserPayload {
   isActive: boolean
 }
 
-/// Payload schimbare parolă
-export interface ChangePasswordPayload {
+/// Payload reset administrativ (adminul nu cunoaște parola veche)
+export interface ResetPasswordPayload {
+  newPassword: string
+}
+
+/// Payload schimbare proprie — parola curentă e dovada posesiei contului
+export interface ChangeOwnPasswordPayload {
+  currentPassword: string
   newPassword: string
 }
 

@@ -13,6 +13,8 @@ export interface AuthUser {
   roleId: string;
   clinicId: string;
   doctorId: string | null;
+  /** Setat după un reset administrativ — clientul forțează schimbarea parolei. */
+  mustChangePassword?: boolean;
 }
 
 /// Permisiune pe modul primită de la backend la login/refresh.

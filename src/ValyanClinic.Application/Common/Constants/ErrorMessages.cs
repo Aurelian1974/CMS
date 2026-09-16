@@ -67,6 +67,10 @@ public static class ErrorMessages
         public const string EmailDuplicate          = "Un utilizator cu această adresă de email există deja.";
         public const string UsernameDuplicate        = "Un utilizator cu acest username există deja.";
         public const string NotFound                = "Utilizatorul nu a fost găsit.";
+        public const string CurrentPasswordIncorrect = "Parola curentă este incorectă.";
+        public const string PasswordUnchanged        = "Parola nouă trebuie să fie diferită de cea curentă.";
+        public const string UseSelfServiceForOwnPassword =
+            "Pentru propria parolă folosiți schimbarea din contul dumneavoastră, care cere parola curentă.";
         public const string InvalidAssociation      = "Utilizatorul trebuie asociat fie unui doctor, fie unui membru al personalului medical.";
         public const string InvalidDoctor           = "Doctorul selectat nu există sau nu aparține acestei clinici.";
         public const string InvalidMedicalStaff     = "Personalul medical selectat nu există sau nu aparține acestei clinici.";

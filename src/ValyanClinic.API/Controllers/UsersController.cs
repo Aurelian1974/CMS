@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Mvc;
 using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Enums;
 using ValyanClinic.Infrastructure.Authentication;
-using ValyanClinic.Application.Features.Users.Commands.ChangePassword;
+using Microsoft.AspNetCore.Authorization;
+using ValyanClinic.Application.Features.Users.Commands.ChangeOwnPassword;
+using ValyanClinic.Application.Features.Users.Commands.ResetUserPassword;
 using ValyanClinic.Application.Features.Users.Commands.CreateUser;
 using ValyanClinic.Application.Features.Users.Commands.DeleteUser;
 using ValyanClinic.Application.Features.Users.Commands.UpdateUser;
@@ -85,14 +87,34 @@ public class UsersController : BaseApiController
         return HandleResult(result);
     }
 
-    /// <summary>Schimbare parolă utilizator.</summary>
-    [HttpPatch("{id:guid}/password")]
+    /// <summary>
+    /// Schimbarea propriei parole. Contul vizat vine din token, nu din rută, iar
+    /// parola curentă este obligatorie.
+    /// </summary>
+    [HttpPatch("me/password")]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ChangeOwnPassword(
+        [FromBody] ChangeOwnPasswordRequest request, CancellationToken ct)
+    {
+        var command = new ChangeOwnPasswordCommand(request.CurrentPassword, request.NewPassword);
+        var result = await Mediator.Send(command, ct);
+        return HandleResult(result);
+    }
+
+    /// <summary>
+    /// Reset administrativ al parolei altui utilizator. Restrâns la rolul Admin:
+    /// [HasAccess(Users, Write)] singur ar permite oricărui rol cu scriere pe modulul
+    /// Users să reseteze parola unui administrator din aceeași clinică și să se
+    /// autentifice cu ea.
+    /// </summary>
+    [HttpPost("{id:guid}/password-reset")]
+    [Authorize(Policy = "AdminOnly")]
     [HasAccess(ModuleCodes.Users, AccessLevel.Write)]
     [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
-    public async Task<IActionResult> ChangePassword(
-        Guid id, [FromBody] ChangePasswordRequest request, CancellationToken ct)
+    public async Task<IActionResult> ResetPassword(
+        Guid id, [FromBody] ResetPasswordRequest request, CancellationToken ct)
     {
-        var command = new ChangePasswordCommand(id, request.NewPassword);
+        var command = new ResetUserPasswordCommand(id, request.NewPassword);
         var result = await Mediator.Send(command, ct);
         return HandleResult(result);
     }
@@ -119,5 +141,8 @@ public sealed record UpdateUserRequest(
     string LastName,
     bool IsActive);
 
-/// <summary>Request body pentru schimbare parolă.</summary>
-public sealed record ChangePasswordRequest(string NewPassword);
+/// <summary>Request body pentru schimbarea propriei parole.</summary>
+public sealed record ChangeOwnPasswordRequest(string CurrentPassword, string NewPassword);
+
+/// <summary>Request body pentru resetul administrativ al parolei.</summary>
+public sealed record ResetPasswordRequest(string NewPassword);

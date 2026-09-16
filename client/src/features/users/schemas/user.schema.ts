@@ -46,14 +46,38 @@ export const updateUserSchema = z.object({
 )
 
 /// Schema Zod — schimbare parolă
-export const changePasswordSchema = z.object({
-  newPassword:     z.string().min(6, 'Parola trebuie să aibă minimum 6 caractere').max(100, 'Maxim 100 caractere'),
+/// Politica trebuie să rămână aliniată cu PasswordRules din backend.
+/// Validarea din client e doar pentru feedback imediat — backendul o reaplică.
+const MIN_PASSWORD_LENGTH = 12
+
+const newPasswordField = z
+  .string()
+  .min(MIN_PASSWORD_LENGTH, `Parola trebuie să aibă minimum ${MIN_PASSWORD_LENGTH} caractere`)
+  .max(100, 'Maxim 100 caractere')
+
+/// Reset administrativ — fără parola curentă, adminul nu o cunoaște
+export const resetPasswordSchema = z.object({
+  newPassword:     newPasswordField,
   confirmPassword: z.string().min(1, 'Confirmarea parolei este obligatorie'),
 }).refine(
   (data) => data.newPassword === data.confirmPassword,
   { message: 'Parolele nu coincid', path: ['confirmPassword'] }
 )
 
+/// Schimbare proprie — parola curentă e obligatorie
+export const changeOwnPasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Parola curentă este obligatorie'),
+  newPassword:     newPasswordField,
+  confirmPassword: z.string().min(1, 'Confirmarea parolei este obligatorie'),
+}).refine(
+  (data) => data.newPassword === data.confirmPassword,
+  { message: 'Parolele nu coincid', path: ['confirmPassword'] }
+).refine(
+  (data) => data.currentPassword !== data.newPassword,
+  { message: 'Parola nouă trebuie să fie diferită de cea curentă', path: ['newPassword'] }
+)
+
 export type CreateUserFormData = z.infer<typeof createUserSchema>
 export type UpdateUserFormData = z.infer<typeof updateUserSchema>
-export type ChangePasswordFormData = z.infer<typeof changePasswordSchema>
+export type ResetPasswordFormData    = z.infer<typeof resetPasswordSchema>
+export type ChangeOwnPasswordFormData = z.infer<typeof changeOwnPasswordSchema>
