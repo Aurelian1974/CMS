@@ -1,8 +1,8 @@
 # Plan — Sidebar: corecturi, permisiuni, accesibilitate și responsive
 
 > Data: 16 Septembrie 2026
-> Stare: **plan propus — nicio etapă începută**
-> Revizie: v1.0
+> Stare: **Etapa 1 finalizată (grupul A)** — etapele 2–5 nepornite
+> Revizie: v1.1
 > Vezi și: [PLAN_SETARI_SECURITATE.md](PLAN_SETARI_SECURITATE.md), [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md), [DECIZII_ARHITECTURA_AUTH.md](DECIZII_ARHITECTURA_AUTH.md)
 
 Analiză completă a sidebar-ului — frontend (funcțional + stilistic) și lanțul
@@ -28,7 +28,7 @@ Fișiere în scop:
 
 | Grup | # | Severitate |
 |---|---|---|
-| **A. Blocante** — rup build-ul sau mint despre permisiuni | A1–A3 | 🔴 |
+| **A. Blocante** — rup build-ul sau mint despre permisiuni | A1–A3 | 🔴 ✅ rezolvat |
 | **B. Coerență navigație ↔ permisiuni** | B1–B4 | 🔴🟠 |
 | **C. Stare, date și performanță** | C1–C4 | 🟠 |
 | **D. Accesibilitate** | D1–D5 | 🟡 |
@@ -97,9 +97,13 @@ ORDER BY m.SortOrder;
 `al.Level > 0` scoate din payload modulele setate explicit pe `None` — azi ajung
 la client degeaba, iar `canRead` le filtrează oricum.
 
-**Fără migrare nouă.** `DatabaseMigrator.RunPhase` rulează faza 2
-(`.Scripts.StoredProcedures.`) cu `NullJournal`, deci SP-urile se re-execută la
-fiecare pornire. Se modifică fișierul existent, în loc.
+**Fără migrare nouă.** Faza 2 DbUp (`.Scripts.StoredProcedures.`) rulează cu
+`NullJournal`, deci SP-urile se re-execută integral la fiecare migrare. Se modifică
+fișierul existent, în loc.
+
+Atenție: DbUp **nu** rulează la pornirea API-ului. `Program.cs` îl invocă doar sub
+`--migrate`, adică prin `.\migrate.ps1`. Un `dotnet run` obișnuit lasă SP-urile
+neschimbate în bază.
 
 ### A3 — `/medicamente` e păzit cu modulul greșit 🔴
 
@@ -374,15 +378,15 @@ Două drift-uri de documentație în același perimetru, de reparat odată cu et
 
 Fiecare etapă = un commit, verificabilă independent.
 
-### Etapa 1 — Oprim sângerarea 🔴
+### Etapa 1 — Oprim sângerarea 🔴 ✅ **finalizată**
 
-| Ce | Fișier |
-|---|---|
-| `Audit` + `Settings` în `MODULE` | `client/src/hooks/useHasAccess.ts` |
-| `LEFT JOIN` + `al.Level > 0` | `Permission_GetEffectiveByUser.sql` |
-| `NavItem.module` → `modules: ModuleCode[]`, AND | `Sidebar.tsx` |
-| `/medicamente` → `['anm', 'cnas']` | `Sidebar.tsx` |
-| Corectură `ModuleCodes` + §8 | `CLAUDE.md` |
+| Ce | Fișier | |
+|---|---|---|
+| `Audit` + `Settings` în `MODULE` | `client/src/hooks/useHasAccess.ts` | ✅ |
+| `LEFT JOIN` + `al.Level > 0` | `Permission_GetEffectiveByUser.sql` | ✅ |
+| `NavItem.module` → `modules: ModuleCode[]`, AND | `Sidebar.tsx` | ✅ |
+| `/medicamente` → `['anm', 'cnas']` | `Sidebar.tsx` | ✅ |
+| Corectură `ModuleCodes` + §8 | `CLAUDE.md` | ✅ |
 
 **Acceptare:** `npm run build` trece · `npm run check:api` trece · un override pe
 un modul pe care rolul nu-l are apare în sidebar după re-login · un utilizator cu
@@ -390,6 +394,46 @@ un modul pe care rolul nu-l are apare în sidebar după re-login · un utilizato
 
 **Test nou:** `client/src/__tests__/components/layout/Sidebar.test.tsx` — montează
 sidebar-ul cu permisiuni parțiale, verifică ce item-uri apar. Ar fi prins A1.
+9 teste, toate trec.
+
+**Verificat:** `tsc --noEmit` curat · `npm run lint` curat · 290 teste unitare
+trec (15 fișiere) · `npm run build` reușește.
+
+**Verificat pe baza de date reală** (`.\migrate.ps1` → `Permission_GetEffectiveByUser`
+re-aplicat, „Upgrade successful"). Test pe rolul `doctor`, care nu are rând
+`settings` în `RoleModulePermissions`, cu un override Read pe `settings` inserat
+într-o tranzacție rulată apoi înapoi:
+
+| Interogare | Rezultat pentru `settings` |
+|---|---|
+| forma veche (`INNER JOIN` pe rol) | **0 rânduri** — override-ul dispărea |
+| SP-ul curent | `settings, AccessLevel=1, IsOverridden=1` ✅ |
+
+Numărul total de module returnate pentru acel utilizator: 9 — cele 13 rânduri de
+rol, minus cele 5 pe nivel `None`, plus modulul venit din override. Confirmă și
+filtrul `al.Level > 0`.
+
+**Confirmat și în interfață**, cu API + Vite pornite local și sesiune de admin:
+
+| Test | Montaj | Rezultat |
+|---|---|---|
+| **A3** — filtrul AND | override `cnas = Fără acces` pe admin (care păstrează `anm` la Control total), pus din ecranul *Override Utilizatori* | secțiunea „Nomenclatoare" cu „Medicamente" **dispare** din sidebar; după ștergerea override-ului, **reapare** ✅ |
+| **A2** — override pe modul absent din rol | rândul `settings` șters din `RoleModulePermissions` pentru rolul admin + override `settings = Read` pe utilizator | „Setări securitate" **apare** în sidebar, iar `GET /api/v1/SecuritySettings` răspunde **200**, cu ecranul randat complet ✅ |
+
+Două observații din montaj:
+
+- Ecranul *Permisiuni Roluri* nu poate produce scenariul A2: `Permission_SyncRolePermissions`
+  e replace-all, iar clientul trimite toate cele 16 module, inclusiv pe cele puse pe
+  „Fără acces" — deci rândul de rol există, la nivel 0, în loc să lipsească. Rândurile
+  absente apar doar când un modul e adăugat în `Modules` după ultima salvare a rolului
+  (cazul real: `anm`, `audit`, `settings` lipsesc din rolul `doctor`).
+- O modificare făcută direct în SQL nu e vizibilă până la expirarea cache-ului:
+  `RefreshTokenCommandHandler` citește întâi `PermissionCacheKeys.DtoForUser`, iar
+  versiunea globală se incrementează doar prin API. La test, cache-ul a fost golit prin
+  repornirea API-ului.
+
+Baza a fost readusă la starea inițială după test: 16 rânduri pentru rolul admin,
+`settings` la nivel 3, un singur rând în `UserModuleOverrides` (cel preexistent).
 
 ### Etapa 2 — Navigația spune adevărul 🔴🟠
 

@@ -877,6 +877,7 @@ public static class ModuleCodes
     public const string Cnas          = "cnas";
     public const string Anm           = "anm";
     public const string Audit         = "audit";
+    public const string Settings      = "settings";
 }
 
 // src/ValyanClinic.Application/Common/Enums/AccessLevel.cs
@@ -1413,17 +1414,31 @@ doua cereri concurente cu acelasi token inseamna ca una primeste 401.
 
 ### 8. useHasAccess — guard pentru permisiuni în UI
 
+Hook-ul se apelează **fără argumente** și întoarce un set de verificatori. Sursa
+permisiunilor este `authStore.permissions` (listă `{ module, level, isOverridden }`
+venită de la `/login` și `/refresh`), nu `user.permissions`.
+
 ```typescript
 // client/src/hooks/useHasAccess.ts
-export const useHasAccess = (module: string, level: AccessLevel): boolean => {
-  const { user } = useAuthStore()
-  return user?.permissions?.[module] >= level ?? false
+export const useHasAccess = () => {
+  const permissions = useAuthStore((s) => s.permissions)
+  // ... permMap: Map<string, number> memoizat
+  return { hasAccess, getLevel, canRead, canWrite, hasFull }
 }
 
 // Folosire în component:
-const canDelete = useHasAccess('consultations', AccessLevel.Full)
+const { canRead, canWrite, hasFull } = useHasAccess()
+const canDelete = hasFull(MODULE.Consultations)
 {canDelete && <AppButton onClick={handleDelete}>Șterge</AppButton>}
+
+// Verificare pe mai multe module — semantica e AND (vezi Sidebar.tsx):
+// o pagină care citește din două module e inutilizabilă fără unul dintre ele.
+const canOpenMedicamente = [MODULE.Anm, MODULE.Cnas].every(canRead)
 ```
+
+`MODULE` (client) trebuie să rămână sincron cu `ModuleCodes` (backend). Un cod
+folosit în client dar absent din `MODULE` este eroare de tip și **rupe
+`npm run build`**, chiar dacă în `npm run dev` pare că funcționează.
 
 ---
 
