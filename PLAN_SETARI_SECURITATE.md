@@ -1,8 +1,8 @@
 # Plan — Ecran de administrare a politicilor de securitate
 
 > Data: 16 Septembrie 2026
-> Stare: **Etapele 1–4 finalizate**, mai rămâne Etapa 5
-> Revizie: v1.5 — Etapele 1–4 implementate
+> Stare: **toate cele cinci etape finalizate**
+> Revizie: v1.6 — plan încheiat
 > Vezi și: [DECIZII_ARHITECTURA_AUTH.md](DECIZII_ARHITECTURA_AUTH.md), [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md)
 
 Un ecran unic din care administratorul configurează politica de parole, durata
@@ -327,9 +327,22 @@ dropdown-ul, iar confirmarea apare doar la modificările disruptive. Jurnalul a
 schimbare a parolei, nu de ecran de administrare — locul lui firesc e în
 `ChangeOwnPasswordModal`, unde utilizatorul chiar tastează o parolă.
 
-### Etapa 5 — Ecranul jurnalului de securitate
-- [ ] Interfață peste `GET /api/v1/SecurityEvents`, care există din PR 5 fără UI
-- [ ] Filtre pe tip, utilizator, IP, interval; evidențierea `TokenReuseDetected`
+### Etapa 5 — Ecranul jurnalului de securitate ✅
+- [x] Interfață peste `GET /api/v1/SecurityEvents`, care exista din PR 5 fără UI
+- [x] Filtre pe tip, rezultat, email încercat, IP și interval, cu resetare
+- [x] `TokenReuseDetected` evidențiat vizual — semnalul clasic de furt de sesiune
+- [x] Etichete în română pentru toate cele 11 tipuri de evenimente
+- [x] Paginare peste componenta existentă
+
+**Cazul fără utilizator identificat** e afișat explicit: un login eșuat cu email
+necunoscut arată adresa încercată, în italic. Este exact situația pentru care
+`SecurityEvents` a fost separat de `AuditLogs` (decizia D3), acum vizibilă în
+interfață.
+
+**Verificat în browser:** jurnalul afișează istoricul real al sesiunii, filtrul pe
+tip funcționează, cele 6 evenimente `TokenReuseDetected` sunt evidențiate cu fundal
+roșu, iar filtrul pe autentificări eșuate arată atât utilizatorii identificați, cât
+și adresa încercată pentru cei necunoscuți.
 
 ---
 
@@ -353,4 +366,4 @@ schimbare a parolei, nu de ecran de administrare — locul lui firesc e în
 | 2 — Politica de parole | ✅ **finalizată** |
 | 3 — Inactivitate per rol | ✅ **finalizată** |
 | 4 — Ecranul de administrare | ✅ **finalizată** |
-| 5 — Ecranul jurnalului | ⬜ neînceput |
+| 5 — Ecranul jurnalului | ✅ **finalizată** |

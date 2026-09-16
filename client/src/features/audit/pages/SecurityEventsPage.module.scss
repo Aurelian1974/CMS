@@ -1,0 +1,64 @@
+.page {
+  padding: 1rem 1.25rem 2rem;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  min-width: 160px;
+
+  span {
+    font-size: .8rem;
+    font-weight: 500;
+  }
+}
+
+.tableWrap {
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: .5rem;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.details {
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .85rem;
+}
+
+.ok {
+  color: var(--bs-success, #198754);
+}
+
+.failed {
+  color: var(--bs-danger, #dc3545);
+}
+
+/* Reutilizarea unui token rotit e semnalul clasic de furt de sesiune —
+   trebuie sa sara in ochi intr-o lista lunga. */
+.critical {
+  background: rgba(220, 53, 69, .08);
+  font-weight: 600;
+}
+
+.attempted {
+  font-style: italic;
+}
+
+.unknown {
+  color: var(--bs-secondary-color, #6c757d);
+}

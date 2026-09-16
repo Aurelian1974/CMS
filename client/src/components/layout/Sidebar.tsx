@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   ShieldAlert,
   SlidersHorizontal,
+  ScrollText,
   ChevronLeft,
   KeyRound,
   LogOut,
@@ -83,6 +84,7 @@ const NAV_SECTIONS: NavSection[] = [
       { to: '/permissions/roles',   label: 'Permisiuni Roluri',    icon: <ShieldCheck   size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'users' },
       { to: '/permissions/users',   label: 'Override Utilizatori', icon: <ShieldAlert   size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'users' },
       { to: '/settings/security',   label: 'Setări securitate',    icon: <SlidersHorizontal size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'settings' },
+      { to: '/audit/security',      label: 'Jurnal securitate',    icon: <ScrollText    size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'audit' },
     ],
   },
   {

@@ -26,6 +26,7 @@ const MedicalStaffDetailPage = lazy(() => import('../features/medicalStaff/pages
 const RolePermissionsPage = lazy(() => import('../features/permissions/pages/RolePermissionsPage').then(m => ({ default: m.RolePermissionsPage })))
 const UserOverridesPage   = lazy(() => import('../features/permissions/pages/UserOverridesPage'))
 const SecuritySettingsPage = lazy(() => import('../features/settings/pages/SecuritySettingsPage'))
+const SecurityEventsPage   = lazy(() => import('../features/audit/pages/SecurityEventsPage'))
 const SchedulePage              = lazy(() => import('../features/clinic/pages/SchedulePage'))
 const AnmDrugsPage              = lazy(() => import('../features/anm/pages/AnmDrugsPage'))
 const MedicamentePage           = lazy(() => import('../features/medicamente/pages/MedicamentePage'))
@@ -75,6 +76,7 @@ export const AppRoutes = () => (
           <Route path="/permissions/roles" element={<RolePermissionsPage />} />
           <Route path="/permissions/users" element={<UserOverridesPage />} />
           <Route path="/settings/security"  element={<SecuritySettingsPage />} />
+          <Route path="/audit/security"     element={<SecurityEventsPage />} />
           <Route path="/schedule"          element={<SchedulePage />} />
           <Route path="/medicamente"             element={<MedicamentePage />} />
           <Route path="/cnas/drugs"              element={<CnasDrugsPage />} />
