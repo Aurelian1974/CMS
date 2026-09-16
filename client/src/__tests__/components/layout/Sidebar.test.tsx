@@ -474,11 +474,25 @@ describe('Sidebar', () => {
     expect(screen.queryByRole('img', { name: /sesiune activă/i })).not.toBeInTheDocument()
   })
 
-  it('afișează timpul rămas formatat mm:ss lângă inel', () => {
+  it('afișează timpul rămas în cuvinte, sub o oră, lângă inel', () => {
     grantRead(MODULE.Dashboard)
-    renderSidebar({ sessionSecondsLeft: 754 })
+    renderSidebar({ sessionSecondsLeft: 3525 }) // 58m 45s
 
-    expect(screen.getByText('12:34')).toBeInTheDocument()
+    expect(screen.getByText('58 minute și 45 secunde')).toBeInTheDocument()
+  })
+
+  it('afișează timpul rămas în cuvinte, cu ore, peste o oră', () => {
+    grantRead(MODULE.Dashboard)
+    renderSidebar({ sessionSecondsLeft: 4530 }) // 1h 15m 30s
+
+    expect(screen.getByText('1 oră 15 minute și 30 secunde')).toBeInTheDocument()
+  })
+
+  it('omite unitățile zero (fără ore) și pluralizează corect', () => {
+    grantRead(MODULE.Dashboard)
+    renderSidebar({ sessionSecondsLeft: 3601 }) // 1h 0m 1s
+
+    expect(screen.getByText('1 oră și 1 secundă')).toBeInTheDocument()
   })
 
   it('inelul e verde când mai sunt peste 5 minute', () => {
@@ -508,45 +522,21 @@ describe('Sidebar', () => {
     renderSidebar({ sessionSecondsLeft: 120 })
 
     expect(screen.getByRole('img', { name: /sesiune activă/i })).toBeInTheDocument()
-    expect(screen.queryByText('2:00')).not.toBeInTheDocument()
+    expect(screen.queryByText('2 minute')).not.toBeInTheDocument()
   })
 
-  it('afișează eticheta „Sesiune” în stânga inelului când sidebar-ul e extins', () => {
+  it('afișează eticheta „Sesiunea expiră în:” în stânga inelului când sidebar-ul e extins', () => {
     grantRead(MODULE.Dashboard)
     renderSidebar({ sessionSecondsLeft: 120 })
 
-    expect(screen.getByText('Sesiune')).toBeInTheDocument()
+    expect(screen.getByText('Sesiunea expiră în:')).toBeInTheDocument()
   })
 
-  it('eticheta „Sesiune” dispare când sidebar-ul e colapsat', () => {
+  it('eticheta „Sesiunea expiră în:” dispare când sidebar-ul e colapsat', () => {
     useUiStore.setState({ sidebarCollapsed: true })
     grantRead(MODULE.Dashboard)
     renderSidebar({ sessionSecondsLeft: 120 })
 
-    expect(screen.queryByText('Sesiune')).not.toBeInTheDocument()
-  })
-
-  it('folosește formatul compact mm:ss când fereastra de inactivitate setată e cel mult 60 de minute', () => {
-    useAuthStore.setState({ idleTimeoutMinutes: 60 })
-    grantRead(MODULE.Dashboard)
-    renderSidebar({ sessionSecondsLeft: 3920 })
-
-    expect(screen.getByText('65:20')).toBeInTheDocument()
-  })
-
-  it('folosește formatul în cuvinte când fereastra de inactivitate setată depășește 60 de minute', () => {
-    useAuthStore.setState({ idleTimeoutMinutes: 120 })
-    grantRead(MODULE.Dashboard)
-    renderSidebar({ sessionSecondsLeft: 3920 })
-
-    expect(screen.getByText('1 oră 5 minute și 20 secunde')).toBeInTheDocument()
-  })
-
-  it('formatul în cuvinte omite unitățile zero și pluralizează corect', () => {
-    useAuthStore.setState({ idleTimeoutMinutes: 90 })
-    grantRead(MODULE.Dashboard)
-    renderSidebar({ sessionSecondsLeft: 3601 }) // 1h 0m 1s
-
-    expect(screen.getByText('1 oră și 1 secundă')).toBeInTheDocument()
+    expect(screen.queryByText('Sesiunea expiră în:')).not.toBeInTheDocument()
   })
 })

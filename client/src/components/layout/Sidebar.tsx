@@ -153,12 +153,14 @@ const NAV_ITEMS_BY_ROUTE: Partial<Record<GuardedRoute, NavItem>> = Object.fromEn
 // ===== Contor sesiune (timp rămas până la deconectarea din inactivitate) =====
 const SESSION_WARNING_THRESHOLD_SEC = 300; // 5 minute
 const SESSION_DANGER_THRESHOLD_SEC = 60;   // 1 minut
-const SESSION_LONG_FORMAT_THRESHOLD_MIN = 60; // peste 60 min setați, afișăm în cuvinte
 
 const pluralizeRo = (count: number, singular: string, plural: string) => `${count} ${count === 1 ? singular : plural}`;
 
-/** „1 oră 5 minute și 20 secunde" — folosit când fereastra de inactivitate depășește o oră. */
-const formatCountdownLong = (totalSeconds: number): string => {
+/**
+ * „1 oră 15 minute și 30 secunde" când trece de o oră, „58 minute și 45 secunde"
+ * sub o oră — unitățile zero (ore, uneori minute) sunt omise, nu afișate ca 0.
+ */
+const formatCountdown = (totalSeconds: number): string => {
   const safeSeconds = Math.max(0, totalSeconds);
   const hours = Math.floor(safeSeconds / 3600);
   const minutes = Math.floor((safeSeconds % 3600) / 60);
@@ -172,20 +174,6 @@ const formatCountdownLong = (totalSeconds: number): string => {
   return parts.length === 1
     ? parts[0]
     : `${parts.slice(0, -1).join(' ')} și ${parts[parts.length - 1]}`;
-};
-
-/**
- * Formatul depinde de fereastra de inactivitate SETATĂ, nu de câte secunde mai
- * sunt acum — altfel formatul ar sări între „mm:ss" și cuvinte pe parcursul
- * aceleiași sesiuni, exact când utilizatorul are nevoie de citire rapidă.
- */
-const formatCountdown = (totalSeconds: number, useLongFormat: boolean): string => {
-  if (useLongFormat) return formatCountdownLong(totalSeconds);
-
-  const safeSeconds = Math.max(0, totalSeconds);
-  const minutes = Math.floor(safeSeconds / 60);
-  const seconds = safeSeconds % 60;
-  return `${minutes}:${String(seconds).padStart(2, '0')}`;
 };
 
 const getSessionTimerClass = (secondsLeft: number): string => {
@@ -220,7 +208,6 @@ export const Sidebar = ({ sessionSecondsLeft = null }: SidebarProps = {}) => {
   const collapsedSections = useUiStore((s) => s.collapsedSections);
   const toggleSection = useUiStore((s) => s.toggleSection);
   const user = useAuthStore((s) => s.user);
-  const idleTimeoutMinutes = useAuthStore((s) => s.idleTimeoutMinutes);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const navigate = useNavigate();
   const location = useLocation();
@@ -548,12 +535,19 @@ export const Sidebar = ({ sessionSecondsLeft = null }: SidebarProps = {}) => {
       {sessionSecondsLeft != null && (
         <div className={`${styles.sessionRingWrap}${sidebarCollapsed ? ` ${styles.collapsedRing}` : ''}`}>
           <div className={styles.sessionRingRow}>
-            {!sidebarCollapsed && <span className={styles.sessionLabel}>Sesiune</span>}
+            {!sidebarCollapsed && (
+              <div className={styles.sessionTextBlock}>
+                <span className={styles.sessionLabel}>Sesiunea expiră în:</span>
+                <span className={styles.sessionRingLabel} title="Timp rămas până la deconectarea automată din inactivitate">
+                  {formatCountdown(sessionSecondsLeft)}
+                </span>
+              </div>
+            )}
             <svg
               viewBox="0 0 40 40"
               className={`${styles.sessionRing} ${styles[getSessionTimerClass(sessionSecondsLeft)]}`}
               role="img"
-              aria-label={`Sesiune activă încă ${formatCountdown(sessionSecondsLeft, idleTimeoutMinutes > SESSION_LONG_FORMAT_THRESHOLD_MIN)}`}
+              aria-label={`Sesiune activă încă ${formatCountdown(sessionSecondsLeft)}`}
             >
               <circle className={styles.sessionRingTrack} cx="20" cy="20" r={SESSION_RING_RADIUS} />
               <circle
@@ -566,11 +560,6 @@ export const Sidebar = ({ sessionSecondsLeft = null }: SidebarProps = {}) => {
               />
             </svg>
           </div>
-          {!sidebarCollapsed && (
-            <span className={styles.sessionRingLabel} title="Timp rămas până la deconectarea automată din inactivitate">
-              {formatCountdown(sessionSecondsLeft, idleTimeoutMinutes > SESSION_LONG_FORMAT_THRESHOLD_MIN)}
-            </span>
-          )}
         </div>
       )}
 
