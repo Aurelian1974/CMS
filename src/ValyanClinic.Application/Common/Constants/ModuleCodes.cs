@@ -18,4 +18,5 @@ public static class ModuleCodes
     public const string Cnas          = "cnas";
     public const string Anm           = "anm";
     public const string Audit         = "audit";
+    public const string Settings      = "settings";
 }

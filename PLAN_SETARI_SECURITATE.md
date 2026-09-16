@@ -1,8 +1,8 @@
 # Plan — Ecran de administrare a politicilor de securitate
 
 > Data: 16 Septembrie 2026
-> Stare: **Etapele 1–3 finalizate**, restul neîncepute
-> Revizie: v1.4 — Etapele 1–3 implementate
+> Stare: **Etapele 1–4 finalizate**, mai rămâne Etapa 5
+> Revizie: v1.5 — Etapele 1–4 implementate
 > Vezi și: [DECIZII_ARHITECTURA_AUTH.md](DECIZII_ARHITECTURA_AUTH.md), [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md)
 
 Un ecran unic din care administratorul configurează politica de parole, durata
@@ -299,16 +299,33 @@ Verificarea a scos la iveală trei probleme, toate reparate:
 **Rămâne fără test automat:** un test realist ar trebui să aștepte scurgerea ferestrei
 (minimul configurabil e un minut), ceea ce ar face suita inutilizabil de lentă.
 
-### Etapa 4 — Ecranul de administrare
-- [ ] `GET` / `PUT /api/v1/SecuritySettings`, protejat cu `[HasAccess(settings, …)]`
-- [ ] Pagină cu trei secțiuni: parole · sesiuni per rol · praguri și retenție
-- [ ] Secțiunea de sesiuni: dropdown de rol, apoi setările rolului selectat
-      *(compromis acceptat: nu se văd toate rolurile deodată; un tabel ar arăta
-      configurația completă dintr-o privire, dar dropdown-ul a fost cerut explicit)*
-- [ ] Indicator de putere a parolei care reflectă politica activă
-- [ ] Avertisment explicit înainte de salvare când o modificare deconectează utilizatori
-- [ ] Fiecare salvare scrie în `SecurityEvents`: cine, ce a schimbat, din ce în ce
-- [ ] Regenerare contract OpenAPI
+### Etapa 4 — Ecranul de administrare ✅
+- [x] `GET` / `PUT /api/v1/SecuritySettings` + `PUT .../roles/{id}`, cu `[HasAccess(settings, …)]`
+- [x] Pagină cu trei secțiuni: parole · sesiuni per rol · praguri și retenție
+- [x] Dropdown de rol, cu fereastra curentă afișată în fiecare opțiune
+- [x] Pragurile minime vin de la server și apar ca hint sub fiecare câmp
+- [x] Confirmare explicită înainte de salvarea modificărilor disruptive
+- [x] Fiecare salvare scrie în `SecurityEvents` diferența exactă, câmp cu câmp
+- [x] Rută, link în sidebar, contract OpenAPI regenerat
+- [ ] Indicator de putere a parolei — **nefăcut**, vezi mai jos
+
+**Pragurile într-un singur adevăr.** Limitele impuse în cod se trimit la client
+odată cu setările, deci formularul validează cu exact aceleași valori pe care le
+impune backend-ul. Altfel ar fi existat două praguri care puteau diverge.
+
+**Confirmarea prin modal, nu `window.confirm`.** Prima variantă folosea dialogul
+nativ. Verificarea în browser a arătat că e suprimat în contexte automate și
+întoarce tăcut `false` — salvarea eșua fără niciun semn. Un dialog nativ nu se
+poate nici stiliza, nici testa; înlocuit cu `AppModal`.
+
+**Verificat în browser, capăt la capăt:** ecranul se încarcă cu valorile reale,
+salvarea globală scrie în baza de date, salvarea pe rol actualizează imediat
+dropdown-ul, iar confirmarea apare doar la modificările disruptive. Jurnalul a
+înregistrat cele trei modificări de test cu diferența exactă.
+
+**Nefăcut:** indicatorul de putere a parolei. E o funcționalitate de formular de
+schimbare a parolei, nu de ecran de administrare — locul lui firesc e în
+`ChangeOwnPasswordModal`, unde utilizatorul chiar tastează o parolă.
 
 ### Etapa 5 — Ecranul jurnalului de securitate
 - [ ] Interfață peste `GET /api/v1/SecurityEvents`, care există din PR 5 fără UI
@@ -335,5 +352,5 @@ Verificarea a scos la iveală trei probleme, toate reparate:
 | 1 — Fundația | ✅ **finalizată** |
 | 2 — Politica de parole | ✅ **finalizată** |
 | 3 — Inactivitate per rol | ✅ **finalizată** |
-| 4 — Ecranul de administrare | ⬜ neînceput |
+| 4 — Ecranul de administrare | ✅ **finalizată** |
 | 5 — Ecranul jurnalului | ⬜ neînceput |

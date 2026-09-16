@@ -15,6 +15,7 @@ import {
   Hospital,
   ShieldCheck,
   ShieldAlert,
+  SlidersHorizontal,
   ChevronLeft,
   KeyRound,
   LogOut,
@@ -81,6 +82,7 @@ const NAV_SECTIONS: NavSection[] = [
       { to: '/schedule',            label: 'Program',              icon: <Clock         size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'clinic' },
       { to: '/permissions/roles',   label: 'Permisiuni Roluri',    icon: <ShieldCheck   size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'users' },
       { to: '/permissions/users',   label: 'Override Utilizatori', icon: <ShieldAlert   size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'users' },
+      { to: '/settings/security',   label: 'Setări securitate',    icon: <SlidersHorizontal size={ICON_SIZE} strokeWidth={ICON_STROKE} />, module: 'settings' },
     ],
   },
   {

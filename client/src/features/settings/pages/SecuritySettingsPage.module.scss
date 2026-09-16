@@ -1,0 +1,59 @@
+.page {
+  padding: 1rem 1.25rem 2rem;
+}
+
+.section {
+  background: var(--bs-body-bg, #fff);
+  border: 1px solid var(--bs-border-color, #dee2e6);
+  border-radius: .5rem;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.sectionTitle {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: .35rem;
+}
+
+.sectionNote {
+  font-size: .85rem;
+  color: var(--bs-secondary-color, #6c757d);
+  margin-bottom: 1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+
+.fieldLabel {
+  font-size: .85rem;
+  font-weight: 500;
+}
+
+.hint {
+  font-size: .75rem;
+  color: var(--bs-secondary-color, #6c757d);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .9rem;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: .5rem;
+}

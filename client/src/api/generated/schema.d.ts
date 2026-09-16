@@ -12231,6 +12231,280 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/SecuritySettings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SecuritySettingsViewDtoApiResponse"];
+                        "application/json": components["schemas"]["SecuritySettingsViewDtoApiResponse"];
+                        "text/json": components["schemas"]["SecuritySettingsViewDtoApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateSecuritySettingsCommand"];
+                    "text/json": components["schemas"]["UpdateSecuritySettingsCommand"];
+                    "application/*+json": components["schemas"]["UpdateSecuritySettingsCommand"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BooleanApiResponse"];
+                        "application/json": components["schemas"]["BooleanApiResponse"];
+                        "text/json": components["schemas"]["BooleanApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/SecuritySettings/roles/{roleId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    roleId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateRoleSettingsRequest"];
+                    "text/json": components["schemas"]["UpdateRoleSettingsRequest"];
+                    "application/*+json": components["schemas"]["UpdateRoleSettingsRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BooleanApiResponse"];
+                        "application/json": components["schemas"]["BooleanApiResponse"];
+                        "text/json": components["schemas"]["BooleanApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/Users/roles": {
         parameters: {
             query?: never;
@@ -15103,6 +15377,16 @@ export interface components {
             /** Format: uuid */
             accessLevelId?: string;
         };
+        RoleSecuritySettingsDto: {
+            /** Format: uuid */
+            roleId?: string;
+            roleCode?: string | null;
+            roleName?: string | null;
+            /** Format: int32 */
+            idleTimeoutMinutes?: number;
+            /** Format: int32 */
+            refreshTokenDays?: number;
+        };
         SecurityEventDto: {
             /** Format: uuid */
             id?: string;
@@ -15134,6 +15418,73 @@ export interface components {
         SecurityEventPagedResultApiResponse: {
             success?: boolean;
             data?: components["schemas"]["SecurityEventPagedResult"];
+            message?: string | null;
+            errors?: {
+                [key: string]: string[];
+            } | null;
+        };
+        SecuritySettingsDto: {
+            /** Format: int32 */
+            passwordMinLength?: number;
+            /** Format: int32 */
+            passwordMaxLength?: number;
+            /** Format: int32 */
+            passwordMinDigits?: number;
+            /** Format: int32 */
+            passwordMinSpecial?: number;
+            /** Format: int32 */
+            passwordMinUppercase?: number;
+            /** Format: int32 */
+            passwordMinLowercase?: number;
+            passwordBlocklistEnabled?: boolean;
+            passwordForbidIdentityValues?: boolean;
+            /** Format: int32 */
+            passwordHistoryCount?: number;
+            /** Format: int32 */
+            passwordExpiryDays?: number;
+            /** Format: int32 */
+            maxFailedLoginAttempts?: number;
+            /** Format: int32 */
+            lockoutMinutes?: number;
+            /** Format: int32 */
+            securityEventRetentionDays?: number;
+            /** Format: int32 */
+            refreshTokenRetentionDays?: number;
+            /** Format: date-time */
+            updatedAt?: string | null;
+            /** Format: uuid */
+            updatedBy?: string | null;
+        };
+        SecuritySettingsLimitsDto: {
+            /** Format: int32 */
+            minPasswordLength?: number;
+            /** Format: int32 */
+            maxPasswordLength?: number;
+            /** Format: int32 */
+            minFailedLoginAttempts?: number;
+            /** Format: int32 */
+            minLockoutMinutes?: number;
+            /** Format: int32 */
+            minSecurityEventRetentionDays?: number;
+            /** Format: int32 */
+            minRefreshTokenRetentionDays?: number;
+            /** Format: int32 */
+            minIdleTimeoutMinutes?: number;
+            /** Format: int32 */
+            maxIdleTimeoutMinutes?: number;
+            /** Format: int32 */
+            minRefreshTokenDays?: number;
+            /** Format: int32 */
+            maxRefreshTokenDays?: number;
+        };
+        SecuritySettingsViewDto: {
+            global: components["schemas"]["SecuritySettingsDto"];
+            roles: components["schemas"]["RoleSecuritySettingsDto"][] | null;
+            limits: components["schemas"]["SecuritySettingsLimitsDto"];
+        };
+        SecuritySettingsViewDtoApiResponse: {
+            success?: boolean;
+            data?: components["schemas"]["SecuritySettingsViewDto"];
             message?: string | null;
             errors?: {
                 [key: string]: string[];
@@ -15473,6 +15824,39 @@ export interface components {
         };
         UpdateRolePermissionsRequest: {
             permissions?: components["schemas"]["RolePermissionItemDto"][] | null;
+        };
+        UpdateRoleSettingsRequest: {
+            /** Format: int32 */
+            idleTimeoutMinutes?: number;
+            /** Format: int32 */
+            refreshTokenDays?: number;
+        };
+        UpdateSecuritySettingsCommand: {
+            /** Format: int32 */
+            passwordMinLength?: number;
+            /** Format: int32 */
+            passwordMaxLength?: number;
+            /** Format: int32 */
+            passwordMinDigits?: number;
+            /** Format: int32 */
+            passwordMinSpecial?: number;
+            /** Format: int32 */
+            passwordMinUppercase?: number;
+            /** Format: int32 */
+            passwordMinLowercase?: number;
+            passwordForbidIdentityValues?: boolean;
+            /** Format: int32 */
+            passwordHistoryCount?: number;
+            /** Format: int32 */
+            passwordExpiryDays?: number;
+            /** Format: int32 */
+            maxFailedLoginAttempts?: number;
+            /** Format: int32 */
+            lockoutMinutes?: number;
+            /** Format: int32 */
+            securityEventRetentionDays?: number;
+            /** Format: int32 */
+            refreshTokenRetentionDays?: number;
         };
         UpdateSpecialtyRequest: {
             /** Format: uuid */

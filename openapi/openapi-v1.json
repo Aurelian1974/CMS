@@ -19800,6 +19800,440 @@
         }
       }
     },
+    "/api/v1/SecuritySettings": {
+      "get": {
+        "tags": [
+          "SecuritySettings"
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecuritySettingsViewDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecuritySettingsViewDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SecuritySettingsViewDtoApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "SecuritySettings"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSecuritySettingsCommand"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSecuritySettingsCommand"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSecuritySettingsCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BooleanApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BooleanApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BooleanApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/SecuritySettings/roles/{roleId}": {
+      "put": {
+        "tags": [
+          "SecuritySettings"
+        ],
+        "parameters": [
+          {
+            "name": "roleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoleSettingsRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoleSettingsRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateRoleSettingsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BooleanApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BooleanApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BooleanApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/Users/roles": {
       "get": {
         "tags": [
@@ -27611,6 +28045,32 @@
         },
         "additionalProperties": false
       },
+      "RoleSecuritySettingsDto": {
+        "type": "object",
+        "properties": {
+          "roleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "roleCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "roleName": {
+            "type": "string",
+            "nullable": true
+          },
+          "idleTimeoutMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "refreshTokenDays": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "SecurityEventDto": {
         "type": "object",
         "properties": {
@@ -27703,6 +28163,172 @@
           },
           "data": {
             "$ref": "#/components/schemas/SecurityEventPagedResult"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SecuritySettingsDto": {
+        "type": "object",
+        "properties": {
+          "passwordMinLength": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "passwordMaxLength": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "passwordMinDigits": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "passwordMinSpecial": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "passwordMinUppercase": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "passwordMinLowercase": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "passwordBlocklistEnabled": {
+            "type": "boolean"
+          },
+          "passwordForbidIdentityValues": {
+            "type": "boolean"
+          },
+          "passwordHistoryCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "passwordExpiryDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxFailedLoginAttempts": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lockoutMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "securityEventRetentionDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "refreshTokenRetentionDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "updatedBy": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SecuritySettingsLimitsDto": {
+        "type": "object",
+        "properties": {
+          "minPasswordLength": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxPasswordLength": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "minFailedLoginAttempts": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "minLockoutMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "minSecurityEventRetentionDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "minRefreshTokenRetentionDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "minIdleTimeoutMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxIdleTimeoutMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "minRefreshTokenDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxRefreshTokenDays": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SecuritySettingsViewDto": {
+        "required": [
+          "global",
+          "limits",
+          "roles"
+        ],
+        "type": "object",
+        "properties": {
+          "global": {
+            "$ref": "#/components/schemas/SecuritySettingsDto"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoleSecuritySettingsDto"
+            },
+            "nullable": true
+          },
+          "limits": {
+            "$ref": "#/components/schemas/SecuritySettingsLimitsDto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SecuritySettingsViewDtoApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SecuritySettingsViewDto"
           },
           "message": {
             "type": "string",
@@ -28795,6 +29421,77 @@
               "$ref": "#/components/schemas/RolePermissionItemDto"
             },
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateRoleSettingsRequest": {
+        "type": "object",
+        "properties": {
+          "idleTimeoutMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "refreshTokenDays": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateSecuritySettingsCommand": {
+        "type": "object",
+        "properties": {
+          "passwordMinLength": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "passwordMaxLength": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "passwordMinDigits": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "passwordMinSpecial": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "passwordMinUppercase": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "passwordMinLowercase": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "passwordForbidIdentityValues": {
+            "type": "boolean"
+          },
+          "passwordHistoryCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "passwordExpiryDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxFailedLoginAttempts": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lockoutMinutes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "securityEventRetentionDays": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "refreshTokenRetentionDays": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false

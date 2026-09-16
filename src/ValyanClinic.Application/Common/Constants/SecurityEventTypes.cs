@@ -20,4 +20,6 @@ public static class SecurityEventTypes
     public const string TokenReuseDetected = "TokenReuseDetected";
     public const string PasswordChanged    = "PasswordChanged";
     public const string PasswordReset      = "PasswordReset";
+    /// <summary>Politica de securitate a fost modificata din ecranul de administrare.</summary>
+    public const string SecuritySettingsChanged = "SecuritySettingsChanged";
 }
