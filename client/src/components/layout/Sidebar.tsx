@@ -560,14 +560,39 @@ export const Sidebar = ({ sessionSecondsLeft = null }: SidebarProps = {}) => {
                 className={`${styles.itemsWrapper}${isExpanded ? ` ${styles.expanded}` : ''}`}
               >
                 {subgroups
-                  ? subgroups.map((subgroup) => (
-                      <div key={subgroup.label} className={styles.navSubgroup}>
-                        {!sidebarCollapsed && (
-                          <div className={styles.navSubgroupLabel}>{subgroup.label}</div>
-                        )}
-                        {subgroup.items.map((item) => renderNavItem(item))}
-                      </div>
-                    ))
+                  ? subgroups.map((subgroup) => {
+                      const subgroupKey = `${section}::${subgroup.label}`;
+                      const subgroupItemsId = `nav-subitems-${subgroupKey}`;
+                      const isSubExpanded =
+                        isSearching || sidebarCollapsed || !collapsedSections.includes(subgroupKey);
+                      return (
+                        <div key={subgroup.label} className={styles.navSubgroup}>
+                          {!sidebarCollapsed && (
+                            <button
+                              type="button"
+                              className={styles.navSubgroupHeader}
+                              onClick={() => toggleSection(subgroupKey)}
+                              aria-expanded={isSubExpanded}
+                              aria-controls={subgroupItemsId}
+                              disabled={isSearching}
+                            >
+                              <span className={styles.navSubgroupLabel}>{subgroup.label}</span>
+                              <ChevronDown
+                                size={11}
+                                strokeWidth={2}
+                                className={`${styles.sectionChevron}${isSubExpanded ? ` ${styles.expanded}` : ''}`}
+                              />
+                            </button>
+                          )}
+                          <div
+                            id={subgroupItemsId}
+                            className={`${styles.itemsWrapper}${isSubExpanded ? ` ${styles.expanded}` : ''}`}
+                          >
+                            {subgroup.items.map((item) => renderNavItem(item))}
+                          </div>
+                        </div>
+                      );
+                    })
                   : items!.map((item) => renderNavItem(item))}
               </div>
             </div>

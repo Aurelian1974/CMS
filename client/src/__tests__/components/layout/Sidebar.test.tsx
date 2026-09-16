@@ -177,6 +177,68 @@ describe('Sidebar', () => {
     expect(screen.queryByText('Securitate')).not.toBeInTheDocument()
   })
 
+  it('subgrupurile din Administrare sunt extinse implicit și afișează itemii', () => {
+    grantRead(MODULE.Settings, MODULE.Audit)
+    renderSidebar()
+
+    expect(screen.getByRole('button', { name: 'Securitate' })).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByText('Jurnal securitate')).toBeInTheDocument()
+  })
+
+  it('click pe header-ul unui subgrup îl restrânge fără să afecteze celelalte subgrupuri', () => {
+    grantRead(MODULE.Users, MODULE.Nomenclature, MODULE.Clinic, MODULE.Settings, MODULE.Audit)
+    renderSidebar()
+
+    const securityHeader = screen.getByRole('button', { name: 'Securitate' })
+    fireEvent.click(securityHeader)
+
+    expect(securityHeader).toHaveAttribute('aria-expanded', 'false')
+    expect(useUiStore.getState().collapsedSections).toContain('Administrare::Securitate')
+    // Restul subgrupurilor rămân extinse.
+    expect(screen.getByRole('button', { name: 'Personal' })).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByText('Doctori')).toBeInTheDocument()
+    // Secțiunea „Administrare” în sine rămâne extinsă — colapsul e doar la nivel de subgrup.
+    expect(screen.getByRole('button', { name: 'Administrare' })).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('un al doilea click reextinde subgrupul', () => {
+    grantRead(MODULE.Settings, MODULE.Audit)
+    renderSidebar()
+
+    const securityHeader = screen.getByRole('button', { name: 'Securitate' })
+    fireEvent.click(securityHeader)
+    fireEvent.click(securityHeader)
+
+    expect(securityHeader).toHaveAttribute('aria-expanded', 'true')
+    expect(useUiStore.getState().collapsedSections).not.toContain('Administrare::Securitate')
+  })
+
+  it('starea restrânsă a unui subgrup persistă în localStorage cu o cheie compusă', () => {
+    grantRead(MODULE.Settings, MODULE.Audit)
+    renderSidebar()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Securitate' }))
+
+    const stored = JSON.parse(localStorage.getItem('ui-storage')!)
+    expect(stored.state.collapsedSections).toContain('Administrare::Securitate')
+  })
+
+  it('un subgrup restrâns rămâne extins automat cât timp există o căutare activă', () => {
+    grantRead(MODULE.Settings, MODULE.Audit)
+    renderSidebar()
+
+    const securityHeader = screen.getByRole('button', { name: 'Securitate' })
+    fireEvent.click(securityHeader)
+    expect(securityHeader).toHaveAttribute('aria-expanded', 'false')
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Caută în meniu' }), {
+      target: { value: 'jurnal' },
+    })
+
+    // Când există o căutare, subgrupul rămâne mereu extins vizual, indiferent de starea restrânsă.
+    expect(screen.getByRole('button', { name: 'Securitate' })).toHaveAttribute('aria-expanded', 'true')
+  })
+
   // ── Item cu mai multe module: semantică AND ─────────────────────────────────
 
   it('Medicamente cere ambele module — anm singur nu e suficient', () => {
