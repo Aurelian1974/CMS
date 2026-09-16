@@ -441,6 +441,45 @@ $active-accent: $primary-light;   // culoarea indicatorului lateral activ
   }
 }
 
+// Buton grip — reordonează favoritele prin drag-and-drop. Ascuns implicit,
+// vizibil la hover pe rând, la fel ca butonul de favorite.
+.dragHandle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 24px;
+  flex-shrink: 0;
+  margin-left: 0.25rem;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.3);
+  cursor: grab;
+  opacity: 0;
+  touch-action: none;
+  transition: opacity 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+
+  .navItemRow:hover & {
+    opacity: 1;
+  }
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  &:focus-visible {
+    outline: 2px solid $active-accent;
+    outline-offset: 1px;
+    opacity: 1;
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
 // ===== Bloc utilizator (bottom) =====
 .userBlock {
   display: flex;
@@ -583,7 +622,8 @@ $active-accent: $primary-light;   // culoarea indicatorului lateral activ
   .sectionChevron,
   .searchInput,
   .searchClear,
-  .favoriteBtn {
+  .favoriteBtn,
+  .dragHandle {
     transition: none !important;
   }
 }

@@ -1,10 +1,10 @@
 # Plan — Extensii Sidebar: secțiuni colapsabile, căutare, favorite, reordonare
 
 > Data: 16 Septembrie 2026
-> Stare: **Aprobat pentru implementare**
-> Revizie: v1.1
+> Stare: **Finalizat — toate cele 4 etape implementate și verificate**
+> Revizie: v1.2
 > Părinte: [PLAN_SIDEBAR.md](PLAN_SIDEBAR.md)
-> Decizii review: coloane dedicate (nu EAV) pentru preferințe UI; restul conform planului inițial.
+> Decizii review: coloane dedicate (nu EAV) pentru preferințe UI; `@dnd-kit` aprobat; reordonare doar pentru favorite; restul conform planului inițial.
 
 ---
 
@@ -277,26 +277,32 @@ restrângere anterioară. Animație cu `max-height` (0 → 600px) în loc de
 
 ---
 
-### Etapa 4 — Reordonarea favoritelor
+### Etapa 4 — Reordonarea favoritelor ✅ **finalizată**
 
 **Backend:**
-- Reutilizează `UpsertUserMenuPreferencesCommand` cu cheia `favoriteRoutes` — ordinea din array e ordinea de afișare.
+- Reutilizează `UpsertUserMenuPreferencesCommand` cu cheia `favoriteRoutes` — ordinea din array e ordinea de afișare. Nicio schimbare de backend necesară.
 
 **Frontend:**
-- Instalează `@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`.
-- Creează componentă `SortableFavoriteItem`.
-- Integrează `DndContext` + `SortableContext` în secțiunea „Favorite".
-- La `onDragEnd`, actualizează ordinea local și sincronizează cu API.
+- Instalate `@dnd-kit/core@6.3.1`, `@dnd-kit/sortable@10.0.0`, `@dnd-kit/utilities@3.2.2` — `axios` a rămas pinned la `1.13.5`.
+- Creată componenta `SortableFavoriteItem.tsx` în `client/src/features/sidebar/components/` — grip de drag + link + buton de eliminare, ca elemente frate (nu imbricate).
+- `DndContext` (`PointerSensor` cu prag de 4px + `KeyboardSensor`) + `SortableContext` (`verticalListSortingStrategy`) integrate direct în secțiunea „Favorite" din `Sidebar.tsx`.
+- `onDragEnd` calculează noul array cu `arrayMove` din `@dnd-kit/sortable` și apelează `useUpsertMenuFavorites().mutate(...)` — cu update optimist.
+- `SortableContext` primește `disabled={isSearching}` — reordonarea e dezactivată cât timp există o căutare activă (lista vizibilă e un subset, ar produce confuzie).
 
 **Accesibilitate:**
-- Buton cu `aria-label="Reordonează favorite"`.
-- Suport tastatură (space/enter pentru pick, săgeți pentru mutare).
+- Grip cu `aria-label="Reordonează {label}"` per item.
+- `KeyboardSensor` din `@dnd-kit` — suport nativ pentru tastatură (Space pentru pick, săgeți pentru mutare, Space pentru drop).
 
-**Acceptare:**
-- Drag-and-drop funcționează cu mouse.
-- Reordonare funcționează cu tastatura.
-- Ordinea persistă după reload.
-- Teste E2E cu Playwright.
+**Acceptare — verificat live în browser** (sesiune admin, date reale):
+- Drag-and-drop cu mouse funcționează: „Setări securitate" mutat înaintea „Jurnal securitate" în secțiunea Favorite, confirmat prin mesajul de status al `@dnd-kit` (`Draggable item ... was dropped over droppable area ...`).
+- **Persistență confirmată**: după `reload`, ordinea nouă a rămas — round-trip complet drag → `PUT /api/v1/UserMenuPreferences` → BD → `GET` la reload.
+- Grip-ul și butonul de favorite dispar corect când sidebar-ul e colapsat (doar iconițele rămân).
+- Grip-urile devin `disabled` automat când există text în căutare.
+- Ordinea a fost restaurată manual la starea inițială după test.
+
+**Teste automate:** simularea unui drag real cu `@dnd-kit` necesită layout real (bounding boxes), pe care `jsdom` nu-l calculează — testele unitare acoperă prezența/vizibilitatea grip-ului (3 teste noi: grip vizibil per favorit, ascuns când colapsat, absent pe itemii nefavoriți). Reordonarea efectivă a fost verificată manual în browser, conform notei de mai sus — nu există încă un spec Playwright dedicat (rămâne ca lucru viitor opțional).
+
+**Verificat:** `npm run build` reușește (bundle-ul `MainLayout` a crescut cu ~47KB gzip din `@dnd-kit`) · `npm run lint` curat · 341 teste unitare (18 fișiere).
 
 **Estimare:** 8–10 ore.
 
@@ -525,26 +531,24 @@ client/src/
 
 ## 12. Criterii de acceptare finale
 
-- [ ] Toate cele 4 funcționalități funcționează pe desktop, tabletă și mobil.
-- [ ] Favoritele și ordinea se persistă după logout/login pe alt browser.
-- [ ] Secțiunile colapsabile și search-ul rămân funcționale după reload.
-- [ ] Permisiunile rămân corect filtrate în toate stările (search, favorite, reordonare).
-- [ ] Accesibilitate: screen reader, tastatură, focus vizibil.
-- [ ] `npm run lint`, `npm run test:unit`, `npm run build`, `npm run check:api` trec.
-- [ ] Backend: `dotnet build` și `dotnet test` trec.
-- [ ] Migrarea `0050` se aplică cu `migrate.ps1`.
-- [ ] Documentația `CLAUDE.md` e actualizată cu noile pattern-uri.
+- [x] Toate cele 4 funcționalități funcționează pe desktop (verificat live); tabletă/mobil moștenesc responsive-ul din PLAN_SIDEBAR.md etapa E.
+- [x] Favoritele și ordinea se persistă — verificat cu reload real în browser (BD, nu doar localStorage).
+- [x] Secțiunile colapsabile și search-ul rămân funcționale după reload.
+- [x] Permisiunile rămân corect filtrate în toate stările (search, favorite, reordonare) — acoperit de teste unitare.
+- [x] Accesibilitate: `aria-label`, `aria-expanded`, `KeyboardSensor` pentru reordonare, focus vizibil (moștenit din etapa D).
+- [x] `npm run lint`, `npm run test:unit` (341 teste), `npm run build` trec. `npm run check:api` a regenerat schema și a confirmat contractul.
+- [x] Backend: `dotnet build` și `dotnet test` (314 teste) trec.
+- [x] Migrarea `0049_CreateUserMenuPreferences` s-a aplicat cu `migrate.ps1` — „Upgrade successful”.
+- [ ] Documentația `CLAUDE.md` — nu a fost actualizată încă cu noile pattern-uri (`UserMenuPreferences`, `@dnd-kit`); rămâne task opus separat dacă se dorește.
 
 ---
 
-## 13. Întrebări pentru review
+## 13. Întrebări pentru review — răspunsuri primite
 
-1. **Persistență:** BD pentru favorite/ordine; localStorage pentru colapsabilitate — ✅ aprobat.
-2. **EAV vs. coloane dedicate:** **Coloane dedicate** — ✅ aprobat.
-3. **@dnd-kit:** OK să adăugăm cele 3 pachete pentru drag-and-drop?
-4. **Scope reordonare:** Doar favoritele, nu întreg meniul — corect?
-5. **Secțiunea „Favorite":** La început, ascunsă când e goală — OK?
-6. **Ordinea etapelor:** Vreți să facem etapele 1+2 împreună (client-only) înainte de a atinge backendul?
-7. **Timeline:** 25h dev + 8h teste + 3h review este realist pentru sprintul curent?
-
-**Răspunsuri așteptate înainte de start:** 3, 4, 5, 6, 7.
+1. **Persistență:** BD pentru favorite/ordine; localStorage pentru colapsabilitate — ✅ aprobat, implementat.
+2. **EAV vs. coloane dedicate:** **Coloane dedicate** — ✅ aprobat, implementat (o singură coloană `FavoriteRoutes`, `SectionOrder` eliminat din scope).
+3. **@dnd-kit:** ✅ aprobat — instalat și integrat, `axios` rămas pinned la `1.13.5`.
+4. **Scope reordonare:** ✅ confirmat — doar favoritele, nu întreg meniul.
+5. **Secțiunea „Favorite":** ✅ confirmat — la început, ascunsă când e goală.
+6. **Ordinea etapelor:** Implementate secvențial 1→2→3→4, fiecare cu commit propriu — nu s-a cerut regruparea lor.
+7. **Timeline:** Estimările inițiale (25h dev + 8h teste + 3h review) au fost orientative; implementarea reală a decurs fără blocaje majore într-o singură sesiune continuă.

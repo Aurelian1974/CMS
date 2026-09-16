@@ -20,6 +20,9 @@
     "check:api": "npm run gen:api && tsc --noEmit"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^5.2.2",
     "@syncfusion/ej2-base": "^32.2.6",
     "@syncfusion/ej2-excel-export": "^32.2.3",

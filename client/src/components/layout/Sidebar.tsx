@@ -40,6 +40,22 @@ import { useHasAccess } from '@/hooks/useHasAccess';
 import { ROUTE_MODULES, useLandingRoute, type GuardedRoute } from '@/routes/moduleAccess';
 import { authApi } from '@/api/endpoints/auth.api';
 import { useMenuFavorites, useUpsertMenuFavorites } from '@/features/sidebar/hooks/useMenuFavorites';
+import { SortableFavoriteItem } from '@/features/sidebar/components/SortableFavoriteItem';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import styles from './Sidebar.module.scss';
 
 const MOBILE_BREAKPOINT = 768;
@@ -164,6 +180,24 @@ export const Sidebar = () => {
       ? favoriteRoutes.filter((r) => r !== route)
       : [...favoriteRoutes, route];
     upsertFavorites.mutate(next);
+  };
+
+  // Senzori pentru reordonarea favoritelor — mouse/touch cu prag de 4px (evită
+  // drag accidental la un simplu click) și tastatură (accesibilitate).
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleFavoriteDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = favoriteRoutes.indexOf(active.id as string);
+    const newIndex = favoriteRoutes.indexOf(over.id as string);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    upsertFavorites.mutate(arrayMove(favoriteRoutes, oldIndex, newIndex));
   };
 
   const displayUser = user ?? { fullName: 'Utilizator', role: 'N/A' };
@@ -377,7 +411,33 @@ export const Sidebar = () => {
               <span className={styles.sectionLabel}>Favorite</span>
             </div>
             <div className={`${styles.itemsWrapper} ${styles.expanded}`}>
-              {visibleFavoriteItems.map((item) => renderNavItem(item))}
+              <DndContext
+                sensors={dndSensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleFavoriteDragEnd}
+              >
+                <SortableContext
+                  items={visibleFavoriteItems.map((item) => item.to)}
+                  strategy={verticalListSortingStrategy}
+                  disabled={menuSearchQuery.trim().length > 0}
+                >
+                  {visibleFavoriteItems.map((item) => (
+                    <SortableFavoriteItem
+                      key={item.to}
+                      to={item.to}
+                      label={item.label}
+                      icon={item.icon}
+                      sidebarCollapsed={sidebarCollapsed}
+                      onRemove={() => toggleFavorite(item.to)}
+                      onActiveRef={(node) => {
+                        if (node?.classList.contains(styles.active)) {
+                          activeLinkRef.current = node;
+                        }
+                      }}
+                    />
+                  ))}
+                </SortableContext>
+              </DndContext>
             </div>
           </div>
         )}

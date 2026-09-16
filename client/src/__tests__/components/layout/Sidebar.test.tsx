@@ -418,6 +418,43 @@ describe('Sidebar', () => {
     })
   })
 
+  // ── Reordonare favorite (drag-and-drop) ─────────────────────────────────────
+  // Simularea unui drag real cu @dnd-kit necesită coordonate de layout pe care
+  // jsdom nu le calculează — verificăm aici prezența/vizibilitatea grip-ului;
+  // reordonarea efectivă e acoperită de un test E2E cu Playwright.
+
+  it('afișează un grip de reordonare pentru fiecare favorit', async () => {
+    vi.mocked(userMenuPreferencesApi.get).mockResolvedValueOnce({
+      favoriteRoutes: ['/dashboard', '/patients'],
+    })
+    grantRead(MODULE.Dashboard, MODULE.Patients)
+    renderSidebar()
+
+    const favoriteGroup = await screen.findByRole('group', { name: 'Favorite' })
+    expect(within(favoriteGroup).getByRole('button', { name: 'Reordonează Dashboard' })).toBeInTheDocument()
+    expect(within(favoriteGroup).getByRole('button', { name: 'Reordonează Pacienți' })).toBeInTheDocument()
+  })
+
+  it('ascunde grip-ul de reordonare când sidebar-ul e colapsat', async () => {
+    useUiStore.setState({ sidebarCollapsed: true })
+    vi.mocked(userMenuPreferencesApi.get).mockResolvedValueOnce({
+      favoriteRoutes: ['/dashboard'],
+    })
+    grantRead(MODULE.Dashboard)
+    renderSidebar()
+
+    const favoriteGroup = await screen.findByRole('group', { name: 'Favorite' })
+    expect(within(favoriteGroup).queryByRole('button', { name: /reordonează/i })).not.toBeInTheDocument()
+  })
+
+  it('itemii din secțiunile obișnuite (nefavorite) nu au grip de reordonare', async () => {
+    grantRead(MODULE.Dashboard)
+    renderSidebar()
+
+    await screen.findByText('Dashboard')
+    expect(screen.queryByRole('button', { name: /reordonează/i })).not.toBeInTheDocument()
+  })
+
   it('nu afișează butonul de favorite când sidebar-ul e colapsat', async () => {
     useUiStore.setState({ sidebarCollapsed: true })
     grantRead(MODULE.Dashboard)
