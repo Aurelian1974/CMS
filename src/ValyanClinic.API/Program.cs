@@ -73,15 +73,16 @@ try
     builder.Services.AddValidatorsFromAssembly(
         typeof(ValyanClinic.Application.Common.Models.Result<>).Assembly);
 
-    // ===== Autorizare — politicile dinamice [HasAccess] sunt gestionate de ModuleAccessPolicyProvider =====
-    // Politicile statice rămân pentru backward compatibility (vor fi înlocuite treptat cu [HasAccess])
-    builder.Services.AddAuthorization(options =>
-    {
-        options.AddPolicy("AdminOnly",        policy => policy.RequireRole("Admin"));
-        options.AddPolicy("DoctorOrAdmin",    policy => policy.RequireRole("Admin", "Doctor"));
-        options.AddPolicy("MedicalStaff",     policy => policy.RequireRole("Admin", "Doctor", "Nurse"));
-        options.AddPolicy("CanManagePatients",policy => policy.RequireRole("Admin", "Doctor", "Nurse", "Receptionist"));
-    });
+    // ===== Autorizare — politicile [HasAccess] sunt generate de ModuleAccessPolicyProvider =====
+    // Nu mai există politici statice de rol. Cele patru care existau (AdminOnly,
+    // DoctorOrAdmin, MedicalStaff, CanManagePatients) nu erau folosite de niciun
+    // endpoint și, în plus, comparau cu forme PascalCase („Admin", „Doctor") care nu
+    // corespund niciunui cod de rol real — codurile din Roles.Code sunt lowercase.
+    // Compararea valorii unui claim e ordinală și case-sensitive, deci oricare dintre
+    // ele ar fi produs un 403 permanent și tăcut la prima utilizare, exact cum s-a
+    // întâmplat cu AdminOnly pe endpoint-ul de reset al parolei.
+    // Restricțiile de rol se exprimă în handler, unde sunt unit-testabile.
+    builder.Services.AddAuthorization();
 
     // ===== CORS =====
     var corsOptions = builder.Configuration
