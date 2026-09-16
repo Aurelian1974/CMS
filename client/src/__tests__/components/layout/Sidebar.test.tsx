@@ -9,7 +9,7 @@
  *   'settings' / 'audit' care rupsese `npm run build`)
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { useAuthStore } from '@/store/authStore'
@@ -208,5 +208,72 @@ describe('Sidebar', () => {
     renderSidebar()
 
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('title', 'Dashboard')
+  })
+
+  // ── Căutare în meniu ────────────────────────────────────────────────────────
+
+  it('afișează inputul de căutare când sidebar-ul e extins', () => {
+    grantRead(MODULE.Dashboard)
+    renderSidebar()
+
+    expect(screen.getByRole('textbox', { name: 'Caută în meniu' })).toBeInTheDocument()
+  })
+
+  it('ascunde inputul de căutare când sidebar-ul e colapsat', () => {
+    useUiStore.setState({ sidebarCollapsed: true })
+    grantRead(MODULE.Dashboard)
+    renderSidebar()
+
+    expect(screen.queryByRole('textbox', { name: 'Caută în meniu' })).not.toBeInTheDocument()
+  })
+
+  it('filtrează itemii de meniu după query', () => {
+    grantRead(MODULE.Dashboard, MODULE.Patients, MODULE.Appointments)
+    renderSidebar()
+
+    const searchInput = screen.getByRole('textbox', { name: 'Caută în meniu' })
+    fireEvent.change(searchInput, { target: { value: 'pac' } })
+
+    expect(screen.getByText('Pacienți')).toBeInTheDocument()
+    expect(screen.queryByText('Dashboard')).not.toBeInTheDocument()
+    expect(screen.queryByText('Programări')).not.toBeInTheDocument()
+  })
+
+  it('filtrează secțiuni după nume și ascunde secțiunile goale', () => {
+    grantRead(MODULE.Dashboard, MODULE.Patients, MODULE.Invoices)
+    renderSidebar()
+
+    const searchInput = screen.getByRole('textbox', { name: 'Caută în meniu' })
+    fireEvent.change(searchInput, { target: { value: 'financiar' } })
+
+    expect(screen.getByText('Financiar')).toBeInTheDocument()
+    expect(screen.getByText('Facturi')).toBeInTheDocument()
+    expect(screen.queryByText('Principal')).not.toBeInTheDocument()
+  })
+
+  it('butonul de clear golește căutarea', () => {
+    useUiStore.setState({ menuSearchQuery: 'pac' })
+    grantRead(MODULE.Dashboard, MODULE.Patients)
+    renderSidebar()
+
+    expect(screen.getByRole('textbox', { name: 'Caută în meniu' })).toHaveValue('pac')
+
+    const clearBtn = screen.getByRole('button', { name: 'Șterge căutarea' })
+    fireEvent.click(clearBtn)
+
+    expect(screen.getByRole('textbox', { name: 'Caută în meniu' })).toHaveValue('')
+    expect(screen.getByText('Dashboard')).toBeInTheDocument()
+    expect(screen.getByText('Pacienți')).toBeInTheDocument()
+  })
+
+  it('la Escape se golește căutarea când inputul are focus', () => {
+    useUiStore.setState({ menuSearchQuery: 'pac' })
+    grantRead(MODULE.Dashboard, MODULE.Patients)
+    renderSidebar()
+
+    const searchInput = screen.getByRole('textbox', { name: 'Caută în meniu' })
+    fireEvent.keyDown(searchInput, { key: 'Escape' })
+
+    expect(useUiStore.getState().menuSearchQuery).toBe('')
   })
 })

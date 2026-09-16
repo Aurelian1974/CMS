@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -29,6 +29,8 @@ import {
   FlaskConical,
   Network,
   Activity,
+  Search,
+  X,
 } from 'lucide-react';
 import { useUiStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
@@ -129,6 +131,8 @@ export const Sidebar = () => {
   const setSidebarCollapsed = useUiStore((s) => s.setSidebarCollapsed);
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const openOwnPasswordModal = useUiStore((s) => s.openOwnPasswordModal);
+  const menuSearchQuery = useUiStore((s) => s.menuSearchQuery);
+  const setMenuSearchQuery = useUiStore((s) => s.setMenuSearchQuery);
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const navigate = useNavigate();
@@ -197,14 +201,25 @@ export const Sidebar = () => {
   };
 
   /// Filtrează secțiunile de navigare — afișează doar elementele la care userul are
-  /// cel puțin Read pe toate modulele de care depinde pagina.
+  /// cel puțin Read pe toate modulele de care depinde pagina și care se potrivesc
+  /// căutării curente (după label sau nume secțiune).
   /// Secțiunile goale (fără item-uri vizibile) sunt ascunse complet.
-  const visibleSections = NAV_SECTIONS
-    .map(({ section, items }) => ({
-      section,
-      items: items.filter((item) => ROUTE_MODULES[item.to].every((m) => canRead(m))),
-    }))
-    .filter(({ items }) => items.length > 0);
+  const visibleSections = useMemo(() => {
+    const query = menuSearchQuery.trim().toLowerCase();
+    return NAV_SECTIONS
+      .map(({ section, items }) => ({
+        section,
+        items: items.filter((item) => {
+          if (!ROUTE_MODULES[item.to].every((m) => canRead(m))) return false;
+          if (!query) return true;
+          return (
+            item.label.toLowerCase().includes(query) ||
+            section.toLowerCase().includes(query)
+          );
+        }),
+      }))
+      .filter(({ items }) => items.length > 0);
+  }, [canRead, menuSearchQuery]);
 
   const isMobileOpen = isMobile && !sidebarCollapsed;
 
@@ -243,6 +258,37 @@ export const Sidebar = () => {
           <ChevronLeft size={14} strokeWidth={2.5} />
         </button>
       </div>
+
+      {/* Căutare în meniu — ascunsă când sidebar-ul e restrâns */}
+      {!sidebarCollapsed && (
+        <div className={styles.searchBox}>
+          <Search size={14} strokeWidth={2} className={styles.searchIcon} />
+          <input
+            type="text"
+            className={styles.searchInput}
+            placeholder="Caută în meniu..."
+            value={menuSearchQuery}
+            onChange={(e) => setMenuSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setMenuSearchQuery('');
+              }
+            }}
+            aria-label="Caută în meniu"
+          />
+          {menuSearchQuery && (
+            <button
+              type="button"
+              className={styles.searchClear}
+              onClick={() => setMenuSearchQuery('')}
+              aria-label="Șterge căutarea"
+              title="Șterge căutarea"
+            >
+              <X size={14} strokeWidth={2} />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Navigare — filtrat pe baza permisiunilor */}
       <nav id="main-navigation" className={styles.nav} aria-label="Navigare principală">

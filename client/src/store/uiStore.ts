@@ -6,11 +6,14 @@ interface UiState {
   activeNotifications: number
   /** Modalul de schimbare a propriei parole — deschis din sidebar, randat în MainLayout. */
   ownPasswordModalOpen: boolean
+  /** Query live pentru filtrarea itemilor din meniul sidebar-ului. */
+  menuSearchQuery: string
   toggleSidebar: () => void
   setSidebarCollapsed: (collapsed: boolean) => void
   setNotificationCount: (count: number) => void
   openOwnPasswordModal: () => void
   closeOwnPasswordModal: () => void
+  setMenuSearchQuery: (query: string) => void
 }
 
 /// Store UI — persistă doar preferințele de interfață, nu date de sesiune.
@@ -22,6 +25,7 @@ export const useUiStore = create<UiState>()(
       sidebarCollapsed: false,
       activeNotifications: 0,
       ownPasswordModalOpen: false,
+      menuSearchQuery: '',
 
       toggleSidebar: () =>
         set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
@@ -35,6 +39,8 @@ export const useUiStore = create<UiState>()(
       openOwnPasswordModal: () => set({ ownPasswordModalOpen: true }),
 
       closeOwnPasswordModal: () => set({ ownPasswordModalOpen: false }),
+
+      setMenuSearchQuery: (query) => set({ menuSearchQuery: query }),
     }),
     {
       name: 'ui-storage',
