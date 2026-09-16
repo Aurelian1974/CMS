@@ -131,8 +131,11 @@ try
     // ===== Response Compression (Brotli preferred, Gzip fallback) =====
     builder.Services.AddResponseCompression(options =>
     {
-        // EnableForHttps: BREACH nu este un risc pentru acest API — nu reflectăm
-        // input de utilizator în răspunsuri neautentificate, toate endpoint-urile cer JWT.
+        // EnableForHttps: BREACH cere ca un răspuns comprimat să conțină simultan un
+        // secret și input controlat de atacator. Endpoint-urile anonime (login, refresh,
+        // /api/version) nu reflectă în răspuns valorile primite — mesajele de eroare
+        // sunt constante, fără ecou al emailului încercat — iar restul cer JWT.
+        // Dacă se adaugă vreodată un endpoint anonim care ecouă input, reevaluați.
         options.EnableForHttps = true;
         options.Providers.Add<BrotliCompressionProvider>();
         options.Providers.Add<GzipCompressionProvider>();
@@ -154,6 +157,8 @@ try
         var loginWindow   = rlSection.GetValue<int>("LoginWindowMinutes",  15);
         var refreshMax    = rlSection.GetValue<int>("RefreshMaxRequests",  60);
         var refreshWindow = rlSection.GetValue<int>("RefreshWindowMinutes", 15);
+        var pwdMax        = rlSection.GetValue<int>("PasswordChangeMaxRequests", 10);
+        var pwdWindow     = rlSection.GetValue<int>("PasswordChangeWindowMinutes", 15);
         var apiMax        = rlSection.GetValue<int>("GeneralMaxRequests",  100);
         var apiWindow     = rlSection.GetValue<int>("GeneralWindowSeconds", 60);
 
@@ -208,6 +213,19 @@ try
                     {
                         PermitLimit          = refreshMax,
                         Window               = TimeSpan.FromMinutes(refreshWindow),
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit           = 0
+                    }));
+
+            // Schimbarea propriei parole — partiționată pe utilizator, nu pe IP:
+            // endpoint-ul cere autentificare, iar ghicirea vizează un cont anume.
+            rl.AddPolicy("password", ctx =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: PartitionByUserOrIp(ctx),
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit          = pwdMax,
+                        Window               = TimeSpan.FromMinutes(pwdWindow),
                         QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                         QueueLimit           = 0
                     }));

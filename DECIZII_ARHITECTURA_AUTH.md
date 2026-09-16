@@ -1,7 +1,7 @@
 # Decizii de Arhitectură — Modulul de Autentificare
 
 > Data: 16 Septembrie 2026
-> Revizie: v1.0
+> Revizie: v1.1 — toate deciziile sunt implementate; vezi coloana Status
 > Context: plan de corecție a bug-urilor și problemelor de securitate din modulul auth
 > Vezi și: [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md) (audit general), [CLAUDE.md](CLAUDE.md) (convenții)
 
@@ -10,11 +10,11 @@ redus: **Context → Decizie → Alternative respinse → Consecințe**.
 
 | # | Decizie | Status | PR |
 |---|---|---|---|
-| [D1](#d1--path-ul-cookie-ului-de-refresh) | Path-ul cookie-ului de refresh | Propusă | 1 |
-| [D2](#d2--hash-pe-refresh-tokens) | Hash pe refresh tokens | Propusă | 3b |
-| [D3](#d3--tabel-separat-pentru-evenimente-de-securitate) | Tabel separat pentru evenimente de securitate | Propusă | 5 |
-| [D4](#d4--separarea-schimbării-de-parolă-în-două-endpoint-uri) | Separarea schimbării de parolă în două endpoint-uri | Propusă | 4 |
-| [D5](#d5--access-token-doar-în-memorie) | Access token doar în memorie | Propusă | 5 |
+| [D1](#d1--path-ul-cookie-ului-de-refresh) | Path-ul cookie-ului de refresh | **Implementată** (cac9fc1) | 1 |
+| [D2](#d2--hash-pe-refresh-tokens) | Hash pe refresh tokens | **Implementată** (14bcf81) | 3b |
+| [D3](#d3--tabel-separat-pentru-evenimente-de-securitate) | Tabel separat pentru evenimente de securitate | **Implementată** (d13bb81) | 5 |
+| [D4](#d4--separarea-schimbării-de-parolă-în-două-endpoint-uri) | Separarea schimbării de parolă în două endpoint-uri | **Implementată** (2bc5245) | 4 |
+| [D5](#d5--access-token-doar-în-memorie) | Access token doar în memorie | **Implementată** (d13bb81) | 5 |
 
 ---
 
@@ -80,10 +80,17 @@ se face după hash. Valoarea în clar există doar în cookie-ul HttpOnly al cli
   Necesită fereastră de mentenanță anunțată.
 - Performanța rămâne neschimbată — lookup pe index unic în loc de index nefiltrat.
 - Toate SP-urile de refresh token își schimbă semnătura (`@Token` → `@TokenHash`).
-  Hash-ul se calculează în `JwtTokenService`, nu în SQL, ca să rămână testabil unitar.
+  Hash-ul se calculează în C#, nu în SQL — vezi abaterea de mai jos pentru locul exact.
 
 **Fișiere:** migrare `0041_HashRefreshTokens.sql`, `RefreshToken_Create/_GetByToken/_Revoke/_RevokeAll.sql`,
-`JwtTokenService.cs`, `AuthRepository.cs`
+`RefreshTokenHasher.cs`, `AuthRepository.cs`
+
+**Abatere la implementare:** hash-ul se calculează în `AuthRepository`, nu în
+`JwtTokenService` cum prevedea decizia. Motivul: `IAuthRepository` păstrează astfel
+semnătura cu token în clar, deci handlerele din Application rămân neatinse și formatul
+de stocare nu iese din stratul care îl deține. Testabilitatea unitară invocată în
+decizie se referea la o garanție („hash-ul stocat e SHA-256 al token-ului") care e
+oricum o preocupare de integrare.
 
 ---
 
@@ -132,7 +139,18 @@ Tabel nou `SecurityEvents`, independent de `AuditLogs`:
 - Necesită politică de retenție separată (propunere: 2 ani) și un index pe
   `(EmailAttempted, OccurredAt DESC)` pentru investigarea atacurilor de tip credential stuffing.
 
-**Fișiere:** migrare `0044_CreateSecurityEvents.sql`, `ISecurityEventRepository` + implementare,
+**Completare (reverificare, Septembrie 2026):** `TokenReuseDetected` se emite doar
+pentru token-urile revocate prin ROTAȚIE. Revocările terminale — logout, schimbare de
+parolă, dezactivare — sunt excluse: acolo un tab rămas deschis care reîncearcă e banal,
+iar tratarea lui ca furt umplea jurnalul cu alarme false exact pe evenimentul care
+trebuie să rămână credibil. Distincția vine din `ReplacedByTokenHash`.
+
+Jurnalul are și un endpoint de citire, `GET /api/v1/SecurityEvents`, protejat cu
+`[HasAccess(audit, Read)]` — fără el ar fi fost write-only și nu ar fi putut fi produs
+la o cerere GDPR.
+
+**Fișiere:** migrare `0044_CreateSecurityEvents.sql`, `ISecurityEventLogger`,
+`ISecurityEventRepository` + implementări, `SecurityEventsController`,
 handlers din `Features/Auth`
 
 ---
@@ -223,9 +241,15 @@ credențiale — pentru a evita un flash de UI gol.
 
 Enumerate pentru trasabilitate — nu necesită aprobare separată.
 
-- **Standardizare pe UTC.** `DateTime.Now` (expirare refresh, lockout, `RefreshTokenDto.IsActive`)
-  coexistă cu `DateTime.UtcNow` (expirare JWT) în același flux. Se trece pe `DateTime.UtcNow` +
-  `SYSUTCDATETIME()` peste tot. Necesită migrare de date dacă serverul nu rulează pe UTC.
+- **Standardizare pe UTC — NU s-a făcut, premisa era greșită.** Verificat referință cu
+  referință: fiecare comparație are ambele părți în aceeași bază de timp. Lockout-ul și
+  refresh-ul sunt integral locale (`DateTime.Now` + `GETDATE()`), iar `UtcNow` apare doar
+  unde specificația o cere (`exp` din JWT) sau unde tipul poartă offset-ul (cookie
+  `DateTimeOffset`). Nu există amestec într-o comparație.
+  Riscul real rămas e trecerea la ora de iarnă, când `DateTime.Now` dă înapoi o oră: un
+  token și o blocare ar trăi cu o oră mai mult. O conversie doar în auth ar intra în
+  conflict cu `LocalDateTimeTypeHandler`, care marchează deliberat toate valorile ca
+  `Local` pentru afișare — deci e o schimbare de convenție la nivel de aplicație.
 - **Durata lockout-ului se separă de fereastra rate-limiter-ului.** `LoginCommandHandler`
   pasează azi `RateLimitingOptions.LoginWindowMinutes` drept durată de blocare a contului —
   două concepte diferite care se vor desincroniza. Se mută în `Security:LockoutMinutes`.

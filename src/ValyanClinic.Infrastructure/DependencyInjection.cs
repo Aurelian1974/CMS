@@ -81,6 +81,7 @@ public static class DependencyInjection
         services.AddScoped<ICnasSyncRepository, CnasSyncRepository>();
         services.AddScoped<IAnmSyncRepository, AnmSyncRepository>();
         services.AddScoped<IAuditLogRepository, AuditLogRepository>();
+        services.AddScoped<ISecurityEventRepository, SecurityEventRepository>();
         services.AddScoped<IICD10Repository, ICD10Repository>();
 
         // ===== Servicii =====

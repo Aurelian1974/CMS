@@ -18,7 +18,7 @@ Fișier de referință pentru Claude (AI assistant). Conține tot ce e necesar c
 | Mapping | Mapster 7.x |
 | Auth | JWT Bearer + Refresh Token |
 | Frontend | React 19 + TypeScript 5.9 + Vite |
-| State | Zustand 4.x (sessionStorage persist) |
+| State | Zustand 4.x (sessionStorage persist — FĂRĂ access token, vezi §7) |
 | Server state | TanStack React Query 5.x |
 | Forms | react-hook-form 7.x + Zod 4.x |
 | HTTP client | Axios (cu interceptori pentru JWT + refresh) |
@@ -1381,21 +1381,35 @@ const { handleSubmit, reset, control, register, formState: { errors } } =
 ### 7. Zustand store (auth)
 
 ```typescript
-// sessionStorage (nu localStorage) — sters la inchiderea tab-ului
+// Access token-ul traieste DOAR in memorie — nu e persistat nicaieri, deci un XSS
+// nu il poate citi din storage. La reload, sesiunea se reconstruieste prin
+// /api/v1/Auth/refresh; cookie-ul HttpOnly e singura sursa de adevar.
+// `user` si `permissions` raman persistate: nu sunt credentiale.
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user:            null,
-      accessToken:     null,
+      accessToken:     null,   // in memorie, exclus din partialize
+      permissions:     [],
       isAuthenticated: false,
-      setAuth:    (user, token) => set({ user, accessToken: token, isAuthenticated: true }),
-      updateToken: (token)      => set({ accessToken: token }),
-      clearAuth:   ()           => set({ user: null, accessToken: null, isAuthenticated: false }),
+      isBootstrapping: true,   // "inca nu stim" != "neautentificat"
+      setAuth: (user, accessToken, permissions) =>
+        set({ user, accessToken, permissions, isAuthenticated: true }),
+      // ...
     }),
-    { name: 'auth-store', storage: createJSONStorage(() => sessionStorage) },
+    {
+      name: 'auth-storage',
+      storage: createJSONStorage(() => sessionStorage),
+      // accessToken lipseste intentionat
+      partialize: (s) => ({ user: s.user, permissions: s.permissions, isAuthenticated: s.isAuthenticated }),
+    },
   ),
 )
 ```
+
+Reconstruirea sesiunii la incarcarea paginii se face in `useSessionBootstrap`, cu
+apelul de refresh deduplicat la nivel de modul — rotatia e atomica pe server, deci
+doua cereri concurente cu acelasi token inseamna ca una primeste 401.
 
 ### 8. useHasAccess — guard pentru permisiuni în UI
 
@@ -1748,7 +1762,7 @@ public static class SqlExceptionHelper
 
 | Greșeală | De ce e greșit | Alternativă corectă |
 |---|---|---|
-| `localStorage.setItem('token', ...)` | Token-ul JWT **NICIODATĂ** în localStorage (XSS vulnerability) | `sessionStorage` via Zustand persist |
+| `localStorage.setItem('token', ...)` sau persistarea access token-ului în `sessionStorage` | Orice storage citibil din JS e expus la XSS | Token DOAR în memorie (Zustand fără persist pe câmp); sesiunea se reface din cookie-ul HttpOnly de refresh |
 | Import neutilizat (`useCallback`, `useState`, etc.) | ESLint `no-unused-vars = error` → CI pică la lint | Șterge imediat importul dacă nu îl folosești |
 | `import { GridComponent } from '@syncfusion/ej2-react-grids'` | Nu folosim GridComponent direct — avem wrapper `AppDataGrid` | `import { AppDataGrid } from '@/components/data-display/AppDataGrid'` |
 | Scriere manuală în `schema.d.ts` | Fișierul e auto-generat — orice editare manuală va fi suprascrisă | Modifică API-ul, regenerează cu `npm run gen:api` |

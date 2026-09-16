@@ -40,9 +40,15 @@ public sealed class RefreshTokenCommandHandler(
         if (existingToken is null)
             return Result<LoginResponseDto>.Unauthorized(ErrorMessages.Auth.InvalidToken);
 
-        // 2. Detecție de reutilizare — un token revocat prezentat din nou înseamnă că
-        //    o copie a lui circulă. Revocăm tot lanțul utilizatorului, forțând un login nou.
-        if (existingToken.IsRevoked)
+        // 2. Detecție de reutilizare — doar pentru un token care fusese ROTIT:
+        //    înseamnă că altcineva l-a folosit deja ca să obțină unul nou, deci o
+        //    copie circulă. Revocăm tot lanțul utilizatorului, forțând un login nou.
+        //
+        //    Revocările terminale (logout, schimbare de parolă, dezactivare) sunt
+        //    excluse intenționat: acolo un tab rămas deschis care reîncearcă e banal,
+        //    iar tratarea lui ca furt ar umple jurnalul de alarme false exact pe
+        //    evenimentul care trebuie să rămână credibil.
+        if (existingToken.IsSuspectedReuse)
         {
             await authRepository.RevokeAllRefreshTokensAsync(existingToken.UserId, ct);
 
@@ -54,6 +60,7 @@ public sealed class RefreshTokenCommandHandler(
             return Result<LoginResponseDto>.Unauthorized(ErrorMessages.Auth.TokenReuseDetected);
         }
 
+        // Revocat terminal sau expirat — refuz simplu, fără alarmă.
         if (!existingToken.IsActive)
             return Result<LoginResponseDto>.Unauthorized(ErrorMessages.Auth.InvalidToken);
 

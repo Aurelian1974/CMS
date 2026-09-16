@@ -72,17 +72,20 @@ public sealed class IntegrationTestFixture : IAsyncLifetime
                 new("Counties"), new("Localities"), new("CaenCodes"),
                 new("schemaversions")
             ],
-            // Ștergem numai tabelele tranzacționale ale clinicii de test
+            // Ștergem numai tabelele tranzacționale ale clinicii de test.
+            // Numele trebuie să existe în baza de date: Respawn ignoră tăcut o
+            // tabelă inexistentă, deci o greșeală aici înseamnă date rămase după
+            // teste, fără niciun semnal. Verificate cu OBJECT_ID.
             TablesToInclude =
             [
                 new("Patients"), new("PatientAllergies"), new("PatientDoctors"), new("PatientEmergencyContacts"),
                 new("Doctors"),
-                new("MedicalStaffMembers"),
-                new("Users"), new("RefreshTokens"),
+                new("MedicalStaff"),
+                new("Users"), new("RefreshTokens"), new("SecurityEvents"),
                 new("Departments"), new("ClinicLocations"),
                 new("ClinicAddresses"), new("ClinicBankAccounts"), new("ClinicContacts"), new("ClinicContactPersons"),
                 new("ClinicCaenCodes"),
-                new("RolePermissions"), new("UserPermissionOverrides")
+                new("RoleModulePermissions"), new("UserModuleOverrides")
             ],
             DbAdapter = DbAdapter.SqlServer
         });

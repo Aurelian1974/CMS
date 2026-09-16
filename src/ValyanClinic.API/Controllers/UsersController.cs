@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Enums;
 using ValyanClinic.Infrastructure.Authentication;
@@ -91,6 +92,7 @@ public class UsersController : BaseApiController
     /// parola curentă este obligatorie.
     /// </summary>
     [HttpPatch("me/password")]
+    [EnableRateLimiting("password")]
     [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> ChangeOwnPassword(
         [FromBody] ChangeOwnPasswordRequest request, CancellationToken ct)

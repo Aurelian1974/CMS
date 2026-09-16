@@ -12127,6 +12127,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/SecurityEvents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    eventType?: string;
+                    userId?: string;
+                    emailAttempted?: string;
+                    ipAddress?: string;
+                    succeeded?: boolean;
+                    dateFrom?: string;
+                    dateTo?: string;
+                    page?: number;
+                    pageSize?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SecurityEventPagedResultApiResponse"];
+                        "application/json": components["schemas"]["SecurityEventPagedResultApiResponse"];
+                        "text/json": components["schemas"]["SecurityEventPagedResultApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/Users/roles": {
         parameters: {
             query?: never;
@@ -14998,6 +15100,42 @@ export interface components {
             moduleId?: string;
             /** Format: uuid */
             accessLevelId?: string;
+        };
+        SecurityEventDto: {
+            /** Format: uuid */
+            id?: string;
+            eventType?: string | null;
+            /** Format: uuid */
+            userId?: string | null;
+            userName?: string | null;
+            /** Format: uuid */
+            clinicId?: string | null;
+            emailAttempted?: string | null;
+            ipAddress?: string | null;
+            userAgent?: string | null;
+            succeeded?: boolean;
+            details?: string | null;
+            /** Format: date-time */
+            occurredAt?: string;
+        };
+        SecurityEventPagedResult: {
+            items: components["schemas"]["SecurityEventDto"][] | null;
+            /** Format: int32 */
+            totalCount?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            pageSize?: number;
+            /** Format: int32 */
+            readonly totalPages?: number;
+        };
+        SecurityEventPagedResultApiResponse: {
+            success?: boolean;
+            data?: components["schemas"]["SecurityEventPagedResult"];
+            message?: string | null;
+            errors?: {
+                [key: string]: string[];
+            } | null;
         };
         SpecialtyDto: {
             /** Format: uuid */

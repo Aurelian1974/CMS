@@ -82,10 +82,24 @@ public sealed record RefreshTokenDto
     public DateTime ExpiresAt { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime? RevokedAt { get; init; }
+
+    /// <summary>
+    /// Token-ul a fost revocat pentru că a fost rotit — altcineva l-a folosit deja
+    /// ca să obțină unul nou. Fals pentru revocările terminale: logout, schimbare
+    /// de parolă, dezactivare de cont.
+    /// </summary>
+    public bool WasReplaced { get; init; }
+
     public string? CreatedByIp { get; init; }
 
     /// <summary>Token-ul a fost revocat explicit — la logout, rotație sau revocare în lanț.</summary>
     public bool IsRevoked => RevokedAt is not null;
+
+    /// <summary>
+    /// Semnalul real de furt: un token deja rotit, prezentat din nou. Revocarea
+    /// terminală nu califică — acolo reîncercarea e doar un client rămas în urmă.
+    /// </summary>
+    public bool IsSuspectedReuse => IsRevoked && WasReplaced;
 
     /// <summary>Token-ul e activ dacă nu e revocat și nu e expirat.</summary>
     public bool IsActive => RevokedAt is null && ExpiresAt > DateTime.Now;

@@ -37,4 +37,5 @@ public static class SecurityEventProcedures
 {
     public const string Create    = "dbo.SecurityEvent_Create";
     public const string DeleteOld = "dbo.SecurityEvent_DeleteOld";
+    public const string GetPaged  = "dbo.SecurityEvent_GetPaged";
 }

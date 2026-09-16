@@ -29,6 +29,15 @@ public sealed class RateLimitingOptions
     public int RefreshMaxRequests   { get; init; } = 60;
     public int RefreshWindowMinutes { get; init; } = 15;
 
+    /// <summary>
+    /// Limita pentru schimbarea propriei parole. Endpoint-ul verifica parola curenta,
+    /// deci e o suprafata de ghicire chiar si pentru cineva care are deja un token
+    /// valid. Nu exista blocare de cont aici, deci limita e singura franare peste
+    /// costul BCrypt.
+    /// </summary>
+    public int PasswordChangeMaxRequests   { get; init; } = 10;
+    public int PasswordChangeWindowMinutes { get; init; } = 15;
+
     public int GeneralMaxRequests   { get; init; } = 100;
     public int GeneralWindowSeconds { get; init; } = 60;
 }

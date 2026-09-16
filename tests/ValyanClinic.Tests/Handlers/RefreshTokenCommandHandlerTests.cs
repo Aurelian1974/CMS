@@ -42,13 +42,15 @@ public sealed class RefreshTokenCommandHandlerTests
     private static RefreshTokenDto BuildToken(
         Guid userId,
         DateTime? revokedAt = null,
-        DateTime? expiresAt = null) => new()
+        DateTime? expiresAt = null,
+        bool wasReplaced = false) => new()
     {
         Id = Guid.NewGuid(),
         UserId = userId,
         ExpiresAt = expiresAt ?? DateTime.Now.AddDays(7),
         CreatedAt = DateTime.Now.AddMinutes(-15),
         RevokedAt = revokedAt,
+        WasReplaced = wasReplaced,
     };
 
     private static UserAuthDto BuildUser(Guid id, bool isActive = true) => new()
@@ -109,7 +111,7 @@ public sealed class RefreshTokenCommandHandlerTests
         var userId = Guid.NewGuid();
         _authRepo.GetRefreshTokenAsync(OldToken, Arg.Any<CancellationToken>())
                  .Returns(Task.FromResult<RefreshTokenDto?>(
-                     BuildToken(userId, revokedAt: DateTime.Now.AddMinutes(-5))));
+                     BuildToken(userId, revokedAt: DateTime.Now.AddMinutes(-5), wasReplaced: true)));
 
         var result = await CreateHandler().Handle(new RefreshTokenCommand(OldToken, null), default);
 
@@ -123,6 +125,35 @@ public sealed class RefreshTokenCommandHandlerTests
         await _authRepo.DidNotReceive().RotateRefreshTokenAsync(
             Arg.Any<string>(), Arg.Any<string>(), Arg.Any<Guid>(),
             Arg.Any<DateTime>(), Arg.Any<string?>(), Arg.Any<CancellationToken>());
+
+        await _securityLog.Received(1).LogAsync(
+            SecurityEventTypes.TokenReuseDetected, false, userId,
+            Arg.Any<Guid?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_TerminallyRevokedToken_IsRefusedWithoutRaisingAlarm()
+    {
+        // Logout, schimbare de parolă și dezactivare revocă token-ul FĂRĂ înlocuitor.
+        // Un tab rămas deschis care reîncearcă nu e un atac: trebuie refuzat simplu,
+        // fără revocare în lanț și fără eveniment de furt în jurnal — altfel alarma
+        // care contează se îneacă în fals pozitivi.
+        var userId = Guid.NewGuid();
+        _authRepo.GetRefreshTokenAsync(OldToken, Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<RefreshTokenDto?>(
+                     BuildToken(userId, revokedAt: DateTime.Now.AddMinutes(-5), wasReplaced: false)));
+
+        var result = await CreateHandler().Handle(new RefreshTokenCommand(OldToken, null), default);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(401, result.StatusCode);
+        Assert.Equal(ErrorMessages.Auth.InvalidToken, result.Error);
+
+        await _authRepo.DidNotReceive().RevokeAllRefreshTokensAsync(
+            Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await _securityLog.DidNotReceive().LogAsync(
+            SecurityEventTypes.TokenReuseDetected, Arg.Any<bool>(), Arg.Any<Guid?>(),
+            Arg.Any<Guid?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
