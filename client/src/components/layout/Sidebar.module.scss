@@ -309,13 +309,36 @@ $active-accent: $primary-light;   // culoarea indicatorului lateral activ
   transition: max-height 0.25s ease;
 
   &.expanded {
-    max-height: 600px; // suficient pentru cea mai lungă secțiune (Administrare, 12 itemi)
+    max-height: 700px; // suficient pentru Administrare: 4 subgrupuri + 12 itemi
   }
 
   .sidebar.collapsed & {
     max-height: none;
     overflow: visible;
   }
+}
+
+// Subgrup etichetat în interiorul unei secțiuni (ex: „Administrare" → „Securitate")
+.navSubgroup {
+  margin-top: 0.625rem;
+
+  &:first-child {
+    margin-top: 0;
+  }
+
+  .sidebar.collapsed & {
+    margin-top: 0.375rem;
+  }
+}
+
+.navSubgroupLabel {
+  font-size: 0.58rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0 1.25rem 0.25rem 1.75rem;
+  white-space: nowrap;
 }
 
 // ===== Rand item navigare (link + buton favorite) =====

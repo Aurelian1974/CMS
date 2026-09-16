@@ -143,6 +143,40 @@ describe('Sidebar', () => {
     expect(screen.queryByText('Jurnal securitate')).not.toBeInTheDocument()
   })
 
+  // ── Subgrupuri în „Administrare” ─────────────────────────────────────────────
+
+  it('afișează etichetele subgrupurilor din Administrare cu permisiuni complete', () => {
+    grantRead(MODULE.Users, MODULE.Nomenclature, MODULE.Clinic, MODULE.Settings, MODULE.Audit)
+    renderSidebar()
+
+    expect(screen.getByText('Administrare')).toBeInTheDocument()
+    expect(screen.getByText('Personal')).toBeInTheDocument()
+    expect(screen.getByText('Clinică')).toBeInTheDocument()
+    expect(screen.getByText('Utilizatori & Permisiuni')).toBeInTheDocument()
+    expect(screen.getByText('Securitate')).toBeInTheDocument()
+  })
+
+  it('ascunde un subgrup din Administrare când niciun item din el nu e vizibil', () => {
+    // Doar module din subgrupul „Securitate” — restul subgrupurilor nu au itemi vizibili.
+    grantRead(MODULE.Settings, MODULE.Audit)
+    renderSidebar()
+
+    expect(screen.getByText('Administrare')).toBeInTheDocument()
+    expect(screen.getByText('Securitate')).toBeInTheDocument()
+    expect(screen.queryByText('Personal')).not.toBeInTheDocument()
+    expect(screen.queryByText('Clinică')).not.toBeInTheDocument()
+    expect(screen.queryByText('Utilizatori & Permisiuni')).not.toBeInTheDocument()
+  })
+
+  it('nu afișează etichetele subgrupurilor din Administrare când sidebar-ul e colapsat', () => {
+    grantRead(MODULE.Settings, MODULE.Audit)
+    useUiStore.setState({ sidebarCollapsed: true })
+    renderSidebar()
+
+    expect(screen.getByText('Jurnal securitate')).toBeInTheDocument()
+    expect(screen.queryByText('Securitate')).not.toBeInTheDocument()
+  })
+
   // ── Item cu mai multe module: semantică AND ─────────────────────────────────
 
   it('Medicamente cere ambele module — anm singur nu e suficient', () => {

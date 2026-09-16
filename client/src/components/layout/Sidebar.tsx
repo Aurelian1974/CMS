@@ -80,10 +80,15 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
-interface NavSection {
-  section: string;
+/** Grup etichetat de itemi în interiorul unei secțiuni (ex: „Securitate" în „Administrare"). */
+interface NavSubgroup {
+  label: string;
   items: NavItem[];
 }
+
+type NavSection =
+  | { section: string; items: NavItem[]; subgroups?: undefined }
+  | { section: string; subgroups: NavSubgroup[]; items?: undefined };
 
 // NOTĂ: ICON_SIZE trebuie să coincidă cu $icon-size din Sidebar.module.scss
 const ICON_SIZE = 17;
@@ -108,19 +113,39 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     section: 'Administrare',
-    items: [
-      { to: '/doctors',             label: 'Doctori',              icon: <UserCheck     size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
-      { to: '/medical-staff',       label: 'Personal Medical',     icon: <HeartPulse   size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
-      { to: '/departments',         label: 'Departamente',         icon: <Building2     size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
-      { to: '/users',               label: 'Utilizatori',          icon: <UserCog       size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
-      { to: '/specialties',         label: 'Specializări',         icon: <BookOpen      size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
-      { to: '/medical-titles',      label: 'Titulaturi',           icon: <GraduationCap size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
-      { to: '/clinic',              label: 'Clinica',              icon: <Hospital      size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
-      { to: '/schedule',            label: 'Program',              icon: <Clock         size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
-      { to: '/permissions/roles',   label: 'Permisiuni Roluri',    icon: <ShieldCheck   size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
-      { to: '/permissions/users',   label: 'Override Utilizatori', icon: <ShieldAlert   size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
-      { to: '/settings/security',   label: 'Setări securitate',    icon: <SlidersHorizontal size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
-      { to: '/audit/security',      label: 'Jurnal securitate',    icon: <ScrollText    size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+    subgroups: [
+      {
+        label: 'Personal',
+        items: [
+          { to: '/doctors',        label: 'Doctori',          icon: <UserCheck     size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+          { to: '/medical-staff',  label: 'Personal Medical', icon: <HeartPulse    size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+          { to: '/specialties',    label: 'Specializări',     icon: <BookOpen      size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+          { to: '/medical-titles', label: 'Titulaturi',       icon: <GraduationCap size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+        ],
+      },
+      {
+        label: 'Clinică',
+        items: [
+          { to: '/departments', label: 'Departamente', icon: <Building2 size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+          { to: '/clinic',      label: 'Clinica',       icon: <Hospital  size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+          { to: '/schedule',    label: 'Program',       icon: <Clock     size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+        ],
+      },
+      {
+        label: 'Utilizatori & Permisiuni',
+        items: [
+          { to: '/users',             label: 'Utilizatori',          icon: <UserCog     size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+          { to: '/permissions/roles', label: 'Permisiuni Roluri',    icon: <ShieldCheck size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+          { to: '/permissions/users', label: 'Override Utilizatori', icon: <ShieldAlert size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+        ],
+      },
+      {
+        label: 'Securitate',
+        items: [
+          { to: '/settings/security', label: 'Setări securitate', icon: <SlidersHorizontal size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+          { to: '/audit/security',    label: 'Jurnal securitate', icon: <ScrollText        size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+        ],
+      },
     ],
   },
   {
@@ -144,10 +169,15 @@ const getInitials = (name: string): string => {
   return name.substring(0, 2).toUpperCase();
 };
 
-// Hartă rută → item, aplatizată din NAV_SECTIONS — folosită pentru randarea
-// secțiunii „Favorite" fără să duplicăm definițiile de label/iconiță.
+// Hartă rută → item, aplatizată din NAV_SECTIONS (inclusiv din subgrupuri) —
+// folosită pentru randarea secțiunii „Favorite" fără să duplicăm definițiile
+// de label/iconiță.
 const NAV_ITEMS_BY_ROUTE: Partial<Record<GuardedRoute, NavItem>> = Object.fromEntries(
-  NAV_SECTIONS.flatMap(({ items }) => items.map((item) => [item.to, item])),
+  NAV_SECTIONS.flatMap((section) =>
+    (section.subgroups ?? [section]).flatMap((group) =>
+      ('items' in group ? group.items : []).map((item) => [item.to, item]),
+    ),
+  ),
 );
 
 // ===== Contor sesiune (timp rămas până la deconectarea din inactivitate) =====
@@ -307,23 +337,28 @@ export const Sidebar = ({ sessionSecondsLeft = null }: SidebarProps = {}) => {
 
   /// Filtrează secțiunile de navigare — afișează doar elementele la care userul are
   /// cel puțin Read pe toate modulele de care depinde pagina și care se potrivesc
-  /// căutării curente (după label sau nume secțiune).
-  /// Secțiunile goale (fără item-uri vizibile) sunt ascunse complet.
+  /// căutării curente (după label sau nume secțiune/subgrup).
+  /// Secțiunile și subgrupurile goale (fără item-uri vizibile) sunt ascunse complet.
   const visibleSections = useMemo(() => {
     const query = menuSearchQuery.trim().toLowerCase();
+    const matches = (...texts: string[]) =>
+      !query || texts.some((text) => text.toLowerCase().includes(query));
+    const filterItems = (items: NavItem[], ...parentLabels: string[]) =>
+      items.filter(
+        (item) => ROUTE_MODULES[item.to].every((m) => canRead(m)) && matches(item.label, ...parentLabels),
+      );
+
     return NAV_SECTIONS
-      .map(({ section, items }) => ({
-        section,
-        items: items.filter((item) => {
-          if (!ROUTE_MODULES[item.to].every((m) => canRead(m))) return false;
-          if (!query) return true;
-          return (
-            item.label.toLowerCase().includes(query) ||
-            section.toLowerCase().includes(query)
-          );
-        }),
-      }))
-      .filter(({ items }) => items.length > 0);
+      .map((navSection) => {
+        if (navSection.subgroups) {
+          const subgroups = navSection.subgroups
+            .map((sg) => ({ label: sg.label, items: filterItems(sg.items, sg.label, navSection.section) }))
+            .filter((sg) => sg.items.length > 0);
+          return { section: navSection.section, subgroups, items: undefined };
+        }
+        return { section: navSection.section, items: filterItems(navSection.items, navSection.section), subgroups: undefined };
+      })
+      .filter((s) => (s.subgroups ? s.subgroups.length > 0 : s.items!.length > 0));
   }, [canRead, menuSearchQuery]);
 
   /// Itemii favoritați, în ordinea salvată — filtrați pe permisiuni (o rută
@@ -489,7 +524,7 @@ export const Sidebar = ({ sessionSecondsLeft = null }: SidebarProps = {}) => {
           </div>
         )}
 
-        {visibleSections.map(({ section, items }) => {
+        {visibleSections.map(({ section, items, subgroups }) => {
           const sectionId = `nav-section-${section}`;
           const itemsId = `nav-items-${section}`;
           // Când există o căutare activă sau sidebar-ul e restrâns la iconițe,
@@ -524,7 +559,16 @@ export const Sidebar = ({ sessionSecondsLeft = null }: SidebarProps = {}) => {
                 id={itemsId}
                 className={`${styles.itemsWrapper}${isExpanded ? ` ${styles.expanded}` : ''}`}
               >
-                {items.map((item) => renderNavItem(item))}
+                {subgroups
+                  ? subgroups.map((subgroup) => (
+                      <div key={subgroup.label} className={styles.navSubgroup}>
+                        {!sidebarCollapsed && (
+                          <div className={styles.navSubgroupLabel}>{subgroup.label}</div>
+                        )}
+                        {subgroup.items.map((item) => renderNavItem(item))}
+                      </div>
+                    ))
+                  : items!.map((item) => renderNavItem(item))}
               </div>
             </div>
           );
