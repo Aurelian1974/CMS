@@ -1,7 +1,16 @@
 import { useLocation } from 'react-router-dom';
 import { formatDate } from '@/utils/format';
+import { useUiStore } from '@/store/uiStore';
 import { AppBreadcrumb } from './AppBreadcrumb';
 import styles from './AppHeader.module.scss';
+
+const IconMenu = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <line x1="3" y1="12" x2="21" y2="12" />
+    <line x1="3" y1="6" x2="21" y2="6" />
+    <line x1="3" y1="18" x2="21" y2="18" />
+  </svg>
+);
 
 // Mapare rute → titluri
 const ROUTE_TITLES: Record<string, string> = {
@@ -33,6 +42,8 @@ const IconSettings = () => (
 
 export const AppHeader = () => {
   const location = useLocation();
+  const setSidebarCollapsed = useUiStore((s) => s.setSidebarCollapsed);
+  const openMobileSidebar = () => setSidebarCollapsed(false);
 
   // Determinare titlu din ruta curentă
   const baseRoute = '/' + location.pathname.split('/')[1];
@@ -43,6 +54,17 @@ export const AppHeader = () => {
   return (
     <header className={styles.header}>
       <div className={styles.left}>
+        {/* Buton hamburger vizibil doar pe mobil */}
+        <button
+          type="button"
+          className={styles.hamburgerBtn}
+          onClick={openMobileSidebar}
+          aria-label="Deschide meniul"
+          title="Deschide meniul"
+        >
+          <IconMenu />
+        </button>
+
         {/* Pe dashboard afișăm titlul simplu; pe celelalte rute — breadcrumbs */}
         {location.pathname === '/dashboard' ? (
           <span className={styles.pageTitle}>{pageTitle}</span>

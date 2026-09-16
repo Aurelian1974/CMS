@@ -19,7 +19,7 @@ $active-accent: $primary-light;   // culoarea indicatorului lateral activ
 // ===== Container sidebar =====
 .sidebar {
   width: $sidebar-width;
-  min-height: 100vh;
+  height: 100%;
   background: $sidebar-bg;
   display: flex;
   flex-direction: column;
@@ -27,6 +27,21 @@ $active-accent: $primary-light;   // culoarea indicatorului lateral activ
   flex-shrink: 0;
   position: relative;
   z-index: 100;
+
+  // Sub tabletă: sidebar fix peste conținut
+  @media (max-width: 767px) {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    box-shadow: $box-shadow-lg;
+
+    &.closed {
+      width: 0;
+      overflow: hidden;
+      box-shadow: none;
+    }
+  }
 
   &.collapsed {
     width: $sidebar-collapsed;
@@ -74,6 +89,26 @@ $active-accent: $primary-light;   // culoarea indicatorului lateral activ
   gap: 0.5rem;
   padding: 0 0.75rem 0 1.25rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  min-height: 60px; // aliniere cu header-ul
+}
+
+// ===== Backdrop mobil =====
+.backdrop {
+  display: none;
+
+  @media (max-width: 767px) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba($gray-800, 0.35);
+    z-index: 99;
+    animation: fadeIn 0.2s ease;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 // ===== Brand =====

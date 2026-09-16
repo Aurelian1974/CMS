@@ -1,4 +1,5 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -35,6 +36,8 @@ import { useHasAccess } from '@/hooks/useHasAccess';
 import { ROUTE_MODULES, useLandingRoute, type GuardedRoute } from '@/routes/moduleAccess';
 import { authApi } from '@/api/endpoints/auth.api';
 import styles from './Sidebar.module.scss';
+
+const MOBILE_BREAKPOINT = 768;
 
 const RedCrossIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
@@ -122,15 +125,64 @@ const getInitials = (name: string): string => {
 // ===== Componenta Sidebar =====
 export const Sidebar = () => {
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
+  const setSidebarCollapsed = useUiStore((s) => s.setSidebarCollapsed);
   const toggleSidebar = useUiStore((s) => s.toggleSidebar);
   const openOwnPasswordModal = useUiStore((s) => s.openOwnPasswordModal);
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const navigate = useNavigate();
+  const location = useLocation();
   const { canRead } = useHasAccess();
   const landing = useLandingRoute();
+  const activeLinkRef = useRef<HTMLAnchorElement | null>(null);
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT;
 
   const displayUser = user ?? { fullName: 'Utilizator', role: 'N/A' };
+
+  // Sub lg: auto-collapse la prima montare; pe mobil începe închis.
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < MOBILE_BREAKPOINT;
+      const tabletDesktopCollapsed = window.innerWidth < 992;
+      if (mobile) {
+        setSidebarCollapsed(true);
+      } else if (tabletDesktopCollapsed) {
+        setSidebarCollapsed(true);
+      }
+      // La desktop mare (>992) nu forțăm — persistă starea utilizatorului.
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [setSidebarCollapsed]);
+
+  // Pe mobil, închide sidebar-ul la navigare.
+  useEffect(() => {
+    if (isMobile && !sidebarCollapsed) {
+      setSidebarCollapsed(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  // Scroll item activ în viewport la montare (util pe ecrane mici).
+  useEffect(() => {
+    if (activeLinkRef.current?.scrollIntoView) {
+      activeLinkRef.current.scrollIntoView({ block: 'nearest' });
+    }
+  }, []);
+
+  // Închide sidebar la Escape (doar pe mobil sau când e deschis).
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !sidebarCollapsed) {
+        setSidebarCollapsed(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [sidebarCollapsed, setSidebarCollapsed]);
 
   const handleLogout = async () => {
     try {
@@ -153,8 +205,20 @@ export const Sidebar = () => {
     }))
     .filter(({ items }) => items.length > 0);
 
+  const isMobileOpen = isMobile && !sidebarCollapsed;
+
   return (
-    <aside className={`${styles.sidebar}${sidebarCollapsed ? ` ${styles.collapsed}` : ''}`}>
+    <>
+      {isMobileOpen && (
+        <div
+          className={styles.backdrop}
+          onClick={() => setSidebarCollapsed(true)}
+          aria-hidden="true"
+        />
+      )}
+      <aside
+        className={`${styles.sidebar}${sidebarCollapsed ? ` ${styles.collapsed}` : ''}${isMobile && sidebarCollapsed ? ` ${styles.closed}` : ''}`}
+      >
 
       {/* Brand + buton collapse — ancorare predictibilă, fără suprapunere peste conținut */}
       <div className={styles.brandArea}>
@@ -195,6 +259,11 @@ export const Sidebar = () => {
                 <NavLink
                   key={to}
                   to={to}
+                  ref={(node) => {
+                    if (node?.classList.contains(styles.active)) {
+                      activeLinkRef.current = node;
+                    }
+                  }}
                   className={({ isActive }) =>
                     `${styles.navItem}${isActive ? ` ${styles.active}` : ''}`
                   }
@@ -241,7 +310,8 @@ export const Sidebar = () => {
         </button>
       </div>
 
-    </aside>
+      </aside>
+    </>
   );
 };
 
