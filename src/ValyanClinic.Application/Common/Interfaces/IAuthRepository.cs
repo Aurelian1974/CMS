@@ -19,11 +19,26 @@ public interface IAuthRepository
     /// <summary>Crează un refresh token nou în baza de date.</summary>
     Task CreateRefreshTokenAsync(Guid userId, string token, DateTime expiresAt, string? ipAddress, CancellationToken ct);
 
-    /// <summary>Obține un refresh token după valoare.</summary>
+    /// <summary>
+    /// Obține un refresh token după valoare. Returnează randul și dacă e revocat sau
+    /// expirat — apelantul are nevoie de starea lui pentru detecția de reutilizare.
+    /// </summary>
     Task<RefreshTokenDto?> GetRefreshTokenAsync(string token, CancellationToken ct);
 
-    /// <summary>Revocă un refresh token (cu opțiune de a indica token-ul înlocuitor).</summary>
+    /// <summary>Revocă un refresh token (folosit la logout).</summary>
     Task RevokeRefreshTokenAsync(string token, string? replacedByToken, CancellationToken ct);
+
+    /// <summary>
+    /// Rotește atomic un refresh token: revocă vechiul token și creează unul nou
+    /// în aceeași tranzacție. Returnează <c>false</c> dacă token-ul vechi nu mai era
+    /// activ — fie a fost deja rotit de o cerere concurentă, fie a fost revocat.
+    /// </summary>
+    Task<bool> RotateRefreshTokenAsync(
+        string oldToken, string newToken, Guid userId, DateTime expiresAt,
+        string? ipAddress, CancellationToken ct);
+
+    /// <summary>Șterge token-urile expirate sau revocate mai vechi decât perioada de retenție.</summary>
+    Task<int> DeleteExpiredRefreshTokensAsync(int retentionDays, CancellationToken ct);
 
     /// <summary>Revocă toate refresh token-urile unui utilizator.</summary>
     Task RevokeAllRefreshTokensAsync(Guid userId, CancellationToken ct);
@@ -53,17 +68,21 @@ public sealed record UserAuthDto
     public DateTime? LockoutEnd { get; init; }
 }
 
-/// <summary>DTO pentru un refresh token din baza de date.</summary>
+/// <summary>
+/// DTO pentru un refresh token din baza de date.
+/// Valoarea în clar nu este stocată (vezi D2) și deci nu apare aici.
+/// </summary>
 public sealed record RefreshTokenDto
 {
     public Guid Id { get; init; }
     public Guid UserId { get; init; }
-    public string Token { get; init; } = string.Empty;
     public DateTime ExpiresAt { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime? RevokedAt { get; init; }
-    public string? ReplacedByToken { get; init; }
     public string? CreatedByIp { get; init; }
+
+    /// <summary>Token-ul a fost revocat explicit — la logout, rotație sau revocare în lanț.</summary>
+    public bool IsRevoked => RevokedAt is not null;
 
     /// <summary>Token-ul e activ dacă nu e revocat și nu e expirat.</summary>
     public bool IsActive => RevokedAt is null && ExpiresAt > DateTime.Now;

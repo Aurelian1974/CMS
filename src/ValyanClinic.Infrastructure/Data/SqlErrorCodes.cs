@@ -28,6 +28,8 @@ public static class SqlErrorCodes
     // ====== Autentificare ======
     public const int AuthInvalidCredentials = 50050;
     public const int AuthAccountLocked      = 50051;
+    /// <summary>Refresh token-ul nu mai era activ la rotație (rotit concurent sau revocat).</summary>
+    public const int RefreshTokenNotActive  = 50052;
 
     // ====== Utilizatori (range real: 50500–50508) ======
     // IMPORTANT: SP-urile aruncă coduri 50500+ (nu 50060/50061 care sunt obsolete)

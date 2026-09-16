@@ -28,4 +28,6 @@ public static class RefreshTokenProcedures
     public const string Create     = "dbo.RefreshToken_Create";
     public const string Revoke     = "dbo.RefreshToken_Revoke";
     public const string RevokeAll  = "dbo.RefreshToken_RevokeAll";
+    public const string Rotate     = "dbo.RefreshToken_Rotate";
+    public const string DeleteExpired = "dbo.RefreshToken_DeleteExpired";
 }

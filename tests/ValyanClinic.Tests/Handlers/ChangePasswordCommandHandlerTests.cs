@@ -64,6 +64,42 @@ public sealed class ChangePasswordCommandHandlerTests
         await _authRepo.DidNotReceive().GetUserByIdForTokenAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
+    // ── Revocarea sesiunilor la schimbarea parolei ────────────────────────────
+
+    [Fact]
+    public async Task Handle_PasswordChanged_RevokesAllRefreshTokens()
+    {
+        // Fără asta, în scenariul „contul a fost compromis, îmi schimb parola",
+        // atacatorul rămâne conectat până la expirarea refresh token-ului (7 zile).
+        _userRepo.UpdatePasswordAsync(
+                OtherUserId, ClinicId, HashedNewPassword, CurrentUserId, Arg.Any<CancellationToken>())
+             .Returns(Task.CompletedTask);
+
+        var command = new ChangePasswordCommand(OtherUserId, ValidNewPassword, CurrentPassword: null);
+        var result  = await CreateHandler().Handle(command, default);
+
+        Assert.True(result.IsSuccess);
+        await _authRepo.Received(1).RevokeAllRefreshTokensAsync(
+            OtherUserId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_PasswordUpdateFails_DoesNotRevokeSessions()
+    {
+        // Revocarea are loc doar după o schimbare reușită — altfel am deconecta
+        // utilizatorul pentru o operație care nu s-a întâmplat.
+        _userRepo.UpdatePasswordAsync(
+                OtherUserId, ClinicId, HashedNewPassword, CurrentUserId, Arg.Any<CancellationToken>())
+             .Throws(SqlExceptionHelper.Make(SqlErrorCodes.UserNotFound));
+
+        var command = new ChangePasswordCommand(OtherUserId, ValidNewPassword, CurrentPassword: null);
+        var result  = await CreateHandler().Handle(command, default);
+
+        Assert.False(result.IsSuccess);
+        await _authRepo.DidNotReceive().RevokeAllRefreshTokensAsync(
+            Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
     // ── Utilizatorul își schimbă propria parolă fără CurrentPassword ──────────
 
     [Fact]

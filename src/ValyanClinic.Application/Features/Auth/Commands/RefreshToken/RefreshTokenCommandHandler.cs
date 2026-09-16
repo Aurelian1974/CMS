@@ -10,8 +10,17 @@ using ValyanClinic.Application.Common.Configuration;
 namespace ValyanClinic.Application.Features.Auth.Commands.RefreshToken;
 
 /// <summary>
-/// Handler pentru refresh token — validează token-ul vechi, generează pereche nouă (rotație).
-/// Permisiunile sunt citite din cache dacă disponibile, evitând un DB call redundant.
+/// Handler pentru refresh token — validează token-ul vechi și generează o pereche nouă.
+///
+/// Ordinea contează: validăm token-ul și starea contului ÎNAINTE de a roti. Anterior
+/// rotația se făcea prima, deci un cont dezactivat primea totuși un token nou în DB.
+///
+/// Un token deja revocat, prezentat din nou, este semnalul clasic de furt: atacatorul
+/// folosește o copie a cookie-ului după ce utilizatorul legitim a rotit-o (sau invers).
+/// În acest caz revocăm întregul lanț de token-uri al utilizatorului, nu doar respingem
+/// cererea — altfel sesiunea atacatorului ar rămâne activă.
+///
+/// Permisiunile sunt citite din cache dacă sunt disponibile, evitând un DB call redundant.
 /// </summary>
 public sealed class RefreshTokenCommandHandler(
     IAuthRepository authRepository,
@@ -24,30 +33,43 @@ public sealed class RefreshTokenCommandHandler(
     public async Task<Result<LoginResponseDto>> Handle(
         RefreshTokenCommand request, CancellationToken ct)
     {
-        // 1. Căutare refresh token în DB
+        // 1. Căutare refresh token în DB (după hash — valoarea în clar nu e stocată)
         var existingToken = await authRepository.GetRefreshTokenAsync(request.Token, ct);
 
-        if (existingToken is null || !existingToken.IsActive)
+        if (existingToken is null)
             return Result<LoginResponseDto>.Unauthorized(ErrorMessages.Auth.InvalidToken);
 
-        // 2. Obținem datele utilizatorului (folosim email/username search dar cu userId)
-        // Revocăm token-ul vechi și generăm unul nou
-        var newRefreshToken = tokenService.GenerateRefreshToken();
+        // 2. Detecție de reutilizare — un token revocat prezentat din nou înseamnă că
+        //    o copie a lui circulă. Revocăm tot lanțul utilizatorului, forțând un login nou.
+        if (existingToken.IsRevoked)
+        {
+            await authRepository.RevokeAllRefreshTokensAsync(existingToken.UserId, ct);
+            return Result<LoginResponseDto>.Unauthorized(ErrorMessages.Auth.TokenReuseDetected);
+        }
 
-        await authRepository.RevokeRefreshTokenAsync(
-            request.Token, newRefreshToken, ct);
+        if (!existingToken.IsActive)
+            return Result<LoginResponseDto>.Unauthorized(ErrorMessages.Auth.InvalidToken);
 
-        // 3. Salvăm noul refresh token
-        var refreshExpiry = DateTime.Now.AddDays(jwtOptions.Value.RefreshTokenExpiryDays);
-        await authRepository.CreateRefreshTokenAsync(
-            existingToken.UserId, newRefreshToken, refreshExpiry, request.IpAddress, ct);
-
-        // 4. Obținem datele utilizatorului pentru noul access token
-        // Căutăm direct în users — avem UserId din refresh token
+        // 3. Starea contului se verifică înainte de rotație — un cont dezactivat
+        //    nu trebuie să primească un token nou.
         var user = await authRepository.GetUserByIdForTokenAsync(existingToken.UserId, ct);
 
         if (user is null || !user.IsActive)
+        {
+            await authRepository.RevokeAllRefreshTokensAsync(existingToken.UserId, ct);
             return Result<LoginResponseDto>.Unauthorized(ErrorMessages.Auth.AccountInactive);
+        }
+
+        // 4. Rotație atomică — revocarea vechiului token și inserarea celui nou într-o
+        //    singură tranzacție. Eșuează dacă o cerere concurentă a rotit deja token-ul.
+        var newRefreshToken = tokenService.GenerateRefreshToken();
+        var refreshExpiry = DateTime.Now.AddDays(jwtOptions.Value.RefreshTokenExpiryDays);
+
+        var rotated = await authRepository.RotateRefreshTokenAsync(
+            request.Token, newRefreshToken, user.Id, refreshExpiry, request.IpAddress, ct);
+
+        if (!rotated)
+            return Result<LoginResponseDto>.Unauthorized(ErrorMessages.Auth.InvalidToken);
 
         // 5. Generare access token (include roleId claim)
         var fullName = $"{user.FirstName} {user.LastName}".Trim();

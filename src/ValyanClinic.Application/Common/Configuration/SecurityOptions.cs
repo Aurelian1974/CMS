@@ -21,4 +21,11 @@ public sealed class SecurityOptions
     /// făcea imposibilă reglarea lor independentă.
     /// </summary>
     public int LockoutMinutes { get; init; } = 15;
+
+    /// <summary>
+    /// Câte zile păstrăm refresh token-urile expirate sau revocate înainte de ștergere.
+    /// Perioada de retenție menține lanțul ReplacedByTokenHash investigabil după un
+    /// incident de securitate; fără curățare, tabela ar crește la infinit.
+    /// </summary>
+    public int RefreshTokenRetentionDays { get; init; } = 30;
 }

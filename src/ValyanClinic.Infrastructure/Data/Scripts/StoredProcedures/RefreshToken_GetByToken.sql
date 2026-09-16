@@ -1,11 +1,15 @@
 -- =============================================================================
--- SP: RefreshToken_GetByToken — returnează refresh token activ (neexpirat, nerevocat)
+-- SP: RefreshToken_GetByToken — returnează un refresh token după hash-ul său.
+--
+-- Returnează randul indiferent de starea lui (revocat / expirat): apelantul are
+-- nevoie de RevokedAt pentru a distinge un token necunoscut de unul revocat,
+-- acesta din urmă fiind semnalul clasic de furt (reuse detection).
 -- =============================================================================
 SET QUOTED_IDENTIFIER ON;
 GO
 
 CREATE OR ALTER PROCEDURE dbo.RefreshToken_GetByToken
-    @Token NVARCHAR(500)
+    @TokenHash CHAR(64)
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -13,13 +17,11 @@ BEGIN
 
     SELECT rt.Id,
            rt.UserId,
-           rt.Token,
            rt.ExpiresAt,
            rt.CreatedAt,
            rt.RevokedAt,
-           rt.ReplacedByToken,
            rt.CreatedByIp
     FROM RefreshTokens rt
-    WHERE rt.Token = @Token;
+    WHERE rt.TokenHash = @TokenHash;
 END;
 GO

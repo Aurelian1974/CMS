@@ -1,12 +1,18 @@
 using System.Data;
 using Dapper;
+using Microsoft.Data.SqlClient;
 using ValyanClinic.Application.Common.Interfaces;
+using ValyanClinic.Infrastructure.Authentication;
 using ValyanClinic.Infrastructure.Data.StoredProcedures;
 
 namespace ValyanClinic.Infrastructure.Data.Repositories;
 
 /// <summary>
 /// Repository pentru operații de autentificare — login, refresh tokens, lockout.
+///
+/// Refresh token-urile se stochează ca hash SHA-256: metodele primesc valoarea în
+/// clar și o convertesc înainte de a atinge baza de date, astfel încât apelanții
+/// din Application să nu cunoască formatul de stocare.
 /// </summary>
 public sealed class AuthRepository(DapperContext context) : IAuthRepository
 {
@@ -62,7 +68,13 @@ public sealed class AuthRepository(DapperContext context) : IAuthRepository
         await connection.ExecuteAsync(
             new CommandDefinition(
                 RefreshTokenProcedures.Create,
-                new { UserId = userId, Token = token, ExpiresAt = expiresAt, CreatedByIp = ipAddress },
+                new
+                {
+                    UserId = userId,
+                    TokenHash = RefreshTokenHasher.Hash(token),
+                    ExpiresAt = expiresAt,
+                    CreatedByIp = ipAddress
+                },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct));
     }
@@ -73,7 +85,7 @@ public sealed class AuthRepository(DapperContext context) : IAuthRepository
         return await connection.QueryFirstOrDefaultAsync<RefreshTokenDto>(
             new CommandDefinition(
                 RefreshTokenProcedures.GetByToken,
-                new { Token = token },
+                new { TokenHash = RefreshTokenHasher.Hash(token) },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct));
     }
@@ -84,7 +96,54 @@ public sealed class AuthRepository(DapperContext context) : IAuthRepository
         await connection.ExecuteAsync(
             new CommandDefinition(
                 RefreshTokenProcedures.Revoke,
-                new { Token = token, ReplacedByToken = replacedByToken },
+                new
+                {
+                    TokenHash = RefreshTokenHasher.Hash(token),
+                    ReplacedByTokenHash = replacedByToken is null
+                        ? null
+                        : RefreshTokenHasher.Hash(replacedByToken)
+                },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+    }
+
+    public async Task<bool> RotateRefreshTokenAsync(
+        string oldToken, string newToken, Guid userId, DateTime expiresAt,
+        string? ipAddress, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        try
+        {
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    RefreshTokenProcedures.Rotate,
+                    new
+                    {
+                        OldTokenHash = RefreshTokenHasher.Hash(oldToken),
+                        NewTokenHash = RefreshTokenHasher.Hash(newToken),
+                        UserId = userId,
+                        ExpiresAt = expiresAt,
+                        CreatedByIp = ipAddress
+                    },
+                    commandType: CommandType.StoredProcedure,
+                    cancellationToken: ct));
+
+            return true;
+        }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.RefreshTokenNotActive)
+        {
+            // Token-ul a fost rotit sau revocat între citire și rotație — cerere concurentă.
+            return false;
+        }
+    }
+
+    public async Task<int> DeleteExpiredRefreshTokensAsync(int retentionDays, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        return await connection.ExecuteScalarAsync<int>(
+            new CommandDefinition(
+                RefreshTokenProcedures.DeleteExpired,
+                new { RetentionDays = retentionDays },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct));
     }

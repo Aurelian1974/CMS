@@ -91,6 +91,7 @@ public static class DependencyInjection
         services.AddScoped<ILabPdfParser, LabPdfParser>();
         services.AddHostedService<CnasSyncHostedService>();
         services.AddHostedService<AnmSyncHostedService>();
+        services.AddHostedService<RefreshTokenCleanupHostedService>();
 
         // ===== HttpClient CNAS (URL-uri permise doar pe cnas.ro) =====
         services.AddHttpClient("CnasClient", client =>

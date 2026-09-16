@@ -8,6 +8,7 @@ namespace ValyanClinic.Application.Features.Users.Commands.UpdateUser;
 
 public sealed class UpdateUserCommandHandler(
     IUserRepository repository,
+    IAuthRepository authRepository,
     ICurrentUser currentUser)
     : IRequestHandler<UpdateUserCommand, Result<bool>>
 {
@@ -29,6 +30,12 @@ public sealed class UpdateUserCommandHandler(
                 request.IsActive,
                 currentUser.Id,
                 cancellationToken);
+
+            // Dezactivarea contului trebuie să încheie și sesiunile deschise. Access
+            // token-ul curent rămâne valid până la maximum 15 minute, dar fără refresh
+            // token utilizatorul nu mai poate prelungi sesiunea.
+            if (!request.IsActive)
+                await authRepository.RevokeAllRefreshTokensAsync(request.Id, cancellationToken);
 
             return Result<bool>.Success(true);
         }

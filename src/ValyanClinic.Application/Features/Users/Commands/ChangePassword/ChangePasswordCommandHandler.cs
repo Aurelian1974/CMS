@@ -41,6 +41,11 @@ public sealed class ChangePasswordCommandHandler(
                 currentUser.Id,
                 cancellationToken);
 
+            // Sesiunile deschise cu parola veche trebuie să cadă. Altfel, în scenariul
+            // „contul a fost compromis, îmi schimb parola", atacatorul rămâne conectat
+            // până la expirarea refresh token-ului (7 zile).
+            await authRepository.RevokeAllRefreshTokensAsync(request.UserId, cancellationToken);
+
             return Result<bool>.Success(true);
         }
         catch (SqlException ex) when (ex.Number == SqlErrorCodes.UserNotFound)
