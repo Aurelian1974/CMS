@@ -9,8 +9,9 @@
  *   'settings' / 'audit' care rupsese `npm run build`)
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Sidebar } from '@/components/layout/Sidebar'
 import { useAuthStore } from '@/store/authStore'
 import { useUiStore } from '@/store/uiStore'
@@ -28,6 +29,17 @@ vi.mock('@/api/endpoints/auth.api', () => ({
   authApi: { login: vi.fn(), refresh: vi.fn(), logout: vi.fn() },
 }))
 
+// ── API mock — favoritele sidebar-ului, fără apel real de rețea ──────────────
+
+vi.mock('@/api/endpoints/userMenuPreferences.api', () => ({
+  userMenuPreferencesApi: {
+    get: vi.fn().mockResolvedValue({ favoriteRoutes: [] }),
+    upsert: vi.fn().mockResolvedValue(undefined),
+  },
+}))
+
+import { userMenuPreferencesApi } from '@/api/endpoints/userMenuPreferences.api'
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 /// Acordă Read pe modulele date; restul rămân implicit fără acces.
@@ -42,16 +54,23 @@ function grantRead(...modules: ModuleCode[]) {
 }
 
 function renderSidebar() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
   return render(
-    <MemoryRouter initialEntries={['/dashboard']}>
-      <Sidebar />
-    </MemoryRouter>,
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <Sidebar />
+      </MemoryRouter>
+    </QueryClientProvider>,
   )
 }
 
 describe('Sidebar', () => {
   beforeEach(() => {
     localStorage.clear()
+    vi.mocked(userMenuPreferencesApi.get).mockReset().mockResolvedValue({ favoriteRoutes: [] })
+    vi.mocked(userMenuPreferencesApi.upsert).mockReset().mockResolvedValue(undefined)
     useUiStore.setState({ sidebarCollapsed: false, collapsedSections: [], menuSearchQuery: '' })
     useAuthStore.setState({
       user: {
@@ -337,5 +356,74 @@ describe('Sidebar', () => {
 
     expect(screen.getByRole('button', { name: 'Principal' })).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByText('Pacienți')).toBeInTheDocument()
+  })
+
+  // ── Favorite ─────────────────────────────────────────────────────────────────
+
+  it('nu afișează secțiunea Favorite când nu există favorite salvate', async () => {
+    grantRead(MODULE.Dashboard)
+    renderSidebar()
+
+    await screen.findByText('Dashboard')
+    expect(screen.queryByRole('group', { name: 'Favorite' })).not.toBeInTheDocument()
+  })
+
+  it('afișează secțiunea Favorite cu itemii salvați, în ordinea din API', async () => {
+    vi.mocked(userMenuPreferencesApi.get).mockResolvedValueOnce({
+      favoriteRoutes: ['/patients'],
+    })
+    grantRead(MODULE.Dashboard, MODULE.Patients)
+    renderSidebar()
+
+    const favoriteGroup = await screen.findByRole('group', { name: 'Favorite' })
+    expect(within(favoriteGroup).getByText('Pacienți')).toBeInTheDocument()
+  })
+
+  it('o rută favorită la care userul și-a pierdut accesul nu apare în Favorite', async () => {
+    vi.mocked(userMenuPreferencesApi.get).mockResolvedValueOnce({
+      favoriteRoutes: ['/patients'],
+    })
+    grantRead(MODULE.Dashboard) // fără Patients
+    renderSidebar()
+
+    await screen.findByText('Dashboard')
+    expect(screen.queryByRole('group', { name: 'Favorite' })).not.toBeInTheDocument()
+  })
+
+  it('click pe steaua unui item îl adaugă la favorite', async () => {
+    grantRead(MODULE.Dashboard)
+    renderSidebar()
+
+    const star = await screen.findByRole('button', { name: 'Adaugă Dashboard la favorite' })
+    fireEvent.click(star)
+
+    await waitFor(() => {
+      expect(userMenuPreferencesApi.upsert).toHaveBeenCalledWith({ favoriteRoutes: ['/dashboard'] })
+    })
+  })
+
+  it('click pe steaua unui item deja favorit îl elimină', async () => {
+    vi.mocked(userMenuPreferencesApi.get).mockResolvedValueOnce({
+      favoriteRoutes: ['/dashboard'],
+    })
+    grantRead(MODULE.Dashboard)
+    renderSidebar()
+
+    const favoriteGroup = await screen.findByRole('group', { name: 'Favorite' })
+    const star = within(favoriteGroup).getByRole('button', { name: 'Elimină Dashboard din favorite' })
+    fireEvent.click(star)
+
+    await waitFor(() => {
+      expect(userMenuPreferencesApi.upsert).toHaveBeenCalledWith({ favoriteRoutes: [] })
+    })
+  })
+
+  it('nu afișează butonul de favorite când sidebar-ul e colapsat', async () => {
+    useUiStore.setState({ sidebarCollapsed: true })
+    grantRead(MODULE.Dashboard)
+    renderSidebar()
+
+    await screen.findByRole('link', { name: 'Dashboard' })
+    expect(screen.queryByRole('button', { name: /favorite/i })).not.toBeInTheDocument()
   })
 })

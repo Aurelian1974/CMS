@@ -32,12 +32,14 @@ import {
   Activity,
   Search,
   X,
+  Star,
 } from 'lucide-react';
 import { useUiStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
 import { useHasAccess } from '@/hooks/useHasAccess';
 import { ROUTE_MODULES, useLandingRoute, type GuardedRoute } from '@/routes/moduleAccess';
 import { authApi } from '@/api/endpoints/auth.api';
+import { useMenuFavorites, useUpsertMenuFavorites } from '@/features/sidebar/hooks/useMenuFavorites';
 import styles from './Sidebar.module.scss';
 
 const MOBILE_BREAKPOINT = 768;
@@ -126,6 +128,12 @@ const getInitials = (name: string): string => {
   return name.substring(0, 2).toUpperCase();
 };
 
+// Hartă rută → item, aplatizată din NAV_SECTIONS — folosită pentru randarea
+// secțiunii „Favorite" fără să duplicăm definițiile de label/iconiță.
+const NAV_ITEMS_BY_ROUTE: Partial<Record<GuardedRoute, NavItem>> = Object.fromEntries(
+  NAV_SECTIONS.flatMap(({ items }) => items.map((item) => [item.to, item])),
+);
+
 // ===== Componenta Sidebar =====
 export const Sidebar = () => {
   const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
@@ -144,6 +152,19 @@ export const Sidebar = () => {
   const landing = useLandingRoute();
   const activeLinkRef = useRef<HTMLAnchorElement | null>(null);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT;
+
+  const { data: menuPreferences } = useMenuFavorites();
+  const upsertFavorites = useUpsertMenuFavorites();
+  const favoriteRoutes = useMemo(() => menuPreferences?.favoriteRoutes ?? [], [menuPreferences]);
+
+  const isFavorite = (route: GuardedRoute) => favoriteRoutes.includes(route);
+
+  const toggleFavorite = (route: GuardedRoute) => {
+    const next = isFavorite(route)
+      ? favoriteRoutes.filter((r) => r !== route)
+      : [...favoriteRoutes, route];
+    upsertFavorites.mutate(next);
+  };
 
   const displayUser = user ?? { fullName: 'Utilizator', role: 'N/A' };
 
@@ -224,6 +245,56 @@ export const Sidebar = () => {
       .filter(({ items }) => items.length > 0);
   }, [canRead, menuSearchQuery]);
 
+  /// Itemii favoritați, în ordinea salvată — filtrați pe permisiuni (o rută
+  /// favorită la care userul și-a pierdut accesul dispare automat) și pe căutare.
+  const visibleFavoriteItems = useMemo(() => {
+    const query = menuSearchQuery.trim().toLowerCase();
+    return favoriteRoutes
+      .filter((route): route is GuardedRoute => route in NAV_ITEMS_BY_ROUTE)
+      .map((route) => NAV_ITEMS_BY_ROUTE[route]!)
+      .filter((item) => {
+        if (!ROUTE_MODULES[item.to].every((m) => canRead(m))) return false;
+        if (!query) return true;
+        return item.label.toLowerCase().includes(query);
+      });
+  }, [favoriteRoutes, canRead, menuSearchQuery]);
+
+  /// Randează un item de navigare + butonul de favorite ca elemente frate —
+  /// evită un <button> imbricat într-un <a>, invalid semantic.
+  const renderNavItem = (item: NavItem) => {
+    const favorited = isFavorite(item.to);
+    return (
+      <div key={item.to} className={styles.navItemRow}>
+        <NavLink
+          to={item.to}
+          ref={(node) => {
+            if (node?.classList.contains(styles.active)) {
+              activeLinkRef.current = node;
+            }
+          }}
+          className={({ isActive }) =>
+            `${styles.navItem}${isActive ? ` ${styles.active}` : ''}`
+          }
+          title={sidebarCollapsed ? item.label : undefined}
+        >
+          <span className={styles.navIcon}>{item.icon}</span>
+          <span className={styles.navLabel}>{item.label}</span>
+        </NavLink>
+        {!sidebarCollapsed && (
+          <button
+            type="button"
+            className={`${styles.favoriteBtn}${favorited ? ` ${styles.favorited}` : ''}`}
+            onClick={() => toggleFavorite(item.to)}
+            aria-label={favorited ? `Elimină ${item.label} din favorite` : `Adaugă ${item.label} la favorite`}
+            title={favorited ? 'Elimină din favorite' : 'Adaugă la favorite'}
+          >
+            <Star size={14} strokeWidth={2} fill={favorited ? 'currentColor' : 'none'} />
+          </button>
+        )}
+      </div>
+    );
+  };
+
   const isMobileOpen = isMobile && !sidebarCollapsed;
 
   return (
@@ -295,6 +366,22 @@ export const Sidebar = () => {
 
       {/* Navigare — filtrat pe baza permisiunilor */}
       <nav id="main-navigation" className={styles.nav} aria-label="Navigare principală">
+        {/* Favorite — fixă la început, ascunsă complet dacă e goală, nu e colapsabilă */}
+        {visibleFavoriteItems.length > 0 && (
+          <div
+            className={styles.navGroup}
+            role="group"
+            aria-labelledby="nav-section-favorite"
+          >
+            <div id="nav-section-favorite" className={styles.favoriteSectionLabel}>
+              <span className={styles.sectionLabel}>Favorite</span>
+            </div>
+            <div className={`${styles.itemsWrapper} ${styles.expanded}`}>
+              {visibleFavoriteItems.map((item) => renderNavItem(item))}
+            </div>
+          </div>
+        )}
+
         {visibleSections.map(({ section, items }) => {
           const sectionId = `nav-section-${section}`;
           const itemsId = `nav-items-${section}`;
@@ -330,24 +417,7 @@ export const Sidebar = () => {
                 id={itemsId}
                 className={`${styles.itemsWrapper}${isExpanded ? ` ${styles.expanded}` : ''}`}
               >
-                {items.map(({ to, label, icon }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    ref={(node) => {
-                      if (node?.classList.contains(styles.active)) {
-                        activeLinkRef.current = node;
-                      }
-                    }}
-                    className={({ isActive }) =>
-                      `${styles.navItem}${isActive ? ` ${styles.active}` : ''}`
-                    }
-                    title={sidebarCollapsed ? label : undefined}
-                  >
-                    <span className={styles.navIcon}>{icon}</span>
-                    <span className={styles.navLabel}>{label}</span>
-                  </NavLink>
-                ))}
+                {items.map((item) => renderNavItem(item))}
               </div>
             </div>
           );

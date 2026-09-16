@@ -12505,6 +12505,180 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/UserMenuPreferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UserMenuPreferencesDtoApiResponse"];
+                        "application/json": components["schemas"]["UserMenuPreferencesDtoApiResponse"];
+                        "text/json": components["schemas"]["UserMenuPreferencesDtoApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpsertUserMenuPreferencesCommand"];
+                    "text/json": components["schemas"]["UpsertUserMenuPreferencesCommand"];
+                    "application/*+json": components["schemas"]["UpsertUserMenuPreferencesCommand"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BooleanApiResponse"];
+                        "application/json": components["schemas"]["BooleanApiResponse"];
+                        "text/json": components["schemas"]["BooleanApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/Users/roles": {
         parameters: {
             query?: never;
@@ -15898,6 +16072,9 @@ export interface components {
             startTime?: string | null;
             endTime?: string | null;
         };
+        UpsertUserMenuPreferencesCommand: {
+            favoriteRoutes?: string[] | null;
+        };
         UserDetailDto: {
             /** Format: uuid */
             id?: string;
@@ -15978,6 +16155,17 @@ export interface components {
         UserListDtoPagedResultApiResponse: {
             success?: boolean;
             data?: components["schemas"]["UserListDtoPagedResult"];
+            message?: string | null;
+            errors?: {
+                [key: string]: string[];
+            } | null;
+        };
+        UserMenuPreferencesDto: {
+            favoriteRoutes?: string[] | null;
+        };
+        UserMenuPreferencesDtoApiResponse: {
+            success?: boolean;
+            data?: components["schemas"]["UserMenuPreferencesDto"];
             message?: string | null;
             errors?: {
                 [key: string]: string[];

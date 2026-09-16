@@ -228,10 +228,10 @@ restrângere anterioară. Animație cu `max-height` (0 → 600px) în loc de
 
 ---
 
-### Etapa 3 — Favorite persistente
+### Etapa 3 — Favorite persistente ✅ **finalizată**
 
 **Backend — fișiere noi/modificate:**
-1. Migrare SQL: `src/ValyanClinic.Infrastructure/Data/Scripts/Migrations/0050_CreateUserMenuPreferences.sql`
+1. Migrare SQL: `src/ValyanClinic.Infrastructure/Data/Scripts/Migrations/0049_CreateUserMenuPreferences.sql`
 2. SP-uri:
    - `UserMenuPreference_GetByUser.sql`
    - `UserMenuPreference_Upsert.sql`
@@ -239,33 +239,39 @@ restrângere anterioară. Animație cu `max-height` (0 → 600px) în loc de
    - `IUserMenuPreferenceRepository.cs` (Application)
    - `UserMenuPreferenceRepository.cs` (Infrastructure)
 4. Features MediatR:
-   - `GetUserMenuPreferencesQuery`
-   - `UpsertUserMenuPreferencesCommand`
+   - `GetUserMenuPreferencesQuery` + Handler
+   - `UpsertUserMenuPreferencesCommand` + Handler + Validator
 5. Controller:
-   - `UserMenuPreferencesController.cs`
+   - `UserMenuPreferencesController.cs` — fără `[HasAccess]`, autoservire (la fel ca schimbarea propriei parole)
 6. DI registration în `DependencyInjection.cs`
 7. Constante SP în `StoredProcedures/UserMenuPreferenceProcedures.cs`
 
 **Frontend — fișiere modificate:**
 - `client/src/api/endpoints/userMenuPreferences.api.ts` (nou)
-- `client/src/store/uiStore.ts` — adaugă `favoriteRoutes`, acțiuni.
-- `client/src/components/layout/Sidebar.tsx` — secțiune „Favorite", buton star per item.
-- `client/src/components/layout/Sidebar.module.scss` — stiluri `.favoriteSection`, `.starBtn`.
-- `client/src/__tests__/components/layout/Sidebar.test.tsx` — teste favorite.
+- `client/src/features/sidebar/hooks/useMenuFavorites.ts` (nou) — TanStack Query, nu Zustand
+- `client/src/components/layout/Sidebar.tsx` — secțiune „Favorite", buton stea per item
+- `client/src/components/layout/Sidebar.module.scss` — stiluri `.navItemRow`, `.favoriteBtn`, `.favoriteSectionLabel`
+- `client/src/__tests__/components/layout/Sidebar.test.tsx` — teste favorite
 
 **Comportament:**
-- Fiecare item de meniu are un buton stea (vizibil la hover sau mereu pentru favorite).
-- Click pe stea: toggle favorite.
-- Secțiunea „Favorite" apare prima în sidebar și conține doar itemi permise și marcați.
-- Dacă user-ul îndepărtează permisiunea pentru un modul, ruta favorită dispare automat (filtrare permisiuni).
-- Sincronizare cu BD: la toggle se apelează `UpsertUserMenuPreferences` pentru cheia `favoriteRoutes`.
-- Optimistic update în UI.
+- Fiecare item de meniu are un buton stea, vizibil la hover pe rând sau permanent dacă e favorit.
+- Click pe stea: toggle favorite, cu update optimist (`onMutate` în `useUpsertMenuFavorites`).
+- Secțiunea „Favorite" apare prima în sidebar și conține doar itemi permise și marcați; ascunsă complet dacă e goală.
+- Un item favoritat rămâne vizibil și în secțiunea lui originală — Favorite e un raft rapid, nu mută itemul.
+- Dacă utilizatorul își pierde accesul la un modul, ruta favorită dispare automat din Favorite (aceeași filtrare `canRead` ca restul meniului).
+- Căutarea din meniu filtrează și secțiunea Favorite.
+
+**Simplificări față de planul inițial (aprobate implicit prin decizia „coloane dedicate"):**
+- **O singură coloană** `FavoriteRoutes` (JSON), nu și `SectionOrder` — reordonarea vizează doar favoritele (confirmat de utilizator), iar ordinea favoritelor E ordinea array-ului JSON. O coloană separată de ordine ar fi fost redundantă.
+- Endpoint **`PUT`** (nu `POST`) pentru upsert — semantic mai corect pentru „înlocuiește complet resursa".
+- Star button randat ca **element frate** al `<NavLink>` (`.navItemRow` wrapper), nu imbricat în el — evită un `<button>` în interiorul unui `<a>`.
 
 **Acceptare:**
-- BD: migrare rulează cu `migrate.ps1`.
-- API: GET/POST funcționează, filtrează după `ClinicId`.
-- Frontend: favoritele apar, toggle funcționează, persistă după logout/login.
-- Teste BE handler + validator; FE unit tests; E2E pentru toggle.
+- BD: migrarea 0049 s-a aplicat cu `migrate.ps1` — „Upgrade successful", SP-urile create.
+- Backend: `dotnet build` curat, 314 teste (302 + 12 noi pentru Get/Upsert handler + validator).
+- Frontend: `npm run build` reușește, `npm run check:api` regenerează `schema.d.ts` cu tipurile noi.
+- Frontend: 338 teste (332 + 6 noi pentru Favorite: afișare, ascundere când gol, filtrare pe permisiuni, toggle add/remove, ascundere buton când colapsat).
+- `npm run lint` curat.
 
 **Estimare:** 10–12 ore.
 
@@ -296,16 +302,14 @@ restrângere anterioară. Animație cu `max-height` (0 → 600px) în loc de
 
 ---
 
-## 6. Contract API
+## 6. Contract API — implementat
 
 ### GET /api/v1/UserMenuPreferences
 
 ```json
 {
   "data": {
-    "favoriteRoutes": ["/patients", "/consultations"],
-    "sectionOrder": ["Favorite", "Principal", "Administrare", "Nomenclatoare", "Financiar"],
-    "collapsedSections": ["Nomenclatoare"]
+    "favoriteRoutes": ["/patients", "/consultations"]
   },
   "success": true,
   "message": null,
@@ -313,15 +317,19 @@ restrângere anterioară. Animație cu `max-height` (0 → 600px) în loc de
 }
 ```
 
-### POST /api/v1/UserMenuPreferences
+### PUT /api/v1/UserMenuPreferences
 
 Body:
 
 ```json
 {
-  "favoriteRoutes": ["/patients", "/consultations"],
-  "sectionOrder": ["Favorite", "Principal", "Administrare", "Nomenclatoare", "Financiar"],
-  "collapsedSections": ["Nomenclatoare"]
+  "favoriteRoutes": ["/patients", "/consultations"]
+}
+```
+
+Response: `200 OK`. `collapsedSections` **nu** trece prin acest endpoint — rămâne
+exclusiv în `localStorage` (§3.2). `sectionOrder` a fost eliminat din scope o dată
+cu decizia de reordonare „doar favoritele”.
 }
 ```
 
@@ -331,21 +339,16 @@ Response: `200 OK` cu obiectul salvat.
 
 ---
 
-## 7. Schema detaliată SQL
+## 7. Schema detaliată SQL — implementată
 
-### Migrare 0050_CreateUserMenuPreferences.sql
+### Migrare 0049_CreateUserMenuPreferences.sql
 
 ```sql
-SET QUOTED_IDENTIFIER ON;
-SET ANSI_NULLS ON;
-GO
-
 CREATE TABLE dbo.UserMenuPreferences (
     UserId         UNIQUEIDENTIFIER NOT NULL,
     ClinicId       UNIQUEIDENTIFIER NOT NULL,
     FavoriteRoutes NVARCHAR(MAX)    NULL,
-    SectionOrder   NVARCHAR(MAX)    NULL,
-    UpdatedAt      DATETIME2(0)     NOT NULL DEFAULT SYSDATETIME(),
+    UpdatedAt      DATETIME2        NOT NULL DEFAULT SYSDATETIME(),
     UpdatedBy      UNIQUEIDENTIFIER NOT NULL,
 
     CONSTRAINT PK_UserMenuPreferences PRIMARY KEY (UserId),
@@ -356,16 +359,11 @@ CREATE TABLE dbo.UserMenuPreferences (
 CREATE NONCLUSTERED INDEX IX_UserMenuPreferences_ClinicId
     ON dbo.UserMenuPreferences (ClinicId)
     INCLUDE (UserId);
-GO
 ```
 
 ### SP UserMenuPreference_GetByUser.sql
 
 ```sql
-SET QUOTED_IDENTIFIER ON;
-SET ANSI_NULLS ON;
-GO
-
 CREATE OR ALTER PROCEDURE dbo.UserMenuPreference_GetByUser
     @UserId   UNIQUEIDENTIFIER,
     @ClinicId UNIQUEIDENTIFIER
@@ -373,26 +371,20 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT FavoriteRoutes, SectionOrder
+    SELECT FavoriteRoutes
     FROM dbo.UserMenuPreferences
     WHERE UserId = @UserId
       AND ClinicId = @ClinicId;
 END;
-GO
 ```
 
 ### SP UserMenuPreference_Upsert.sql
 
 ```sql
-SET QUOTED_IDENTIFIER ON;
-SET ANSI_NULLS ON;
-GO
-
 CREATE OR ALTER PROCEDURE dbo.UserMenuPreference_Upsert
     @UserId         UNIQUEIDENTIFIER,
     @ClinicId       UNIQUEIDENTIFIER,
-    @FavoriteRoutes NVARCHAR(MAX) = NULL,
-    @SectionOrder   NVARCHAR(MAX) = NULL,
+    @FavoriteRoutes NVARCHAR(MAX),
     @UpdatedBy      UNIQUEIDENTIFIER
 AS
 BEGIN
@@ -402,27 +394,13 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        IF EXISTS (
-            SELECT 1 FROM dbo.UserMenuPreferences
-            WHERE UserId = @UserId
-              AND ClinicId = @ClinicId
-        )
-        BEGIN
+        IF EXISTS (SELECT 1 FROM dbo.UserMenuPreferences WHERE UserId = @UserId AND ClinicId = @ClinicId)
             UPDATE dbo.UserMenuPreferences
-            SET FavoriteRoutes = @FavoriteRoutes,
-                SectionOrder   = @SectionOrder,
-                UpdatedAt      = SYSDATETIME(),
-                UpdatedBy      = @UpdatedBy
-            WHERE UserId = @UserId
-              AND ClinicId = @ClinicId;
-        END
+            SET FavoriteRoutes = @FavoriteRoutes, UpdatedAt = SYSDATETIME(), UpdatedBy = @UpdatedBy
+            WHERE UserId = @UserId AND ClinicId = @ClinicId;
         ELSE
-        BEGIN
-            INSERT INTO dbo.UserMenuPreferences
-                (UserId, ClinicId, FavoriteRoutes, SectionOrder, UpdatedBy)
-            VALUES
-                (@UserId, @ClinicId, @FavoriteRoutes, @SectionOrder, @UpdatedBy);
-        END;
+            INSERT INTO dbo.UserMenuPreferences (UserId, ClinicId, FavoriteRoutes, UpdatedBy)
+            VALUES (@UserId, @ClinicId, @FavoriteRoutes, @UpdatedBy);
 
         COMMIT TRANSACTION;
     END TRY
@@ -431,8 +409,9 @@ BEGIN
         THROW;
     END CATCH;
 END;
-GO
 ```
+
+Ambele confirmate rulate cu succes prin `.\migrate.ps1` ("Upgrade successful").
 
 ---
 
@@ -470,7 +449,7 @@ src/ValyanClinic.API/
     └── UserMenuPreferencesController.cs
 
 src/ValyanClinic.Infrastructure/Data/Scripts/Migrations/
-└── 0050_CreateUserMenuPreferences.sql
+└── 0049_CreateUserMenuPreferences.sql
 
 src/ValyanClinic.Infrastructure/Data/Scripts/StoredProcedures/
 ├── UserMenuPreference_GetByUser.sql

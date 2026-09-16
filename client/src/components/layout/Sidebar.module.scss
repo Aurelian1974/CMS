@@ -290,6 +290,18 @@ $active-accent: $primary-light;   // culoarea indicatorului lateral activ
   }
 }
 
+// Header static pentru secțiunea „Favorite" — nu e colapsabilă, deci fără buton
+.favoriteSectionLabel {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.25rem 0.25rem;
+
+  .sidebar.collapsed & {
+    justify-content: center;
+    padding: 0.5rem 0 0.25rem;
+  }
+}
+
 // Wrapper animat pentru itemii unei secțiuni
 .itemsWrapper {
   overflow: hidden;
@@ -306,6 +318,13 @@ $active-accent: $primary-light;   // culoarea indicatorului lateral activ
   }
 }
 
+// ===== Rand item navigare (link + buton favorite) =====
+.navItemRow {
+  display: flex;
+  align-items: center;
+  margin: 0 0.5rem 1px;
+}
+
 // ===== Item navigare =====
 .navItem {
   display: flex;
@@ -313,7 +332,8 @@ $active-accent: $primary-light;   // culoarea indicatorului lateral activ
   gap: 0.75rem;
   height: $nav-item-height;
   padding: 0 1rem 0 1.375rem;
-  margin: 0 0.5rem 1px;
+  flex: 1;
+  min-width: 0;
   border-radius: $border-radius;
   color: rgba(255, 255, 255, 0.68);
   text-decoration: none;
@@ -381,6 +401,44 @@ $active-accent: $primary-light;   // culoarea indicatorului lateral activ
 .navLabel {
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+// Buton stea — favorite. Ascuns implicit, apare la hover pe rând sau când e activ.
+.favoriteBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  margin-right: 0.375rem;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+
+  .navItemRow:hover &,
+  &.favorited {
+    opacity: 1;
+  }
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: $warning;
+  }
+
+  &.favorited {
+    color: $warning;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $active-accent;
+    outline-offset: 1px;
+    opacity: 1;
+  }
 }
 
 // ===== Bloc utilizator (bottom) =====
@@ -524,7 +582,8 @@ $active-accent: $primary-light;   // culoarea indicatorului lateral activ
   .itemsWrapper,
   .sectionChevron,
   .searchInput,
-  .searchClear {
+  .searchClear,
+  .favoriteBtn {
     transition: none !important;
   }
 }
