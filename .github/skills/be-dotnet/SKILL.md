@@ -288,7 +288,7 @@ public sealed class DapperContext(IConfiguration configuration)
 SP throws in range 50000–59999. C# catches and maps to `Result.Failure/Conflict`:
 
 ```csharp
-// Infrastructure/Data/SqlErrorCodes.cs
+// Application/Common/Constants/SqlErrorCodes.cs
 public static class SqlErrorCodes
 {
     public const int PatientCnpDuplicate = 50001;
