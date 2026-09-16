@@ -1,8 +1,8 @@
 # Plan — Sidebar: corecturi, permisiuni, accesibilitate și responsive
 
 > Data: 16 Septembrie 2026
-> Stare: **Etapele 1, 2 și C finalizate (grupurile A, B și C)** — etapele 3–5 (D, E, F rămase) nepornite
-> Revizie: v1.2
+> Stare: **Etapele 1, 2, C, D, E și F finalizate (grupurile A–F)** — etapa 5 (OpenAPI pentru ModuleCode) rămâne pentru viitor
+> Revizie: v1.3
 > Vezi și: [PLAN_SETARI_SECURITATE.md](PLAN_SETARI_SECURITATE.md), [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md), [DECIZII_ARHITECTURA_AUTH.md](DECIZII_ARHITECTURA_AUTH.md)
 
 Analiză completă a sidebar-ului — frontend (funcțional + stilistic) și lanțul
@@ -32,8 +32,8 @@ Fișiere în scop:
 | **B. Coerență navigație ↔ permisiuni** | B1–B4 | 🔴🟠 ✅ B1–B3 rezolvate |
 | **C. Stare, date și performanță** | C1–C4 | ✅ **finalizată** |
 | **D. Accesibilitate** | D1–D5 | ✅ **finalizată** |
-| **E. Responsive & layout** | E1–E3 | 🟠 |
-| **F. Igienă cod și stil** | F1–F3 | 🟡 |
+| **E. Responsive & layout** | E1–E3 | ✅ **finalizată** |
+| **F. Igienă cod și stil** | F1–F3 | ✅ **finalizată** |
 
 ---
 
@@ -286,21 +286,21 @@ predictibilă, fără suprapunere peste conținut).
 
 **Implementat:** butonul de collapse mutat în `.brandArea`; adăugate `aria-expanded`, `aria-controls="main-navigation"`, `title`; dimensiune mărită la 28x28 px.
 
-### D5 — `<nav>` fără etichetă, secțiuni fără semantică 🟡
+### D5 — `<nav>` fără etichetă, secțiuni fără semantică 🟡 ✅
 
 `<nav>` n-are `aria-label`. Grupurile sunt `<div>`-uri cu un `<div>` titlu
-deasupra — relația nu există pentru asistive tech.
+desupra — relația nu există pentru asistive tech.
 
 **Fix:** `<nav aria-label="Navigare principală">`, `.navGroup` cu `role="group"` +
 `aria-labelledby` către id-ul section label-ului.
 
-**Implementat:** `<nav>` are `aria-label`; fiecare `.navGroup` are `role="group"` și `aria-labelledby` către `sectionLabel`; id-urile sunt generate per secțiune.
+**Implementat:** `<nav>` are `aria-label`; fiecare `.navGroup` are `role="group"` și `aria-labelledby` către `sectionLabel`; id-urile sunt generate per secțiune. Test acoperit în `Sidebar.test.tsx`.
 
 ---
 
 ## E. Responsive & layout
 
-### E1 — Zero responsive 🟠
+### E1 — Zero responsive 🟠 ✅
 
 Zero `@media` în `Sidebar.module.scss`, `MainLayout.module.scss` și
 `AppHeader.module.scss`. Sub ~900px cei 260px fixi mănâncă ecranul, iar
@@ -313,7 +313,12 @@ nefolosibil.
 - sub `md` (768px): mod overlay peste conținut + backdrop, buton hamburger în
   `AppHeader`, închidere la navigare și la `Escape`, focus trap cât e deschis.
 
-### E2 — `min-height: 100vh` într-un layout `height: 100%` 🟡
+**Implementat:** `useEffect` pentru resize în `Sidebar.tsx`; media query
+`max-width: 767px` pentru overlay mobil în `Sidebar.module.scss`; backdrop cu
+`onClick` pentru închidere; buton hamburger în `AppHeader.tsx` vizibil doar sub
+768px; închidere la navigare (`location.pathname`) și la tasta `Escape`.
+
+### E2 — `min-height: 100vh` într-un layout `height: 100%` 🟡 ✅
 
 `body` are `overflow: hidden` și `height: 100%`; `.layout` e `height: 100%`. Pe
 mobil `100vh` ≠ înălțimea vizibilă (bara de URL) → sidebar-ul depășește ecranul
@@ -322,7 +327,11 @@ fără scroll posibil.
 **Fix:** `height: 100%` pe `.sidebar`. Bonus: `.nav { flex: 1 }` și
 `.userBlock { margin-top: auto }` fac același lucru — unul e redundant.
 
-### E3 — Item-ul activ nu e derulat în viewport 🟡
+**Implementat:** `.sidebar { height: 100% }` în `Sidebar.module.scss`;
+`.nav { flex: 1 }` și `.userBlock { margin-top: auto }` păstrate pentru layoutul
+flex vertical.
+
+### E3 — Item-ul activ nu e derulat în viewport 🟡 ✅
 
 Cu 12 item-uri în „Administrare", pe un ecran de 768px cel activ poate fi sub fold
 la reload. Nicio secțiune nu e colapsabilă.
@@ -330,47 +339,69 @@ la reload. Nicio secțiune nu e colapsabilă.
 **Fix:** `scrollIntoView({ block: 'nearest' })` pe item-ul activ la montare.
 Secțiuni colapsabile — opțional, vezi §Decizii.
 
+**Implementat:** `ref` callback pe `NavLink`; la montare, dacă elementul activ
+suportă `scrollIntoView`, se apelează cu `{ block: 'nearest' }`. Guard pentru
+medii de test fără suport nativ (`activeLinkRef.current?.scrollIntoView`).
+
 ---
 
 ## F. Igienă cod și stil
 
-### F1 — `.logoutBtn` colorează roșu și „Schimbă parola" 🟡
+### F1 — `.logoutBtn` colorează roșu și „Schimbă parola" 🟡 ✅
 
-Ambele butoane din `.userBlock` folosesc `.logoutBtn`, care are
+Ambele butoane din `.userBlock` foloseau `.logoutBtn`, care avea
 `&:hover { color: $danger }`. Schimbarea parolei nu e o acțiune distructivă.
 
 **Fix:** `.iconBtn` ca bază + modificator `.danger` doar pe deconectare.
 
-### F2 — `.userBlock` se pretinde clickabil 🟡
+**Implementat:** butonul „Schimbă parola” folosește `styles.iconBtn`; butonul de
+„Deconectare” folosește `${styles.iconBtn} ${styles.danger}`. Clasa `.logoutBtn`
+a fost eliminată din SCSS.
 
-Are `cursor: pointer` și `:hover { background }`, dar **nu are `onClick`**. Promite
+### F2 — `.userBlock` se pretinde clickabil 🟡 ✅
+
+Avea `cursor: pointer` și `:hover { background }`, dar **nu avea `onClick`**. Promitea
 un meniu de profil care nu există.
 
 **Fix:** ori devine buton real (dropdown: profil / schimbă parola / deconectare),
 ori se scoate afordanța. Vezi §Decizii.
 
-### F3 — Surse duplicate de adevăr 🟡
+**Implementat:** s-a ales curățarea CSS — eliminate `cursor: pointer` și
+`:hover { background }` de pe `.userBlock`; de asemenea eliminată tranziția
+`background-color` rămasă fără stare de hover. `.userBlock` rămâne container static
+pentru avatar, info și cele două butoane icon.
+
+### F3 — Surse duplicate de adevăr 🟡 ✅
 
 | Duplicat | Unde |
 |---|---|
-| Dimensiunea iconiței | `ICON_SIZE = 17` (`Sidebar.tsx:53`) vs `$icon-size: 18px` (`.scss:3`) |
-| Culoarea de accent | `$active-accent: #7DA8CC` (`.scss:4`) e literalmente `$primary-light` din `_variables.scss` |
-| `transition: all` | `.logoutBtn:hover` — restul fișierului enumeră proprietățile |
+| Dimensiunea iconiței | `ICON_SIZE = 17` (`Sidebar.tsx:53`) vs `$icon-size: 17px` (`.scss:3`) |
+| Culoarea de accent | `$active-accent: $primary-light` (`.scss:4`) |
+| `transition: all` | `.logoutBtn:hover` — eliminat odată cu clasa |
 
-**Fix:** `$active-accent: $primary-light`; `ICON_SIZE` derivat dintr-o singură
-constantă; enumerare explicită la tranziții. Plus
-`@media (prefers-reduced-motion: reduce)` pentru tranziția de 0.25s pe lățime.
+**Fix:** `$active-accent: $primary-light`; `ICON_SIZE` sincronizat cu `$icon-size`
+prin comentarii explicite în ambele fișiere; enumerare explicită la toate
+tranzițiile. Plus `@media (prefers-reduced-motion: reduce)` pentru tranzițiile de
+lățime/culoare.
+
+**Implementat:**
+- `$active-accent: $primary-light` în `Sidebar.module.scss`;
+- comentarii de sincronizare `// NOTĂ: ICON_SIZE trebuie să coincidă cu $icon-size`
+în `Sidebar.tsx` și invers în `Sidebar.module.scss`;
+- toate tranzițiile enumeră proprietățile (`background-color`, `color`, `border-color`,
+`transform`, `width`, `padding` etc.);
+- `@media (prefers-reduced-motion: reduce)` dezactivează toate tranzițiile.
 
 ---
 
-## Notă — CLAUDE.md a rămas în urmă
+## Notă — CLAUDE.md actualizat ✅
 
-Două drift-uri de documentație în același perimetru, de reparat odată cu etapa 1:
+Drift-urile de documentație din același perimetru au fost reparate în etapa 1:
 
-| Secțiune CLAUDE.md | Ce scrie | Realitatea |
-|---|---|---|
-| `ModuleCodes.cs` | listează `Audit`, nu și `Settings` | `Settings` există din migrarea 0047 |
-| §8 „useHasAccess" | `useHasAccess(module, level): boolean`, citind `user.permissions[module]` | hook-ul întoarce `{ hasAccess, getLevel, canRead, canWrite, hasFull }` și citește `authStore.permissions` |
+| Secțiune CLAUDE.md | Ce scria | Realitatea | Stare |
+|---|---|---|---|
+| `ModuleCodes.cs` | lista `Audit`, nu și `Settings` | `Settings` există din migrarea 0047 | ✅ actualizat |
+| §8 „useHasAccess" | `useHasAccess(module, level): boolean`, citind `user.permissions[module]` | hook-ul întoarce `{ hasAccess, getLevel, canRead, canWrite, hasFull }` și citește `authStore.permissions` | ✅ actualizat |
 
 ---
 
@@ -492,7 +523,7 @@ niciun cod absent din `MODULE`.
 
 **Rămas din grup:** B4 (remodelarea modulului `users`) — plan separat, vezi §Decizii.
 
-### Etapa 3 — Accesibilitate 🟡
+### Etapa 3 — Accesibilitate 🟡 ✅ **finalizată**
 
 D1 contrast · D2 `.visually-hidden` + tooltips · D3 `:focus-visible` ·
 D4 `aria-expanded` + repoziționare · D5 `aria-label` + `role="group"`.
@@ -501,7 +532,7 @@ D4 `aria-expanded` + repoziționare · D5 `aria-label` + `role="group"`.
 completă cu Tab, cu focus vizibil · colapsat, fiecare item are nume accesibil și
 tooltip.
 
-### Etapa 4 — Responsive, stare, performanță 🟠
+### Etapa 4 — Responsive, stare, performanță 🟠 ✅ **finalizată**
 
 E1 breakpoints + overlay + hamburger · E2 `height: 100%` · E3 `scrollIntoView` ·
 C1 invalidare permisiuni · C2 `persist` · C3 selectoare · C4 `getInitials` ·
@@ -509,7 +540,9 @@ F1–F3.
 
 **Acceptare:** la 375px sidebar-ul e overlay cu backdrop, se închide la navigare și
 la `Escape` · collapsed supraviețuiește reload-ului · `setNotificationCount` nu mai
-re-randează sidebar-ul.
+re-randează sidebar-ul · butonul de logout are modifier `.danger`, iar „Schimbă
+parola” nu · `.userBlock` nu mai promite un meniu de profil · `$active-accent` și
+`ICON_SIZE` sunt sincronizate.
 
 ### Etapa 5 — Sursa unică pentru codurile de modul 🟠
 

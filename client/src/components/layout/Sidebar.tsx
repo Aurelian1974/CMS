@@ -64,6 +64,7 @@ interface NavSection {
   items: NavItem[];
 }
 
+// NOTĂ: ICON_SIZE trebuie să coincidă cu $icon-size din Sidebar.module.scss
 const ICON_SIZE = 17;
 const ICON_STROKE = 1.75;
 

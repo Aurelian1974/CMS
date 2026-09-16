@@ -1,6 +1,8 @@
 // Stiluri pentru Sidebar-ul aplicației
 $nav-item-height: 40px;
+// NOTĂ: $icon-size trebuie să coincidă cu ICON_SIZE din Sidebar.tsx
 $icon-size: 17px;
+// NOTĂ: $active-accent trebuie să coincidă cu $primary-light din _variables.scss
 $active-accent: $primary-light;   // culoarea indicatorului lateral activ
 
 // Text accesibil vizual ascuns (înlocuitor pentru display: none)
@@ -263,7 +265,6 @@ $active-accent: $primary-light;   // culoarea indicatorului lateral activ
   padding: 1rem 1.125rem;
   border-top: 1px solid rgba(255, 255, 255, 0.07);
   margin-top: auto;
-  transition: background-color 0.15s ease;
 }
 
 .avatar {
