@@ -18,7 +18,7 @@ public sealed class LoginCommandHandler(
     ITokenService tokenService,
     IPermissionRepository permissionRepository,
     IOptions<JwtOptions> jwtOptions,
-    IOptions<RateLimitingOptions> rateLimitingOptions,
+    IOptions<SecurityOptions> securityOptions,
     IMemoryCache cache)
     : IRequestHandler<LoginCommand, Result<LoginResponseDto>>
 {
@@ -46,10 +46,12 @@ public sealed class LoginCommandHandler(
         // 4. Verificare parolă
         if (!passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
         {
-            // Incrementare login eșuat (lockout automat dacă se depășește limita)
-            var rl = rateLimitingOptions.Value;
+            // Incrementare login eșuat (lockout automat dacă se depășește limita).
+            // Pragul și durata vin din Security — nu din RateLimiting, care guvernează
+            // limitarea cererilor per IP, nu blocarea unui cont.
+            var security = securityOptions.Value;
             await authRepository.IncrementFailedLoginAsync(
-                user.Id, rl.LoginMaxAttempts, rl.LoginWindowMinutes, ct);
+                user.Id, security.MaxFailedLoginAttempts, security.LockoutMinutes, ct);
 
             return Result<LoginResponseDto>.Unauthorized(ErrorMessages.Auth.InvalidCredentials);
         }

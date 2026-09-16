@@ -17,6 +17,16 @@ public class AuthController(IOptions<JwtOptions> jwtOptions) : BaseApiController
 {
     private const string RefreshTokenCookieName = "refreshToken";
 
+    /// <summary>
+    /// Path-ul pe care browserul trimite cookie-ul de refresh. Trebuie să fie un prefix al
+    /// rutei reale a controller-ului (<c>api/v{version}/[controller]</c>) — path matching-ul
+    /// din RFC 6265 este prefix exact și case-sensitive, deci o valoare greșită face ca
+    /// cookie-ul să nu fie trimis niciodată (și nici să nu poată fi șters).
+    /// La introducerea unei versiuni noi de API, actualizați constanta. Testul e2e
+    /// „sesiunea supraviețuiește expirării access token-ului" (auth.spec.ts) prinde regresia.
+    /// </summary>
+    private const string RefreshTokenCookiePath = "/api/v1/Auth";
+
     /// <summary>Login cu email/username + parolă.</summary>
     [AllowAnonymous]
     [EnableRateLimiting("login")]
@@ -104,7 +114,7 @@ public class AuthController(IOptions<JwtOptions> jwtOptions) : BaseApiController
                 .GetRequiredService<IWebHostEnvironment>().IsDevelopment(),
             SameSite = SameSiteMode.Strict,
             Expires = DateTimeOffset.UtcNow.AddDays(jwtOptions.Value.RefreshTokenExpiryDays),
-            Path = "/api/auth"
+            Path = RefreshTokenCookiePath
         };
 
         Response.Cookies.Append(RefreshTokenCookieName, token, cookieOptions);
@@ -112,9 +122,10 @@ public class AuthController(IOptions<JwtOptions> jwtOptions) : BaseApiController
 
     private void ClearRefreshTokenCookie()
     {
+        // Path-ul trebuie să fie identic cu cel de la Append — altfel cookie-ul nu se șterge.
         Response.Cookies.Delete(RefreshTokenCookieName, new CookieOptions
         {
-            Path = "/api/auth"
+            Path = RefreshTokenCookiePath
         });
     }
 }

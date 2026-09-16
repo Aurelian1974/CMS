@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
+using ValyanClinic.Application.Common.Configuration;
 using ValyanClinic.Application.Common.Interfaces;
-using ValyanClinic.Infrastructure.Configuration;
 
 namespace ValyanClinic.Infrastructure.Authentication;
 

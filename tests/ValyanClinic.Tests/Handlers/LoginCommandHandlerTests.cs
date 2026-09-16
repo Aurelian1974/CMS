@@ -2,6 +2,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using ValyanClinic.Application.Common.Configuration;
+using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Interfaces;
 using ValyanClinic.Application.Features.Auth.Commands.Login;
 using Xunit;
@@ -22,7 +23,9 @@ public sealed class LoginCommandHandlerTests
     private readonly IMemoryCache _cache = new MemoryCache(Options.Create(new MemoryCacheOptions()));
 
     private readonly JwtOptions _jwtOptions = new() { RefreshTokenExpiryDays = 7 };
-    private readonly RateLimitingOptions _rateLimitOptions = new() { LoginMaxAttempts = 5, LoginWindowMinutes = 15 };
+    // Valori intenționat diferite de cele din RateLimiting (5/15): dacă handler-ul ar citi
+    // din nou secțiunea greșită de configurare, aserțiunile de mai jos ar cădea.
+    private readonly SecurityOptions _securityOptions = new() { MaxFailedLoginAttempts = 3, LockoutMinutes = 30 };
 
     private LoginCommandHandler CreateHandler() => new(
         _authRepo,
@@ -30,7 +33,7 @@ public sealed class LoginCommandHandlerTests
         _tokenService,
         _permissionRepo,
         Options.Create(_jwtOptions),
-        Options.Create(_rateLimitOptions),
+        Options.Create(_securityOptions),
         _cache);
 
     /// Construiește un UserAuthDto valid cu valorile implicite.
@@ -129,6 +132,59 @@ public sealed class LoginCommandHandlerTests
         Assert.Equal(401, result.StatusCode);
     }
 
+    [Fact]
+    public async Task Handle_LockoutExpiredWithMaxedCounter_StillDelegatesToIncrement()
+    {
+        // Contul a fost blocat (contor la prag), dar blocarea a expirat.
+        // Handler-ul nu trebuie să respingă cererea pe motiv de lockout — decizia de
+        // reblocare aparține SP-ului, care repornește contorul când fereastra a expirat.
+        var user = BuildUser(
+            lockoutEnd: DateTime.Now.AddMinutes(-1),
+            failedAttempts: _securityOptions.MaxFailedLoginAttempts);
+
+        _authRepo.GetByEmailOrUsernameAsync(
+                      Arg.Any<string>(), Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<UserAuthDto?>(user));
+        _passwordHasher.VerifyPassword(Arg.Any<string>(), user.PasswordHash)
+                       .Returns(false);
+        _authRepo.IncrementFailedLoginAsync(
+                      Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+                 .Returns(Task.CompletedTask);
+
+        var result = await CreateHandler().Handle(
+            new LoginCommand("admin", "wrong"), default);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(401, result.StatusCode);
+        Assert.Equal(ErrorMessages.Auth.InvalidCredentials, result.Error);
+
+        await _authRepo.Received(1).IncrementFailedLoginAsync(
+            user.Id,
+            _securityOptions.MaxFailedLoginAttempts,
+            _securityOptions.LockoutMinutes,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_LockedAccount_ReportsLockoutMessage_NotInvalidCredentials()
+    {
+        // Distinge blocarea de credențialele greșite — testul existent verifică doar 401,
+        // deci nu ar prinde o regresie care confundă cele două ramuri.
+        var user = BuildUser(lockoutEnd: DateTime.Now.AddMinutes(10));
+        _authRepo.GetByEmailOrUsernameAsync(
+                      Arg.Any<string>(), Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<UserAuthDto?>(user));
+
+        var result = await CreateHandler().Handle(
+            new LoginCommand("admin", "password"), default);
+
+        Assert.NotEqual(ErrorMessages.Auth.InvalidCredentials, result.Error);
+
+        // Contul fiind deja blocat, nu mai incrementăm contorul
+        await _authRepo.DidNotReceive().IncrementFailedLoginAsync(
+            Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+    }
+
     // ── Parolă greșită ────────────────────────────────────────────────────
 
     [Fact]
@@ -153,8 +209,8 @@ public sealed class LoginCommandHandlerTests
         // Trebuie să fi incrementat failed logins
         await _authRepo.Received(1).IncrementFailedLoginAsync(
             user.Id,
-            _rateLimitOptions.LoginMaxAttempts,
-            _rateLimitOptions.LoginWindowMinutes,
+            _securityOptions.MaxFailedLoginAttempts,
+            _securityOptions.LockoutMinutes,
             Arg.Any<CancellationToken>());
     }
 
