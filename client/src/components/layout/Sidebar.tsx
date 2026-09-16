@@ -153,8 +153,35 @@ const NAV_ITEMS_BY_ROUTE: Partial<Record<GuardedRoute, NavItem>> = Object.fromEn
 // ===== Contor sesiune (timp rămas până la deconectarea din inactivitate) =====
 const SESSION_WARNING_THRESHOLD_SEC = 300; // 5 minute
 const SESSION_DANGER_THRESHOLD_SEC = 60;   // 1 minut
+const SESSION_LONG_FORMAT_THRESHOLD_MIN = 60; // peste 60 min setați, afișăm în cuvinte
 
-const formatCountdown = (totalSeconds: number): string => {
+const pluralizeRo = (count: number, singular: string, plural: string) => `${count} ${count === 1 ? singular : plural}`;
+
+/** „1 oră 5 minute și 20 secunde" — folosit când fereastra de inactivitate depășește o oră. */
+const formatCountdownLong = (totalSeconds: number): string => {
+  const safeSeconds = Math.max(0, totalSeconds);
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  const seconds = safeSeconds % 60;
+
+  const parts: string[] = [];
+  if (hours > 0) parts.push(pluralizeRo(hours, 'oră', 'ore'));
+  if (minutes > 0) parts.push(pluralizeRo(minutes, 'minut', 'minute'));
+  if (seconds > 0 || parts.length === 0) parts.push(pluralizeRo(seconds, 'secundă', 'secunde'));
+
+  return parts.length === 1
+    ? parts[0]
+    : `${parts.slice(0, -1).join(' ')} și ${parts[parts.length - 1]}`;
+};
+
+/**
+ * Formatul depinde de fereastra de inactivitate SETATĂ, nu de câte secunde mai
+ * sunt acum — altfel formatul ar sări între „mm:ss" și cuvinte pe parcursul
+ * aceleiași sesiuni, exact când utilizatorul are nevoie de citire rapidă.
+ */
+const formatCountdown = (totalSeconds: number, useLongFormat: boolean): string => {
+  if (useLongFormat) return formatCountdownLong(totalSeconds);
+
   const safeSeconds = Math.max(0, totalSeconds);
   const minutes = Math.floor(safeSeconds / 60);
   const seconds = safeSeconds % 60;
@@ -169,7 +196,7 @@ const getSessionTimerClass = (secondsLeft: number): string => {
 
 // Inelul rămâne plin (100%) peste pragul de 5 minute — abia sub el se golește
 // vizibil, ca să fie relevant indiferent de lungimea ferestrei de inactivitate.
-const SESSION_RING_RADIUS = 15.5;
+const SESSION_RING_RADIUS = 16.5;
 const SESSION_RING_CIRCUMFERENCE = 2 * Math.PI * SESSION_RING_RADIUS;
 
 const getSessionRingFraction = (secondsLeft: number): number => {
@@ -193,6 +220,7 @@ export const Sidebar = ({ sessionSecondsLeft = null }: SidebarProps = {}) => {
   const collapsedSections = useUiStore((s) => s.collapsedSections);
   const toggleSection = useUiStore((s) => s.toggleSection);
   const user = useAuthStore((s) => s.user);
+  const idleTimeoutMinutes = useAuthStore((s) => s.idleTimeoutMinutes);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const navigate = useNavigate();
   const location = useLocation();
@@ -519,25 +547,28 @@ export const Sidebar = ({ sessionSecondsLeft = null }: SidebarProps = {}) => {
       {/* Contor sesiune — inel care se golește vizibil în ultimele 5 minute de inactivitate */}
       {sessionSecondsLeft != null && (
         <div className={`${styles.sessionRingWrap}${sidebarCollapsed ? ` ${styles.collapsedRing}` : ''}`}>
-          <svg
-            viewBox="0 0 36 36"
-            className={`${styles.sessionRing} ${styles[getSessionTimerClass(sessionSecondsLeft)]}`}
-            role="img"
-            aria-label={`Sesiune activă încă ${formatCountdown(sessionSecondsLeft)}`}
-          >
-            <circle className={styles.sessionRingTrack} cx="18" cy="18" r={SESSION_RING_RADIUS} />
-            <circle
-              className={styles.sessionRingProgress}
-              cx="18" cy="18" r={SESSION_RING_RADIUS}
-              style={{
-                strokeDasharray: SESSION_RING_CIRCUMFERENCE,
-                strokeDashoffset: SESSION_RING_CIRCUMFERENCE * (1 - getSessionRingFraction(sessionSecondsLeft)),
-              }}
-            />
-          </svg>
+          <div className={styles.sessionRingRow}>
+            {!sidebarCollapsed && <span className={styles.sessionLabel}>Sesiune</span>}
+            <svg
+              viewBox="0 0 40 40"
+              className={`${styles.sessionRing} ${styles[getSessionTimerClass(sessionSecondsLeft)]}`}
+              role="img"
+              aria-label={`Sesiune activă încă ${formatCountdown(sessionSecondsLeft, idleTimeoutMinutes > SESSION_LONG_FORMAT_THRESHOLD_MIN)}`}
+            >
+              <circle className={styles.sessionRingTrack} cx="20" cy="20" r={SESSION_RING_RADIUS} />
+              <circle
+                className={styles.sessionRingProgress}
+                cx="20" cy="20" r={SESSION_RING_RADIUS}
+                style={{
+                  strokeDasharray: SESSION_RING_CIRCUMFERENCE,
+                  strokeDashoffset: SESSION_RING_CIRCUMFERENCE * (1 - getSessionRingFraction(sessionSecondsLeft)),
+                }}
+              />
+            </svg>
+          </div>
           {!sidebarCollapsed && (
             <span className={styles.sessionRingLabel} title="Timp rămas până la deconectarea automată din inactivitate">
-              {formatCountdown(sessionSecondsLeft)}
+              {formatCountdown(sessionSecondsLeft, idleTimeoutMinutes > SESSION_LONG_FORMAT_THRESHOLD_MIN)}
             </span>
           )}
         </div>

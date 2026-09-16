@@ -83,12 +83,13 @@ describe('Sidebar', () => {
         doctorId: null,
       },
       permissions: [],
+      idleTimeoutMinutes: 0,
     })
   })
 
   afterEach(() => {
     localStorage.clear()
-    useAuthStore.setState({ user: null, permissions: [] })
+    useAuthStore.setState({ user: null, permissions: [], idleTimeoutMinutes: 0 })
   })
 
   // ── Filtrare pe permisiuni ──────────────────────────────────────────────────
@@ -508,5 +509,44 @@ describe('Sidebar', () => {
 
     expect(screen.getByRole('img', { name: /sesiune activă/i })).toBeInTheDocument()
     expect(screen.queryByText('2:00')).not.toBeInTheDocument()
+  })
+
+  it('afișează eticheta „Sesiune” în stânga inelului când sidebar-ul e extins', () => {
+    grantRead(MODULE.Dashboard)
+    renderSidebar({ sessionSecondsLeft: 120 })
+
+    expect(screen.getByText('Sesiune')).toBeInTheDocument()
+  })
+
+  it('eticheta „Sesiune” dispare când sidebar-ul e colapsat', () => {
+    useUiStore.setState({ sidebarCollapsed: true })
+    grantRead(MODULE.Dashboard)
+    renderSidebar({ sessionSecondsLeft: 120 })
+
+    expect(screen.queryByText('Sesiune')).not.toBeInTheDocument()
+  })
+
+  it('folosește formatul compact mm:ss când fereastra de inactivitate setată e cel mult 60 de minute', () => {
+    useAuthStore.setState({ idleTimeoutMinutes: 60 })
+    grantRead(MODULE.Dashboard)
+    renderSidebar({ sessionSecondsLeft: 3920 })
+
+    expect(screen.getByText('65:20')).toBeInTheDocument()
+  })
+
+  it('folosește formatul în cuvinte când fereastra de inactivitate setată depășește 60 de minute', () => {
+    useAuthStore.setState({ idleTimeoutMinutes: 120 })
+    grantRead(MODULE.Dashboard)
+    renderSidebar({ sessionSecondsLeft: 3920 })
+
+    expect(screen.getByText('1 oră 5 minute și 20 secunde')).toBeInTheDocument()
+  })
+
+  it('formatul în cuvinte omite unitățile zero și pluralizează corect', () => {
+    useAuthStore.setState({ idleTimeoutMinutes: 90 })
+    grantRead(MODULE.Dashboard)
+    renderSidebar({ sessionSecondsLeft: 3601 }) // 1h 0m 1s
+
+    expect(screen.getByText('1 oră și 1 secundă')).toBeInTheDocument()
   })
 })
