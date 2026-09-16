@@ -1,6 +1,38 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useAuthStore } from '@/store/authStore'
 import { permissionsApi } from '@/api/endpoints/permissions.api'
-import type { RolePermissionItemPayload, UserOverrideItemPayload } from '../types/permission.types'
+import type {
+  RolePermissionItemPayload,
+  UserOverrideItemPayload,
+  UserEffectivePermissionDto,
+} from '../types/permission.types'
+import type { ModulePermission } from '@/features/auth/types/auth.types'
+
+/// Reîmprospătează permisiunile din authStore dacă utilizatorul afectat este cel curent.
+/// Se apelează după modificarea permisiunilor de rol sau a override-urilor, astfel încât
+/// sidebar-ul și garda de rută să reflecte schimbarea fără a aștepta re-login.
+async function refreshCurrentUserPermissionsIfAffected(
+  affectedUserId?: string,
+  affectedRoleId?: string,
+) {
+  const currentUser = useAuthStore.getState().user
+  if (!currentUser) return
+
+  const isAffected =
+    (affectedUserId !== undefined && affectedUserId === currentUser.id) ||
+    (affectedRoleId !== undefined && affectedRoleId === currentUser.roleId)
+  if (!isAffected) return
+
+  const response = await permissionsApi.getUserEffective(currentUser.id, currentUser.roleId)
+  const effective = (response.data ?? []) as UserEffectivePermissionDto[]
+  const permissions: ModulePermission[] = effective.map((p) => ({
+    module: p.moduleCode,
+    level: p.accessLevel,
+    isOverridden: p.isOverridden,
+  }))
+
+  useAuthStore.getState().updatePermissions(permissions)
+}
 
 // ── Query keys ────────────────────────────────────────────────────────────────
 export const permissionKeys = {
@@ -53,8 +85,9 @@ export const useUpdateRolePermissions = () => {
   return useMutation({
     mutationFn: ({ roleId, permissions }: { roleId: string; permissions: RolePermissionItemPayload[] }) =>
       permissionsApi.updateRolePermissions(roleId, permissions),
-    onSuccess: (_, { roleId }) => {
-      queryClient.invalidateQueries({ queryKey: permissionKeys.rolePermissions(roleId) })
+    onSuccess: async (_, { roleId }) => {
+      await queryClient.invalidateQueries({ queryKey: permissionKeys.rolePermissions(roleId) })
+      await refreshCurrentUserPermissionsIfAffected(undefined, roleId)
     },
   })
 }
@@ -65,9 +98,10 @@ export const useUpdateUserOverrides = () => {
   return useMutation({
     mutationFn: ({ userId, overrides }: { userId: string; overrides: UserOverrideItemPayload[] }) =>
       permissionsApi.updateUserOverrides(userId, overrides),
-    onSuccess: (_, { userId }) => {
-      queryClient.invalidateQueries({ queryKey: permissionKeys.userOverrides(userId) })
-      queryClient.invalidateQueries({ queryKey: permissionKeys.userEffective(userId) })
+    onSuccess: async (_, { userId }) => {
+      await queryClient.invalidateQueries({ queryKey: permissionKeys.userOverrides(userId) })
+      await queryClient.invalidateQueries({ queryKey: permissionKeys.userEffective(userId) })
+      await refreshCurrentUserPermissionsIfAffected(userId, undefined)
     },
   })
 }

@@ -51,6 +51,7 @@ function renderSidebar() {
 
 describe('Sidebar', () => {
   beforeEach(() => {
+    localStorage.clear()
     useUiStore.setState({ sidebarCollapsed: false })
     useAuthStore.setState({
       user: {
@@ -67,6 +68,7 @@ describe('Sidebar', () => {
   })
 
   afterEach(() => {
+    localStorage.clear()
     useAuthStore.setState({ user: null, permissions: [] })
   })
 
@@ -151,5 +153,23 @@ describe('Sidebar', () => {
     renderSidebar()
 
     expect(screen.getByText('AP')).toBeInTheDocument()
+  })
+
+  it('afișează inițialele corect și când numele are spații duble', () => {
+    useAuthStore.setState({
+      user: {
+        id: 'u-1',
+        email: 'test@valyanclinic.ro',
+        fullName: 'Ion  Popescu',
+        role: 'admin',
+        roleId: 'r-1',
+        clinicId: 'c-1',
+        doctorId: null,
+      },
+    })
+    grantRead(MODULE.Dashboard)
+    renderSidebar()
+
+    expect(screen.getByText('IP')).toBeInTheDocument()
   })
 })

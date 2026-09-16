@@ -114,14 +114,16 @@ const NAV_SECTIONS: NavSection[] = [
 
 // ===== Extrage inițialele pentru avatar =====
 const getInitials = (name: string): string => {
-  const parts = name.trim().split(' ');
+  const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
   return name.substring(0, 2).toUpperCase();
 };
 
 // ===== Componenta Sidebar =====
 export const Sidebar = () => {
-  const { sidebarCollapsed, toggleSidebar, openOwnPasswordModal } = useUiStore();
+  const sidebarCollapsed = useUiStore((s) => s.sidebarCollapsed);
+  const toggleSidebar = useUiStore((s) => s.toggleSidebar);
+  const openOwnPasswordModal = useUiStore((s) => s.openOwnPasswordModal);
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const navigate = useNavigate();
