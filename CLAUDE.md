@@ -1955,6 +1955,105 @@ registerLicense(import.meta.env.VITE_SYNCFUSION_LICENSE_KEY)
 
 ---
 
+## @dnd-kit — drag-and-drop (reordonare favorite sidebar)
+
+Singurul loc din client unde se folosește drag-and-drop azi e reordonarea
+favoritelor din `Sidebar.tsx` (`client/src/features/sidebar/components/SortableFavoriteItem.tsx`).
+Nu instala alte biblioteci DnD fără discuție — `@dnd-kit` acoperă orice caz nou de
+reordonare listă.
+
+```typescript
+// Sidebar.tsx — context + senzori (mouse/touch + tastatură)
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core'
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
+
+const dndSensors = useSensors(
+  useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), // prag anti drag-accidental la click
+  useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+)
+
+const handleDragEnd = (event: DragEndEvent) => {
+  const { active, over } = event
+  if (!over || active.id === over.id) return
+  const oldIndex = favoriteRoutes.indexOf(active.id as string)
+  const newIndex = favoriteRoutes.indexOf(over.id as string)
+  if (oldIndex === -1 || newIndex === -1) return
+  upsertFavorites.mutate(arrayMove(favoriteRoutes, oldIndex, newIndex)) // ordinea array-ului = ordinea de afișare
+}
+
+<DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+  <SortableContext items={ids} strategy={verticalListSortingStrategy} disabled={isSearching}>
+    {items.map((item) => <SortableFavoriteItem key={item.to} {...item} />)}
+  </SortableContext>
+</DndContext>
+```
+
+```typescript
+// SortableFavoriteItem.tsx — fiecare item sortabil
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+
+const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: to })
+const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 }
+
+<div ref={setNodeRef} style={style}>
+  <button {...attributes} {...listeners} aria-label={`Reordonează ${label}`}>{/* grip icon */}</button>
+  {/* link + restul conținutului */}
+</div>
+```
+
+**Reguli:**
+- `SortableContext` primește `disabled` când lista vizibilă e un subset filtrat (ex: căutare activă) —
+  reordonarea unui subset ar produce o ordine incorectă față de lista completă.
+- `arrayMove` operează pe array-ul complet (`favoriteRoutes`), nu pe subsetul filtrat afișat —
+  `indexOf` pe id-uri găsește poziția corectă indiferent de itemii ascunși din
+  array între ei.
+- Grip-ul de drag e buton separat (`aria-label="Reordonează {label}"`), niciodată
+  imbricat într-un `<a>` — `<button>` în `<a>` e semantic invalid.
+- **Testare:** simularea unui drag real necesită layout (bounding boxes) pe care
+  `jsdom` nu-l calculează — testele unitare verifică doar prezența/vizibilitatea
+  grip-ului; reordonarea efectivă se verifică manual în browser sau printr-un
+  spec Playwright (folosind `page.mouse.move/down/up` cu pași incrementali, nu
+  `dragTo` HTML5 — `@dnd-kit` răspunde la evenimente de pointer, nu la API-ul
+  nativ de drag).
+
+---
+
+## Feature autoservire fără `[HasAccess]` (ex: `UserMenuPreferences`)
+
+Nu orice controller are nevoie de o gardă de modul. Când o resursă aparține
+strict utilizatorului curent — propriile preferințe de sidebar, propria parolă
+(`UsersController.ChangeOwnPassword`) — controller-ul rămâne protejat doar de
+`[Authorize]`-ul moștenit din `BaseApiController`, fără `[HasAccess(Modul, Nivel)]`.
+
+```csharp
+// UserMenuPreferencesController.cs — orice cont autentificat își administrează
+// propriul meniu, indiferent de rol; nu există un modul "dashboard preferences"
+public class UserMenuPreferencesController : BaseApiController
+{
+    [HttpGet]
+    public async Task<IActionResult> Get(CancellationToken ct)
+        => HandleResult(await Mediator.Send(new GetUserMenuPreferencesQuery(), ct));
+
+    [HttpPut]
+    public async Task<IActionResult> Upsert(
+        [FromBody] UpsertUserMenuPreferencesCommand command, CancellationToken ct)
+        => HandleResult(await Mediator.Send(command, ct));
+}
+```
+
+Handler-ul citește `currentUser.Id` și `currentUser.ClinicId` direct din `ICurrentUser`
+— nu din body/query — exact ca la `ChangeOwnPasswordCommandHandler`. Nu există risc
+de escaladare: userul nu poate niciodată specifica alt `UserId` decât al lui.
+
+**Preferințe de sidebar — coloane dedicate, nu EAV.** `UserMenuPreferences` are o
+singură coloană `FavoriteRoutes NVARCHAR(MAX)` (JSON, array ordonat de rute) —
+ordinea array-ului E ordinea de afișare, deci reordonarea e doar o nouă valoare
+pentru aceeași coloană. Preferințele pur locale (ex: secțiuni colapsate) rămân
+în `localStorage` prin `uiStore`, nu ajung în BD.
+
+---
+
 ## Reguli de lucru (IMPORTANT)
 
 ### R1 — Multi-tenancy obligatoriu
@@ -2114,6 +2213,9 @@ git add -A ; git commit -m "feat: ..." ; git push origin main
 | react-hook-form | 7.x |
 | Axios | **1.13.5 (pinned)** |
 | Syncfusion EJ2 | 32.x |
+| @dnd-kit/core | 6.3.1 |
+| @dnd-kit/sortable | 10.0.0 |
+| @dnd-kit/utilities | 3.2.2 |
 
 > ⚠️ **Axios — NU face upgrade fără verificare manuală.**  
 > Pe 31 martie 2025 pachetul `axios@1.14.1` a conținut malware (supply chain attack).  

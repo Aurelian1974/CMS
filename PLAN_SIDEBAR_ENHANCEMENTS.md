@@ -539,7 +539,7 @@ client/src/
 - [x] `npm run lint`, `npm run test:unit` (341 teste), `npm run build` trec. `npm run check:api` a regenerat schema și a confirmat contractul.
 - [x] Backend: `dotnet build` și `dotnet test` (314 teste) trec.
 - [x] Migrarea `0049_CreateUserMenuPreferences` s-a aplicat cu `migrate.ps1` — „Upgrade successful”.
-- [ ] Documentația `CLAUDE.md` — nu a fost actualizată încă cu noile pattern-uri (`UserMenuPreferences`, `@dnd-kit`); rămâne task opus separat dacă se dorește.
+- [x] Documentația `CLAUDE.md` actualizată cu pattern-urile noi: `@dnd-kit` (senzori, `SortableContext`, `arrayMove`) și controller autoservire fără `[HasAccess]` (`UserMenuPreferences`).
 
 ---
 
