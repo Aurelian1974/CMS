@@ -17,8 +17,7 @@ public sealed class LoginCommandHandler(
     IPasswordHasher passwordHasher,
     ITokenService tokenService,
     IPermissionRepository permissionRepository,
-    IOptions<JwtOptions> jwtOptions,
-    IOptions<SecurityOptions> securityOptions,
+    ISecuritySettingsProvider settingsProvider,
     ISecurityEventLogger securityLog,
     IMemoryCache cache)
     : IRequestHandler<LoginCommand, Result<LoginResponseDto>>
@@ -39,6 +38,10 @@ public sealed class LoginCommandHandler(
     public async Task<Result<LoginResponseDto>> Handle(
         LoginCommand request, CancellationToken ct)
     {
+        // Setarile sunt administrabile din aplicatie; provider-ul le cachuieste
+        // si garanteaza pragurile minime, deci le citim o data si le folosim direct.
+        var settings = await settingsProvider.GetAsync(ct);
+
         // 1. Căutare utilizator după email sau username (fără filtru clinic)
         var user = await authRepository.GetByEmailOrUsernameAsync(request.Email, ct);
 
@@ -83,11 +86,10 @@ public sealed class LoginCommandHandler(
         if (!passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
         {
             // Incrementare login eșuat (lockout automat dacă se depășește limita).
-            // Pragul și durata vin din Security — nu din RateLimiting, care guvernează
-            // limitarea cererilor per IP, nu blocarea unui cont.
-            var security = securityOptions.Value;
+            // Pragul și durata vin din setarile de securitate — nu din RateLimiting,
+            // care guvernează limitarea cererilor per IP, nu blocarea unui cont.
             await authRepository.IncrementFailedLoginAsync(
-                user.Id, security.MaxFailedLoginAttempts, security.LockoutMinutes, ct);
+                user.Id, settings.MaxFailedLoginAttempts, settings.LockoutMinutes, ct);
 
             await securityLog.LogAsync(
                 SecurityEventTypes.LoginFailed, succeeded: false,
@@ -109,9 +111,12 @@ public sealed class LoginCommandHandler(
         var accessToken = tokenService.GenerateAccessToken(
             user.Id, user.ClinicId, user.Email, fullName, user.RoleCode, user.RoleId);
 
-        // 7. Generare refresh token + salvare în DB
+        // 7. Generare refresh token + salvare în DB.
+        //    Durata e configurabila per rol; toate rolurile pornesc de la 7 zile,
+        //    valoarea globala de dinainte.
+        var roleSettings = await settingsProvider.GetForRoleAsync(user.RoleId, ct);
         var refreshToken = tokenService.GenerateRefreshToken();
-        var refreshExpiry = DateTime.Now.AddDays(jwtOptions.Value.RefreshTokenExpiryDays);
+        var refreshExpiry = DateTime.Now.AddDays(roleSettings.RefreshTokenDays);
         await authRepository.CreateRefreshTokenAsync(
             user.Id, refreshToken, refreshExpiry, null, ct);
 
@@ -145,6 +150,7 @@ public sealed class LoginCommandHandler(
         {
             AccessToken = accessToken,
             RefreshToken = refreshToken,
+            RefreshTokenExpiresAt = refreshExpiry,
             User = new AuthUserDto
             {
                 Id = user.Id.ToString(),

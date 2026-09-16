@@ -1,19 +1,17 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Options;
 using ValyanClinic.Application.Common.Models;
 using ValyanClinic.Application.Features.Auth.Commands.Login;
 using ValyanClinic.Application.Features.Auth.Commands.Logout;
 using ValyanClinic.Application.Features.Auth.Commands.RefreshToken;
-using ValyanClinic.Application.Common.Configuration;
 
 namespace ValyanClinic.API.Controllers;
 
 /// <summary>
 /// Controller pentru autentificare — login, refresh token, logout.
 /// </summary>
-public class AuthController(IOptions<JwtOptions> jwtOptions) : BaseApiController
+public class AuthController : BaseApiController
 {
     private const string RefreshTokenCookieName = "refreshToken";
 
@@ -41,7 +39,7 @@ public class AuthController(IOptions<JwtOptions> jwtOptions) : BaseApiController
             return HandleResult(result);
 
         // Setăm refresh token-ul ca HttpOnly cookie
-        SetRefreshTokenCookie(result.Value!.RefreshToken);
+        SetRefreshTokenCookie(result.Value!.RefreshToken, result.Value.RefreshTokenExpiresAt);
 
         // Returnăm access token + user info + permissions (fără refresh token în body)
         var response = new
@@ -77,7 +75,7 @@ public class AuthController(IOptions<JwtOptions> jwtOptions) : BaseApiController
         }
 
         // Setăm noul refresh token ca cookie
-        SetRefreshTokenCookie(result.Value!.RefreshToken);
+        SetRefreshTokenCookie(result.Value!.RefreshToken, result.Value.RefreshTokenExpiresAt);
 
         var response = new
         {
@@ -105,7 +103,11 @@ public class AuthController(IOptions<JwtOptions> jwtOptions) : BaseApiController
 
     // ===== Cookie helpers =====
 
-    private void SetRefreshTokenCookie(string token)
+    /// <param name="expiresAt">
+    /// Momentul calculat de handler din setarea rolului. Nu il recalculam aici:
+    /// cookie-ul si randul din baza de date trebuie sa expire in acelasi moment.
+    /// </param>
+    private void SetRefreshTokenCookie(string token, DateTime expiresAt)
     {
         var cookieOptions = new CookieOptions
         {
@@ -113,7 +115,7 @@ public class AuthController(IOptions<JwtOptions> jwtOptions) : BaseApiController
             Secure = !HttpContext.RequestServices
                 .GetRequiredService<IWebHostEnvironment>().IsDevelopment(),
             SameSite = SameSiteMode.Strict,
-            Expires = DateTimeOffset.UtcNow.AddDays(jwtOptions.Value.RefreshTokenExpiryDays),
+            Expires = new DateTimeOffset(expiresAt),
             Path = RefreshTokenCookiePath
         };
 

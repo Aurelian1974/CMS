@@ -1,8 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using ValyanClinic.Application.Common.Configuration;
 using ValyanClinic.Application.Common.Interfaces;
 
 namespace ValyanClinic.Infrastructure.Services;
@@ -17,7 +15,6 @@ namespace ValyanClinic.Infrastructure.Services;
 /// </summary>
 public sealed class RefreshTokenCleanupHostedService(
     IServiceScopeFactory scopeFactory,
-    IOptions<SecurityOptions> options,
     ILogger<RefreshTokenCleanupHostedService> logger) : BackgroundService
 {
     private static readonly TimeSpan Interval = TimeSpan.FromHours(24);
@@ -54,14 +51,16 @@ public sealed class RefreshTokenCleanupHostedService(
 
     private async Task CleanupAsync(CancellationToken ct)
     {
-        var tokenRetention = options.Value.RefreshTokenRetentionDays;
-        var eventRetention = options.Value.SecurityEventRetentionDays;
-
         try
         {
             using var scope = scopeFactory.CreateScope();
             var authRepository = scope.ServiceProvider.GetRequiredService<IAuthRepository>();
             var securityLog    = scope.ServiceProvider.GetRequiredService<ISecurityEventLogger>();
+            var settings       = await scope.ServiceProvider
+                .GetRequiredService<ISecuritySettingsProvider>().GetAsync(ct);
+
+            var tokenRetention = settings.RefreshTokenRetentionDays;
+            var eventRetention = settings.SecurityEventRetentionDays;
 
             var deletedTokens = await authRepository.DeleteExpiredRefreshTokensAsync(tokenRetention, ct);
             if (deletedTokens > 0)

@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using NSubstitute;
-using ValyanClinic.Application.Common.Configuration;
+using ValyanClinic.Application.Features.SecuritySettings.DTOs;
 using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Interfaces;
 using ValyanClinic.Application.Features.Auth.Commands.Login;
@@ -23,20 +23,33 @@ public sealed class LoginCommandHandlerTests
     private readonly IMemoryCache _cache = new MemoryCache(Options.Create(new MemoryCacheOptions()));
     private readonly ISecurityEventLogger _securityLog = Substitute.For<ISecurityEventLogger>();
 
-    private readonly JwtOptions _jwtOptions = new() { RefreshTokenExpiryDays = 7 };
     // Valori intenționat diferite de cele din RateLimiting (5/15): dacă handler-ul ar citi
     // din nou secțiunea greșită de configurare, aserțiunile de mai jos ar cădea.
-    private readonly SecurityOptions _securityOptions = new() { MaxFailedLoginAttempts = 3, LockoutMinutes = 30 };
+    private readonly SecuritySettingsDto _settings = new()
+    {
+        MaxFailedLoginAttempts = 3,
+        LockoutMinutes = 30,
+    };
+    private readonly RoleSecuritySettingsDto _roleSettings = new() { RefreshTokenDays = 7 };
+    private readonly ISecuritySettingsProvider _settingsProvider =
+        Substitute.For<ISecuritySettingsProvider>();
 
     private LoginCommandHandler CreateHandler() => new(
         _authRepo,
         _passwordHasher,
         _tokenService,
         _permissionRepo,
-        Options.Create(_jwtOptions),
-        Options.Create(_securityOptions),
+        _settingsProvider,
         _securityLog,
         _cache);
+
+    public LoginCommandHandlerTests()
+    {
+        _settingsProvider.GetAsync(Arg.Any<CancellationToken>())
+                         .Returns(Task.FromResult(_settings));
+        _settingsProvider.GetForRoleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+                         .Returns(Task.FromResult(_roleSettings));
+    }
 
     /// Construiește un UserAuthDto valid cu valorile implicite.
     private static UserAuthDto BuildUser(
@@ -142,7 +155,7 @@ public sealed class LoginCommandHandlerTests
         // reblocare aparține SP-ului, care repornește contorul când fereastra a expirat.
         var user = BuildUser(
             lockoutEnd: DateTime.Now.AddMinutes(-1),
-            failedAttempts: _securityOptions.MaxFailedLoginAttempts);
+            failedAttempts: _settings.MaxFailedLoginAttempts);
 
         _authRepo.GetByEmailOrUsernameAsync(
                       Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -162,8 +175,8 @@ public sealed class LoginCommandHandlerTests
 
         await _authRepo.Received(1).IncrementFailedLoginAsync(
             user.Id,
-            _securityOptions.MaxFailedLoginAttempts,
-            _securityOptions.LockoutMinutes,
+            _settings.MaxFailedLoginAttempts,
+            _settings.LockoutMinutes,
             Arg.Any<CancellationToken>());
     }
 
@@ -211,8 +224,8 @@ public sealed class LoginCommandHandlerTests
         // Trebuie să fi incrementat failed logins
         await _authRepo.Received(1).IncrementFailedLoginAsync(
             user.Id,
-            _securityOptions.MaxFailedLoginAttempts,
-            _securityOptions.LockoutMinutes,
+            _settings.MaxFailedLoginAttempts,
+            _settings.LockoutMinutes,
             Arg.Any<CancellationToken>());
     }
 

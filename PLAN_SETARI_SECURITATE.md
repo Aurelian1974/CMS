@@ -1,8 +1,8 @@
 # Plan — Ecran de administrare a politicilor de securitate
 
 > Data: 16 Septembrie 2026
-> Stare: **propus**, neînceput
-> Revizie: v1.1 — ferestre implicite, definiția activității, corecție la mecanismul de expirare
+> Stare: **Etapa 1 finalizată**, restul neîncepute
+> Revizie: v1.2 — Etapa 1 implementată
 > Vezi și: [DECIZII_ARHITECTURA_AUTH.md](DECIZII_ARHITECTURA_AUTH.md), [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md)
 
 Un ecran unic din care administratorul configurează politica de parole, durata
@@ -74,11 +74,20 @@ securitysettings:global:v{N}    → politica de parole și pragurile globale
 securitysettings:role:{id}:v{N} → setările de sesiune ale unui rol
 ```
 
-Invalidarea prin incrementarea versiunii, nu prin ștergere de chei, pentru că
-aplicația poate rula pe mai multe instanțe: o ștergere locală nu ajunge la celelalte,
-iar o versiune citită din baza de date da. **Atenție:** `PermissionCacheKeys.Version`
-se ține azi în `IMemoryCache`, deci are deja această limitare — o discutăm la
-Etapa 1, nu o moștenim tacit.
+**Decizie luată la Etapa 1: TTL absolut de 60 de secunde, fără versiune.**
+
+Tiparul cu versiune de la permisiuni a fost respins tocmai pentru că
+`PermissionCacheKeys.Version` se ține în `IMemoryCache`: pe mai multe instanțe, o
+modificare pe una nu ajunge la celelalte, deci versiunea nu rezolvă problema pentru
+care există. Mutarea versiunii în baza de date ar însemna o citire la fiecare acces,
+adică exact ce evită cache-ul.
+
+Un TTL de 60 de secunde rezolvă problema fără nicio infrastructură: o setare
+schimbată pe o instanță devine activă pe toate în cel mult un minut, iar setările se
+schimbă rar. La salvare se face și invalidare locală, deci administratorul care
+tocmai a salvat vede efectul imediat.
+
+Chei: `securitysettings:global` și `securitysettings:roles`.
 
 ---
 
@@ -204,17 +213,25 @@ implementare prea agresivă ar deconecta medici în timpul consultației.
 
 ## Etape
 
-### Etapa 1 — Fundația: setări în baza de date
-- [ ] Migrare: `SecuritySettings`, `RoleSecuritySettings`, seed cu valorile actuale
-- [ ] Migrare: modul de permisiuni `settings` + acordare rolului admin
+### Etapa 1 — Fundația: setări în baza de date ✅
+- [x] Migrarea 0046: `SecuritySettings`, `RoleSecuritySettings`, seed cu valorile actuale
+- [x] Migrarea 0047: modul de permisiuni `settings` + acordare rolului admin
       *(lecția din 0045: un `ModuleCode` fără rând în `Modules` produce 403 tăcut pentru toată lumea)*
-- [ ] `ISecuritySettingsProvider` cu cache versionat + SP-uri de citire/scriere
-- [ ] Înlocuirea celor opt locuri de consum `IOptions`
-- [ ] Decizie: versiunea de cache rămâne în `IMemoryCache` sau trece în baza de date
-- [ ] Teste: provider-ul respectă pragurile minime; invalidarea funcționează
+- [x] `ISecuritySettingsProvider` cu cache TTL + patru SP-uri de citire/scriere
+- [x] `SecuritySettingsLimits` — pragurile minime impuse la fiecare citire
+- [x] Înlocuirea locurilor de consum `IOptions` care trec în baza de date
+- [x] Decizia despre cache: TTL de 60 s, nu versiune (vezi mai sus)
+- [x] 25 de teste pe praguri și valori implicite
 
-**Nimic vizibil pentru utilizator.** Comportamentul trebuie să rămână identic —
-suita existentă e plasa de siguranță.
+**Verificat live:** comportamentul e identic după migrare (login, refresh, parolă
+greșită), iar schimbarea `RefreshTokenDays` de la 7 la 2 în baza de date a mutat
+expirarea și în cookie, și în rândul din `RefreshTokens` — deci setările chiar
+guvernează comportamentul, nu doar sunt stocate.
+
+**Schimbare de contract internă:** `LoginResponseDto` poartă acum
+`RefreshTokenExpiresAt`. Controller-ul folosește momentul calculat de handler în loc
+să îl recalculeze dintr-o valoare globală — altfel cookie-ul și rândul din baza de
+date ar fi putut diverge odată ce durata devine per rol.
 
 ### Etapa 2 — Politica de parole configurabilă
 - [ ] `PasswordRules` devine dinamic, alimentat de provider, cu praguri minime impuse
@@ -268,7 +285,7 @@ suita existentă e plasa de siguranță.
 
 | Etapă | Stare |
 |---|---|
-| 1 — Fundația | ⬜ neînceput |
+| 1 — Fundația | ✅ **finalizată** |
 | 2 — Politica de parole | ⬜ neînceput |
 | 3 — Inactivitate per rol | ⬜ neînceput |
 | 4 — Ecranul de administrare | ⬜ neînceput |

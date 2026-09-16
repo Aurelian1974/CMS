@@ -113,6 +113,7 @@ public static class DependencyInjection
         services.AddScoped<ICurrentUser, CurrentUser>();
         services.AddScoped<IRequestContext, RequestContext>();
         services.AddScoped<ISecurityEventLogger, SecurityEventLogger>();
+        services.AddScoped<ISecuritySettingsProvider, SecuritySettingsProvider>();
 
         // ===== JWT Authentication =====
         // Secretul nu are valoare implicită și nu este versionat în appsettings.json:

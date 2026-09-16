@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using NSubstitute;
-using ValyanClinic.Application.Common.Configuration;
+using ValyanClinic.Application.Features.SecuritySettings.DTOs;
 using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Interfaces;
 using ValyanClinic.Application.Features.Auth.Commands.Login;
@@ -29,15 +29,22 @@ public sealed class RefreshTokenCommandHandlerTests
     private readonly IMemoryCache _cache = new MemoryCache(Options.Create(new MemoryCacheOptions()));
     private readonly ISecurityEventLogger _securityLog = Substitute.For<ISecurityEventLogger>();
 
-    private readonly JwtOptions _jwtOptions = new() { RefreshTokenExpiryDays = 7 };
+    private readonly ISecuritySettingsProvider _settingsProvider =
+        Substitute.For<ISecuritySettingsProvider>();
 
     private RefreshTokenCommandHandler CreateHandler() => new(
         _authRepo,
         _tokenService,
         _permissionRepo,
-        Options.Create(_jwtOptions),
+        _settingsProvider,
         _securityLog,
         _cache);
+
+    public RefreshTokenCommandHandlerTests()
+    {
+        _settingsProvider.GetForRoleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+                         .Returns(Task.FromResult(new RoleSecuritySettingsDto { RefreshTokenDays = 7 }));
+    }
 
     private static RefreshTokenDto BuildToken(
         Guid userId,

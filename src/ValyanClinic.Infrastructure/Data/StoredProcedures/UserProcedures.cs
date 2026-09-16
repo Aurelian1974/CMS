@@ -39,3 +39,12 @@ public static class SecurityEventProcedures
     public const string DeleteOld = "dbo.SecurityEvent_DeleteOld";
     public const string GetPaged  = "dbo.SecurityEvent_GetPaged";
 }
+
+/// <summary>Nume SP pentru setarile de securitate administrabile.</summary>
+public static class SecuritySettingsProcedures
+{
+    public const string Get         = "dbo.SecuritySettings_Get";
+    public const string Update      = "dbo.SecuritySettings_Update";
+    public const string GetAllRoles = "dbo.RoleSecuritySettings_GetAll";
+    public const string UpdateRole  = "dbo.RoleSecuritySettings_Update";
+}

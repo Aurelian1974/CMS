@@ -26,7 +26,7 @@ public sealed class RefreshTokenCommandHandler(
     IAuthRepository authRepository,
     ITokenService tokenService,
     IPermissionRepository permissionRepository,
-    IOptions<JwtOptions> jwtOptions,
+    ISecuritySettingsProvider settingsProvider,
     ISecurityEventLogger securityLog,
     IMemoryCache cache)
     : IRequestHandler<RefreshTokenCommand, Result<LoginResponseDto>>
@@ -76,8 +76,9 @@ public sealed class RefreshTokenCommandHandler(
 
         // 4. Rotație atomică — revocarea vechiului token și inserarea celui nou într-o
         //    singură tranzacție. Eșuează dacă o cerere concurentă a rotit deja token-ul.
+        var roleSettings = await settingsProvider.GetForRoleAsync(user.RoleId, ct);
         var newRefreshToken = tokenService.GenerateRefreshToken();
-        var refreshExpiry = DateTime.Now.AddDays(jwtOptions.Value.RefreshTokenExpiryDays);
+        var refreshExpiry = DateTime.Now.AddDays(roleSettings.RefreshTokenDays);
 
         var rotated = await authRepository.RotateRefreshTokenAsync(
             request.Token, newRefreshToken, user.Id, refreshExpiry, request.IpAddress, ct);
@@ -125,6 +126,7 @@ public sealed class RefreshTokenCommandHandler(
         {
             AccessToken = accessToken,
             RefreshToken = newRefreshToken,
+            RefreshTokenExpiresAt = refreshExpiry,
             User = new AuthUserDto
             {
                 Id = user.Id.ToString(),

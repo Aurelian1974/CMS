@@ -7,6 +7,13 @@ public sealed record LoginResponseDto
 {
     public string AccessToken { get; init; } = string.Empty;
     public string RefreshToken { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Momentul expirarii refresh token-ului, calculat din setarea rolului.
+    /// Controller-ul il foloseste pentru cookie in loc sa recalculeze dintr-o
+    /// valoare globala — altfel cookie-ul si randul din baza de date ar putea diverge.
+    /// </summary>
+    public DateTime RefreshTokenExpiresAt { get; init; }
     public AuthUserDto User { get; init; } = null!;
     public IReadOnlyList<ModulePermissionDto> Permissions { get; init; } = [];
 }
