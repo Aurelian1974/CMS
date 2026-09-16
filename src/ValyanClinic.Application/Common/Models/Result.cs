@@ -35,4 +35,11 @@ public sealed class Result<T>
 
     public static Result<T> Unauthorized(string error) =>
         new(false, default, error, 401);
+
+    /// <summary>
+    /// Autentificat, dar fără dreptul de a face operația — distinct de Unauthorized,
+    /// care înseamnă „nu știm cine ești".
+    /// </summary>
+    public static Result<T> Forbidden(string error) =>
+        new(false, default, error, 403);
 }

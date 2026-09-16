@@ -32,11 +32,53 @@ public sealed class ResetUserPasswordCommandHandlerTests
     {
         _currentUser.Id.Returns(AdminId);
         _currentUser.ClinicId.Returns(ClinicId);
+        // Claim-ul de rol poartă codul din baza de date, care e lowercase.
+        _currentUser.Role.Returns(Roles.Admin);
         _passwordHasher.HashPassword(Arg.Any<string>()).Returns(HashedNewPassword);
     }
 
     private ResetUserPasswordCommandHandler CreateHandler() =>
         new(_userRepo, _authRepo, _passwordHasher, _currentUser);
+
+    // ── Restricția de rol ─────────────────────────────────────────────────────
+
+    [Theory]
+    [InlineData("doctor")]
+    [InlineData("nurse")]
+    [InlineData("receptionist")]
+    [InlineData("clinic_manager")]
+    public async Task Handle_NonAdminRole_IsForbidden(string role)
+    {
+        // [HasAccess(Users, Write)] singur nu e suficient: ar permite unui Receptionist
+        // să reseteze parola unui administrator din propria clinică.
+        _currentUser.Role.Returns(role);
+
+        var result = await CreateHandler().Handle(
+            new ResetUserPasswordCommand(TargetUserId, NewPassword), default);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(403, result.StatusCode);
+        await _userRepo.DidNotReceive().UpdatePasswordAsync(
+            Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid>(),
+            Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData("admin")]
+    [InlineData("Admin")]
+    [InlineData("ADMIN")]
+    public async Task Handle_AdminRole_AnyCasing_IsAllowed(string role)
+    {
+        // Compararea valorii unui claim e ordinală și case-sensitive, deci o politică
+        // RequireRole("Admin") pe un claim „admin" ar da un 403 permanent și tăcut.
+        // Verificarea din handler este intenționat case-insensitive.
+        _currentUser.Role.Returns(role);
+
+        var result = await CreateHandler().Handle(
+            new ResetUserPasswordCommand(TargetUserId, NewPassword), default);
+
+        Assert.True(result.IsSuccess, $"Reset refuzat pentru rolul {role}: {result.Error}");
+    }
 
     [Fact]
     public async Task Handle_ResetsOtherUser_SetsMustChangePasswordFlag()

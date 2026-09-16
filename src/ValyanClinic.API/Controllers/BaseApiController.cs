@@ -17,6 +17,7 @@ namespace ValyanClinic.API.Controllers;
 [Authorize]
 [ProducesResponseType<ApiResponse<string>>(StatusCodes.Status400BadRequest)]
 [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+[ProducesResponseType<ApiResponse<string>>(StatusCodes.Status403Forbidden)]
 [ProducesResponseType<ApiResponse<string>>(StatusCodes.Status404NotFound)]
 [ProducesResponseType<ApiResponse<string>>(StatusCodes.Status409Conflict)]
 public abstract class BaseApiController : ControllerBase
@@ -36,6 +37,7 @@ public abstract class BaseApiController : ControllerBase
         204 => NoContent(),
         400 => BadRequest(new ApiResponse<T>(false, default, result.Error, null)),
         401 => Unauthorized(new ApiResponse<T>(false, default, result.Error, null)),
+        403 => StatusCode(403, new ApiResponse<T>(false, default, result.Error, null)),
         404 => NotFound(new ApiResponse<T>(false, default, result.Error, null)),
         409 => Conflict(new ApiResponse<T>(false, default, result.Error, null)),
         _   => BadRequest(new ApiResponse<T>(false, default, result.Error, null))

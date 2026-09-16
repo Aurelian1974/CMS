@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Enums;
 using ValyanClinic.Infrastructure.Authentication;
-using Microsoft.AspNetCore.Authorization;
 using ValyanClinic.Application.Features.Users.Commands.ChangeOwnPassword;
 using ValyanClinic.Application.Features.Users.Commands.ResetUserPassword;
 using ValyanClinic.Application.Features.Users.Commands.CreateUser;
@@ -106,9 +105,13 @@ public class UsersController : BaseApiController
     /// [HasAccess(Users, Write)] singur ar permite oricărui rol cu scriere pe modulul
     /// Users să reseteze parola unui administrator din aceeași clinică și să se
     /// autentifice cu ea.
+    ///
+    /// Restricția de rol e aplicată în handler, nu printr-o politică RequireRole:
+    /// politicile statice din Program.cs compară cu „Admin", în timp ce claim-ul
+    /// poartă codul rolului („admin"), iar compararea valorii unui claim e
+    /// case-sensitive — rezultatul ar fi un 403 permanent și tăcut.
     /// </summary>
     [HttpPost("{id:guid}/password-reset")]
-    [Authorize(Policy = "AdminOnly")]
     [HasAccess(ModuleCodes.Users, AccessLevel.Write)]
     [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> ResetPassword(

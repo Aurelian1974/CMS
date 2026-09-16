@@ -20,6 +20,12 @@ public sealed class ResetUserPasswordCommandHandler(
     public async Task<Result<bool>> Handle(
         ResetUserPasswordCommand request, CancellationToken ct)
     {
+        // Doar administratorii pot reseta parola altcuiva. Fără asta, orice rol cu
+        // scriere pe modulul Users (de exemplu Receptionist) ar putea reseta parola
+        // unui administrator din propria clinică și s-ar putea autentifica cu ea.
+        if (!string.Equals(currentUser.Role, Roles.Admin, StringComparison.OrdinalIgnoreCase))
+            return Result<bool>.Forbidden(ErrorMessages.User.PasswordResetRequiresAdmin);
+
         // Resetul administrativ nu e calea pentru propria parolă: acolo parola curentă
         // e obligatorie, iar ocolirea ei ar goli de sens verificarea.
         if (request.UserId == currentUser.Id)
