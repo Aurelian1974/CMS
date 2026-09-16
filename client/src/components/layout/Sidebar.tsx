@@ -196,7 +196,7 @@ const getSessionTimerClass = (secondsLeft: number): string => {
 
 // Inelul rămâne plin (100%) peste pragul de 5 minute — abia sub el se golește
 // vizibil, ca să fie relevant indiferent de lungimea ferestrei de inactivitate.
-const SESSION_RING_RADIUS = 16.5;
+const SESSION_RING_RADIUS = 15; // marjă pentru stroke-width mai mare, fără clipping la marginea viewBox-ului
 const SESSION_RING_CIRCUMFERENCE = 2 * Math.PI * SESSION_RING_RADIUS;
 
 const getSessionRingFraction = (secondsLeft: number): number => {
