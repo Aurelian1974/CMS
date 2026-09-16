@@ -23,7 +23,10 @@ export const IdleWarningModal = ({ secondsLeft, onStay }: IdleWarningModalProps)
       isOpen
       onClose={() => {}}
       maxWidth={420}
-      title="Sesiunea urmează să expire"
+      // `header`, nu `title`: varianta cu titlu randează automat un buton × care
+      // aici nu ar face nimic. Un control vizibil care nu răspunde e mai rău decât
+      // lipsa lui — pare că prelungește sesiunea.
+      header={<h5 className="mb-0">Sesiunea urmează să expire</h5>}
       footer={
         <AppButton variant="primary" onClick={onStay}>
           Rămân conectat

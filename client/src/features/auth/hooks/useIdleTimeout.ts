@@ -3,8 +3,15 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { authApi } from '@/api/endpoints/auth.api'
 import { useAuthStore } from '@/store/authStore'
 
-/** Cu cât timp înainte de expirare apare avertismentul. */
-const WARNING_SECONDS = 60
+/**
+ * Cu cât timp înainte de expirare apare avertismentul.
+ *
+ * Pentru ferestre scurte se reduce la jumătate: cu o fereastră de un minut, un prag
+ * fix de 60 de secunde ar face avertismentul să apară imediat după autentificare,
+ * ceea ce l-ar transforma în zgomot.
+ */
+const warningSecondsFor = (windowSeconds: number) =>
+  Math.max(5, Math.min(60, Math.floor(windowSeconds / 2)))
 
 /** Cât de des verificăm dacă fereastra s-a scurs. */
 const TICK_MS = 5_000
@@ -111,6 +118,7 @@ export const useIdleTimeout = (): IdleState => {
     }
 
     const limitMs = idleMinutes * 60_000
+    const warningSec = warningSecondsFor(idleMinutes * 60)
 
     const tick = async () => {
       const idleMs = Date.now() - lastActivity.current
@@ -118,8 +126,10 @@ export const useIdleTimeout = (): IdleState => {
 
       if (remainingSec <= 0) {
         // Încercăm un logout curat, dar sesiunea locală se curăță oricum.
+        // Motivul ajunge în jurnal: altfel o deconectare pentru inactivitate ar
+        // fi indistinctă de una deliberată.
         try {
-          await authApi.logout()
+          await authApi.logout('idle')
         } catch {
           // Serverul poate fi deja de partea cealaltă a ferestrei; nu contează.
         }
@@ -128,7 +138,7 @@ export const useIdleTimeout = (): IdleState => {
         return
       }
 
-      setSecondsLeft(remainingSec <= WARNING_SECONDS ? remainingSec : null)
+      setSecondsLeft(remainingSec <= warningSec ? remainingSec : null)
     }
 
     const id = window.setInterval(tick, TICK_MS)

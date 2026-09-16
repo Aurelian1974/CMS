@@ -15,6 +15,8 @@ export const authApi = {
     return response.data!;
   },
 
-  logout: (): Promise<void> =>
-    api.post('/api/v1/Auth/logout'),
+  /// `reason` ajunge in jurnalul de securitate: 'idle' pentru deconectarea
+  /// automata la inactivitate, nimic pentru una deliberata.
+  logout: (reason?: string): Promise<void> =>
+    api.post('/api/v1/Auth/logout', undefined, reason ? { params: { reason } } : undefined),
 };

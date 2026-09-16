@@ -268,7 +268,7 @@ funcționează. Istoricul a respins corect întoarcerea la o parolă anterioară
 - [x] Limita de refresh ridicată la 300/15 min pentru noul ritm de rotație
 - [x] Eveniment nou în jurnal: `SessionExpiredIdle`
 - [x] 4 teste pe fereastra de inactivitate
-- [ ] **Teste e2e pentru expirare — NEACOPERITE**, vezi mai jos
+- [x] Verificat manual în browser, capăt la capăt (vezi mai jos)
 
 **Marja de un access token.** Serverul refuză la `IdleTimeoutMinutes + AccessTokenExpiryMinutes`,
 nu la fereastra exactă. Ultima activitate poate fi oriunde în intervalul
@@ -281,11 +281,23 @@ că reîmprospătările automate nu contează. Dacă o sincronizare depășește
 utilizatorul e deconectat și se poate reautentifica — jobul rulează pe server, deci
 deconectarea nu îl întrerupe.
 
-**Gol de acoperire, asumat:** expirarea propriu-zisă nu are test automat. Un test
-realist ar trebui să aștepte scurgerea ferestrei (minimul configurabil e un minut, plus
-marja), ceea ce ar face suita inutilizabil de lentă. Logica server-side e acoperită de
-patru teste unitare pe praguri; comportamentul clientului — avertisment, deconectare,
-sincronizare între tab-uri — **nu a fost verificat live**.
+**Verificat manual în browser**, cu fereastra adminului pusă temporar la un minut:
+avertismentul apare la jumătatea ferestrei, contorul scade, deconectarea duce la
+`/login`, `sessionStorage` se golește și jurnalul înregistrează `SessionExpiredIdle`.
+
+Verificarea a scos la iveală trei probleme, toate reparate:
+
+1. **Avertismentul apărea imediat** la ferestre de un minut, pentru că pragul era fix
+   la 60 de secunde. Acum se reduce la jumătate din fereastră, cu minim 5 secunde.
+2. **Modalul avea un buton × care nu făcea nimic** — `AppModal` îl randează automat
+   când primește `title`. Trecut pe `header` custom. Aceeași corecție și la modalul de
+   schimbare impusă a parolei.
+3. **Jurnalul înregistra `Logout`, nu `SessionExpiredIdle`**, pentru că deconectarea
+   pornea din client și arăta ca una deliberată. Clientul trimite acum motivul, iar
+   operatorul poate distinge cele două cazuri.
+
+**Rămâne fără test automat:** un test realist ar trebui să aștepte scurgerea ferestrei
+(minimul configurabil e un minut), ceea ce ar face suita inutilizabil de lentă.
 
 ### Etapa 4 — Ecranul de administrare
 - [ ] `GET` / `PUT /api/v1/SecuritySettings`, protejat cu `[HasAccess(settings, …)]`

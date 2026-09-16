@@ -92,10 +92,14 @@ public class AuthController : BaseApiController
     /// <summary>Logout — revocă refresh token din cookie.</summary>
     [Authorize]
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout(CancellationToken ct)
+    /// <param name="reason">
+    /// Opțional. "idle" când clientul deconectează pentru inactivitate — ajunge în
+    /// jurnal, altfel cele două cazuri ar fi indistincte.
+    /// </param>
+    public async Task<IActionResult> Logout([FromQuery] string? reason, CancellationToken ct)
     {
         var refreshToken = Request.Cookies[RefreshTokenCookieName];
-        var command = new LogoutCommand(refreshToken);
+        var command = new LogoutCommand(refreshToken, reason);
         await Mediator.Send(command, ct);
 
         ClearRefreshTokenCookie();

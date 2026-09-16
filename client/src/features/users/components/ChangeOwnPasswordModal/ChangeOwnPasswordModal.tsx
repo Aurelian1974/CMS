@@ -50,7 +50,11 @@ export const ChangeOwnPasswordModal = ({
       isOpen={isOpen}
       onClose={forced ? () => {} : onClose}
       maxWidth={480}
-      title={forced ? 'Schimbarea parolei este obligatorie' : 'Schimbă-ți parola'}
+      // La schimbarea impusă folosim `header`: varianta cu `title` randează un buton
+      // × care nu ar avea ce închide.
+      {...(forced
+        ? { header: <h5 className="mb-0">Schimbarea parolei este obligatorie</h5> }
+        : { title: 'Schimbă-ți parola' })}
       as="form"
       onSubmit={handleSubmit(onSubmit)}
       bodyClassName={styles.body}

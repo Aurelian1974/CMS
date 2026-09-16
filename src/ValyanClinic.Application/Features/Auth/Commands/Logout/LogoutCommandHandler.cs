@@ -14,6 +14,9 @@ public sealed class LogoutCommandHandler(
     ISecurityEventLogger securityLog)
     : IRequestHandler<LogoutCommand, Result<bool>>
 {
+    /// <summary>Motivul trimis de client la deconectarea pentru inactivitate.</summary>
+    private const string IdleReason = "idle";
+
     public async Task<Result<bool>> Handle(LogoutCommand request, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.RefreshToken))
@@ -21,9 +24,14 @@ public sealed class LogoutCommandHandler(
 
         await authRepository.RevokeRefreshTokenAsync(request.RefreshToken, null, ct);
 
+        var expiredByIdle = string.Equals(request.Reason, IdleReason, StringComparison.OrdinalIgnoreCase);
+
         await securityLog.LogAsync(
-            SecurityEventTypes.Logout, succeeded: true,
-            userId: currentUser.Id, clinicId: currentUser.ClinicId, ct: ct);
+            expiredByIdle ? SecurityEventTypes.SessionExpiredIdle : SecurityEventTypes.Logout,
+            succeeded: !expiredByIdle,
+            userId: currentUser.Id, clinicId: currentUser.ClinicId,
+            details: expiredByIdle ? "Deconectare pentru inactivitate, initiata de client." : null,
+            ct: ct);
 
         return Result<bool>.Success(true);
     }
