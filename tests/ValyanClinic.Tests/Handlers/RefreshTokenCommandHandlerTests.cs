@@ -27,6 +27,7 @@ public sealed class RefreshTokenCommandHandlerTests
     private readonly ITokenService _tokenService = Substitute.For<ITokenService>();
     private readonly IPermissionRepository _permissionRepo = Substitute.For<IPermissionRepository>();
     private readonly IMemoryCache _cache = new MemoryCache(Options.Create(new MemoryCacheOptions()));
+    private readonly ISecurityEventLogger _securityLog = Substitute.For<ISecurityEventLogger>();
 
     private readonly JwtOptions _jwtOptions = new() { RefreshTokenExpiryDays = 7 };
 
@@ -35,6 +36,7 @@ public sealed class RefreshTokenCommandHandlerTests
         _tokenService,
         _permissionRepo,
         Options.Create(_jwtOptions),
+        _securityLog,
         _cache);
 
     private static RefreshTokenDto BuildToken(

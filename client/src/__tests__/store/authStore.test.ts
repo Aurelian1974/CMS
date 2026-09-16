@@ -166,6 +166,35 @@ describe('authStore', () => {
     });
   });
 
+  // ── Persistență ────────────────────────────────────────────────────────────
+
+  describe('persistență', () => {
+    it('NU persistă access token-ul în sessionStorage', () => {
+      // Garanția centrală: token-ul trăiește doar în memorie, deci un XSS nu îl
+      // poate citi din storage. Sesiunea se reconstruiește prin cookie-ul HttpOnly
+      // de refresh, care nu e accesibil din JavaScript.
+      useAuthStore.getState().setAuth(mockUser, MOCK_TOKEN, mockPermissions);
+
+      const raw = sessionStorage.getItem('auth-storage') ?? '';
+      expect(raw).not.toContain(MOCK_TOKEN);
+      expect(JSON.parse(raw).state.accessToken).toBeUndefined();
+    });
+
+    it('persistă user și permisiuni, care nu sunt credențiale', () => {
+      useAuthStore.getState().setAuth(mockUser, MOCK_TOKEN, mockPermissions);
+
+      const persisted = JSON.parse(sessionStorage.getItem('auth-storage') ?? '{}').state;
+      expect(persisted.user.id).toBe(mockUser.id);
+      expect(persisted.permissions).toHaveLength(mockPermissions.length);
+      expect(persisted.isAuthenticated).toBe(true);
+    });
+
+    it('token-ul rămâne disponibil în memorie dupa setAuth', () => {
+      useAuthStore.getState().setAuth(mockUser, MOCK_TOKEN, []);
+      expect(useAuthStore.getState().accessToken).toBe(MOCK_TOKEN);
+    });
+  });
+
   // ── Proprietăți user ───────────────────────────────────────────────────────
 
   describe('proprietăți AuthUser', () => {

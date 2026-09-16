@@ -19,6 +19,7 @@ public sealed class LoginCommandHandler(
     IPermissionRepository permissionRepository,
     IOptions<JwtOptions> jwtOptions,
     IOptions<SecurityOptions> securityOptions,
+    ISecurityEventLogger securityLog,
     IMemoryCache cache)
     : IRequestHandler<LoginCommand, Result<LoginResponseDto>>
 {
@@ -46,17 +47,34 @@ public sealed class LoginCommandHandler(
             // Consumam acelasi timp ca o verificare reala, apoi raspundem identic.
             _dummyPasswordHash ??= passwordHasher.HashPassword(Guid.NewGuid().ToString());
             passwordHasher.VerifyPassword(request.Password, _dummyPasswordHash);
+
+            await securityLog.LogAsync(
+                SecurityEventTypes.LoginFailed, succeeded: false,
+                emailAttempted: request.Email, details: "Utilizator inexistent.", ct: ct);
+
             return Result<LoginResponseDto>.Unauthorized(ErrorMessages.Auth.InvalidCredentials);
         }
 
         // 2. Verificare cont activ
         if (!user.IsActive)
+        {
+            await securityLog.LogAsync(
+                SecurityEventTypes.AccountInactive, succeeded: false,
+                userId: user.Id, clinicId: user.ClinicId, emailAttempted: request.Email, ct: ct);
+
             return Result<LoginResponseDto>.Unauthorized(ErrorMessages.Auth.AccountInactive);
+        }
 
         // 3. Verificare lockout
         if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.Now)
         {
             var minutesLeft = (int)Math.Ceiling((user.LockoutEnd.Value - DateTime.Now).TotalMinutes);
+
+            await securityLog.LogAsync(
+                SecurityEventTypes.AccountLocked, succeeded: false,
+                userId: user.Id, clinicId: user.ClinicId, emailAttempted: request.Email,
+                details: $"Blocat inca {minutesLeft} minute.", ct: ct);
+
             return Result<LoginResponseDto>.Unauthorized(
                 string.Format(ErrorMessages.Auth.AccountLocked, minutesLeft));
         }
@@ -71,11 +89,20 @@ public sealed class LoginCommandHandler(
             await authRepository.IncrementFailedLoginAsync(
                 user.Id, security.MaxFailedLoginAttempts, security.LockoutMinutes, ct);
 
+            await securityLog.LogAsync(
+                SecurityEventTypes.LoginFailed, succeeded: false,
+                userId: user.Id, clinicId: user.ClinicId, emailAttempted: request.Email,
+                details: "Parola incorecta.", ct: ct);
+
             return Result<LoginResponseDto>.Unauthorized(ErrorMessages.Auth.InvalidCredentials);
         }
 
         // 5. Login reușit — reset failed attempts
         await authRepository.ResetFailedLoginAsync(user.Id, ct);
+
+        await securityLog.LogAsync(
+            SecurityEventTypes.LoginSucceeded, succeeded: true,
+            userId: user.Id, clinicId: user.ClinicId, emailAttempted: request.Email, ct: ct);
 
         // 6. Generare access token (include roleId claim)
         var fullName = $"{user.FirstName} {user.LastName}".Trim();

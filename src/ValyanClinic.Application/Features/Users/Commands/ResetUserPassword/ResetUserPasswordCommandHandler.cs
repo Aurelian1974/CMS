@@ -14,7 +14,8 @@ public sealed class ResetUserPasswordCommandHandler(
     IUserRepository repository,
     IAuthRepository authRepository,
     IPasswordHasher passwordHasher,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    ISecurityEventLogger securityLog)
     : IRequestHandler<ResetUserPasswordCommand, Result<bool>>
 {
     public async Task<Result<bool>> Handle(
@@ -45,6 +46,12 @@ public sealed class ResetUserPasswordCommandHandler(
 
             // Parola veche nu mai e validă — nici sesiunile deschise cu ea nu trebuie să fie.
             await authRepository.RevokeAllRefreshTokensAsync(request.UserId, ct);
+
+            // Cine a resetat conteaza la fel de mult ca cine a fost resetat.
+            await securityLog.LogAsync(
+                SecurityEventTypes.PasswordReset, succeeded: true,
+                userId: request.UserId, clinicId: currentUser.ClinicId,
+                details: $"Resetat de utilizatorul {currentUser.Id}.", ct: ct);
 
             return Result<bool>.Success(true);
         }

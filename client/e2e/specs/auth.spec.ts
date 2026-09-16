@@ -99,39 +99,39 @@ test.describe('Continuitatea sesiunii', () => {
     expect(response.status()).toBe(200);
   });
 
-  test('sesiunea supraviețuiește expirării access token-ului', async ({ page }) => {
+  test('sesiunea supraviețuiește reîncărcării paginii', async ({ page }) => {
     await login(page, CREDENTIALS.admin.email, CREDENTIALS.admin.password);
 
-    // Înlocuim access token-ul persistat cu unul cu semnătură invalidă, dar cu `exp` în
-    // viitor: garda de la pornire din App.tsx îl acceptă, backend-ul îl respinge cu 401,
-    // iar interceptorul axios declanșează exact fluxul de refresh pe care îl testăm.
-    await page.evaluate(() => {
-      const raw = sessionStorage.getItem('auth-storage');
-      if (!raw) throw new Error('auth-storage lipsește din sessionStorage');
-
-      const b64url = (value: unknown) =>
-        btoa(JSON.stringify(value)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-
-      const parsed = JSON.parse(raw);
-      parsed.state.accessToken =
-        `${b64url({ alg: 'HS256', typ: 'JWT' })}.` +
-        `${b64url({ sub: 'test', exp: Math.floor(Date.now() / 1000) + 3600 })}.` +
-        'semnatura-invalida';
-      sessionStorage.setItem('auth-storage', JSON.stringify(parsed));
-    });
-
+    // Access token-ul trăiește doar în memorie, deci un reload îl pierde.
+    // Sesiunea trebuie reconstruită din cookie-ul HttpOnly de refresh.
     const refreshCall = page.waitForResponse(
       (r) => r.url().includes('/api/v1/Auth/refresh') && r.request().method() === 'POST',
       { timeout: 15_000 },
     );
 
-    // Navigare care declanșează cereri API cu token-ul invalid
-    await page.goto('/patients');
+    await page.reload();
 
     const refreshResponse = await refreshCall;
     expect(refreshResponse.status()).toBe(200);
 
-    // Sesiunea a fost reconstruită din cookie — fără redirect la login
+    // Fără redirect la login: ProtectedRoute a asteptat bootstrap-ul
     await expect(page).not.toHaveURL(/.*login/);
+    // .first(): pagina are doua elemente <nav> — sidebar-ul si tab-urile de pagini
+    await expect(page.getByRole('navigation').first()).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('access token-ul nu ajunge in sessionStorage', async ({ page }) => {
+    await login(page, CREDENTIALS.admin.email, CREDENTIALS.admin.password);
+
+    const persisted = await page.evaluate(() => sessionStorage.getItem('auth-storage'));
+    expect(persisted, 'starea de autentificare ar trebui persistata').not.toBeNull();
+
+    const state = JSON.parse(persisted!).state;
+    expect(state.accessToken).toBeUndefined();
+    expect(persisted).not.toContain('eyJ');   // niciun JWT in storage
+
+    // Datele necredentiale raman, ca sa nu apara un ecran gol la reload
+    expect(state.user).toBeTruthy();
+    expect(state.isAuthenticated).toBe(true);
   });
 });

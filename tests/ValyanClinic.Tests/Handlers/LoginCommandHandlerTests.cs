@@ -21,6 +21,7 @@ public sealed class LoginCommandHandlerTests
     private readonly ITokenService _tokenService = Substitute.For<ITokenService>();
     private readonly IPermissionRepository _permissionRepo = Substitute.For<IPermissionRepository>();
     private readonly IMemoryCache _cache = new MemoryCache(Options.Create(new MemoryCacheOptions()));
+    private readonly ISecurityEventLogger _securityLog = Substitute.For<ISecurityEventLogger>();
 
     private readonly JwtOptions _jwtOptions = new() { RefreshTokenExpiryDays = 7 };
     // Valori intenționat diferite de cele din RateLimiting (5/15): dacă handler-ul ar citi
@@ -34,6 +35,7 @@ public sealed class LoginCommandHandlerTests
         _permissionRepo,
         Options.Create(_jwtOptions),
         Options.Create(_securityOptions),
+        _securityLog,
         _cache);
 
     /// Construiește un UserAuthDto valid cu valorile implicite.
@@ -362,6 +364,72 @@ public sealed class LoginCommandHandlerTests
         Assert.Equal(2, result.Value.Permissions.Count);
         Assert.Equal("patients", result.Value.Permissions[0].Module);
         Assert.Equal(3, result.Value.Permissions[0].Level);
+    }
+
+    // ── Jurnal de securitate ──────────────────────────────────────────────
+
+    [Fact]
+    public async Task Handle_ValidCredentials_LogsLoginSucceeded()
+    {
+        var user = BuildUser();
+        SetupSuccessfulLogin(user);
+
+        await CreateHandler().Handle(new LoginCommand("admin", "correct"), default);
+
+        await _securityLog.Received(1).LogAsync(
+            SecurityEventTypes.LoginSucceeded, true,
+            user.Id, user.ClinicId, Arg.Any<string?>(), Arg.Any<string?>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_WrongPassword_LogsLoginFailed_WithUserIdentified()
+    {
+        var user = BuildUser();
+        _authRepo.GetByEmailOrUsernameAsync(
+                      Arg.Any<string>(), Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<UserAuthDto?>(user));
+        _passwordHasher.VerifyPassword(Arg.Any<string>(), user.PasswordHash).Returns(false);
+
+        await CreateHandler().Handle(new LoginCommand("admin", "wrong"), default);
+
+        await _securityLog.Received(1).LogAsync(
+            SecurityEventTypes.LoginFailed, false,
+            user.Id, user.ClinicId, "admin", Arg.Any<string?>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_UnknownUser_LogsLoginFailed_WithoutUserId()
+    {
+        // Emailul incercat e singura informatie disponibila — exact ce trebuie
+        // jurnalizat pentru a investiga un atac de tip credential stuffing.
+        _authRepo.GetByEmailOrUsernameAsync(
+                      Arg.Any<string>(), Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<UserAuthDto?>(null));
+
+        await CreateHandler().Handle(new LoginCommand("necunoscut@test.ro", "x"), default);
+
+        await _securityLog.Received(1).LogAsync(
+            SecurityEventTypes.LoginFailed, false,
+            null, null, "necunoscut@test.ro", Arg.Any<string?>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_LockedAccount_LogsAccountLocked()
+    {
+        var user = BuildUser(lockoutEnd: DateTime.Now.AddMinutes(10));
+        _authRepo.GetByEmailOrUsernameAsync(
+                      Arg.Any<string>(), Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<UserAuthDto?>(user));
+
+        await CreateHandler().Handle(new LoginCommand("admin", "orice"), default);
+
+        await _securityLog.Received(1).LogAsync(
+            SecurityEventTypes.AccountLocked, false,
+            user.Id, user.ClinicId, Arg.Any<string?>(), Arg.Any<string?>(),
+            Arg.Any<CancellationToken>());
     }
 
     // ── Helper ────────────────────────────────────────────────────────────

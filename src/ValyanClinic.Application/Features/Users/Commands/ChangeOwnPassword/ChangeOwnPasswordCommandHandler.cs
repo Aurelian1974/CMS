@@ -14,7 +14,8 @@ public sealed class ChangeOwnPasswordCommandHandler(
     IUserRepository repository,
     IAuthRepository authRepository,
     IPasswordHasher passwordHasher,
-    ICurrentUser currentUser)
+    ICurrentUser currentUser,
+    ISecurityEventLogger securityLog)
     : IRequestHandler<ChangeOwnPasswordCommand, Result<bool>>
 {
     public async Task<Result<bool>> Handle(
@@ -27,7 +28,14 @@ public sealed class ChangeOwnPasswordCommandHandler(
             return Result<bool>.NotFound(ErrorMessages.User.NotFound);
 
         if (!passwordHasher.VerifyPassword(request.CurrentPassword, user.PasswordHash))
+        {
+            await securityLog.LogAsync(
+                SecurityEventTypes.PasswordChanged, succeeded: false,
+                userId: userId, clinicId: currentUser.ClinicId,
+                details: "Parola curenta incorecta.", ct: ct);
+
             return Result<bool>.Unauthorized(ErrorMessages.User.CurrentPasswordIncorrect);
+        }
 
         if (passwordHasher.VerifyPassword(request.NewPassword, user.PasswordHash))
             return Result<bool>.Failure(ErrorMessages.User.PasswordUnchanged);
@@ -46,6 +54,10 @@ public sealed class ChangeOwnPasswordCommandHandler(
 
             // Sesiunile deschise cu parola veche trebuie să cadă.
             await authRepository.RevokeAllRefreshTokensAsync(userId, ct);
+
+            await securityLog.LogAsync(
+                SecurityEventTypes.PasswordChanged, succeeded: true,
+                userId: userId, clinicId: currentUser.ClinicId, ct: ct);
 
             return Result<bool>.Success(true);
         }

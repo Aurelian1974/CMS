@@ -92,7 +92,7 @@ export const LoginPage = () => {
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '', rememberMe: false },
+    defaultValues: { email: '', password: '' },
   });
 
   const onSubmit: SubmitHandler<LoginFormData> = (data) => {
@@ -251,11 +251,10 @@ export const LoginPage = () => {
               </div>
 
               {/* Opțiuni */}
+              {/* Checkbox-ul „Ține-mă autentificat" a fost eliminat: nu ajungea
+                  niciodată la API, deci promitea un comportament inexistent.
+                  Durata sesiunii e dată de Jwt:RefreshTokenExpiryDays. */}
               <div className={styles.opts}>
-                <label className={styles.rememberWrap}>
-                  <input type="checkbox" {...register('rememberMe')} />
-                  <span className={styles.rememberLabel}>Ține-mă autentificat</span>
-                </label>
                 <a href="#" className={styles.forgotLink}>
                   Parolă uitată?
                 </a>

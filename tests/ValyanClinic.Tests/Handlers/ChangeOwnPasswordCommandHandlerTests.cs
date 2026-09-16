@@ -30,6 +30,7 @@ public sealed class ChangeOwnPasswordCommandHandlerTests
     private readonly IAuthRepository _authRepo       = Substitute.For<IAuthRepository>();
     private readonly IPasswordHasher _passwordHasher = Substitute.For<IPasswordHasher>();
     private readonly ICurrentUser    _currentUser    = Substitute.For<ICurrentUser>();
+    private readonly ISecurityEventLogger _securityLog = Substitute.For<ISecurityEventLogger>();
 
     public ChangeOwnPasswordCommandHandlerTests()
     {
@@ -47,7 +48,7 @@ public sealed class ChangeOwnPasswordCommandHandlerTests
     }
 
     private ChangeOwnPasswordCommandHandler CreateHandler() =>
-        new(_userRepo, _authRepo, _passwordHasher, _currentUser);
+        new(_userRepo, _authRepo, _passwordHasher, _currentUser, _securityLog);
 
     private void AcceptCurrentPassword()
         => _passwordHasher.VerifyPassword(CurrentPassword, StoredHash).Returns(true);

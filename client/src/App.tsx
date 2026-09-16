@@ -1,28 +1,16 @@
 import { BrowserRouter } from 'react-router-dom'
 import { AppRoutes } from './routes/AppRoutes'
-import { useAuthStore } from './store/authStore'
+import { useSessionBootstrap } from './features/auth/hooks/useSessionBootstrap'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
 
-// ===== Validare sesiune la startup =====
-// Dacă JWT-ul stocat în sessionStorage e expirat, curățăm sesiunea înainte de render.
-// Previne ciclul: pagini protejate → 401 → refresh eșuat → redirect → eroare inutilă.
-;(() => {
-  const { accessToken, isAuthenticated, clearAuth } = useAuthStore.getState()
-  if (!isAuthenticated || !accessToken) return
-
-  try {
-    const payload = JSON.parse(atob(accessToken.split('.')[1]))
-    const expMs = (payload.exp ?? 0) * 1000
-    if (Date.now() > expMs) {
-      clearAuth()
-    }
-  } catch {
-    // Token malformat — curățăm sesiunea
-    clearAuth()
-  }
-})()
+// Verificarea manuală a expirării JWT-ului de la pornire a fost eliminată: era
+// necesară doar pentru că access token-ul se persista în sessionStorage și putea
+// fi expirat la reîncărcare. Acum token-ul trăiește doar în memorie, iar sesiunea
+// se reconstruiește prin /refresh — vezi useSessionBootstrap.
 
 function App() {
+  useSessionBootstrap()
+
   return (
     <ErrorBoundary label="aplicație" variant="page">
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>

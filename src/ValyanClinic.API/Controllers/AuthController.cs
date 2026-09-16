@@ -56,7 +56,7 @@ public class AuthController(IOptions<JwtOptions> jwtOptions) : BaseApiController
 
     /// <summary>Reîmprospătare access token folosind refresh token din cookie.</summary>
     [AllowAnonymous]
-    [EnableRateLimiting("login")]
+    [EnableRateLimiting("refresh")]
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh(CancellationToken ct)
     {

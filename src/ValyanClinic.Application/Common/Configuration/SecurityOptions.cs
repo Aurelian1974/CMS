@@ -28,4 +28,11 @@ public sealed class SecurityOptions
     /// incident de securitate; fără curățare, tabela ar crește la infinit.
     /// </summary>
     public int RefreshTokenRetentionDays { get; init; } = 30;
+
+    /// <summary>
+    /// Cate zile pastram evenimentele din SecurityEvents. Mult mai mult decat la
+    /// refresh tokens: jurnalul trebuie sa poata raspunde unei cereri GDPR sau unei
+    /// investigatii ulterioare. Implicit doi ani.
+    /// </summary>
+    public int SecurityEventRetentionDays { get; init; } = 730;
 }

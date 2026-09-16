@@ -27,6 +27,7 @@ public sealed class ResetUserPasswordCommandHandlerTests
     private readonly IAuthRepository _authRepo       = Substitute.For<IAuthRepository>();
     private readonly IPasswordHasher _passwordHasher = Substitute.For<IPasswordHasher>();
     private readonly ICurrentUser    _currentUser    = Substitute.For<ICurrentUser>();
+    private readonly ISecurityEventLogger _securityLog = Substitute.For<ISecurityEventLogger>();
 
     public ResetUserPasswordCommandHandlerTests()
     {
@@ -38,7 +39,7 @@ public sealed class ResetUserPasswordCommandHandlerTests
     }
 
     private ResetUserPasswordCommandHandler CreateHandler() =>
-        new(_userRepo, _authRepo, _passwordHasher, _currentUser);
+        new(_userRepo, _authRepo, _passwordHasher, _currentUser, _securityLog);
 
     // ── Restricția de rol ─────────────────────────────────────────────────────
 

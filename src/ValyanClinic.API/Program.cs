@@ -149,18 +149,32 @@ try
 
     // ===== Rate Limiting (built-in ASP.NET Core, .NET 7+) =====
     {
-        var rlSection   = builder.Configuration.GetSection(RateLimitingOptions.SectionName);
-        var loginMax    = rlSection.GetValue<int>("LoginMaxAttempts",    5);
-        var loginWindow = rlSection.GetValue<int>("LoginWindowMinutes", 15);
-        var apiMax      = rlSection.GetValue<int>("GeneralMaxRequests", 100);
-        var apiWindow   = rlSection.GetValue<int>("GeneralWindowSeconds", 60);
+        var rlSection     = builder.Configuration.GetSection(RateLimitingOptions.SectionName);
+        var loginMax      = rlSection.GetValue<int>("LoginMaxAttempts",    30);
+        var loginWindow   = rlSection.GetValue<int>("LoginWindowMinutes",  15);
+        var refreshMax    = rlSection.GetValue<int>("RefreshMaxRequests",  60);
+        var refreshWindow = rlSection.GetValue<int>("RefreshWindowMinutes", 15);
+        var apiMax        = rlSection.GetValue<int>("GeneralMaxRequests",  100);
+        var apiWindow     = rlSection.GetValue<int>("GeneralWindowSeconds", 60);
+
+        // Partiție per utilizator autentificat, cu IP-ul ca rezervă. O clinică
+        // întreagă poate ieși la internet printr-un singur IP: fără această
+        // separare, activitatea normală a câtorva colegi epuizează cota comună.
+        // Funcționează pentru că UseRateLimiter() e plasat după UseAuthentication().
+        static string PartitionByUserOrIp(HttpContext ctx)
+        {
+            var userId = ctx.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            return !string.IsNullOrEmpty(userId)
+                ? $"user:{userId}"
+                : $"ip:{ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown"}";
+        }
 
         builder.Services.AddRateLimiter(rl =>
         {
-            // Limită globală per IP — sliding window pe toate request-urile
+            // Limită globală — sliding window, per utilizator sau per IP
             rl.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(ctx =>
                 RateLimitPartition.GetSlidingWindowLimiter(
-                    partitionKey: ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    partitionKey: PartitionByUserOrIp(ctx),
                     factory: _ => new SlidingWindowRateLimiterOptions
                     {
                         PermitLimit          = apiMax,
@@ -170,7 +184,9 @@ try
                         QueueLimit           = 0
                     }));
 
-            // Policy strictă per IP — fixed window pentru login/refresh (anti brute-force)
+            // Login — limită anti-flood per IP. Protecția împotriva forței brute pe un
+            // cont anume e blocarea per cont (Security:MaxFailedLoginAttempts), nu aceasta;
+            // de aceea limita e deliberat mai mare decât pragul de blocare.
             rl.AddPolicy("login", ctx =>
                 RateLimitPartition.GetFixedWindowLimiter(
                     partitionKey: ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -178,6 +194,20 @@ try
                     {
                         PermitLimit          = loginMax,
                         Window               = TimeSpan.FromMinutes(loginWindow),
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit           = 0
+                    }));
+
+            // Refresh — politică separată și mai permisivă. Rotația token-ului e o
+            // operație legitimă declanșată la 15 minute de fiecare tab deschis, deci
+            // limita de login ar fi epuizată de utilizare normală.
+            rl.AddPolicy("refresh", ctx =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    partitionKey: ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    factory: _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit          = refreshMax,
+                        Window               = TimeSpan.FromMinutes(refreshWindow),
                         QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                         QueueLimit           = 0
                     }));
@@ -272,11 +302,14 @@ try
         app.UseHttpsRedirection();
     }
 
-    app.UseRateLimiter();
-
     app.UseCors("ValyanClinicCors");
 
     app.UseAuthentication();
+
+    // Dupa UseAuthentication: limitarea globala partitioneaza pe utilizator cand
+    // exista claims, si abia altfel pe IP. Inainte de autentificare, ctx.User e gol
+    // si toata clinica ar imparti cota unui singur IP.
+    app.UseRateLimiter();
 
     // Autorizare — controller-ele care nu au [AllowAnonymous] cer JWT valid
     app.UseAuthorization();

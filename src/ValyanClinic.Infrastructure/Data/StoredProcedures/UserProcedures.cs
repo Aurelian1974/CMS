@@ -31,3 +31,10 @@ public static class RefreshTokenProcedures
     public const string Rotate     = "dbo.RefreshToken_Rotate";
     public const string DeleteExpired = "dbo.RefreshToken_DeleteExpired";
 }
+
+/// <summary>Nume SP pentru jurnalul de evenimente de securitate.</summary>
+public static class SecurityEventProcedures
+{
+    public const string Create    = "dbo.SecurityEvent_Create";
+    public const string DeleteOld = "dbo.SecurityEvent_DeleteOld";
+}

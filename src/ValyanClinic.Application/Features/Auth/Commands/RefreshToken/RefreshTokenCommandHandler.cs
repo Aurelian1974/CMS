@@ -27,6 +27,7 @@ public sealed class RefreshTokenCommandHandler(
     ITokenService tokenService,
     IPermissionRepository permissionRepository,
     IOptions<JwtOptions> jwtOptions,
+    ISecurityEventLogger securityLog,
     IMemoryCache cache)
     : IRequestHandler<RefreshTokenCommand, Result<LoginResponseDto>>
 {
@@ -44,6 +45,12 @@ public sealed class RefreshTokenCommandHandler(
         if (existingToken.IsRevoked)
         {
             await authRepository.RevokeAllRefreshTokensAsync(existingToken.UserId, ct);
+
+            await securityLog.LogAsync(
+                SecurityEventTypes.TokenReuseDetected, succeeded: false,
+                userId: existingToken.UserId,
+                details: "Refresh token revocat, prezentat din nou. Lantul a fost revocat.", ct: ct);
+
             return Result<LoginResponseDto>.Unauthorized(ErrorMessages.Auth.TokenReuseDetected);
         }
 
@@ -93,6 +100,10 @@ public sealed class RefreshTokenCommandHandler(
                 PermissionCacheKeys.Ttl);
             cache.Set(dtoCacheKey, effectivePermissions, PermissionCacheKeys.Ttl);
         }
+
+        await securityLog.LogAsync(
+            SecurityEventTypes.TokenRefreshed, succeeded: true,
+            userId: user.Id, clinicId: user.ClinicId, ct: ct);
 
         var permissions = effectivePermissions
             .Select(p => new ModulePermissionDto

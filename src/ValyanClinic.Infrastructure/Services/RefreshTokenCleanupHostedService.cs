@@ -8,11 +8,12 @@ using ValyanClinic.Application.Common.Interfaces;
 namespace ValyanClinic.Infrastructure.Services;
 
 /// <summary>
-/// Serviciu background care șterge zilnic refresh token-urile expirate sau revocate
-/// mai vechi decât perioada de retenție configurată.
+/// Serviciu background care șterge zilnic datele de autentificare expirate:
+/// refresh token-urile revocate sau expirate și evenimentele vechi din jurnalul
+/// de securitate, fiecare cu perioada lui de retenție.
 ///
-/// Fără el, tabela RefreshTokens crește la infinit: fiecare rotație lasă în urmă un
-/// rând revocat, iar rotația are loc la fiecare 15 minute pentru fiecare sesiune activă.
+/// Fără el, RefreshTokens crește la infinit: fiecare rotație lasă în urmă un rând
+/// revocat, iar rotația are loc la 15 minute pentru fiecare sesiune activă.
 /// </summary>
 public sealed class RefreshTokenCleanupHostedService(
     IServiceScopeFactory scopeFactory,
@@ -53,24 +54,31 @@ public sealed class RefreshTokenCleanupHostedService(
 
     private async Task CleanupAsync(CancellationToken ct)
     {
-        var retentionDays = options.Value.RefreshTokenRetentionDays;
+        var tokenRetention = options.Value.RefreshTokenRetentionDays;
+        var eventRetention = options.Value.SecurityEventRetentionDays;
 
         try
         {
             using var scope = scopeFactory.CreateScope();
             var authRepository = scope.ServiceProvider.GetRequiredService<IAuthRepository>();
+            var securityLog    = scope.ServiceProvider.GetRequiredService<ISecurityEventLogger>();
 
-            var deleted = await authRepository.DeleteExpiredRefreshTokensAsync(retentionDays, ct);
-
-            if (deleted > 0)
+            var deletedTokens = await authRepository.DeleteExpiredRefreshTokensAsync(tokenRetention, ct);
+            if (deletedTokens > 0)
                 logger.LogInformation(
                     "Curățare refresh tokens: {Deleted} rânduri șterse (retenție {Days} zile).",
-                    deleted, retentionDays);
+                    deletedTokens, tokenRetention);
+
+            var deletedEvents = await securityLog.DeleteOlderThanAsync(eventRetention, ct);
+            if (deletedEvents > 0)
+                logger.LogInformation(
+                    "Curățare jurnal securitate: {Deleted} evenimente șterse (retenție {Days} zile).",
+                    deletedEvents, eventRetention);
         }
         catch (Exception ex)
         {
             // Curățarea e un job de întreținere — un eșec nu trebuie să oprească serviciul.
-            logger.LogError(ex, "Curățarea refresh token-urilor a eșuat.");
+            logger.LogError(ex, "Curățarea datelor de autentificare a eșuat.");
         }
     }
 }
