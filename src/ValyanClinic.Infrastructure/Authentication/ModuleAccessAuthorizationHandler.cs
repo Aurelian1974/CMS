@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Memory;
 using ValyanClinic.Application.Common.Constants;
@@ -20,15 +21,12 @@ public sealed class ModuleAccessAuthorizationHandler(
         AuthorizationHandlerContext context,
         ModuleAccessRequirement requirement)
     {
-        // Extrage userId și roleId din claims
-        var userIdClaim = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        var roleIdClaim = context.User.FindFirst("roleId")?.Value;
-
-        if (string.IsNullOrEmpty(userIdClaim) || string.IsNullOrEmpty(roleIdClaim))
-            return; // Fail — nu are claims necesare
-
-        var userId = Guid.Parse(userIdClaim);
-        var roleId = Guid.Parse(roleIdClaim);
+        // Extrage userId și roleId din claims. TryParse tratează deopotrivă claim-ul
+        // absent și pe cel malformat: un GUID invalid într-un token înseamnă refuz de
+        // autorizare (401/403), nu o excepție netratată transformată în 500.
+        if (!Guid.TryParse(context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var userId)
+            || !Guid.TryParse(context.User.FindFirst("roleId")?.Value, out var roleId))
+            return;
 
         // Caută permisiunile în cache sau le încarcă din DB.
         // Cache-ul e pre-populat de LoginCommandHandler/RefreshTokenCommandHandler

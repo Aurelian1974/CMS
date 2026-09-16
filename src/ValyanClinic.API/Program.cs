@@ -43,6 +43,20 @@ try
     CultureInfo.DefaultThreadCurrentCulture   = roCulture;
     CultureInfo.DefaultThreadCurrentUICulture = roCulture;
 
+    // ===== Configurație sensibilă — nu este versionată în appsettings.json =====
+    // Development: dotnet user-secrets. Alte medii: variabile de mediu / Key Vault.
+    // Verificăm explicit aici, pentru un mesaj util în locul unei erori SQL obscure
+    // la primul query. Secretul JWT e validat separat, în AddInfrastructure.
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (string.IsNullOrWhiteSpace(connectionString))
+    {
+        throw new InvalidOperationException(
+            "ConnectionStrings:DefaultConnection lipsește din configurație. În Development: " +
+            "dotnet user-secrets set \"ConnectionStrings:DefaultConnection\" \"<connection string>\" " +
+            "--project src/ValyanClinic.API. " +
+            "În alte medii: variabila de mediu ConnectionStrings__DefaultConnection.");
+    }
+
     // ===== Infrastructure (Dapper, Auth, JWT, Options) =====
     builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -88,7 +102,7 @@ try
     // ===== Health Checks =====
     builder.Services.AddHealthChecks()
         .AddSqlServer(
-            connectionString: builder.Configuration.GetConnectionString("DefaultConnection")!,
+            connectionString: connectionString,
             name: "sql-server",
             tags: ["db", "ready"]);
 
@@ -189,8 +203,6 @@ try
     // Exemplu: dotnet run --project ... -- --migrate
     if (args.Contains("--migrate"))
     {
-        var connectionString = app.Configuration.GetConnectionString("DefaultConnection")
-                               ?? throw new InvalidOperationException("ConnectionString 'DefaultConnection' lipsă.");
         var migratorLogger = app.Services.GetRequiredService<ILogger<DatabaseMigrator>>();
         var migrator = new DatabaseMigrator(connectionString, migratorLogger);
         return migrator.Run() ? 0 : 1;

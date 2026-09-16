@@ -17,8 +17,23 @@ Aplicație de management pentru cabinet medical — pneumologie.
 ## Pornire
 
 1. Clonează repo-ul
-2. Creează baza de date și rulează migrările din `src/ValyanClinic.Infrastructure/Data/Scripts/Migrations/` (în ordine numerică)
-3. Configurează connection string în `appsettings.json` sau user-secrets
+2. Configurează secretele locale — `appsettings.json` NU le conține, iar aplicația
+   refuză să pornească fără ele:
+
+```bash
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=<server>;Database=ValyanClinic;Trusted_Connection=True;Encrypt=False;MultipleActiveResultSets=True" --project src/ValyanClinic.API
+```
+
+```bash
+dotnet user-secrets set "Jwt:Secret" "$(openssl rand -base64 64 | tr -d '
+')" --project src/ValyanClinic.API
+```
+
+   `Jwt:Secret` trebuie să aibă minimum 32 de bytes (cerință HMAC-SHA256); validarea
+   rulează la pornire. În afara mediului de development, folosiți variabile de mediu
+   (`ConnectionStrings__DefaultConnection`, `Jwt__Secret`) sau Key Vault.
+
+3. Creează baza de date și rulează migrările: `./migrate.ps1`
 4. Backend: `cd src/ValyanClinic.API && dotnet run`
 5. Frontend: `cd client && npm install && npm run dev`
 6. Deschide `http://localhost:5173`

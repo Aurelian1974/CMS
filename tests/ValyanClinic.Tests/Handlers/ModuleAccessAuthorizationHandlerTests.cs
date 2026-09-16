@@ -100,6 +100,31 @@ public sealed class ModuleAccessAuthorizationHandlerTests
         Assert.False(context.HasSucceeded);
     }
 
+    // ── Claims malformate ─────────────────────────────────────────────────────
+    // Anterior se folosea Guid.Parse: un claim care nu e GUID valid arunca
+    // FormatException din handler-ul de autorizare, ceea ce se transforma în 500
+    // în loc de un refuz curat. Acum TryParse tratează cazul ca lipsă de autorizare.
+
+    [Theory]
+    [InlineData("nu-e-un-guid", null)]
+    [InlineData(null, "nu-e-un-guid")]
+    [InlineData("nu-e-un-guid", "nici-asta")]
+    [InlineData("", "")]
+    public async Task HandleAsync_MalformedGuidClaims_DoesNotSucceed_AndDoesNotThrow(
+        string? userId, string? roleId)
+    {
+        var user = MakeUser(
+            userId: userId ?? UserId.ToString(),
+            roleId: roleId ?? RoleId.ToString());
+        var context = MakeContext(user, Require("patients", AccessLevel.Read));
+
+        await CreateHandler().HandleAsync(context);
+
+        Assert.False(context.HasSucceeded);
+        await _repo.DidNotReceive().GetEffectiveByUserAsync(
+            Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
     // ── Verificare nivel acces ────────────────────────────────────────────────
 
     [Fact]

@@ -62,7 +62,7 @@ memoryCache.Set(cacheVersionKey, currentVersion + 1);
 
 ---
 
-### 🔴 BUG-002 — DevAuthBypassMiddleware lipsă claim `roleId`
+### ⬜ BUG-002 — DevAuthBypassMiddleware lipsă claim `roleId` — WON'T FIX (eliminat)
 
 **Fișier:** `DevAuthBypassMiddleware.cs`
 
@@ -90,11 +90,17 @@ if (string.IsNullOrEmpty(userIdClaim) || string.IsNullOrEmpty(roleIdClaim))
 **Impact:**  
 În environment Development, **toate endpoint-urile cu `[HasAccess]` returnează 403 Forbidden**, deoarece handler-ul returnează fără a apela `context.Succeed(requirement)`. Bypassul de dev nu funcționează corect pentru autorizare.
 
-**Fix recomandat:**
-```csharp
-// Adăugați în DevAuthBypassMiddleware:
-new Claim("roleId", "00000001-0000-0000-0000-000000000001"), // GUID rol Admin din seed
-```
+**Rezoluție (PR 2, Septembrie 2026): middleware-ul a fost eliminat, nu reparat.**
+
+Completarea lui cu `roleId` ar fi înrăutățit situația: middleware-ul injectează un
+principal cu rol `Admin` pentru orice cerere neautentificată, iar adăugarea claim-ului
+lipsă l-ar fi făcut să treacă și de `[HasAccess]`. Nu era înregistrat în `Program.cs`
+— deci impactul descris mai sus nu se manifesta în practică — dar rămânea o mină
+pentru primul `app.UseMiddleware<DevAuthBypassMiddleware>()` adăugat din greșeală.
+
+Vezi [DECIZII_ARHITECTURA_AUTH.md](DECIZII_ARHITECTURA_AUTH.md), secțiunea
+„Decizii adiacente". Pentru testarea locală fără login, folosiți un utilizator real
+din seed.
 
 ---
 
@@ -573,7 +579,7 @@ Testele de integrare acoperă:
 | ID | Task | Effort | Impact |
 |----|------|--------|--------|
 | BUG-001 | Fix cache key mismatch pentru user overrides | S (1h) | Critic |
-| BUG-002 | Adăugare `roleId` claim în DevAuthBypassMiddleware | XS (15min) | Critic (dev) |
+| BUG-002 | ~~Adăugare `roleId` claim în DevAuthBypassMiddleware~~ — middleware eliminat (PR 2) | — | Rezolvat |
 | BUG-004 | Sincronizare SqlErrorCodes cu SP-urile reale | M (4h) | Înalt |
 | SEC-001 | Mărire minim parolă la 8 caractere | XS (15min) | Mediu |
 | LOGIC-006 | Adăugare validator UpdateAppointmentStatusCommand | XS (30min) | Scăzut |
@@ -624,7 +630,7 @@ Testele de integrare acoperă:
 
 ### 🟠 Trebuie fixat înainte de next release
 
-4. **BUG-002** — DevAuthBypassMiddleware `roleId` lipsă (blochează dezvoltarea)
+4. ~~**BUG-002** — DevAuthBypassMiddleware `roleId` lipsă~~ — middleware eliminat (PR 2)
 5. **BUG-003** — Raw SQL în AuthRepository
 6. **BUG-004** — SqlErrorCodes inconsistente
 7. **FEAT-002** — Dashboard cu date reale
