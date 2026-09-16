@@ -193,7 +193,7 @@ e colapsat. 7 teste noi adăugate — total 20 teste în `Sidebar.test.tsx`, 327
 
 ---
 
-### Etapa 2 — Secțiuni colapsabile
+### Etapa 2 — Secțiuni colapsabile ✅ **finalizată**
 
 **Fișiere modificate:**
 - `client/src/store/uiStore.ts` — adaugă `expandedSections`, `toggleSection`, persist localStorage.
@@ -213,6 +213,16 @@ e colapsat. 7 teste noi adăugate — total 20 teste în `Sidebar.test.tsx`, 327
 - Starea supraviețuiește reload-ului.
 - Screen reader anunță corect starea.
 - Build + teste trec.
+
+**Implementat:** stare stocată ca `collapsedSections: string[]` în `uiStore`
+(persistată alături de `sidebarCollapsed` sub cheia `ui-storage`, nu o cheie
+separată `vc-sidebar-sections` — reutilizează același storage existent pentru a
+evita încă un artefact în localStorage). Secțiunile sunt forțat extinse automat
+când: (a) sidebar-ul e restrâns la iconițe (`sidebarCollapsed`), sau (b) există o
+căutare activă — altfel rezultatele filtrate ar putea rămâne ascunse de o
+restrângere anterioară. Animație cu `max-height` (0 → 600px) în loc de
+`grid-template-rows`, mai simplă și predictibilă pentru un număr fix de itemi.
+5 teste noi — total 25 teste în `Sidebar.test.tsx`, 332 în suită.
 
 **Estimare:** 4–5 ore.
 

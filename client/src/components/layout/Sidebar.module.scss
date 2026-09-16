@@ -244,8 +244,66 @@ $active-accent: $primary-light;   // culoarea indicatorului lateral activ
   color: rgba(255, 255, 255, 0.5);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  padding: 0.75rem 1.25rem 0.25rem;
   white-space: nowrap;
+}
+
+// Header de secțiune — buton clickabil care extinde/restrânge lista de itemi
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.75rem 1.25rem 0.25rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+
+  &:disabled {
+    cursor: default;
+  }
+
+  &:focus-visible {
+    outline: 2px solid $active-accent;
+    outline-offset: -2px;
+  }
+
+  .sidebar.collapsed & {
+    pointer-events: none;
+    padding: 0.5rem 0 0.25rem;
+    justify-content: center;
+  }
+}
+
+.sectionChevron {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.35);
+  transition: transform 0.2s ease;
+  transform: rotate(-90deg);
+
+  &.expanded {
+    transform: rotate(0deg);
+  }
+
+  .sidebar.collapsed & {
+    @extend .visuallyHidden;
+  }
+}
+
+// Wrapper animat pentru itemii unei secțiuni
+.itemsWrapper {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.25s ease;
+
+  &.expanded {
+    max-height: 600px; // suficient pentru cea mai lungă secțiune (Administrare, 12 itemi)
+  }
+
+  .sidebar.collapsed & {
+    max-height: none;
+    overflow: visible;
+  }
 }
 
 // ===== Item navigare =====
@@ -462,7 +520,11 @@ $active-accent: $primary-light;   // culoarea indicatorului lateral activ
   .userBlock,
   .iconBtn,
   .collapseBtn,
-  .collapseBtn svg {
+  .collapseBtn svg,
+  .itemsWrapper,
+  .sectionChevron,
+  .searchInput,
+  .searchClear {
     transition: none !important;
   }
 }

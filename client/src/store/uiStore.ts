@@ -8,12 +8,15 @@ interface UiState {
   ownPasswordModalOpen: boolean
   /** Query live pentru filtrarea itemilor din meniul sidebar-ului. */
   menuSearchQuery: string
+  /** Numele secțiunilor de navigare restrânse de utilizator (restul rămân extinse implicit). */
+  collapsedSections: string[]
   toggleSidebar: () => void
   setSidebarCollapsed: (collapsed: boolean) => void
   setNotificationCount: (count: number) => void
   openOwnPasswordModal: () => void
   closeOwnPasswordModal: () => void
   setMenuSearchQuery: (query: string) => void
+  toggleSection: (section: string) => void
 }
 
 /// Store UI — persistă doar preferințele de interfață, nu date de sesiune.
@@ -26,6 +29,7 @@ export const useUiStore = create<UiState>()(
       activeNotifications: 0,
       ownPasswordModalOpen: false,
       menuSearchQuery: '',
+      collapsedSections: [],
 
       toggleSidebar: () =>
         set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
@@ -41,11 +45,21 @@ export const useUiStore = create<UiState>()(
       closeOwnPasswordModal: () => set({ ownPasswordModalOpen: false }),
 
       setMenuSearchQuery: (query) => set({ menuSearchQuery: query }),
+
+      toggleSection: (section) =>
+        set((state) => ({
+          collapsedSections: state.collapsedSections.includes(section)
+            ? state.collapsedSections.filter((s) => s !== section)
+            : [...state.collapsedSections, section],
+        })),
     }),
     {
       name: 'ui-storage',
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ sidebarCollapsed: state.sidebarCollapsed }),
+      partialize: (state) => ({
+        sidebarCollapsed: state.sidebarCollapsed,
+        collapsedSections: state.collapsedSections,
+      }),
     },
   ),
 )

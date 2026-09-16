@@ -52,7 +52,7 @@ function renderSidebar() {
 describe('Sidebar', () => {
   beforeEach(() => {
     localStorage.clear()
-    useUiStore.setState({ sidebarCollapsed: false })
+    useUiStore.setState({ sidebarCollapsed: false, collapsedSections: [], menuSearchQuery: '' })
     useAuthStore.setState({
       user: {
         id: 'u-1',
@@ -275,5 +275,67 @@ describe('Sidebar', () => {
     fireEvent.keyDown(searchInput, { key: 'Escape' })
 
     expect(useUiStore.getState().menuSearchQuery).toBe('')
+  })
+
+  // ── Secțiuni colapsabile ─────────────────────────────────────────────────────
+
+  it('toate secțiunile sunt extinse implicit', () => {
+    grantRead(MODULE.Dashboard, MODULE.Invoices)
+    renderSidebar()
+
+    expect(screen.getByRole('button', { name: 'Principal' })).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('button', { name: 'Financiar' })).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByText('Dashboard')).toBeInTheDocument()
+    expect(screen.getByText('Facturi')).toBeInTheDocument()
+  })
+
+  it('click pe header restrânge secțiunea și îi ascunde itemii vizual', () => {
+    grantRead(MODULE.Dashboard, MODULE.Invoices)
+    renderSidebar()
+
+    const header = screen.getByRole('button', { name: 'Principal' })
+    fireEvent.click(header)
+
+    expect(header).toHaveAttribute('aria-expanded', 'false')
+    expect(useUiStore.getState().collapsedSections).toContain('Principal')
+    // Financiar rămâne neafectat.
+    expect(screen.getByRole('button', { name: 'Financiar' })).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('un al doilea click reextinde secțiunea', () => {
+    grantRead(MODULE.Dashboard)
+    renderSidebar()
+
+    const header = screen.getByRole('button', { name: 'Principal' })
+    fireEvent.click(header)
+    fireEvent.click(header)
+
+    expect(header).toHaveAttribute('aria-expanded', 'true')
+    expect(useUiStore.getState().collapsedSections).not.toContain('Principal')
+  })
+
+  it('starea restrânsă persistă în localStorage', () => {
+    grantRead(MODULE.Dashboard)
+    renderSidebar()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Principal' }))
+
+    const stored = JSON.parse(localStorage.getItem('ui-storage')!)
+    expect(stored.state.collapsedSections).toContain('Principal')
+  })
+
+  it('o secțiune restrânsă rămâne extinsă automat cât timp există o căutare activă', () => {
+    useUiStore.setState({ collapsedSections: ['Principal'] })
+    grantRead(MODULE.Dashboard, MODULE.Patients)
+    renderSidebar()
+
+    // Fără căutare, secțiunea e restrânsă.
+    expect(screen.getByRole('button', { name: 'Principal' })).toHaveAttribute('aria-expanded', 'false')
+
+    const searchInput = screen.getByRole('textbox', { name: 'Caută în meniu' })
+    fireEvent.change(searchInput, { target: { value: 'pac' } })
+
+    expect(screen.getByRole('button', { name: 'Principal' })).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByText('Pacienți')).toBeInTheDocument()
   })
 })

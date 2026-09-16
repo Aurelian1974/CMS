@@ -19,6 +19,7 @@ import {
   SlidersHorizontal,
   ScrollText,
   ChevronLeft,
+  ChevronDown,
   KeyRound,
   LogOut,
   Clock,
@@ -133,6 +134,8 @@ export const Sidebar = () => {
   const openOwnPasswordModal = useUiStore((s) => s.openOwnPasswordModal);
   const menuSearchQuery = useUiStore((s) => s.menuSearchQuery);
   const setMenuSearchQuery = useUiStore((s) => s.setMenuSearchQuery);
+  const collapsedSections = useUiStore((s) => s.collapsedSections);
+  const toggleSection = useUiStore((s) => s.toggleSection);
   const user = useAuthStore((s) => s.user);
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const navigate = useNavigate();
@@ -294,6 +297,12 @@ export const Sidebar = () => {
       <nav id="main-navigation" className={styles.nav} aria-label="Navigare principală">
         {visibleSections.map(({ section, items }) => {
           const sectionId = `nav-section-${section}`;
+          const itemsId = `nav-items-${section}`;
+          // Când există o căutare activă sau sidebar-ul e restrâns la iconițe,
+          // secțiunea rămâne mereu extinsă — altfel rezultatele filtrate sau
+          // iconițele ar putea fi ascunse de o restrângere anterioară.
+          const isSearching = menuSearchQuery.trim().length > 0;
+          const isExpanded = isSearching || sidebarCollapsed || !collapsedSections.includes(section);
           return (
             <div
               key={section}
@@ -301,25 +310,45 @@ export const Sidebar = () => {
               role="group"
               aria-labelledby={sectionId}
             >
-              <div id={sectionId} className={styles.sectionLabel}>{section}</div>
-              {items.map(({ to, label, icon }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  ref={(node) => {
-                    if (node?.classList.contains(styles.active)) {
-                      activeLinkRef.current = node;
+              <button
+                type="button"
+                id={sectionId}
+                className={styles.sectionHeader}
+                onClick={() => toggleSection(section)}
+                aria-expanded={isExpanded}
+                aria-controls={itemsId}
+                disabled={isSearching}
+              >
+                <span className={styles.sectionLabel}>{section}</span>
+                <ChevronDown
+                  size={13}
+                  strokeWidth={2}
+                  className={`${styles.sectionChevron}${isExpanded ? ` ${styles.expanded}` : ''}`}
+                />
+              </button>
+              <div
+                id={itemsId}
+                className={`${styles.itemsWrapper}${isExpanded ? ` ${styles.expanded}` : ''}`}
+              >
+                {items.map(({ to, label, icon }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    ref={(node) => {
+                      if (node?.classList.contains(styles.active)) {
+                        activeLinkRef.current = node;
+                      }
+                    }}
+                    className={({ isActive }) =>
+                      `${styles.navItem}${isActive ? ` ${styles.active}` : ''}`
                     }
-                  }}
-                  className={({ isActive }) =>
-                    `${styles.navItem}${isActive ? ` ${styles.active}` : ''}`
-                  }
-                  title={sidebarCollapsed ? label : undefined}
-                >
-                  <span className={styles.navIcon}>{icon}</span>
-                  <span className={styles.navLabel}>{label}</span>
-                </NavLink>
-              ))}
+                    title={sidebarCollapsed ? label : undefined}
+                  >
+                    <span className={styles.navIcon}>{icon}</span>
+                    <span className={styles.navLabel}>{label}</span>
+                  </NavLink>
+                ))}
+              </div>
             </div>
           );
         })}
