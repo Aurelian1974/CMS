@@ -69,6 +69,8 @@ public static class ErrorMessages
         public const string NotFound                = "Utilizatorul nu a fost găsit.";
         public const string CurrentPasswordIncorrect = "Parola curentă este incorectă.";
         public const string PasswordUnchanged        = "Parola nouă trebuie să fie diferită de cea curentă.";
+        public const string PasswordRecentlyUsed =
+            "Parola a mai fost folosită recent. Alegeți una diferită de ultimele {0}.";
         public const string PasswordResetRequiresAdmin =
             "Doar un administrator poate reseta parola altui utilizator.";
         public const string UseSelfServiceForOwnPassword =

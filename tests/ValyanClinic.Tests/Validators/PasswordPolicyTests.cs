@@ -1,104 +1,229 @@
-using FluentValidation.TestHelper;
+using NSubstitute;
+using ValyanClinic.Application.Common.Interfaces;
 using ValyanClinic.Application.Common.Validation;
-using ValyanClinic.Application.Features.Users.Commands.ChangeOwnPassword;
-using ValyanClinic.Application.Features.Users.Commands.ResetUserPassword;
+using ValyanClinic.Application.Features.SecuritySettings.DTOs;
 using Xunit;
 
 namespace ValyanClinic.Tests.Validators;
 
 /// <summary>
-/// Teste pentru politica de parole, aplicată identic pe ambele fluxuri.
-/// Politica anterioară cerea doar 8 caractere, fără listă de blocare.
+/// Teste pentru politica de parole, acum citita din setări în loc de constante.
+///
+/// Verificatorul returnează lista de încălcări, nu un adevărat/fals: utilizatorul
+/// trebuie să afle exact ce lipsește. Testele verifică și conținutul mesajelor unde
+/// asta contează.
 /// </summary>
 public sealed class PasswordPolicyTests
 {
-    private readonly ChangeOwnPasswordCommandValidator _ownValidator = new();
-    private readonly ResetUserPasswordCommandValidator _resetValidator = new();
+    private readonly ISecuritySettingsProvider _provider =
+        Substitute.For<ISecuritySettingsProvider>();
 
-    private static ChangeOwnPasswordCommand Own(string newPassword)
-        => new("ParolaCurenta123", newPassword);
+    /// <summary>Configurează politica activă pentru un test.</summary>
+    private PasswordPolicyChecker WithSettings(SecuritySettingsDto settings)
+    {
+        _provider.GetAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult(settings));
+        return new PasswordPolicyChecker(_provider);
+    }
 
-    private static ResetUserPasswordCommand Reset(string newPassword)
-        => new(Guid.NewGuid(), newPassword);
+    /// <summary>Politica implicită: exact comportamentul de dinainte de Etapa 2.</summary>
+    private PasswordPolicyChecker WithDefaults() => WithSettings(new SecuritySettingsDto());
 
-    // ── Lungime ───────────────────────────────────────────────────────────────
+    // ── Comportamentul implicit nu se schimbă ─────────────────────────────────
+
+    [Fact]
+    public async Task Defaults_AcceptStrongPassword_WithoutCompositionRules()
+    {
+        // Regulile de compoziție pornesc oprite: o parolă lungă fără cifre trece,
+        // exact ca înainte de a exista setările.
+        var errors = await WithDefaults().ValidateAsync("Ploaie-Verde-Munte");
+
+        Assert.Empty(errors);
+    }
 
     [Theory]
-    [InlineData("")]
     [InlineData("scurt")]
-    [InlineData("11caractere")]          // 11 — sub prag
-    public void NewPassword_TooShort_HasError(string password)
+    [InlineData("11caractere")]
+    public async Task Defaults_RejectTooShort(string password)
     {
-        _ownValidator.TestValidate(Own(password))
-                     .ShouldHaveValidationErrorFor(x => x.NewPassword);
-    }
+        var errors = await WithDefaults().ValidateAsync(password);
 
-    [Fact]
-    public void NewPassword_AtMinimumLength_IsAccepted()
-    {
-        var password = new string('x', PasswordRules.MinimumLength);
-        _ownValidator.TestValidate(Own(password))
-                     .ShouldNotHaveValidationErrorFor(x => x.NewPassword);
+        Assert.Contains(errors, e => e.Contains("minimum 12 caractere"));
     }
-
-    [Fact]
-    public void NewPassword_TooLong_HasError()
-    {
-        var password = new string('x', PasswordRules.MaximumLength + 1);
-        _ownValidator.TestValidate(Own(password))
-                     .ShouldHaveValidationErrorFor(x => x.NewPassword);
-    }
-
-    // ── Listă de blocare ──────────────────────────────────────────────────────
 
     [Theory]
     [InlineData("password123")]
-    [InlineData("PASSWORD123")]          // comparația e case-insensitive
-    [InlineData("parola123")]
+    [InlineData("PAROLA123")]
     [InlineData("valyanclinic")]
-    [InlineData("administrator")]
-    [InlineData("1234567890")]
-    public void NewPassword_CommonlyUsed_HasError(string password)
+    public async Task Defaults_RejectBlockedPasswords(string password)
     {
-        _ownValidator.TestValidate(Own(password))
-                     .ShouldHaveValidationErrorFor(x => x.NewPassword);
+        var errors = await WithDefaults().ValidateAsync(password);
+
+        Assert.Contains(errors, e => e.Contains("prea des folosită"));
     }
 
     [Fact]
-    public void NewPassword_WhitespaceOnly_HasError()
+    public async Task Defaults_RejectWhitespaceOnly()
     {
-        _ownValidator.TestValidate(Own(new string(' ', 20)))
-                     .ShouldHaveValidationErrorFor(x => x.NewPassword);
+        var errors = await WithDefaults().ValidateAsync(new string(' ', 20));
+
+        Assert.Contains(errors, e => e.Contains("doar spații"));
     }
 
-    // ── Politica e identică pe ambele fluxuri ─────────────────────────────────
+    [Fact]
+    public async Task Empty_IsRejectedWithSingleMessage()
+    {
+        var errors = await WithDefaults().ValidateAsync("");
+
+        Assert.Single(errors);
+        Assert.Contains("obligatorie", errors[0]);
+    }
+
+    // ── Reguli de compoziție, fiecare separat ─────────────────────────────────
+
+    [Fact]
+    public async Task MinDigits_IsEnforced_AndMessageSaysHowManyAreMissing()
+    {
+        var checker = WithSettings(new SecuritySettingsDto { PasswordMinDigits = 3 });
+
+        var errors = await checker.ValidateAsync("ParolaFaraCifre1");
+
+        var message = Assert.Single(errors);
+        Assert.Contains("cel puțin 3 cifre", message);
+        Assert.Contains("(are 1)", message);
+    }
+
+    [Fact]
+    public async Task MinSpecial_IsEnforced()
+    {
+        var checker = WithSettings(new SecuritySettingsDto { PasswordMinSpecial = 2 });
+
+        var errors = await checker.ValidateAsync("ParolaFaraSimboluri");
+
+        Assert.Contains(errors, e => e.Contains("caractere speciale"));
+    }
+
+    [Fact]
+    public async Task MinUppercase_IsEnforced()
+    {
+        var checker = WithSettings(new SecuritySettingsDto { PasswordMinUppercase = 2 });
+
+        var errors = await checker.ValidateAsync("parola-fara-majuscule");
+
+        Assert.Contains(errors, e => e.Contains("litere mari"));
+    }
+
+    [Fact]
+    public async Task MinLowercase_IsEnforced()
+    {
+        var checker = WithSettings(new SecuritySettingsDto { PasswordMinLowercase = 2 });
+
+        var errors = await checker.ValidateAsync("PAROLA-FARA-MINUSCULE");
+
+        Assert.Contains(errors, e => e.Contains("litere mici"));
+    }
+
+    [Fact]
+    public async Task SingularIsUsedForOne()
+    {
+        var checker = WithSettings(new SecuritySettingsDto { PasswordMinDigits = 1 });
+
+        var errors = await checker.ValidateAsync("ParolaFaraNiciUna");
+
+        Assert.Contains(errors, e => e.Contains("1 cifră") && !e.Contains("cifre"));
+    }
+
+    [Fact]
+    public async Task AllCompositionRules_AreReportedTogether()
+    {
+        // Utilizatorul trebuie să vadă tot ce lipsește dintr-o dată, nu regulă cu regulă.
+        var checker = WithSettings(new SecuritySettingsDto
+        {
+            PasswordMinDigits    = 2,
+            PasswordMinSpecial   = 2,
+            PasswordMinUppercase = 2,
+        });
+
+        var errors = await checker.ValidateAsync("parolanumaicuminuscule");
+
+        Assert.Equal(3, errors.Count);
+    }
+
+    [Fact]
+    public async Task PasswordSatisfyingAllRules_IsAccepted()
+    {
+        var checker = WithSettings(new SecuritySettingsDto
+        {
+            PasswordMinDigits    = 2,
+            PasswordMinSpecial   = 1,
+            PasswordMinUppercase = 1,
+            PasswordMinLowercase = 1,
+        });
+
+        var errors = await checker.ValidateAsync("Ploaie-Verde-42");
+
+        Assert.Empty(errors);
+    }
+
+    // ── Caracterele speciale ──────────────────────────────────────────────────
 
     [Theory]
-    [InlineData("scurt")]
-    [InlineData("password123")]
-    public void ResetFlow_AppliesSamePolicy(string password)
+    [InlineData('!')]
+    [InlineData('@')]
+    [InlineData('-')]
+    [InlineData(' ')]
+    [InlineData('ș')]   // nu e special: e literă
+    public void IsSpecial_ClassifiesByExclusion(char c)
     {
-        _resetValidator.TestValidate(Reset(password))
-                       .ShouldHaveValidationErrorFor(x => x.NewPassword);
+        // Definiția prin excludere evită o listă fixă de simboluri care ar respinge
+        // caractere valide dintr-un layout de tastatură diferit.
+        Assert.Equal(!char.IsLetterOrDigit(c), PasswordRules.IsSpecial(c));
+    }
+
+    // ── Parola egală cu identitatea contului ──────────────────────────────────
+
+    [Fact]
+    public async Task PasswordEqualToIdentityValue_IsRejected()
+    {
+        var checker = WithDefaults();
+
+        var errors = await checker.ValidateAsync(
+            "medic@valyanclinic.ro",
+            ["medic@valyanclinic.ro", "medic"]);
+
+        Assert.Contains(errors, e => e.Contains("identică cu emailul"));
     }
 
     [Fact]
-    public void BothFlows_AcceptTheSameStrongPassword()
+    public async Task IdentityCheck_IsCaseInsensitive()
     {
-        const string strong = "Ploaie-Verde-42-Munte";
+        var checker = WithDefaults();
 
-        _ownValidator.TestValidate(Own(strong))
-                     .ShouldNotHaveValidationErrorFor(x => x.NewPassword);
-        _resetValidator.TestValidate(Reset(strong))
-                       .ShouldNotHaveValidationErrorFor(x => x.NewPassword);
+        var errors = await checker.ValidateAsync("Medic@Valyanclinic.Ro", ["medic@valyanclinic.ro"]);
+
+        Assert.Contains(errors, e => e.Contains("identică cu emailul"));
     }
 
-    // ── Parola curentă ────────────────────────────────────────────────────────
+    [Fact]
+    public async Task IdentityCheck_CanBeDisabled()
+    {
+        var checker = WithSettings(new SecuritySettingsDto { PasswordForbidIdentityValues = false });
+
+        var errors = await checker.ValidateAsync("medic@valyanclinic.ro", ["medic@valyanclinic.ro"]);
+
+        Assert.Empty(errors);
+    }
+
+    // ── Politica configurată nu poate coborî sub praguri ──────────────────────
 
     [Fact]
-    public void CurrentPassword_Empty_HasError()
+    public async Task ProviderGuaranteesFloors_SoCheckerNeverAcceptsShortPasswords()
     {
-        _ownValidator.TestValidate(new ChangeOwnPasswordCommand("", "Ploaie-Verde-42-Munte"))
-                     .ShouldHaveValidationErrorFor(x => x.CurrentPassword);
+        // Provider-ul real trece setările prin SecuritySettingsLimits.Sanitize, deci
+        // aici simulăm rezultatul acelei ridicări: 4 devine 8.
+        var checker = WithSettings(new SecuritySettingsDto { PasswordMinLength = 8 });
+
+        var errors = await checker.ValidateAsync("1234567");
+
+        Assert.Contains(errors, e => e.Contains("minimum 8 caractere"));
     }
 }

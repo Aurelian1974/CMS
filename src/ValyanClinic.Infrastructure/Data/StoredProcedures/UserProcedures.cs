@@ -48,3 +48,10 @@ public static class SecuritySettingsProcedures
     public const string GetAllRoles = "dbo.RoleSecuritySettings_GetAll";
     public const string UpdateRole  = "dbo.RoleSecuritySettings_Update";
 }
+
+/// <summary>Nume SP pentru istoricul parolelor.</summary>
+public static class PasswordHistoryProcedures
+{
+    public const string Add       = "dbo.PasswordHistory_Add";
+    public const string GetRecent = "dbo.PasswordHistory_GetRecent";
+}

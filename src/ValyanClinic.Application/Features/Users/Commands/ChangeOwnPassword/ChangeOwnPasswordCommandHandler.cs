@@ -15,6 +15,7 @@ public sealed class ChangeOwnPasswordCommandHandler(
     IAuthRepository authRepository,
     IPasswordHasher passwordHasher,
     ICurrentUser currentUser,
+    ISecuritySettingsProvider settingsProvider,
     ISecurityEventLogger securityLog)
     : IRequestHandler<ChangeOwnPasswordCommand, Result<bool>>
 {
@@ -40,6 +41,20 @@ public sealed class ChangeOwnPasswordCommandHandler(
         if (passwordHasher.VerifyPassword(request.NewPassword, user.PasswordHash))
             return Result<bool>.Failure(ErrorMessages.User.PasswordUnchanged);
 
+        // Reutilizarea parolelor recente, daca istoricul e activat. Verificarea
+        // inseamna cate un BCrypt verify per intrare, deci costa — dar numai la
+        // schimbarea parolei, nu la fiecare autentificare.
+        var settings = await settingsProvider.GetAsync(ct);
+        if (settings.PasswordHistoryCount > 0)
+        {
+            var recent = await repository.GetRecentPasswordHashesAsync(
+                userId, settings.PasswordHistoryCount, ct);
+
+            if (recent.Any(hash => passwordHasher.VerifyPassword(request.NewPassword, hash)))
+                return Result<bool>.Failure(string.Format(
+                    ErrorMessages.User.PasswordRecentlyUsed, settings.PasswordHistoryCount));
+        }
+
         try
         {
             var passwordHash = passwordHasher.HashPassword(request.NewPassword);
@@ -51,6 +66,14 @@ public sealed class ChangeOwnPasswordCommandHandler(
                 userId,
                 mustChangePassword: false,
                 ct);
+
+            if (settings.PasswordHistoryCount > 0)
+            {
+                // Pastram hash-ul VECHI: istoricul exista ca sa interzica intoarcerea
+                // la parole abandonate, iar cea noua e deja in Users.PasswordHash.
+                await repository.AddPasswordHistoryAsync(
+                    userId, user.PasswordHash, settings.PasswordHistoryCount, ct);
+            }
 
             // Sesiunile deschise cu parola veche trebuie să cadă.
             await authRepository.RevokeAllRefreshTokensAsync(userId, ct);

@@ -25,7 +25,8 @@ BEGIN
            u.LastLoginAt,
            u.FailedLoginAttempts,
            u.LockoutEnd,
-           u.MustChangePassword
+           u.MustChangePassword,
+           u.PasswordChangedAt
     FROM Users u
     INNER JOIN Roles r ON r.Id = u.RoleId
     WHERE u.Id = @Id

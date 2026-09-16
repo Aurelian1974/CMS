@@ -1,8 +1,8 @@
 # Plan — Ecran de administrare a politicilor de securitate
 
 > Data: 16 Septembrie 2026
-> Stare: **Etapa 1 finalizată**, restul neîncepute
-> Revizie: v1.2 — Etapa 1 implementată
+> Stare: **Etapele 1–2 finalizate**, restul neîncepute
+> Revizie: v1.3 — Etapele 1 și 2 implementate
 > Vezi și: [DECIZII_ARHITECTURA_AUTH.md](DECIZII_ARHITECTURA_AUTH.md), [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md)
 
 Un ecran unic din care administratorul configurează politica de parole, durata
@@ -233,13 +233,30 @@ guvernează comportamentul, nu doar sunt stocate.
 să îl recalculeze dintr-o valoare globală — altfel cookie-ul și rândul din baza de
 date ar fi putut diverge odată ce durata devine per rol.
 
-### Etapa 2 — Politica de parole configurabilă
-- [ ] `PasswordRules` devine dinamic, alimentat de provider, cu praguri minime impuse
-- [ ] Reguli de compoziție: cifre, speciale, majuscule, minuscule
-- [ ] Mesaje de eroare care spun exact ce lipsește, nu „parolă invalidă"
-- [ ] `PasswordHistory` + verificare la schimbare
-- [ ] `PasswordChangedAt` + expirare, prin `MustChangePassword` la login
-- [ ] Teste: fiecare regulă separat, plus că pragurile minime nu pot fi coborâte
+### Etapa 2 — Politica de parole configurabilă ✅
+- [x] `IPasswordPolicyChecker` — politica se citește din setări la fiecare validare
+- [x] Reguli de compoziție: cifre, speciale, majuscule, minuscule
+- [x] Mesaje care spun exact ce lipsește și cât: „cel puțin 2 cifre (are 0)"
+- [x] Migrarea 0048: `PasswordHistory` + `Users.PasswordChangedAt`
+- [x] Verificarea reutilizării la schimbarea parolei
+- [x] Expirarea parolei, calculată la login fără scriere în baza de date
+- [x] 33 de teste noi
+
+**Decizii de implementare:**
+
+- Validatorii folosesc `CustomAsync`, nu reguli fluente: politica se citește din baza
+  de date la fiecare validare, deci nu poate fi construită în constructorul validatorului.
+- Expirarea se **calculează** la login, nu se scrie. Flag-ul persistent
+  `MustChangePassword` rămâne rezervat resetului administrativ; expirarea e o funcție de
+  timp care se poate opri oricând din setări fără să lase urme de curățat.
+- Istoricul păstrează hash-ul **vechi** la schimbare — cel nou e deja în `Users`.
+- Un `PasswordChangedAt` necunoscut nu forțează schimbarea: nu deconectăm utilizatori
+  pe baza unei informații pe care nu o avem.
+
+**Verificat live:** cu politica implicită comportamentul e neschimbat (o parolă lungă
+fără cifre trece). După activarea regulilor în baza de date, politica nouă a devenit
+activă în **52 de secunde fără repornire** — confirmarea că TTL-ul din Etapa 1
+funcționează. Istoricul a respins corect întoarcerea la o parolă anterioară.
 
 ### Etapa 3 — Expirare pe inactivitate, per rol
 - [ ] Access token scurtat la 5 minute (granularitatea observării inactivității)
@@ -286,7 +303,7 @@ date ar fi putut diverge odată ce durata devine per rol.
 | Etapă | Stare |
 |---|---|
 | 1 — Fundația | ✅ **finalizată** |
-| 2 — Politica de parole | ⬜ neînceput |
+| 2 — Politica de parole | ✅ **finalizată** |
 | 3 — Inactivitate per rol | ⬜ neînceput |
 | 4 — Ecranul de administrare | ⬜ neînceput |
 | 5 — Ecranul jurnalului | ⬜ neînceput |

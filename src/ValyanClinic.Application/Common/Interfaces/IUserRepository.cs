@@ -33,5 +33,15 @@ public interface IUserRepository
         Guid id, Guid clinicId, string passwordHash, Guid updatedBy,
         bool mustChangePassword, CancellationToken ct);
 
+    /// <summary>Ultimele hash-uri de parolă ale utilizatorului, pentru verificarea reutilizării.</summary>
+    Task<IReadOnlyList<string>> GetRecentPasswordHashesAsync(Guid userId, int count, CancellationToken ct);
+
+    /// <summary>
+    /// Adaugă un hash în istoric și păstrează doar ultimele <paramref name="keep"/>.
+    /// Istoricul nu are sens dincolo de fereastra configurată, iar păstrarea lui ar fi
+    /// date sensibile fără scop.
+    /// </summary>
+    Task AddPasswordHistoryAsync(Guid userId, string passwordHash, int keep, CancellationToken ct);
+
     Task<IReadOnlyList<RoleDto>> GetAllRolesAsync(CancellationToken ct);
 }

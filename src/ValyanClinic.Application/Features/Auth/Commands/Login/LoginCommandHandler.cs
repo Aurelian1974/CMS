@@ -35,6 +35,20 @@ public sealed class LoginCommandHandler(
     /// </summary>
     private static string? _dummyPasswordHash;
 
+    /// <summary>
+    /// Parola a depasit durata de valabilitate configurata. Se calculeaza la login,
+    /// fara sa scriem in baza de date: flag-ul persistent ramane rezervat resetului
+    /// administrativ, iar expirarea e o functie de timp care se poate opri oricand
+    /// din setari fara sa lase urme de curatat.
+    /// </summary>
+    private static bool IsPasswordExpired(UserAuthDto user, int expiryDays)
+    {
+        if (expiryDays <= 0) return false;
+        if (user.PasswordChangedAt is not { } changedAt) return false;
+
+        return changedAt.AddDays(expiryDays) < DateTime.UtcNow;
+    }
+
     public async Task<Result<LoginResponseDto>> Handle(
         LoginCommand request, CancellationToken ct)
     {
@@ -160,7 +174,8 @@ public sealed class LoginCommandHandler(
                 RoleId = user.RoleId.ToString(),
                 ClinicId = user.ClinicId.ToString(),
                 DoctorId = user.DoctorId?.ToString(),
-                MustChangePassword = user.MustChangePassword,
+                MustChangePassword = user.MustChangePassword
+                                     || IsPasswordExpired(user, settings.PasswordExpiryDays),
             },
             Permissions = permissions
         };

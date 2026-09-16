@@ -25,7 +25,7 @@ public sealed class LoginCommandHandlerTests
 
     // Valori intenționat diferite de cele din RateLimiting (5/15): dacă handler-ul ar citi
     // din nou secțiunea greșită de configurare, aserțiunile de mai jos ar cădea.
-    private readonly SecuritySettingsDto _settings = new()
+    private SecuritySettingsDto _settings = new()
     {
         MaxFailedLoginAttempts = 3,
         LockoutMinutes = 30,
@@ -46,7 +46,7 @@ public sealed class LoginCommandHandlerTests
     public LoginCommandHandlerTests()
     {
         _settingsProvider.GetAsync(Arg.Any<CancellationToken>())
-                         .Returns(Task.FromResult(_settings));
+                         .Returns(_ => Task.FromResult(_settings));
         _settingsProvider.GetForRoleAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
                          .Returns(Task.FromResult(_roleSettings));
     }
@@ -55,7 +55,8 @@ public sealed class LoginCommandHandlerTests
     private static UserAuthDto BuildUser(
         bool isActive = true,
         DateTime? lockoutEnd = null,
-        int failedAttempts = 0) => new()
+        int failedAttempts = 0,
+        DateTime? passwordChangedAt = null) => new()
     {
         Id = Guid.NewGuid(),
         ClinicId = Guid.NewGuid(),
@@ -70,6 +71,7 @@ public sealed class LoginCommandHandlerTests
         IsActive = isActive,
         LockoutEnd = lockoutEnd,
         FailedLoginAttempts = failedAttempts,
+        PasswordChangedAt = passwordChangedAt,
     };
 
     // ── Utilizator inexistent ─────────────────────────────────────────────
@@ -377,6 +379,60 @@ public sealed class LoginCommandHandlerTests
         Assert.Equal(2, result.Value.Permissions.Count);
         Assert.Equal("patients", result.Value.Permissions[0].Module);
         Assert.Equal(3, result.Value.Permissions[0].Level);
+    }
+
+    // ── Expirarea parolei ─────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Handle_PasswordExpiryDisabled_DoesNotFlagOldPasswords()
+    {
+        // Implicit PasswordExpiryDays = 0: o parolă veche de ani rămâne valabilă.
+        var user = BuildUser(passwordChangedAt: DateTime.UtcNow.AddYears(-3));
+        SetupSuccessfulLogin(user);
+
+        var result = await CreateHandler().Handle(new LoginCommand("admin", "correct"), default);
+
+        Assert.True(result.IsSuccess);
+        Assert.False(result.Value!.User.MustChangePassword);
+    }
+
+    [Fact]
+    public async Task Handle_PasswordOlderThanExpiry_RequiresChange()
+    {
+        _settings = _settings with { PasswordExpiryDays = 90 };
+        var user = BuildUser(passwordChangedAt: DateTime.UtcNow.AddDays(-91));
+        SetupSuccessfulLogin(user);
+
+        var result = await CreateHandler().Handle(new LoginCommand("admin", "correct"), default);
+
+        Assert.True(result.IsSuccess, "expirarea nu trebuie să blocheze login-ul, doar să ceară schimbarea");
+        Assert.True(result.Value!.User.MustChangePassword);
+    }
+
+    [Fact]
+    public async Task Handle_PasswordWithinExpiry_DoesNotRequireChange()
+    {
+        _settings = _settings with { PasswordExpiryDays = 90 };
+        var user = BuildUser(passwordChangedAt: DateTime.UtcNow.AddDays(-89));
+        SetupSuccessfulLogin(user);
+
+        var result = await CreateHandler().Handle(new LoginCommand("admin", "correct"), default);
+
+        Assert.False(result.Value!.User.MustChangePassword);
+    }
+
+    [Fact]
+    public async Task Handle_PasswordChangedAtUnknown_DoesNotRequireChange()
+    {
+        // Conturi create înainte de migrarea 0048 și neactualizate: nu îi deconectăm
+        // pe baza unei informații pe care nu o avem.
+        _settings = _settings with { PasswordExpiryDays = 90 };
+        var user = BuildUser(passwordChangedAt: null);
+        SetupSuccessfulLogin(user);
+
+        var result = await CreateHandler().Handle(new LoginCommand("admin", "correct"), default);
+
+        Assert.False(result.Value!.User.MustChangePassword);
     }
 
     // ── Jurnal de securitate ──────────────────────────────────────────────

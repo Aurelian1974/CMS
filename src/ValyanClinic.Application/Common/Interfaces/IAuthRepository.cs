@@ -69,6 +69,12 @@ public sealed record UserAuthDto
 
     /// <summary>Contul trebuie să își schimbe parola la următoarea autentificare.</summary>
     public bool MustChangePassword { get; init; }
+
+    /// <summary>
+    /// Momentul ultimei schimbări de parolă, baza pentru expirare.
+    /// Null doar pentru conturi create înainte de migrarea 0048 și neactualizate.
+    /// </summary>
+    public DateTime? PasswordChangedAt { get; init; }
 }
 
 /// <summary>

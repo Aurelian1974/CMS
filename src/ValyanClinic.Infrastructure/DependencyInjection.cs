@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using ValyanClinic.Application.Common.Interfaces;
+using ValyanClinic.Application.Common.Validation;
 using ValyanClinic.Infrastructure.Authentication;
 using ValyanClinic.Application.Common.Configuration;
 using ValyanClinic.Infrastructure.Configuration;
@@ -114,6 +115,7 @@ public static class DependencyInjection
         services.AddScoped<IRequestContext, RequestContext>();
         services.AddScoped<ISecurityEventLogger, SecurityEventLogger>();
         services.AddScoped<ISecuritySettingsProvider, SecuritySettingsProvider>();
+        services.AddScoped<IPasswordPolicyChecker, PasswordPolicyChecker>();
 
         // ===== JWT Authentication =====
         // Secretul nu are valoare implicită și nu este versionat în appsettings.json:

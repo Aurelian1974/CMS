@@ -116,6 +116,32 @@ public sealed class UserRepository(DapperContext context) : IUserRepository
                 cancellationToken: ct));
     }
 
+    public async Task<IReadOnlyList<string>> GetRecentPasswordHashesAsync(
+        Guid userId, int count, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        var rows = await connection.QueryAsync<string>(
+            new CommandDefinition(
+                PasswordHistoryProcedures.GetRecent,
+                new { UserId = userId, Count = count },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+
+        return rows.ToList();
+    }
+
+    public async Task AddPasswordHistoryAsync(
+        Guid userId, string passwordHash, int keep, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                PasswordHistoryProcedures.Add,
+                new { UserId = userId, PasswordHash = passwordHash, Keep = keep },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+    }
+
     public async Task<IReadOnlyList<RoleDto>> GetAllRolesAsync(CancellationToken ct)
     {
         using var connection = context.CreateConnection();

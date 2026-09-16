@@ -27,6 +27,8 @@ BEGIN
         UPDATE Users
         SET PasswordHash       = @PasswordHash,
             MustChangePassword = @MustChangePassword,
+            -- Punctul de pornire pentru expirarea parolei
+            PasswordChangedAt  = SYSUTCDATETIME(),
             UpdatedBy          = @UpdatedBy,
             UpdatedAt          = GETDATE()
         WHERE Id = @Id AND ClinicId = @ClinicId AND IsDeleted = 0;

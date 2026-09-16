@@ -2,6 +2,7 @@ using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Interfaces;
+using ValyanClinic.Application.Features.SecuritySettings.DTOs;
 using ValyanClinic.Application.Features.Users.Commands.ChangeOwnPassword;
 using ValyanClinic.Tests.TestHelpers;
 using Xunit;
@@ -31,12 +32,19 @@ public sealed class ChangeOwnPasswordCommandHandlerTests
     private readonly IPasswordHasher _passwordHasher = Substitute.For<IPasswordHasher>();
     private readonly ICurrentUser    _currentUser    = Substitute.For<ICurrentUser>();
     private readonly ISecurityEventLogger _securityLog = Substitute.For<ISecurityEventLogger>();
+    private readonly ISecuritySettingsProvider _settingsProvider =
+        Substitute.For<ISecuritySettingsProvider>();
+
+    /// <summary>Politica activă în test; implicit istoricul e oprit, ca în producție.</summary>
+    private SecuritySettingsDto _settings = new();
 
     public ChangeOwnPasswordCommandHandlerTests()
     {
         _currentUser.Id.Returns(CurrentUserId);
         _currentUser.ClinicId.Returns(ClinicId);
         _passwordHasher.HashPassword(Arg.Any<string>()).Returns(HashedNewPassword);
+        _settingsProvider.GetAsync(Arg.Any<CancellationToken>())
+                         .Returns(_ => Task.FromResult(_settings));
 
         _authRepo.GetUserByIdForTokenAsync(CurrentUserId, Arg.Any<CancellationToken>())
                  .Returns(Task.FromResult<UserAuthDto?>(new UserAuthDto
@@ -48,7 +56,7 @@ public sealed class ChangeOwnPasswordCommandHandlerTests
     }
 
     private ChangeOwnPasswordCommandHandler CreateHandler() =>
-        new(_userRepo, _authRepo, _passwordHasher, _currentUser, _securityLog);
+        new(_userRepo, _authRepo, _passwordHasher, _currentUser, _settingsProvider, _securityLog);
 
     private void AcceptCurrentPassword()
         => _passwordHasher.VerifyPassword(CurrentPassword, StoredHash).Returns(true);
@@ -84,6 +92,64 @@ public sealed class ChangeOwnPasswordCommandHandlerTests
         await _userRepo.DidNotReceive().UpdatePasswordAsync(
             Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid>(),
             Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
+    // ── Istoricul parolelor ───────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Handle_HistoryDisabled_DoesNotQueryHistory()
+    {
+        // Implicit PasswordHistoryCount = 0: nicio interogare, niciun cost BCrypt suplimentar.
+        AcceptCurrentPassword();
+
+        await CreateHandler().Handle(
+            new ChangeOwnPasswordCommand(CurrentPassword, NewPassword), default);
+
+        await _userRepo.DidNotReceive().GetRecentPasswordHashesAsync(
+            Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+        await _userRepo.DidNotReceive().AddPasswordHistoryAsync(
+            Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_PasswordRecentlyUsed_IsRejected()
+    {
+        _settings = new SecuritySettingsDto { PasswordHistoryCount = 3 };
+        AcceptCurrentPassword();
+
+        const string OldHash = "hash-parola-veche";
+        _userRepo.GetRecentPasswordHashesAsync(CurrentUserId, 3, Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<IReadOnlyList<string>>([OldHash]));
+        _passwordHasher.VerifyPassword(NewPassword, OldHash).Returns(true);
+
+        var result = await CreateHandler().Handle(
+            new ChangeOwnPasswordCommand(CurrentPassword, NewPassword), default);
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("folosită recent", result.Error);
+        await _userRepo.DidNotReceive().UpdatePasswordAsync(
+            Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid>(),
+            Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_PasswordNotInHistory_IsAccepted_AndOldHashIsRecorded()
+    {
+        _settings = new SecuritySettingsDto { PasswordHistoryCount = 3 };
+        AcceptCurrentPassword();
+
+        _userRepo.GetRecentPasswordHashesAsync(CurrentUserId, 3, Arg.Any<CancellationToken>())
+                 .Returns(Task.FromResult<IReadOnlyList<string>>(["alt-hash"]));
+
+        var result = await CreateHandler().Handle(
+            new ChangeOwnPasswordCommand(CurrentPassword, NewPassword), default);
+
+        Assert.True(result.IsSuccess, $"Handler eșuat: {result.Error}");
+
+        // Se păstrează hash-ul VECHI: istoricul interzice întoarcerea la parole
+        // abandonate, iar cea nouă e deja în Users.PasswordHash.
+        await _userRepo.Received(1).AddPasswordHistoryAsync(
+            CurrentUserId, StoredHash, 3, Arg.Any<CancellationToken>());
     }
 
     // ── Cazul reușit ──────────────────────────────────────────────────────────
