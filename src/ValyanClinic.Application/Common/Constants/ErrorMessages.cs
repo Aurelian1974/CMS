@@ -36,6 +36,13 @@ public static class ErrorMessages
         public const string AnalysisNotInDictionary = "Analiza nu există în dicționar.";
     }
 
+    public static class ConsultationMedication
+    {
+        public const string NotFound             = "Medicamentul din tratament nu a fost găsit.";
+        public const string DrugNotFound         = "Medicamentul nu există în nomenclatorul CNAS sau nu mai este activ.";
+        public const string CopaymentListInvalid = "Medicamentul nu este compensat pe lista selectată.";
+    }
+
     public static class AnalysesResult
     {
         public const string NotFound = "Buletinul de analize nu a fost găsit.";
@@ -43,8 +50,13 @@ public static class ErrorMessages
 
     public static class Prescription
     {
-        public const string NotFound = "Rețeta nu a fost găsită.";
-        public const string Expired  = "Rețeta a expirat și nu mai poate fi modificată.";
+        public const string NotFound          = "Rețeta nu a fost găsită.";
+        public const string Expired           = "Rețeta a expirat și nu mai poate fi modificată.";
+        public const string SipeNotConfigured =
+            "Transmiterea în SIPE nu este configurată. Rețeta rămâne emisă; transmiteți-o din aplicația CNAS sau configurați integrarea.";
+        public const string SipeTransmissionFailed = "Transmiterea în SIPE a eșuat: {0}";
+        public const string NotTransmittable =
+            "Doar rețetele compensate emise (netransmise) pot fi transmise în SIPE.";
     }
 
     public static class Invoice

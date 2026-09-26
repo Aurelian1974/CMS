@@ -1,0 +1,62 @@
+@use '@/styles/variables' as *;
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1070;
+}
+
+.dialog {
+  background: $card-bg;
+  border-radius: $border-radius-lg;
+  box-shadow: $box-shadow-lg;
+  padding: 1.5rem;
+  max-width: 440px;
+  width: 100%;
+}
+
+.title {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  color: $gray-700;
+}
+
+.text {
+  margin: 0 0 0.75rem;
+  color: $gray-500;
+  font-size: 0.85rem;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 90px;
+  padding: 8px 10px;
+  border: 1.5px solid $gray-200;
+  border-radius: $border-radius;
+  font-size: 0.85rem;
+  color: $gray-700;
+  resize: vertical;
+  outline: none;
+
+  &:focus {
+    border-color: $primary;
+    box-shadow: 0 0 0 3px rgba($primary, 0.1);
+  }
+}
+
+.error {
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: darken($danger, 15%);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}

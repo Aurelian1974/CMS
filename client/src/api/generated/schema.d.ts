@@ -4909,6 +4909,474 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ConsultationMedications/by-consultation/{consultationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    consultationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ConsultationMedicationDtoIReadOnlyListApiResponse"];
+                        "application/json": components["schemas"]["ConsultationMedicationDtoIReadOnlyListApiResponse"];
+                        "text/json": components["schemas"]["ConsultationMedicationDtoIReadOnlyListApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ConsultationMedications/drug-search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    search?: string;
+                    top?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CnasDrugLookupDtoIReadOnlyListApiResponse"];
+                        "application/json": components["schemas"]["CnasDrugLookupDtoIReadOnlyListApiResponse"];
+                        "text/json": components["schemas"]["CnasDrugLookupDtoIReadOnlyListApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ConsultationMedications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description UUID opțional pentru idempotency. Răspunsul este cașat 5 minute — request-urile duplicate cu același key returnează același rezultat fără re-procesare. Recomandat la crearea de resurse pentru a preveni duplicatele în caz de retry. */
+                    "X-Idempotency-Key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateConsultationMedicationCommand"];
+                    "text/json": components["schemas"]["CreateConsultationMedicationCommand"];
+                    "application/*+json": components["schemas"]["CreateConsultationMedicationCommand"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["GuidApiResponse"];
+                        "application/json": components["schemas"]["GuidApiResponse"];
+                        "text/json": components["schemas"]["GuidApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ConsultationMedications/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateConsultationMedicationRequest"];
+                    "text/json": components["schemas"]["UpdateConsultationMedicationRequest"];
+                    "application/*+json": components["schemas"]["UpdateConsultationMedicationRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BooleanApiResponse"];
+                        "application/json": components["schemas"]["BooleanApiResponse"];
+                        "text/json": components["schemas"]["BooleanApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BooleanApiResponse"];
+                        "application/json": components["schemas"]["BooleanApiResponse"];
+                        "text/json": components["schemas"]["BooleanApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/Consultations": {
         parameters: {
             query?: never;
@@ -11189,6 +11657,1129 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/Prescriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    search?: string;
+                    prescriptionTypeId?: string;
+                    statusId?: string;
+                    doctorId?: string;
+                    patientId?: string;
+                    dateFrom?: string;
+                    dateTo?: string;
+                    page?: number;
+                    pageSize?: number;
+                    sortBy?: string;
+                    sortDir?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PrescriptionsPagedResponseApiResponse"];
+                        "application/json": components["schemas"]["PrescriptionsPagedResponseApiResponse"];
+                        "text/json": components["schemas"]["PrescriptionsPagedResponseApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description UUID opțional pentru idempotency. Răspunsul este cașat 5 minute — request-urile duplicate cu același key returnează același rezultat fără re-procesare. Recomandat la crearea de resurse pentru a preveni duplicatele în caz de retry. */
+                    "X-Idempotency-Key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreatePrescriptionsCommand"];
+                    "text/json": components["schemas"]["CreatePrescriptionsCommand"];
+                    "application/*+json": components["schemas"]["CreatePrescriptionsCommand"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["GuidIReadOnlyListApiResponse"];
+                        "application/json": components["schemas"]["GuidIReadOnlyListApiResponse"];
+                        "text/json": components["schemas"]["GuidIReadOnlyListApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/Prescriptions/lookups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PrescriptionLookupsDtoApiResponse"];
+                        "application/json": components["schemas"]["PrescriptionLookupsDtoApiResponse"];
+                        "text/json": components["schemas"]["PrescriptionLookupsDtoApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/Prescriptions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PrescriptionDetailDtoApiResponse"];
+                        "application/json": components["schemas"]["PrescriptionDetailDtoApiResponse"];
+                        "text/json": components["schemas"]["PrescriptionDetailDtoApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdatePrescriptionRequest"];
+                    "text/json": components["schemas"]["UpdatePrescriptionRequest"];
+                    "application/*+json": components["schemas"]["UpdatePrescriptionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BooleanApiResponse"];
+                        "application/json": components["schemas"]["BooleanApiResponse"];
+                        "text/json": components["schemas"]["BooleanApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BooleanApiResponse"];
+                        "application/json": components["schemas"]["BooleanApiResponse"];
+                        "text/json": components["schemas"]["BooleanApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/Prescriptions/{id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/pdf": string;
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/Prescriptions/by-consultation/{consultationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    consultationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PrescriptionListDtoIReadOnlyListApiResponse"];
+                        "application/json": components["schemas"]["PrescriptionListDtoIReadOnlyListApiResponse"];
+                        "text/json": components["schemas"]["PrescriptionListDtoIReadOnlyListApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/Prescriptions/from-consultation/{consultationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description UUID opțional pentru idempotency. Răspunsul este cașat 5 minute — request-urile duplicate cu același key returnează același rezultat fără re-procesare. Recomandat la crearea de resurse pentru a preveni duplicatele în caz de retry. */
+                    "X-Idempotency-Key"?: string;
+                };
+                path: {
+                    consultationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["GenerateConsultationPrescriptionsRequest"];
+                    "text/json": components["schemas"]["GenerateConsultationPrescriptionsRequest"];
+                    "application/*+json": components["schemas"]["GenerateConsultationPrescriptionsRequest"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["GuidIReadOnlyListApiResponse"];
+                        "application/json": components["schemas"]["GuidIReadOnlyListApiResponse"];
+                        "text/json": components["schemas"]["GuidIReadOnlyListApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/Prescriptions/{id}/issue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description UUID opțional pentru idempotency. Răspunsul este cașat 5 minute — request-urile duplicate cu același key returnează același rezultat fără re-procesare. Recomandat la crearea de resurse pentru a preveni duplicatele în caz de retry. */
+                    "X-Idempotency-Key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BooleanApiResponse"];
+                        "application/json": components["schemas"]["BooleanApiResponse"];
+                        "text/json": components["schemas"]["BooleanApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/Prescriptions/{id}/transmit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description UUID opțional pentru idempotency. Răspunsul este cașat 5 minute — request-urile duplicate cu același key returnează același rezultat fără re-procesare. Recomandat la crearea de resurse pentru a preveni duplicatele în caz de retry. */
+                    "X-Idempotency-Key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BooleanApiResponse"];
+                        "application/json": components["schemas"]["BooleanApiResponse"];
+                        "text/json": components["schemas"]["BooleanApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/Prescriptions/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description UUID opțional pentru idempotency. Răspunsul este cașat 5 minute — request-urile duplicate cu același key returnează același rezultat fără re-procesare. Recomandat la crearea de resurse pentru a preveni duplicatele în caz de retry. */
+                    "X-Idempotency-Key"?: string;
+                };
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CancelPrescriptionRequest"];
+                    "text/json": components["schemas"]["CancelPrescriptionRequest"];
+                    "application/*+json": components["schemas"]["CancelPrescriptionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BooleanApiResponse"];
+                        "application/json": components["schemas"]["BooleanApiResponse"];
+                        "text/json": components["schemas"]["BooleanApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/RecommendedAnalyses/by-consultation/{consultationId}": {
         parameters: {
             query?: never;
@@ -13876,6 +15467,9 @@ export interface components {
                 [key: string]: string[];
             } | null;
         };
+        CancelPrescriptionRequest: {
+            reason?: string | null;
+        };
         ChangeOwnPasswordRequest: {
             currentPassword?: string | null;
             newPassword?: string | null;
@@ -14158,6 +15752,27 @@ export interface components {
                 [key: string]: string[];
             } | null;
         };
+        CnasDrugLookupDto: {
+            code?: string | null;
+            name?: string | null;
+            activeSubstanceCode?: string | null;
+            pharmaceuticalForm?: string | null;
+            concentration?: string | null;
+            presentationMode?: string | null;
+            prescriptionMode?: string | null;
+            /** Format: double */
+            pricePerPackage?: number | null;
+            isCompensated?: boolean;
+            copaymentLists?: string | null;
+        };
+        CnasDrugLookupDtoIReadOnlyListApiResponse: {
+            success?: boolean;
+            data?: components["schemas"]["CnasDrugLookupDto"][] | null;
+            message?: string | null;
+            errors?: {
+                [key: string]: string[];
+            } | null;
+        };
         CnasIcd10Dto: {
             code?: string | null;
             name?: string | null;
@@ -14429,6 +16044,48 @@ export interface components {
             readonly hasPreviousPage?: boolean;
             readonly hasNextPage?: boolean;
         };
+        ConsultationMedicationDto: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            consultationId?: string;
+            /** Format: uuid */
+            patientId?: string;
+            drugCode?: string | null;
+            drugName?: string | null;
+            activeSubstance?: string | null;
+            pharmaceuticalForm?: string | null;
+            concentration?: string | null;
+            prescriptionMode?: string | null;
+            copaymentListType?: string | null;
+            isCompensated?: boolean;
+            availableCopaymentLists?: string | null;
+            /** Format: double */
+            doseMorning?: number | null;
+            /** Format: double */
+            doseAfternoon?: number | null;
+            /** Format: double */
+            doseEvening?: number | null;
+            /** Format: int32 */
+            durationDays?: number | null;
+            /** Format: double */
+            totalQuantity?: number | null;
+            notes?: string | null;
+            /** Format: int32 */
+            sortOrder?: number;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string | null;
+        };
+        ConsultationMedicationDtoIReadOnlyListApiResponse: {
+            success?: boolean;
+            data?: components["schemas"]["ConsultationMedicationDto"][] | null;
+            message?: string | null;
+            errors?: {
+                [key: string]: string[];
+            } | null;
+        };
         ConsultationStatsDto: {
             /** Format: int32 */
             totalConsultations?: number;
@@ -14563,6 +16220,21 @@ export interface components {
             /** Format: uuid */
             statusId?: string | null;
         };
+        CreateConsultationMedicationCommand: {
+            /** Format: uuid */
+            consultationId?: string;
+            drugCode?: string | null;
+            copaymentListType?: string | null;
+            /** Format: double */
+            doseMorning?: number | null;
+            /** Format: double */
+            doseAfternoon?: number | null;
+            /** Format: double */
+            doseEvening?: number | null;
+            /** Format: int32 */
+            durationDays?: number | null;
+            notes?: string | null;
+        };
         CreateDepartmentCommand: {
             /** Format: uuid */
             locationId?: string;
@@ -14658,6 +16330,27 @@ export interface components {
             allergies?: components["schemas"]["SyncAllergyItem"][] | null;
             doctors?: components["schemas"]["SyncDoctorItem"][] | null;
             emergencyContacts?: components["schemas"]["SyncEmergencyContactItem"][] | null;
+        };
+        CreatePrescriptionsCommand: {
+            /** Format: uuid */
+            patientId?: string;
+            /** Format: uuid */
+            doctorId?: string;
+            /** Format: uuid */
+            consultationId?: string | null;
+            /** Format: uuid */
+            careTypeId?: string | null;
+            /** Format: uuid */
+            insuredCategoryId?: string | null;
+            /** Format: int32 */
+            treatmentDays?: number | null;
+            diagnostic?: string | null;
+            diagnosticCodes?: string | null;
+            registryNumber?: string | null;
+            isContinuation?: boolean;
+            referralLetterNumber?: string | null;
+            notes?: string | null;
+            items?: components["schemas"]["PrescriptionItemData"][] | null;
         };
         CreateRecommendedAnalysisCommand: {
             /** Format: uuid */
@@ -14913,10 +16606,26 @@ export interface components {
                 [key: string]: string[];
             } | null;
         };
+        GenerateConsultationPrescriptionsRequest: {
+            /** Format: uuid */
+            careTypeId?: string | null;
+            /** Format: uuid */
+            insuredCategoryId?: string | null;
+            /** Format: int32 */
+            treatmentDays?: number | null;
+        };
         GuidApiResponse: {
             success?: boolean;
             /** Format: uuid */
             data?: string;
+            message?: string | null;
+            errors?: {
+                [key: string]: string[];
+            } | null;
+        };
+        GuidIReadOnlyListApiResponse: {
+            success?: boolean;
+            data?: string[] | null;
             message?: string | null;
             errors?: {
                 [key: string]: string[];
@@ -15460,6 +17169,268 @@ export interface components {
                 [key: string]: string[];
             } | null;
         };
+        PrescriptionCareTypeLookupDto: {
+            /** Format: uuid */
+            id?: string;
+            code?: string | null;
+            name?: string | null;
+            /** Format: int32 */
+            maxDays?: number;
+            /** Format: int32 */
+            validityDays?: number;
+        };
+        PrescriptionDetailDto: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            clinicId?: string;
+            clinicName?: string | null;
+            clinicFiscalCode?: string | null;
+            clinicCnasContract?: string | null;
+            clinicAddress?: string | null;
+            clinicPhone?: string | null;
+            /** Format: uuid */
+            patientId?: string;
+            patientName?: string | null;
+            patientCnp?: string | null;
+            /** Format: date */
+            patientBirthDate?: string | null;
+            patientGender?: string | null;
+            patientAddress?: string | null;
+            patientIsInsured?: boolean;
+            /** Format: uuid */
+            doctorId?: string;
+            doctorName?: string | null;
+            doctorMedicalCode?: string | null;
+            doctorSpecialty?: string | null;
+            /** Format: uuid */
+            consultationId?: string | null;
+            /** Format: date-time */
+            consultationDate?: string | null;
+            /** Format: uuid */
+            prescriptionTypeId?: string;
+            typeCode?: string | null;
+            typeName?: string | null;
+            isCnas?: boolean;
+            /** Format: uuid */
+            statusId?: string;
+            statusCode?: string | null;
+            statusName?: string | null;
+            /** Format: uuid */
+            careTypeId?: string | null;
+            careTypeCode?: string | null;
+            careTypeName?: string | null;
+            /** Format: int32 */
+            careTypeMaxDays?: number | null;
+            /** Format: uuid */
+            insuredCategoryId?: string | null;
+            insuredCategoryName?: string | null;
+            nhpCode?: string | null;
+            nhpName?: string | null;
+            series?: string | null;
+            /** Format: int32 */
+            number?: number | null;
+            /** Format: date-time */
+            issueDate?: string | null;
+            /** Format: date */
+            validUntil?: string | null;
+            isExpired?: boolean;
+            /** Format: int32 */
+            treatmentDays?: number | null;
+            diagnostic?: string | null;
+            diagnosticCodes?: string | null;
+            registryNumber?: string | null;
+            isContinuation?: boolean;
+            referralLetterNumber?: string | null;
+            notes?: string | null;
+            electronicId?: string | null;
+            isOffline?: boolean;
+            /** Format: date-time */
+            transmittedAt?: string | null;
+            transmissionError?: string | null;
+            cancelReason?: string | null;
+            /** Format: date-time */
+            cancelledAt?: string | null;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string | null;
+            items?: components["schemas"]["PrescriptionItemDto"][] | null;
+        };
+        PrescriptionDetailDtoApiResponse: {
+            success?: boolean;
+            data?: components["schemas"]["PrescriptionDetailDto"];
+            message?: string | null;
+            errors?: {
+                [key: string]: string[];
+            } | null;
+        };
+        PrescriptionItemData: {
+            /** Format: uuid */
+            consultationMedicationId?: string | null;
+            drugCode?: string | null;
+            drugName?: string | null;
+            copaymentListType?: string | null;
+            diagnosisCode?: string | null;
+            /** Format: double */
+            doseMorning?: number | null;
+            /** Format: double */
+            doseAfternoon?: number | null;
+            /** Format: double */
+            doseEvening?: number | null;
+            /** Format: int32 */
+            durationDays?: number | null;
+            /** Format: double */
+            quantity?: number | null;
+            instructions?: string | null;
+        };
+        PrescriptionItemDto: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            prescriptionId?: string;
+            /** Format: uuid */
+            consultationMedicationId?: string | null;
+            drugCode?: string | null;
+            drugName?: string | null;
+            activeSubstance?: string | null;
+            pharmaceuticalForm?: string | null;
+            concentration?: string | null;
+            prescriptionMode?: string | null;
+            copaymentListType?: string | null;
+            /** Format: double */
+            copaymentPercent?: number | null;
+            availableCopaymentLists?: string | null;
+            diagnosisCode?: string | null;
+            /** Format: double */
+            doseMorning?: number | null;
+            /** Format: double */
+            doseAfternoon?: number | null;
+            /** Format: double */
+            doseEvening?: number | null;
+            /** Format: int32 */
+            durationDays?: number | null;
+            /** Format: double */
+            quantity?: number | null;
+            instructions?: string | null;
+            /** Format: int32 */
+            sortOrder?: number;
+        };
+        PrescriptionListDto: {
+            /** Format: uuid */
+            id?: string;
+            series?: string | null;
+            /** Format: int32 */
+            number?: number | null;
+            /** Format: date-time */
+            issueDate?: string | null;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: uuid */
+            prescriptionTypeId?: string;
+            typeCode?: string | null;
+            typeName?: string | null;
+            isCnas?: boolean;
+            /** Format: uuid */
+            statusId?: string;
+            statusCode?: string | null;
+            statusName?: string | null;
+            /** Format: uuid */
+            patientId?: string;
+            patientName?: string | null;
+            patientCnp?: string | null;
+            /** Format: uuid */
+            doctorId?: string;
+            doctorName?: string | null;
+            /** Format: uuid */
+            consultationId?: string | null;
+            careTypeName?: string | null;
+            /** Format: int32 */
+            treatmentDays?: number | null;
+            diagnostic?: string | null;
+            diagnosticCodes?: string | null;
+            nhpCode?: string | null;
+            /** Format: date */
+            validUntil?: string | null;
+            isExpired?: boolean;
+            electronicId?: string | null;
+            /** Format: int32 */
+            itemCount?: number;
+        };
+        PrescriptionListDtoIReadOnlyListApiResponse: {
+            success?: boolean;
+            data?: components["schemas"]["PrescriptionListDto"][] | null;
+            message?: string | null;
+            errors?: {
+                [key: string]: string[];
+            } | null;
+        };
+        PrescriptionListDtoPagedResult: {
+            items?: components["schemas"]["PrescriptionListDto"][] | null;
+            /** Format: int32 */
+            totalCount?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            pageSize?: number;
+            /** Format: int32 */
+            readonly totalPages?: number;
+            readonly hasPreviousPage?: boolean;
+            readonly hasNextPage?: boolean;
+        };
+        PrescriptionLookupItemDto: {
+            /** Format: uuid */
+            id?: string;
+            code?: string | null;
+            name?: string | null;
+        };
+        PrescriptionLookupsDto: {
+            types?: components["schemas"]["PrescriptionTypeLookupDto"][] | null;
+            statuses?: components["schemas"]["PrescriptionLookupItemDto"][] | null;
+            careTypes?: components["schemas"]["PrescriptionCareTypeLookupDto"][] | null;
+            insuredCategories?: components["schemas"]["PrescriptionLookupItemDto"][] | null;
+        };
+        PrescriptionLookupsDtoApiResponse: {
+            success?: boolean;
+            data?: components["schemas"]["PrescriptionLookupsDto"];
+            message?: string | null;
+            errors?: {
+                [key: string]: string[];
+            } | null;
+        };
+        PrescriptionStatsDto: {
+            /** Format: int32 */
+            totalPrescriptions?: number;
+            /** Format: int32 */
+            compensatedCount?: number;
+            /** Format: int32 */
+            simpleCount?: number;
+            /** Format: int32 */
+            draftCount?: number;
+            /** Format: int32 */
+            issuedThisMonth?: number;
+        };
+        PrescriptionTypeLookupDto: {
+            /** Format: uuid */
+            id?: string;
+            code?: string | null;
+            name?: string | null;
+            isCnas?: boolean;
+            /** Format: int32 */
+            maxItems?: number | null;
+        };
+        PrescriptionsPagedResponse: {
+            pagedResult: components["schemas"]["PrescriptionListDtoPagedResult"];
+            stats: components["schemas"]["PrescriptionStatsDto"];
+        };
+        PrescriptionsPagedResponseApiResponse: {
+            success?: boolean;
+            data?: components["schemas"]["PrescriptionsPagedResponse"];
+            message?: string | null;
+            errors?: {
+                [key: string]: string[];
+            } | null;
+        };
         ProblemDetails: {
             type?: string | null;
             title?: string | null;
@@ -15865,6 +17836,18 @@ export interface components {
             examenClinic?: string | null;
             alteObservatiiClinice?: string | null;
         };
+        UpdateConsultationMedicationRequest: {
+            copaymentListType?: string | null;
+            /** Format: double */
+            doseMorning?: number | null;
+            /** Format: double */
+            doseAfternoon?: number | null;
+            /** Format: double */
+            doseEvening?: number | null;
+            /** Format: int32 */
+            durationDays?: number | null;
+            notes?: string | null;
+        };
         UpdateConsultationRequest: {
             /** Format: uuid */
             patientId?: string;
@@ -15988,6 +17971,21 @@ export interface components {
             allergies?: components["schemas"]["SyncAllergyItem"][] | null;
             doctors?: components["schemas"]["SyncDoctorItem"][] | null;
             emergencyContacts?: components["schemas"]["SyncEmergencyContactItem"][] | null;
+        };
+        UpdatePrescriptionRequest: {
+            /** Format: uuid */
+            careTypeId?: string | null;
+            /** Format: uuid */
+            insuredCategoryId?: string | null;
+            /** Format: int32 */
+            treatmentDays?: number | null;
+            diagnostic?: string | null;
+            diagnosticCodes?: string | null;
+            registryNumber?: string | null;
+            isContinuation?: boolean;
+            referralLetterNumber?: string | null;
+            notes?: string | null;
+            items?: components["schemas"]["PrescriptionItemData"][] | null;
         };
         UpdateRecommendedAnalysisRequest: {
             /** Format: int32 */

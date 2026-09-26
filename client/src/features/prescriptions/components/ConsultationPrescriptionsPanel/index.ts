@@ -1,0 +1,1 @@
+export { ConsultationPrescriptionsPanel } from './ConsultationPrescriptionsPanel'

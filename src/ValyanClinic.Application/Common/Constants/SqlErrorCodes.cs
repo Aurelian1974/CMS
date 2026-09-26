@@ -26,6 +26,11 @@ public static class SqlErrorCodes
     public const int AnalysisNotFound              = 50024;
     public const int RecommendedAnalysisNotFound  = 50025;
 
+    // ====== Tratament recomandat (medicamente CNAS pe consultație) ======
+    public const int ConsultationMedicationNotFound = 50026;
+    public const int CnasDrugNotFound               = 50027;
+    public const int CopaymentListInvalid           = 50028;
+
     // ====== Buletine analize (AnalysesResults) ======
     public const int AnalysesResultNotFound = 50401;
 
@@ -34,8 +39,16 @@ public static class SqlErrorCodes
     public const int InvoiceNotFound    = 50031;
 
     // ====== Rețete ======
-    public const int PrescriptionExpired  = 50040;
-    public const int PrescriptionNotFound = 50041;
+    public const int PrescriptionExpired           = 50040;
+    public const int PrescriptionNotFound          = 50041;
+    public const int PrescriptionNotEditable       = 50042;
+    public const int PrescriptionNoItems           = 50043;
+    public const int PrescriptionCannotCancel      = 50044;
+    public const int PrescriptionNothingToGenerate = 50045;
+    public const int PrescriptionInvalidData       = 50046;
+    public const int PrescriptionTreatmentInvalid  = 50047;
+    public const int PrescriptionTooManyItems      = 50048;
+    public const int PrescriptionNotTransmittable  = 50049;
 
     // ====== Autentificare ======
     public const int AuthInvalidCredentials = 50050;

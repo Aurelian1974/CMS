@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { ConsultationListDto, ConsultationStatusFilter, ConsultationDetailDto, CreateConsultationPayload, UpdateConsultationPayload } from '../types/consultation.types'
@@ -24,6 +24,8 @@ import { consultationSchema, type ConsultationFormData } from '../schemas/consul
 import { useQueryClient } from '@tanstack/react-query'
 import { InvestigationsStep } from '../investigations/InvestigationsStep'
 import { AnalizeMedicaleStep } from '../lab/AnalizeMedicaleStep'
+import { PrescribedMedicationsTable } from '../medications/components/PrescribedMedicationsTable'
+import { ConsultationPrescriptionsPanel } from '@/features/prescriptions/components/ConsultationPrescriptionsPanel'
 import {
   MessageSquareText, Stethoscope, Microscope, FlaskConical, ClipboardList, CheckCircle2,
   FileText, ClipboardPlus, Pill, PenLine, FileCheck, CalendarClock,
@@ -267,9 +269,17 @@ export const ConsultationsListPage = () => {
   const isFinalized = detail?.statusCode?.toUpperCase() === 'FINALIZATA'
   const isEditable = isCreating || (!isLocked && !isFinalized)
 
-  // Sync detail → form when selection changes
+  // Refetch-urile după salvările la schimbarea tab-ului nu trebuie să suprascrie ce tastează
+  // utilizatorul între timp: formularul se inițializează din server o singură dată per consultație.
+  const syncedDetailIdRef = useRef<string | null>(null)
+
   useEffect(() => {
-    if (detail && !isCreating) {
+    if (isCreating) {
+      syncedDetailIdRef.current = null
+      return
+    }
+    if (detail && syncedDetailIdRef.current !== detail.id) {
+      syncedDetailIdRef.current = detail.id
       form.reset({
         patientId:      detail.patientId,
         doctorId:       detail.doctorId,
@@ -544,6 +554,7 @@ export const ConsultationsListPage = () => {
             factoriDeRisc: v.factoriDeRisc || null,
             alergiiConsultatie: v.alergiiConsultatie || null,
           })
+          setServerError(null)
           qc.invalidateQueries({ queryKey: consultationKeys.detail(selectedId) })
         } else if (previousTab === 'examen') {
           await consultationsApi.updateExam(selectedId, {
@@ -564,6 +575,7 @@ export const ConsultationsListPage = () => {
             examenClinic: v.examenClinic || null,
             alteObservatiiClinice: v.alteObservatiiClinice || null,
           })
+          setServerError(null)
           qc.invalidateQueries({ queryKey: consultationKeys.detail(selectedId) })
         } else {
           // Tab-urile 3-6 ţin de Consultations (header) → folosim handleSaveDraft
@@ -1119,7 +1131,7 @@ export const ConsultationsListPage = () => {
                             <span className={styles.examCardLabel}>Înălțime</span>
                           </div>
                           <div className={styles.examCardInput}>
-                            <input type="number" step="0.1" disabled={!isEditable} className={styles.examNumInput} placeholder="175" {...form.register('inaltime', { setValueAs: v => v === '' ? null : parseFloat(v) })} />
+                            <input type="number" step="1" disabled={!isEditable} className={styles.examNumInput} placeholder="175" {...form.register('inaltime', { setValueAs: v => v === '' ? null : parseInt(v) })} />
                             <span className={styles.examUnit}>cm</span>
                           </div>
                         </div>
@@ -1191,7 +1203,7 @@ export const ConsultationsListPage = () => {
                             <span className={styles.examCardLabel}>SpO₂</span>
                           </div>
                           <div className={styles.examCardInput}>
-                            <input type="number" step="0.1" disabled={!isEditable} className={styles.examNumInput} placeholder="98" {...form.register('spO2', { setValueAs: v => v === '' ? null : parseFloat(v) })} />
+                            <input type="number" step="1" disabled={!isEditable} className={styles.examNumInput} placeholder="98" {...form.register('spO2', { setValueAs: v => v === '' ? null : parseInt(v) })} />
                             <span className={styles.examUnit}>%</span>
                           </div>
                         </div>
@@ -1322,9 +1334,33 @@ export const ConsultationsListPage = () => {
                       <div className={styles.formSection}>
                         <h3 className={styles.sectionTitle}>
                           <span className={styles.sectionIcon}><Pill size={18} /></span>
-                          Recomandări / Tratament
+                          Tratament recomandat
                         </h3>
-                        <FormInput name="recomandari" control={form.control} placeholder="Descrieți tratamentul și recomandările..." multiline rows={5} disabled={!isEditable} maxLength={4000} />
+                        {selectedId && !isCreating ? (
+                          <>
+                            <PrescribedMedicationsTable consultationId={selectedId} isEditable={isEditable} />
+                            <ConsultationPrescriptionsPanel
+                              consultationId={selectedId}
+                              isEditable={isEditable}
+                              onIssuedSeriesChange={(series) => {
+                                // SP-ul a actualizat deja consultația; formularul se aliniază ca autosave-ul să nu suprascrie
+                                form.setValue('saEliberatPrescriptie', !!series)
+                                form.setValue('seriePrescriptie', series ?? '')
+                              }}
+                            />
+                          </>
+                        ) : (
+                          <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                            Salvează consultația ca draft pentru a putea adăuga medicamente.
+                          </p>
+                        )}
+                      </div>
+                      <div className={styles.formSection}>
+                        <h3 className={styles.sectionTitle}>
+                          <span className={styles.sectionIcon}><NotebookPen size={18} /></span>
+                          Recomandări
+                        </h3>
+                        <FormInput name="recomandari" control={form.control} placeholder="Regim alimentar, stil de viață, indicații suplimentare..." multiline rows={4} disabled={!isEditable} maxLength={4000} />
                       </div>
                       <div className={styles.formSection}>
                         <h3 className={styles.sectionTitle}>

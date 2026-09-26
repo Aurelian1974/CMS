@@ -1,0 +1,121 @@
+@use '@/styles/variables' as *;
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sectionTitle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: $gray-700;
+  margin: 6px 0 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid $gray-200;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: $gray-600;
+  margin-bottom: 4px;
+}
+
+.hint {
+  font-size: 0.74rem;
+  color: $gray-500;
+  margin-top: 3px;
+}
+
+.fieldError {
+  font-size: 0.74rem;
+  color: darken($danger, 15%);
+  margin-top: 3px;
+}
+
+.splitInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: rgba($info, 0.1);
+  border: 1px solid rgba($info, 0.3);
+  border-radius: $border-radius;
+  font-size: 0.8rem;
+  color: $gray-600;
+}
+
+.itemsToolbar {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  > :first-child { flex: 1; min-width: 280px; }
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius;
+}
+
+.table {
+  width: 100%;
+  min-width: 1040px;
+  border-collapse: collapse;
+  font-size: 0.83rem;
+
+  th {
+    padding: 7px 8px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    text-align: left;
+    color: $gray-600;
+    background: $gray-50;
+    border-bottom: 1px solid $gray-200;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 6px 8px;
+    border-bottom: 1px solid $gray-100;
+    vertical-align: top;
+  }
+
+  tbody tr:last-child td { border-bottom: 0; }
+}
+
+.rowCompensated { background: rgba($success, 0.08); }
+
+.colDrug   { min-width: 220px; }
+.colSmall  { width: 74px; }
+.colList   { width: 150px; }
+.colCode   { width: 90px; }
+
+.drugName { font-weight: 500; color: $gray-700; }
+.drugMeta { font-size: 0.72rem; color: $gray-500; }
+
+.empty {
+  padding: 16px;
+  text-align: center;
+  font-size: 0.84rem;
+  color: $gray-500;
+  background: $gray-50;
+  border: 1px dashed $gray-300;
+  border-radius: $border-radius;
+}
+
+.deleteBtn {
+  border: none;
+  background: transparent;
+  color: $gray-400;
+  padding: 4px;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover { color: darken($danger, 10%); background: rgba($danger, 0.1); }
+}
