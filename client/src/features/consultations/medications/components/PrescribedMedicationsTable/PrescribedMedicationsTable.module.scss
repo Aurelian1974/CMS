@@ -1,0 +1,213 @@
+@import '@/styles/variables';
+
+.summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+  color: $gray-500;
+}
+
+.empty {
+  padding: 16px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: $gray-500;
+  background: $gray-50;
+  border: 1px dashed $gray-300;
+  border-radius: $border-radius;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius;
+}
+
+.table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  th {
+    padding: 8px 10px;
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-align: left;
+    vertical-align: middle;
+    color: $gray-600;
+    background: $gray-50;
+    border-bottom: 1px solid $gray-200;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 8px 10px;
+    vertical-align: middle;
+    border-bottom: 1px solid $gray-100;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+}
+
+.rowCompensated {
+  background: rgba($success, 0.08);
+
+  td:first-child {
+    box-shadow: inset 3px 0 0 $success;
+  }
+}
+
+.colIndex {
+  width: 32px;
+  color: $gray-400;
+  text-align: center;
+}
+
+.colDrug {
+  min-width: 220px;
+}
+
+.colCompensation {
+  width: 170px;
+}
+
+.groupHeader {
+  text-align: center !important;
+  border-left: 1px solid $gray-200;
+  border-right: 1px solid $gray-200;
+}
+
+.colDose {
+  width: 84px;
+  text-align: center !important;
+  vertical-align: middle !important;
+  color: $gray-400;
+}
+
+.doseActive {
+  color: $gray-800;
+  font-weight: 600;
+}
+
+.doseCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  :global(.form-check-input) {
+    flex-shrink: 0;
+    margin: 0;
+    cursor: pointer;
+  }
+}
+
+.doseInput {
+  width: 50px;
+  padding-left: 4px;
+  padding-right: 4px;
+  text-align: center;
+}
+
+.colQuantity {
+  width: 96px;
+  text-align: center !important;
+  vertical-align: middle !important;
+}
+
+.quantityValue {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: $primary-darker;
+}
+
+.quantityHint {
+  font-size: 0.68rem;
+  color: $gray-500;
+  white-space: nowrap;
+}
+
+.quantityEmpty {
+  color: $gray-400;
+}
+
+.colNumber {
+  width: 84px;
+}
+
+.colNotes {
+  width: 150px;
+}
+
+.colAction {
+  width: 44px;
+  text-align: center;
+}
+
+.drugName {
+  font-weight: 600;
+  color: $gray-800;
+}
+
+.drugMeta {
+  font-size: 0.75rem;
+  color: $gray-600;
+}
+
+.drugCode {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+  color: $gray-400;
+}
+
+.badgeCompensated {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: rgba($success, 0.2);
+  color: darken($success, 30%);
+  white-space: nowrap;
+}
+
+.badgeNotCompensated {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  background: $gray-100;
+  color: $gray-500;
+  white-space: nowrap;
+}
+
+.selectCompensated {
+  border-color: $success;
+  color: darken($success, 30%);
+  font-weight: 600;
+}
+
+.rowError {
+  margin-top: 4px;
+  font-size: 0.72rem;
+  color: darken($danger, 20%);
+}
+
+.deleteBtn {
+  padding: 4px;
+  border: 0;
+  background: transparent;
+  color: darken($danger, 15%);
+  cursor: pointer;
+  border-radius: $border-radius-sm;
+
+  &:hover {
+    background: rgba($danger, 0.15);
+  }
+}
