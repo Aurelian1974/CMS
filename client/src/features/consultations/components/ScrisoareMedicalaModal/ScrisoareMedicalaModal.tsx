@@ -1,13 +1,21 @@
-﻿import { useState, useEffect, useRef } from 'react'
-import type { RefObject } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { ConsultationDetailDto, ConsultationInvestigationDto } from '../../types/consultation.types'
 import { useCurrentClinic } from '@/features/clinic/hooks/useClinic'
-import { AppButton } from '@/components/ui/AppButton'
 import { MedicalLetter } from '../MedicalLetter'
-import type { MedicalLetterProps, LabAnalysesBulletin } from '../MedicalLetter'
+import type { MedicalLetterProps, LabAnalysesBulletin, LetterMedication } from '../MedicalLetter'
 import { analysesResultsApi } from '@/api/endpoints/analysesResults.api'
+import { describeStructuredData } from '@/features/consultations/investigations/config/investigationSchemas'
+import { useRecommendedAnalyses } from '@/features/consultations/lab/hooks/useLab'
+import { PRIORITY_LABELS, type AnalysisPriority, type RecommendedAnalysisStatus } from '@/features/consultations/lab/types/lab.types'
+import { useConsultationMedications } from '@/features/consultations/medications/hooks/useConsultationMedications'
+import type { ConsultationMedicationDto } from '@/features/consultations/medications/types/medication.types'
+import { formatPosology, formatQuantity } from '@/features/consultations/medications/utils/medicationFormat'
+import { PrintPreview } from './PrintPreview'
 import styles from './ScrisoareMedicalaModal.module.scss'
+
+const RECOMMENDED_STATUS_CANCELLED: RecommendedAnalysisStatus = 2
+const PRIORITY_HIGH: AnalysisPriority = 2
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 interface Props {
@@ -226,9 +234,8 @@ function formatInvestigationEntry(inv: ConsultationInvestigationDto): string {
   if (inv.structuredData) {
     try {
       const obj = JSON.parse(inv.structuredData) as Record<string, unknown>
-      const lines = Object.entries(obj)
-        .filter(([, v]) => v !== null && v !== undefined && v !== '')
-        .map(([k, v]) => `  ${k}: ${v}`)
+      const lines = describeStructuredData(inv.investigationType, obj)
+        .map(({ label, value }) => `  ${label}: ${value}`)
       if (lines.length > 0) {
         parts.push(`Date structurate:\n${lines.join('\n')}`)
       }
@@ -337,7 +344,51 @@ function FTextarea({ label, value, onChange, rows = 3, placeholder, hint }: {
 }
 
 // ── Form content ──────────────────────────────────────────────────────────────
-function FormContent({ data, update }: { data: ScrisoareMedicalaData; update: UpdateFn }) {
+function toLetterMedications(rows: ConsultationMedicationDto[]): LetterMedication[] {
+  return rows.map(r => ({
+    name: r.drugName ?? r.drugCode ?? '',
+    details: [r.concentration, r.pharmaceuticalForm, r.activeSubstance].filter(Boolean).join(' · ') || undefined,
+    posology: formatPosology(r) ?? undefined,
+    days: r.durationDays != null ? String(r.durationDays) : undefined,
+    quantity: r.totalQuantity != null ? formatQuantity(r.totalQuantity) : undefined,
+    compensationList: r.copaymentListType ?? undefined,
+    notes: r.notes?.trim() || undefined,
+  }))
+}
+
+function MedicationsSummary({ items }: { items: LetterMedication[] }) {
+  return (
+    <div className={styles.field}>
+      <label className={styles.fieldLabel}>Tratament recomandat — medicamente ({items.length})</label>
+      <span className={styles.fieldHint}>
+        Preluat din tabelul Tratament recomandat (tab-ul Diagnostic &amp; Tratament) — se modifică acolo
+      </span>
+      {items.length > 0 ? (
+        <ol className={styles.medSummary}>
+          {items.map((m, i) => (
+            <li key={i}>
+              <strong>{m.name}</strong>
+              {m.posology && <> — {m.posology}</>}
+              {m.days && <>, {m.days} zile</>}
+              {m.quantity && <> = {m.quantity}</>}
+              {m.compensationList
+                ? <span className={styles.medSummaryCompensated}> · Compensat {m.compensationList}</span>
+                : <span className={styles.medSummaryMuted}> · Necompensat</span>}
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <span className={styles.medSummaryMuted}>Niciun medicament adăugat.</span>
+      )}
+    </div>
+  )
+}
+
+function FormContent({ data, update, medications }: {
+  data: ScrisoareMedicalaData
+  update: UpdateFn
+  medications: LetterMedication[]
+}) {
   return (
     <div className={styles.formBody}>
 
@@ -421,7 +472,8 @@ function FormContent({ data, update }: { data: ScrisoareMedicalaData; update: Up
         <div className={styles.sectionTitle}>Tratament și informații suplimentare</div>
         <FTextarea label="Tratament efectuat" value={data.tratamentEfectuat} onChange={v => update('tratamentEfectuat', v)} rows={3} hint="Pre-completat din câmpul Tratament anterior" />
         <FTextarea label="Alte informații referitoare la starea de sănătate a asiguratului" value={data.alteInformatii} onChange={v => update('alteInformatii', v)} rows={3} hint="Pre-completat din câmpul Observații" />
-        <FTextarea label="Tratament recomandat" value={data.tratamentRecomandat} onChange={v => update('tratamentRecomandat', v)} rows={5} hint="Pre-completat din câmpul Recomandări" placeholder="Includeți medicamentele cu durata de prescriere..." />
+        <MedicationsSummary items={medications} />
+        <FTextarea label="Recomandări" value={data.tratamentRecomandat} onChange={v => update('tratamentRecomandat', v)} rows={4} hint="Pre-completat din câmpul Recomandări — apare în scrisoare sub tabelul de medicamente" placeholder="Regim alimentar, stil de viață, indicații suplimentare..." />
       </div>
 
       {/* ── Indicație revenire ── */}
@@ -624,6 +676,7 @@ function buildMedicalLetterProps(
       date: data.dataPrezentare,
       registryNumber: data.nrRegistru || undefined,
       isOncological: data.esteOncologic,
+      presentationReasons: data.motivePrezentare.trim() || undefined,
     },
     diagnoses: buildDiagnoses(detail),
     anamnesis: anamnesisParts.join('\n\n') || undefined,
@@ -665,18 +718,14 @@ function buildMedicalLetterProps(
   }
 }
 
-// ─── Preview uses the new MedicalLetter component ─────────────────────────────
-function PreviewContent({
-  data,
-  detail,
-  letterRef,
-}: {
-  data: ScrisoareMedicalaData
-  detail: ConsultationDetailDto
-  letterRef: RefObject<HTMLDivElement | null>
-}) {
+// ─── Date scrisoare, comune previzualizării și tipăririi ─────────────────────────────
+function useMedicalLetterProps(
+  data: ScrisoareMedicalaData,
+  detail: ConsultationDetailDto,
+  medications: LetterMedication[],
+): { letterProps: MedicalLetterProps; isLoading: boolean } {
   // Fetch analyses results pentru aceasta consultatie (null-safe: da [] cand consultationId lipseste)
-  const { data: analysesResponse } = useQuery({
+  const { data: analysesResponse, isLoading: analysesLoading } = useQuery({
     queryKey: ['analysesResults', 'for-medical-letter', detail.id],
     queryFn: () => analysesResultsApi.getForMedicalLetter(detail.id),
     enabled: !!detail.id,
@@ -700,11 +749,32 @@ function PreviewContent({
     })),
   }))
 
-  const letterProps = buildMedicalLetterProps(data, detail)
+  const { data: recommendedRows = [], isLoading: recommendedLoading } = useRecommendedAnalyses(detail.id)
+  const recommendedAnalyses = recommendedRows
+    .filter(r => r.status !== RECOMMENDED_STATUS_CANCELLED)
+    .map(r => ({
+      name: r.analysisName,
+      // Prioritatea normală/scăzută e implicită — menționăm doar ce cere atenție
+      priority: r.priority >= PRIORITY_HIGH ? PRIORITY_LABELS[r.priority] : undefined,
+      notes: r.notes?.trim() || undefined,
+    }))
+
+  return {
+    letterProps: {
+      ...buildMedicalLetterProps(data, detail),
+      analysesResults,
+      recommendedAnalyses,
+      prescribedMedications: medications,
+    },
+    isLoading: analysesLoading || recommendedLoading,
+  }
+}
+
+function PreviewContent({ letterProps }: { letterProps: MedicalLetterProps }) {
   return (
     <div className={styles.previewWrapper}>
-      <div className={styles.letterPage} ref={letterRef}>
-        <MedicalLetter {...letterProps} analysesResults={analysesResults} />
+      <div className={styles.letterPage}>
+        <MedicalLetter {...letterProps} />
       </div>
     </div>
   )
@@ -712,9 +782,11 @@ function PreviewContent({
 
 // ── Main Modal ────────────────────────────────────────────────────────────────
 export function ScrisoareMedicalaModal({ detail, onClose }: Props) {
-  const [view, setView] = useState<'form' | 'preview'>('form')
+  const [view, setView] = useState<'form' | 'preview' | 'print'>('form')
   const [data, setData] = useState<ScrisoareMedicalaData>(() => initFromDetail(detail))
-  const letterRef = useRef<HTMLDivElement>(null)
+  const { data: medicationRows = [] } = useConsultationMedications(detail.id)
+  const medications = toLetterMedications(medicationRows)
+  const { letterProps, isLoading: letterLoading } = useMedicalLetterProps(data, detail, medications)
   // Populate clinic fields from DB (already cached via staleTime: Infinity)
   const { data: clinicResponse } = useCurrentClinic()
   const clinic = clinicResponse?.data
@@ -728,52 +800,6 @@ export function ScrisoareMedicalaModal({ detail, onClose }: Props) {
   }, [clinic])
   const update = <K extends keyof ScrisoareMedicalaData>(key: K, val: ScrisoareMedicalaData[K]) =>
     setData(prev => ({ ...prev, [key]: val }))
-
-  const handlePrint = () => {
-    // Switch to preview first so the letter is rendered in the DOM
-    if (view !== 'preview') {
-      setView('preview')
-      setTimeout(handlePrint, 150)
-      return
-    }
-
-    const letterEl = letterRef.current
-    if (!letterEl) return
-
-    const win = window.open('', '_blank', 'width=960,height=820,scrollbars=yes')
-    if (!win) {
-      alert('Browserul a blocat fereastra nouă. Permiteți pop-up-uri pentru acest site.')
-      return
-    }
-
-    // Collect all compiled CSS rules from the current page (includes hashed CSS-module classes)
-    const allCss = Array.from(document.styleSheets)
-      .flatMap((sheet) => {
-        try {
-          return Array.from(sheet.cssRules).map((r) => r.cssText)
-        } catch {
-          // Cross-origin sheet — link it by URL instead
-          return sheet.href ? [`@import url("${sheet.href}");`] : []
-        }
-      })
-      .join('\n')
-
-    win.document.write(`<!DOCTYPE html>
-<html lang="ro">
-<head>
-  <meta charset="utf-8">
-  <title>Scrisoare Medicală — ${data.patientName}</title>
-  <style>${allCss}</style>
-  <style>body { margin: 0; padding: 0; background: #fff; }</style>
-</head>
-<body>${letterEl.outerHTML}</body>
-</html>`)
-    win.document.close()
-    setTimeout(() => {
-      win.focus()
-      win.print()
-    }, 600)
-  }
 
   return (
     <div className={styles.overlay} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
@@ -801,20 +827,29 @@ export function ScrisoareMedicalaModal({ detail, onClose }: Props) {
               >
                 👁 Previzualizare
               </button>
+              <button
+                type="button"
+                className={`${styles.viewTab} ${view === 'print' ? styles.viewTabActive : ''}`}
+                onClick={() => setView('print')}
+              >
+                🖨 Previzualizare tipărire
+              </button>
             </div>
-            {view === 'preview' && (
-              <AppButton variant="primary" size="sm" onClick={handlePrint}>
-                🖨 Tipărește / PDF
-              </AppButton>
-            )}
             <button type="button" className={styles.closeBtn} onClick={onClose} title="Închide">✕</button>
           </div>
         </div>
 
         {/* Body */}
         <div className={styles.dialogBody}>
-          {view === 'form'    && <FormContent data={data} update={update} />}
-          {view === 'preview' && <PreviewContent data={data} detail={detail} letterRef={letterRef} />}
+          {view === 'form'    && <FormContent data={data} update={update} medications={medications} />}
+          {view === 'preview' && <PreviewContent letterProps={letterProps} />}
+          {view === 'print'   && (
+            <PrintPreview
+              letterProps={letterProps}
+              isLoading={letterLoading}
+              title={`Scrisoare Medicală — ${data.patientName}`}
+            />
+          )}
         </div>
 
       </div>

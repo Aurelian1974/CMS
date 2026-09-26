@@ -148,6 +148,20 @@ $ml-brand-dark:  #0C447C;
   color: $gray-500;
 }
 
+.headedPara + .headedPara {
+  margin-top: 4px;
+}
+
+.paraHeading {
+  font-weight: 700;
+  color: $gray-700;
+}
+
+.examSubLabel {
+  font-style: italic;
+  margin-bottom: 2px;
+}
+
 // ─── Diagnostics ──────────────────────────────────────────────────────────────
 .diagItem {
   margin-bottom: 8px;
@@ -192,18 +206,8 @@ $ml-brand-dark:  #0C447C;
   margin-top: 4px;
 }
 
-// ─── Paraclinic type pills ────────────────────────────────────────────────────
-.pillRow {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.pill {
-  background: $gray-50;
-  border: 0.5px solid $gray-200;
-  padding: 2px 9px;
-  border-radius: $border-radius;
+// ─── Structured data (non-spirometry investigations) ───────────────────────────────
+.structList {
   font-size: 12px;
 }
 
@@ -488,6 +492,76 @@ $ml-brand-dark:  #0C447C;
   font-size: 11px;
   color: $gray-400;
   font-style: italic;
+}
+
+// ─── Tratament recomandat (medicamente CNAS) ─────────────────────────────────
+.medTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  margin-bottom: 6px;
+
+  th {
+    font-size: 10px;
+    font-weight: 500;
+    color: $gray-500;
+    text-align: left;
+    padding: 3px 6px;
+    border-bottom: 1px solid $ml-brand-light;
+    vertical-align: bottom;
+  }
+
+  td {
+    padding: 4px 6px;
+    color: $gray-700;
+    border-bottom: 1px solid $gray-100;
+    vertical-align: middle;
+  }
+
+  tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
+
+.medColIndex {
+  width: 24px;
+  text-align: center !important;
+  color: $gray-400;
+}
+
+.medColCenter {
+  text-align: center !important;
+  white-space: nowrap;
+}
+
+.medSubHeader {
+  font-size: 9px;
+  font-weight: 400;
+  color: $gray-400;
+}
+
+.medName {
+  font-weight: 600;
+}
+
+.medDetails {
+  font-size: 10px;
+  color: $gray-500;
+}
+
+// Bordura, nu box-shadow: umbrele nu se tipăresc implicit
+.medRowCompensated td:first-child {
+  border-left: 2px solid #2E7D32;
+}
+
+.medCompensated {
+  font-weight: 600;
+  color: #2E7D32;
+}
+
+.preLine {
+  white-space: pre-line;
 }
 
 // ─── Atomic sections (never split across page boundaries) ─────────────────────

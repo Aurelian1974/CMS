@@ -519,3 +519,42 @@ export function isAbnormal(value: number | undefined, field: FieldSpec): boolean
   if (field.normalMax !== undefined && value > field.normalMax) return true
   return false
 }
+
+const isFilledValue = (v: unknown) => v !== null && v !== undefined && v !== ''
+
+function formatFieldValue(field: FieldSpec, v: unknown): string {
+  if (typeof v === 'boolean') return v ? 'Da' : 'Nu'
+  if (field.type === 'select') return field.options?.find(o => o.value === v)?.label ?? String(v)
+  return field.unit ? `${v} ${field.unit}` : String(v)
+}
+
+/**
+ * Perechi etichetă–valoare pentru datele structurate ale unei investigații, cu etichetele
+ * și unitățile din formularul de introducere, în ordinea din formular.
+ * Cheile necunoscute schemei (date vechi) apar cu numele brut, la final.
+ */
+export function describeStructuredData(
+  typeCode: string,
+  data: Record<string, unknown>,
+): { label: string; value: string }[] {
+  const schema = STRUCTURED_SCHEMAS[typeCode]
+  const fields = schema
+    ? [...(schema.fields ?? []), ...(schema.sections ?? []).flatMap(s => s.fields)]
+    : []
+
+  const rows: { label: string; value: string }[] = []
+  for (const f of fields) {
+    const v = getNested(data, f.name)
+    if (isFilledValue(v)) rows.push({ label: f.label, value: formatFieldValue(f, v) })
+  }
+
+  const knownRoots = new Set(fields.map(f => f.name.split('.')[0]))
+  for (const [k, v] of Object.entries(data)) {
+    if (knownRoots.has(k) || !isFilledValue(v)) continue
+    rows.push({
+      label: k,
+      value: typeof v === 'boolean' ? (v ? 'Da' : 'Nu') : typeof v === 'object' ? JSON.stringify(v) : String(v),
+    })
+  }
+  return rows
+}

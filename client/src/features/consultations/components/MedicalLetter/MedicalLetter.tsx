@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { describeStructuredData } from '@/features/consultations/investigations/config/investigationSchemas'
 import styles from './MedicalLetter.module.scss'
 
 // ─── Spirometry structured-data shape ────────────────────────────────────────
@@ -31,6 +32,18 @@ export interface LabAnalysesBulletin {
   details: LabAnalysesDetailRow[]
 }
 
+export interface LetterMedication {
+  name: string
+  details?: string
+  /** Dimineață – după-amiază – seara, ex. „1 – 0 – 0,5” */
+  posology?: string
+  days?: string
+  quantity?: string
+  /** Lista CNAS de compensare; lipsă = necompensat */
+  compensationList?: string
+  notes?: string
+}
+
 // ─── Public Props ─────────────────────────────────────────────────────────────
 export interface MedicalLetterProps {
   provider: {
@@ -49,6 +62,7 @@ export interface MedicalLetterProps {
     date: string
     registryNumber?: string
     isOncological: boolean
+    presentationReasons?: string
   }
   diagnoses: Array<{
     icdCode: string
@@ -60,6 +74,7 @@ export interface MedicalLetterProps {
   clinicalExam?: { general?: string; local?: string }
   labExams?: { normalValues?: string; pathologicalValues?: string }
   analysesResults?: LabAnalysesBulletin[]
+  recommendedAnalyses?: Array<{ name: string; priority?: string; notes?: string }>
   paraclinicTypes?: string[]
   investigations: Array<{
     type: string
@@ -70,6 +85,7 @@ export interface MedicalLetterProps {
   }>
   treatmentAdministered?: string
   additionalInfo?: string
+  prescribedMedications?: LetterMedication[]
   recommendedTreatment?: string
   checkboxes: {
     returnForHospitalization: boolean
@@ -93,6 +109,26 @@ function dash(v: string | null | undefined): string {
 // ─── Small shared pieces ─────────────────────────────────────────────────────
 function SecLabel({ children }: { children: ReactNode }) {
   return <div className={styles.secLabel}>{children}</div>
+}
+
+// Titlu scurt la început de rând, fără cifre sau punctuație, ca să nu îngroșăm fraze care conțin ":".
+const HEADING_RE = /^([A-ZĂÂÎȘȚŞŢ][\p{L}\u2080-\u2089 /]{1,40}):\s*(.*)$/u
+
+function HeadedParagraphs({ text }: { text: string | null | undefined }) {
+  const lines = text?.split(/\n+/).map(l => l.trim()).filter(Boolean) ?? []
+  if (lines.length === 0) return <>{DASH}</>
+  return (
+    <>
+      {lines.map((line, i) => {
+        const m = HEADING_RE.exec(line)
+        return (
+          <div key={i} className={styles.headedPara}>
+            {m ? <><span className={styles.paraHeading}>{m[1]}:</span> {m[2]}</> : line}
+          </div>
+        )
+      })}
+    </>
+  )
 }
 
 // ─── Spirometry metric grid ───────────────────────────────────────────────────
@@ -147,39 +183,76 @@ function SpirometryCards({ data }: { data: Record<string, unknown> }) {
   )
 }
 
-// ─── Single investigation block ───────────────────────────────────────────────
-function InvestigationBlock({
-  inv,
-}: {
-  inv: MedicalLetterProps['investigations'][number]
-}) {
-  const title = inv.displayName ?? inv.type
-  const hasStructured = inv.structuredData != null
+// ─── Paraclinic exam: title + details of every instance of that exam ─────────────────
+type Investigation = MedicalLetterProps['investigations'][number]
+
+const SPIROMETRY_KEYS = ['fvc', 'fev1', 'fev1_FVC_Ratio', 'pef']
+
+const isFilled = (v: unknown) => v !== null && v !== undefined && v !== ''
+
+function StructuredList({ typeCode, data }: { typeCode: string; data: Record<string, unknown> }) {
+  return (
+    <div className={styles.structList}>
+      {describeStructuredData(typeCode, data).map(({ label, value }) => (
+        <div key={label}>
+          <span className={styles.paraHeading}>{label}:</span> {value}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function InvestigationDetails({ inv }: { inv: Investigation }) {
+  const data = inv.structuredData ?? null
+  const isSpirometry = data != null && SPIROMETRY_KEYS.some(k => isFilled(data[k]))
+  const hasStructured = data != null && Object.values(data).some(isFilled)
+
+  return (
+    <>
+      {isSpirometry && <SpirometryCards data={data} />}
+      {!isSpirometry && hasStructured && <StructuredList typeCode={inv.type} data={data} />}
+
+      {inv.narrative ? (
+        hasStructured ? (
+          <div className={styles.narrativeBlock}>
+            <div className={styles.noteLabel}>Note clinice</div>
+            <div className={styles.noteText}>{inv.narrative}</div>
+          </div>
+        ) : (
+          <div className={styles.noteText}>{inv.narrative}</div>
+        )
+      ) : (
+        !hasStructured && <div className={styles.noteMuted}>{DASH}</div>
+      )}
+    </>
+  )
+}
+
+function ParaclinicGroup({ title, items }: { title: string; items: Investigation[] }) {
+  const hasStructured = items.some(i => i.structuredData != null)
 
   return (
     <div className={styles.investBlock}>
       <div className={`${styles.investTitle} ${hasStructured ? styles.investTitleBrand : ''}`}>
         {title}
       </div>
-
-      {hasStructured && <SpirometryCards data={inv.structuredData!} />}
-
-      {inv.narrative ? (
-        hasStructured ? (
-          // Both present: render narrative in a labelled sub-block below the metric grid
-          <div className={styles.narrativeBlock}>
-            <div className={styles.noteLabel}>Note clinice</div>
-            <div className={styles.noteText}>{inv.narrative}</div>
-          </div>
-        ) : (
-          // Narrative only
-          <div className={styles.noteText}>{inv.narrative}</div>
-        )
-      ) : (
-        !hasStructured && <div className={styles.noteMuted}>{DASH}</div>
-      )}
+      {items.length > 0
+        ? items.map((inv, i) => (
+            <div key={i} className={styles.headedPara}><InvestigationDetails inv={inv} /></div>
+          ))
+        : <div className={styles.noteMuted}>{DASH}</div>}
     </div>
   )
+}
+
+function groupParaclinic(investigations: Investigation[], types: string[]) {
+  const groups = new Map<string, Investigation[]>()
+  for (const inv of investigations) {
+    const title = inv.displayName ?? inv.type
+    groups.set(title, [...(groups.get(title) ?? []), inv])
+  }
+  for (const t of types) if (!groups.has(t)) groups.set(t, [])
+  return [...groups.entries()]
 }
 
 // ─── Lab analyses block ───────────────────────────────────────────────────────
@@ -235,6 +308,47 @@ function LabBulletinBlock({ bulletin }: { bulletin: LabAnalysesBulletin }) {
 }
 
 // ─── Checkbox label helpers ───────────────────────────────────────────────────
+
+function MedicationsTable({ items }: { items: LetterMedication[] }) {
+  return (
+    <table className={styles.medTable}>
+      <thead>
+        <tr>
+          <th className={styles.medColIndex}>Nr.</th>
+          <th>Medicament</th>
+          <th className={styles.medColCenter}>
+            Posologie
+            <div className={styles.medSubHeader}>dim. – d-a. – seara</div>
+          </th>
+          <th className={styles.medColCenter}>Zile</th>
+          <th className={styles.medColCenter}>Cantitate</th>
+          <th className={styles.medColCenter}>Compensare</th>
+          <th>Observații</th>
+        </tr>
+      </thead>
+      <tbody>
+        {items.map((m, i) => (
+          <tr key={i} className={m.compensationList ? styles.medRowCompensated : undefined}>
+            <td className={styles.medColIndex}>{i + 1}</td>
+            <td>
+              <div className={styles.medName}>{m.name}</div>
+              {m.details && <div className={styles.medDetails}>{m.details}</div>}
+            </td>
+            <td className={styles.medColCenter}>{dash(m.posology)}</td>
+            <td className={styles.medColCenter}>{dash(m.days)}</td>
+            <td className={`${styles.medColCenter} ${styles.strong}`}>{dash(m.quantity)}</td>
+            <td className={styles.medColCenter}>
+              {m.compensationList
+                ? <span className={styles.medCompensated}>Compensat · {m.compensationList}</span>
+                : <span className={styles.muted}>Necompensat</span>}
+            </td>
+            <td>{dash(m.notes)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )
+}
 function resolveCheckboxLabels(cb: MedicalLetterProps['checkboxes']) {
   const returnHosp = cb.returnForHospitalization
     ? '☑ Da, revine pentru internare'
@@ -275,10 +389,12 @@ export const MedicalLetter = ({
   clinicalExam,
   labExams,
   analysesResults = [],
+  recommendedAnalyses = [],
   paraclinicTypes = [],
   investigations,
   treatmentAdministered,
   additionalInfo,
+  prescribedMedications = [],
   recommendedTreatment,
   checkboxes,
   transmission,
@@ -286,6 +402,7 @@ export const MedicalLetter = ({
   doctorSignature,
 }: MedicalLetterProps) => {
   const cb = resolveCheckboxLabels(checkboxes)
+  const paraclinicGroups = groupParaclinic(investigations, paraclinicTypes)
 
   return (
     <div className={styles.wrapper}>
@@ -326,6 +443,7 @@ export const MedicalLetter = ({
           <span className={styles.muted}>{consultation.registryNumber ?? '............'}</span>.
           <br />
           <span className={`${styles.muted} ${styles.italic}`}>Motivele prezentării:</span>
+          {consultation.presentationReasons && <> {consultation.presentationReasons}</>}
         </div>
       </div>
 
@@ -374,19 +492,29 @@ export const MedicalLetter = ({
         ))}
       </div>
 
-      {/* ── 6. Anamneză | Examen clinic — atomic ─────────────────────────── */}
-      <div className={`${styles.atomic} ${styles.grid2} ${styles.section}`}>
-        <div>
-          <SecLabel>Anamneză</SecLabel>
-          <div className={styles.content12}>{dash(anamnesis)}</div>
-        </div>
+      {/* ── 6. Anamneză, apoi Examen clinic — fiecare atomic ────────────────── */}
+      <div className={`${styles.atomic} ${styles.section}`}>
+        <SecLabel>Anamneză</SecLabel>
+        <div className={styles.content12}><HeadedParagraphs text={anamnesis} /></div>
+      </div>
+      <div className={`${styles.atomic} ${styles.section}`}>
         <div>
           <SecLabel>Examen clinic</SecLabel>
           <div className={styles.content12}>
             {clinicalExam?.general || clinicalExam?.local ? (
               <>
-                {clinicalExam.general && <div>— general: {clinicalExam.general}</div>}
-                {clinicalExam.local && <div>— local: {clinicalExam.local}</div>}
+                {clinicalExam.general && (
+                  <div className={styles.headedPara}>
+                    <div className={styles.examSubLabel}>— general</div>
+                    <HeadedParagraphs text={clinicalExam.general} />
+                  </div>
+                )}
+                {clinicalExam.local && (
+                  <div className={styles.headedPara}>
+                    <div className={styles.examSubLabel}>— local</div>
+                    <HeadedParagraphs text={clinicalExam.local} />
+                  </div>
+                )}
               </>
             ) : (
               <>
@@ -398,8 +526,8 @@ export const MedicalLetter = ({
         </div>
       </div>
 
-      {/* ── 7. Examene laborator | Tip paraclinice — atomic ──────────────── */}
-      <div className={`${styles.atomic} ${styles.grid2} ${styles.section}`}>
+      {/* ── 7. Examene laborator — atomic ────────────────────────────────── */}
+      <div className={`${styles.atomic} ${styles.section}`}>
         <div>
           <SecLabel>Examene de laborator</SecLabel>
           {analysesResults.length > 0 ? (
@@ -424,35 +552,41 @@ export const MedicalLetter = ({
             </div>
           )}
         </div>
-        <div>
-          <SecLabel>Tip examene paraclinice</SecLabel>
-          <div className={styles.pillRow}>
-            {paraclinicTypes.length > 0 ? (
-              paraclinicTypes.map((t) => (
-                <span key={t} className={styles.pill}>{t}</span>
-              ))
-            ) : (
-              <span className={styles.muted}>{DASH}</span>
-            )}
-          </div>
-        </div>
       </div>
 
-      {/* ── 8. Paraclinice — detalii ──────────────────────────────────────── */}
-      {investigations.length > 0 && (
-        <div className={styles.section}>
-          {/* Heading glued to first block; remaining blocks are each atomic */}
-          <div className={styles.atomic}>
-            <SecLabel>Examene paraclinice — detalii</SecLabel>
-            <InvestigationBlock inv={investigations[0]} />
+      {recommendedAnalyses.length > 0 && (
+        <div className={`${styles.atomic} ${styles.section}`}>
+          <SecLabel>Analize recomandate</SecLabel>
+          <div className={styles.content12}>
+            {recommendedAnalyses.map((a, i) => (
+              <div key={i} className={styles.headedPara}>
+                <span className={styles.paraHeading}>{a.name}</span>
+                {a.priority && <> ({a.priority})</>}
+                {a.notes && <> — {a.notes}</>}
+              </div>
+            ))}
           </div>
-          {investigations.slice(1).map((inv, i) => (
-            <div key={i + 1} className={styles.atomic}>
-              <InvestigationBlock inv={inv} />
-            </div>
-          ))}
         </div>
       )}
+
+      {/* ── 8. Examene paraclinice — fiecare examen urmat de detaliile lui ─── */}
+      {/* data-print-split: previzualizarea tipăririi poate rupe secțiunea între examene */}
+      <div className={styles.section} data-print-split>
+        {paraclinicGroups.length > 0 ? (
+          paraclinicGroups.map(([title, items], i) => (
+            // Titlul secțiunii rămâne lipit de primul examen la paginare
+            <div key={title} className={styles.atomic}>
+              {i === 0 && <SecLabel>Examene paraclinice</SecLabel>}
+              <ParaclinicGroup title={title} items={items} />
+            </div>
+          ))
+        ) : (
+          <div className={styles.atomic}>
+            <SecLabel>Examene paraclinice</SecLabel>
+            <span className={styles.muted}>{DASH}</span>
+          </div>
+        )}
+      </div>
 
       {/* ── 9. Tratament efectuat | Alte informații — atomic ─────────────── */}
       <div className={`${styles.atomic} ${styles.contentBlock} ${styles.section}`}>
@@ -475,7 +609,19 @@ export const MedicalLetter = ({
           Se va specifica durata pentru care se poate prescrie de medicul din ambulatoriu,
           inclusiv medicul de familie.
         </div>
-        <div className={styles.content12}>{dash(recommendedTreatment)}</div>
+        {prescribedMedications.length > 0 ? (
+          <>
+            <MedicationsTable items={prescribedMedications} />
+            {recommendedTreatment?.trim() && (
+              <div className={styles.content12}>
+                <div className={styles.paraHeading}>Recomandări:</div>
+                <div className={styles.preLine}>{recommendedTreatment.trim()}</div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className={styles.content12}>{dash(recommendedTreatment)}</div>
+        )}
       </div>
 
       {/* ── 11. Checkbox summary — atomic ─────────────────────────────────── */}
