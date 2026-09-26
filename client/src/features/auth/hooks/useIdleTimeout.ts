@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { authApi } from '@/api/endpoints/auth.api'
 import { useAuthStore } from '@/store/authStore'
+import { ACTIVITY_EVENT, getActivityChannel, trackUserActivity } from '../activity'
 
 /**
  * Cu cât timp înainte de expirare apare avertismentul.
@@ -15,43 +16,6 @@ const warningSecondsFor = (windowSeconds: number) =>
 
 /** Cât de des verificăm dacă fereastra s-a scurs. */
 const TICK_MS = 1_000
-
-/**
- * Canal de sincronizare între tab-uri. Fără el, un tab activ ar ține sesiunea vie
- * pe server în timp ce altul, lăsat deschis, ar afișa avertismentul și ar deconecta.
- */
-const CHANNEL_NAME = 'valyan-activity'
-
-/**
- * Ce înseamnă activitate: **schimbarea ecranului**.
- *
- * Navigarea între rute e detectată automat. Schimbările de ecran care nu produc
- * navigare — deschiderea unui modal, comutarea unui tab, trecerea la altă pagină
- * de grilă — trebuie marcate explicit prin `reportActivity()`.
- *
- * NU sunt activitate, deliberat: mișcarea mouse-ului, scroll-ul, click-urile
- * oarecare în pagină și reîmprospătările automate din fundal. O stație
- * nesupravegheată al cărei mouse e atins accidental trebuie să se blocheze.
- */
-let channel: BroadcastChannel | null = null
-
-const getChannel = () => {
-  if (channel) return channel
-  try {
-    channel = new BroadcastChannel(CHANNEL_NAME)
-  } catch {
-    // Browser fără BroadcastChannel: sincronizarea între tab-uri lipsește,
-    // dar fiecare tab își aplică oricum propria fereastră.
-    channel = null
-  }
-  return channel
-}
-
-/** Marchează o schimbare de ecran care nu produce navigare. */
-export const reportActivity = () => {
-  window.dispatchEvent(new Event('valyan:activity'))
-  getChannel()?.postMessage('activity')
-}
 
 interface IdleState {
   /** Secunde rămase până la deconectare; null cât timp nu e cazul să avertizăm. */
@@ -98,25 +62,28 @@ export const useIdleTimeout = (): IdleState => {
   useEffect(() => {
     if (!isAuthenticated) return
     markActive()
-    getChannel()?.postMessage('activity')
+    getActivityChannel()?.postMessage('activity')
   }, [location.pathname, isAuthenticated])
 
-  // Schimbările de ecran fără navigare, marcate explicit, și cele din alte tab-uri.
+  // Interacțiunile deliberate din orice pagină (vezi activity.ts) și cele din alte tab-uri.
   useEffect(() => {
     if (!isAuthenticated) return
 
-    const onLocal = () => markActive()
-    window.addEventListener('valyan:activity', onLocal)
+    const untrack = trackUserActivity()
 
-    const ch = getChannel()
+    const onLocal = () => markActive()
+    window.addEventListener(ACTIVITY_EVENT, onLocal)
+
+    const ch = getActivityChannel()
     const onRemote = () => markActive()
     ch?.addEventListener('message', onRemote)
 
     return () => {
-      window.removeEventListener('valyan:activity', onLocal)
+      untrack()
+      window.removeEventListener(ACTIVITY_EVENT, onLocal)
       ch?.removeEventListener('message', onRemote)
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, idleMinutes])
 
   // Cronometrul propriu-zis.
   useEffect(() => {

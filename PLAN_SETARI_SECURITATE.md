@@ -187,12 +187,13 @@ Semnalul de activitate în client:
 | Contează ca activitate | Nu contează |
 |---|---|
 | Navigare între rute | Mișcarea mouse-ului |
-| Deschiderea unui ecran dintr-un meniu | Scroll |
-| Schimbarea unui ecran fără navigare — modal, tab, pagină de grilă | Click-uri oarecare în pagină |
-| Trimiterea unui formular | Reîmprospătări automate în fundal |
+| Click pe un control — buton, link, tab, rând de grilă, câmp, opțiune | Scroll |
+| Orice tastă apăsată | Click-uri pe zone neinteractive |
+| Modificarea unui câmp (filtre, select-uri) și trimiterea unui formular | Reîmprospătări automate în fundal |
 
-Schimbările de ecran care nu produc navigare trebuie marcate explicit; nu există un
-eveniment DOM care să le acopere.
+Semnalul e captat global, într-un singur loc (`features/auth/activity.ts`), instalat de
+`useIdleTimeout` — paginile noi sunt acoperite automat. `reportActivity()` rămâne pentru
+cazurile rare pe care ascultătorii globali nu le văd.
 
 **De verificat la implementare:** `useAnmSyncStatus` și `useCnasSyncStatus` fac polling
 la 3 secunde cât timp un job de sincronizare rulează. Polling-ul e condiționat de un job
