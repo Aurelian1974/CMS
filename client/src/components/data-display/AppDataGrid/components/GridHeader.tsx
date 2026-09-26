@@ -33,6 +33,8 @@ export interface GridHeaderProps<T extends object> {
   stickyHeader?: boolean
   stickyOffsets?: Map<string, StickyOffset>
   rtl?: boolean
+  /** Rândurile au celulă de drag la început — header-ul rezervă aceeași lățime */
+  rowDragEnabled?: boolean
 }
 
 export function GridHeader<T extends object>(props: GridHeaderProps<T>) {
@@ -54,6 +56,7 @@ export function GridHeader<T extends object>(props: GridHeaderProps<T>) {
     onToggleSelectAll,
     stickyHeader,
     stickyOffsets,
+    rowDragEnabled,
   } = props
 
   const [openFilterField, setOpenFilterField] = useState<string | null>(null)
@@ -213,6 +216,7 @@ export function GridHeader<T extends object>(props: GridHeaderProps<T>) {
     <div className={`adg-header ${stickyHeader ? 'adg-header--sticky' : ''}`} role="rowgroup">
       {/* Header row */}
       <div className="adg-header__row" role="row">
+        {rowDragEnabled && <div className="adg-header__cell adg-cell--drag-handle" aria-hidden="true" />}
         {nonRightCols.map(col => renderHeaderCell(col))}
         {rightCols.length > 0 && <div className="adg-header__spacer" aria-hidden="true" />}
         {rightCols.map(col => renderHeaderCell(col))}

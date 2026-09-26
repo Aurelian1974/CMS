@@ -629,6 +629,7 @@ function AppDataGridInner<T extends object>(
           }}
           stickyHeader={stickyHeader}
           stickyOffsets={stickyOffsets}
+          rowDragEnabled={rowDragEnabled}
         />
 
         {/* Body */}
