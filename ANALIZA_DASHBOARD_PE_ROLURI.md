@@ -38,7 +38,7 @@ primul care cade dacă un widget cere un endpoint pe care rolul curent nu-l poat
 | Migrări | DbUp, 2 faze: `Scripts/Migrations/NNNN_*.sql` (o dată, journal `SchemaVersions`) + `Scripts/StoredProcedures/*.sql` (re-rulate la fiecare execuție, `NullJournal`). Ultima migrare: **`0056_CreateFiscalReceipts.sql`** | Migrarea nouă pornește de la **`0057`**; SP-urile sunt `CREATE OR ALTER`, deci re-deployabile |
 | Rezultate paginate | `PagedResult<T>` + wrapper `{Entity}PagedResponse` cu `PagedResult` + `Stats` | Dashboard-ul **nu paginează**: listele sunt „top N", cu link „vezi tot" spre pagina de listă |
 | Rezultate multiple | `QueryMultipleAsync` + `ReadAsync`/`ReadSingleAsync` (precedent: `ConsultationBilling_GetPaged`, 3 result sets) | Același pattern; §8.1 explică de ce result set-urile trebuie să fie **fixe**, nu condiționate de parametri |
-| Response API | `ApiResponse<T>` = `{ success, data, message, errors }`; interceptorul axios returnează `response.data`, deci fișierele `*.api.ts` întorc `Promise<ApiResponse<T>>` | §10: hook-ul accesează `.data`, **nu** `.data.data` (vezi §17 — CLAUDE.md e învechit aici) |
+| Response API | `ApiResponse<T>` = `{ success, data, message, errors }`; interceptorul axios returnează `response.data`, deci fișierele `*.api.ts` întorc `Promise<ApiResponse<T>>` | §10: hook-ul accesează `.data`, **nu** `.data.data` |
 | Server state | TanStack Query; `{feature}Keys` cu `all/lists/list(params)/details/detail(id)`; `staleTime` explicit (15s la billing, 1 min la consultații) | §10.3: `staleTime` diferit per widget — agenda de azi nu se învechește ca încasările lunii |
 | Grafice | **Nicio bibliotecă de chart instalată** (verificat `client/package.json`: fără `@syncfusion/ej2-react-charts`, fără recharts/chart.js/d3) | §12 — decizie necesară |
 | Teste | xUnit + NSubstitute (handler/validator), Vitest + Testing Library (FE), Playwright (e2e) | §13 |
@@ -1951,7 +1951,7 @@ neutilizat într-un widget oprește build-ul) + Vitest + build; `contract` valid
 | 6 | **Trei convenții de timp în schemă** (`SYSDATETIME` / `GETDATE` / `SYSUTCDATETIME`) | „Azi" e ambiguu; `SecurityEvents` e decalat | `@Today` de la handler + `@SinceUtc` separat (§8.2). Merită un ticket de uniformizare a schemei |
 | 7 | **`#Billable` fără limită de perioadă** | Scan crescător liniar cu istoricul clinicii, pe pagina cea mai des deschisă | `@BillableSince` (§16/D5) |
 | 8 | **Niciun `RowVersion` pe `Appointments`** | Fără impact pe citire; relevant doar dacă dashboard-ul devine scriitor | Nimic acum |
-| 9 | **CLAUDE.md conține inexactități** (vezi §17) | Un dezvoltator care urmează documentul scrie cod care nu compilează | §17 |
+| 9 | **CLAUDE.md conținea 19 inexactități** (vezi §17), printre care exemplul central `CreateConsultationCommand` cu 47 de parametri, obsolet după 0035 | Un dezvoltator care urma documentul scria cod care nu compilează | **Corectat** în același PR — §17 |
 | 10 | **Nicio bibliotecă de chart** | `chart.*` nu se poate implementa fără decizie | §12 |
 | 11 | **Cache-ul de permisiuni e accesibil doar din `ModuleAccessAuthorizationHandler`** (`IMemoryCache` + `PermissionCacheKeys`, TTL 5 min, pre-populat la login/refresh) | Un handler de feature care are nevoie de permisiuni ar face un apel la BD paralel cu un cache deja cald | `IEffectivePermissions` (§9.3, D13) |
 
@@ -1977,20 +1977,38 @@ neutilizat într-un widget oprește build-ul) + Vitest + build; `contract` valid
 
 ---
 
-## 17. Anexă — inexactități găsite în CLAUDE.md
+## 17. Anexă — inexactități găsite în CLAUDE.md (CORECTATE)
 
-Verificate împotriva codului în timpul acestei analize. Merită corectate, pentru că documentul e citit
-ca referință normativă.
+Verificate împotriva codului în timpul acestei analize și **remediate în același PR**.
+Lista rămâne aici ca urmă a ce s-a schimbat și de ce.
 
-| § din CLAUDE.md | Ce scrie | Realitatea în cod |
+| Ce scria CLAUDE.md | Realitatea în cod | Stare |
 |---|---|---|
-| §5 „ICurrentUser" | Listează `currentUser.IsAdmin // bool` | `ICurrentUser` **nu are** `IsAdmin`. Are `Id`, `ClinicId`, `RoleId`, `Email`, `FullName`, `Role`, `IsInRole(string)`. Nu are nici `DoctorId` |
-| §4 API client + tabelul de anti-pattern-uri | `api.get(...).then(r => r.data.data)`; „`api.get(...)` fără `.then(r => r.data.data)`" = greșeală | Interceptorul din `axiosInstance.ts` returnează deja `response.data`. Fișierele reale (`billing.api.ts`, `consultations.api.ts`) întorc `Promise<ApiResponse<T>>` **fără** `.then`, iar consumatorul accesează `.data`. Urmând CLAUDE.md se obține `undefined` |
-| Checklist „feature nou" | `src/ValyanClinic.Application/Common/Constants/` pentru `SqlErrorCodes` / `ErrorMessages` | Corect, dar `ModuleCodes` are și `Tariffs` (0053), absent din lista din §„Constante" |
-| §„Migration order" | Exemplu cu `0031` | Ultima migrare reală e **`0056_CreateFiscalReceipts.sql`** |
-| §„SqlErrorCodes" | Se oprește la 50508 | Codurile reale merg până la **50645** (range-ul financiar 50600–50699 din `ANALIZA_MODUL_FINANCIAR.md`) |
-| §„Pattern-uri frontend / Zustand" | Nu menționează `idleTimeoutMinutes` | `authStore` are și `idleTimeoutMinutes`, persistat, venit de la server la login/refresh |
-| §„Reguli R1" | „ORICE query la DB trece ClinicId" | Corect ca regulă, dar există excepții legitime documentate: nomenclatoarele naționale (`Anm_*`, `Cnas_*`, `NomenclatorSyncLog`) nu sunt per clinică |
+| `CreateConsultationCommand` cu **47 de parametri** (`Motiv`, `IstoricMedicalPersonal`, `StareGenerala`, `Greutate`, `TensiuneSistolica`, `SpO2`, …) | **23 de parametri.** Migrarea 0035 a mutat anamneza și examenul clinic în tabele proprii, cu comenzi separate (`UpdateConsultationAnamnesis` / `UpdateConsultationExam`) | ✅ corectat |
+| `IConsultationRepository.CreateAsync(Guid clinicId, Guid patientId, …)` — semnătură pozițională lungă | `CreateAsync(ConsultationCreateData data, Guid createdBy, CancellationToken ct)` — **record de date**, 3 parametri | ✅ corectat, cu regula de formă explicitată |
+| „REGULĂ CRITICĂ: numărul de `Arg.Any<>()` TREBUIE SĂ COINCIDĂ EXACT… (47 params + ct = **48 total**)", cu un bloc de 48 de `Arg.Any<>()` | `Arg.Any<ConsultationCreateData>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>()` — **3**. Verificarea unui câmp se face cu `Arg.Is<T>(predicat)` | ✅ rescris |
+| `currentUser.IsAdmin // bool` | Membrul **nu există**. Interfața are `Id`, `ClinicId`, `RoleId`, `Email`, `FullName`, `Role`, `IsInRole(string)` | ✅ corectat + rând în anti-pattern-uri |
+| *(nemenționat)* | `ICurrentUser` **nu are `DoctorId`**, iar JWT nu emite claim-ul | ✅ documentat explicit |
+| `api.get(...).then(r => r.data.data)`, iar absența `.then` listată ca **greșeală** | Interceptorul face `(response) => response.data`, deci `api.get()` întoarce `ApiResponse<T>`; `r.data.data` e `undefined`. Fișierele reale nu despachetează | ✅ inversat, în ambele locuri |
+| `<Controller render={({ field }) => <FormDatePicker field={field} error={…} />} />` | Wrapper-ele apelează `useController` **intern**: primesc `name` + `control`, cu parametru generic (`<FormInput<FormData>>`) | ✅ rescris |
+| „Wrappers: …`FormTextArea`, `FormRichText` (**Syncfusion RTE**), `FormCheckbox`, `FormSwitch`" | `FormTextArea`/`FormCheckbox`/`FormSwitch` **nu există**; `FormRichText` e **TipTap**, nu Syncfusion. Syncfusion RTE apare doar în `components/icd10/` | ✅ corectat + tabel cu wrapper-ele reale |
+| `<Inject services={[Toolbar, Link, **Image**, HtmlEditor, Count, QuickToolbar]} />` | `[Toolbar, Link, HtmlEditor, Count, QuickToolbar, **Resize**]` — `Image` nu e injectat nicăieri | ✅ corectat |
+| Lista CSS Syncfusion din `main.tsx`, parțială | 11 import-uri + `L10n`/`loadCldr`/`setCulture`/`setCurrencyCode` | ✅ completat |
+| `z.number({ invalid_type_error: '…' })`, `z.boolean().default(false)` | Zod 4 a redenumit parametrul în `error`; schemele reale folosesc `.nullable().optional()` și nu pun `.default()` | ✅ corectat, cu motivul |
+| `SqlExceptionHelper.Make(int number, string message = "…")`, prin `FormatterServices.GetUninitializedObject` | `internal static Make(int number)` — **un** parametru; reflection peste `SqlErrorCollection`/`SqlError` | ✅ corectat |
+| `Result<T>` fără `Forbidden` | Există și `Result<T>.Forbidden(...)` → 403 | ✅ adăugat |
+| Exemplu R6 cu `0031`; „ultima migrare" implicit veche | Ultima migrare: **`0056_CreateFiscalReceipts.sql`** | ✅ corectat + comanda de verificare |
+| `SqlErrorCodes` „coduri complete", oprit la 50508 | Codurile merg până la **50645**; harta range-urilor lipsea | ✅ marcat ca extras + hartă de range-uri |
+| `ModuleCodes` fără `Tariffs` | `Tariffs` există (0053). Modulele nu vin toate din 0011: `anm`/0030, `audit`/0045, `settings`/0047, `tariffs`/0053 | ✅ completat |
+| `authStore` fără `idleTimeoutMinutes` | Câmpul există, e persistat și vine de la server la login/refresh | ✅ adăugat, cu `AuthUser` complet |
+| R1: „`WHERE ClinicId = @ClinicId` — OBLIGATORIU, fără excepție" | Nomenclatoarele naționale nu au coloana; `SecurityEvents.ClinicId` e NULL-abil, deci filtrul simplu ascunde rândurile relevante | ✅ nuanțat, cu forma corectă |
+| Axios „**1.13.5 (pinned)**" | `package.json` are `^1.13.5` (interval caret). Ce blochează versiunea e `package-lock.json`, respectat de `npm ci` | ✅ corectat, cu cum se blochează efectiv |
+| Căi de hook-uri: `hooks/{feature}.hooks.ts` (în checklist) vs `use{Entity}s.ts` (în tabelul de naming) — contradicție internă | Realitatea: `useConsultations.ts`, `usePatients.ts`, `useBilling.ts` | ✅ unificat |
+
+Adăugat pe lângă corecții: o notă în capul documentului cu data ultimei verificări, regula
+„dacă un exemplu nu compilează, exemplul e greșit, nu codul", obligația de a actualiza
+secțiunea în același PR cu refactorizarea, și lista reperelor care se învechesc cel mai
+repede, cu comenzile de verificat.
 
 ---
 
