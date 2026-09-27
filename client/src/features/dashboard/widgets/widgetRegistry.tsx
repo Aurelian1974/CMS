@@ -11,6 +11,14 @@ import { UnpaidWidget } from '../components/widgets/UnpaidWidget'
 import { ReceiptIssuesWidget } from '../components/widgets/ReceiptIssuesWidget'
 import { ActivityWidget } from '../components/widgets/ActivityWidget'
 import { SecurityEventsWidget } from '../components/widgets/SecurityEventsWidget'
+import { RevenueTrendWidget } from '../components/widgets/RevenueTrendWidget'
+import { AppointmentsWeekWidget } from '../components/widgets/AppointmentsWeekWidget'
+import { NoShowRateWidget } from '../components/widgets/NoShowRateWidget'
+import { DoctorWorkloadWidget } from '../components/widgets/DoctorWorkloadWidget'
+import { TopServicesWidget } from '../components/widgets/TopServicesWidget'
+import { InsuranceExpiringWidget, LicensesExpiringWidget } from '../components/widgets/ExpiringItemsWidgets'
+import { LockedUsersWidget } from '../components/widgets/LockedUsersWidget'
+import { FreshnessWidget } from '../components/widgets/FreshnessWidget'
 
 export interface WidgetEntry {
   component: React.FC<DashboardWidgetProps>
@@ -18,6 +26,8 @@ export interface WidgetEntry {
   group: 'kpi' | 'card'
   /** Lățimea e decizie de prezentare a clientului, nu vine de la server. */
   colClass: string
+  /** Widget redundant în contextul dat (ex. alt widget randează deja aceleași date). */
+  skip?: (widgetIds: readonly string[]) => boolean
 }
 
 const KPI  = { group: 'kpi',  colClass: 'col-sm-6 col-xl-3' } as const
@@ -47,4 +57,19 @@ export const WIDGET_REGISTRY: Record<string, WidgetEntry> = {
   'list.receipts.failed':     { component: ReceiptIssuesWidget,     ...HALF },
   'list.activity':            { component: ActivityWidget,          ...HALF },
   'list.security.events':     { component: SecurityEventsWidget,    ...HALF },
+
+  'chart.revenue.trend':      { component: RevenueTrendWidget,      ...HALF },
+  'chart.appointments.week':  { component: AppointmentsWeekWidget,  ...HALF },
+  'panel.noshow.rate':        { component: NoShowRateWidget,        ...HALF },
+  'panel.doctor.workload':    { component: DoctorWorkloadWidget,    ...HALF },
+  'panel.top.services':       { component: TopServicesWidget,       ...HALF },
+  'panel.licenses.expiring':  { component: LicensesExpiringWidget,  ...HALF },
+  'panel.insurance.expiring': { component: InsuranceExpiringWidget, ...HALF },
+  'panel.users.locked':       { component: LockedUsersWidget,       ...HALF },
+  'panel.freshness.anm':      { component: FreshnessWidget,         ...HALF },
+  'panel.freshness.cnas':     {
+    component: FreshnessWidget,
+    ...HALF,
+    skip: (ids) => ids.includes('panel.freshness.anm'),
+  },
 }

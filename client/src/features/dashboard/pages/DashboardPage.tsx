@@ -55,7 +55,7 @@ export const DashboardPage = () => {
     );
   }
 
-  const known = widgetIds.filter((id) => WIDGET_REGISTRY[id]);
+  const known = widgetIds.filter((id) => WIDGET_REGISTRY[id] && !WIDGET_REGISTRY[id].skip?.(widgetIds));
   const renderGroup = (group: 'kpi' | 'card') =>
     known
       .filter((id) => WIDGET_REGISTRY[id].group === group)

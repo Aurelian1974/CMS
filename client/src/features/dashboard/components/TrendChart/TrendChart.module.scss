@@ -1,0 +1,51 @@
+@import '@/styles/variables';
+
+.chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.axis {
+  stroke: $gray-200;
+  stroke-width: 1;
+}
+
+.grid {
+  stroke: $gray-100;
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.line {
+  fill: none;
+  stroke: $primary;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.area {
+  fill: rgba($primary, 0.12);
+  stroke: none;
+}
+
+.point {
+  fill: $card-bg;
+  stroke: $primary;
+  stroke-width: 1.5;
+}
+
+.bar {
+  fill: $primary-light;
+
+  &:hover {
+    fill: $primary;
+  }
+}
+
+.label {
+  font-size: 11px;
+  fill: $gray-500;
+}
