@@ -9,8 +9,26 @@ using ValyanClinic.Infrastructure.Authentication;
 namespace ValyanClinic.API.Controllers;
 
 /// <summary>
-/// Endpoints minimal pentru upload și download de documente atașate (in-DB storage).
+/// Upload și download pentru atașamentele investigațiilor din consultație (in-DB storage).
 /// Limită upload: 10 MB.
+///
+/// GARDA E PE `consultations`, NU PE `documents` — INTENȚIONAT.
+/// dbo.Documents a fost creat în migrarea 0036 ca depozit de atașamente pentru
+/// ConsultationInvestigations.AttachedDocumentId. Un fișier de aici e conținut clinic:
+/// un buletin de spirometrie, un EKG, o radiografie atașate unei investigații. Singurul
+/// consumator din client e DocumentUpload.tsx, sub features/consultations/investigations/.
+///
+/// Modulul `documents` seed-uit în 0011 („Trimiteri, scrisori medicale, concedii") era
+/// pentru un feature diferit, care nu s-a construit; a fost retras în migrarea 0057.
+///
+/// Mutarea acestui controller pe ModuleCodes.Documents ar fi fost o regresie de
+/// securitate, nu o aliniere:
+///   - recepția (consultations = None, documents = Write) ar fi CÂȘTIGAT acces la
+///     atașamente clinice;
+///   - asistenta (consultations = Read, documents = None) ar fi PIERDUT accesul de
+///     citire pe care îl are azi.
+/// Dacă apare vreodată feature-ul de trimiteri/scrisori/concedii, el primește
+/// controller-ul lui și modulul reactivat — acesta rămâne unde e.
 /// </summary>
 public class DocumentsController(IDocumentRepository documents, ICurrentUser currentUser) : BaseApiController
 {

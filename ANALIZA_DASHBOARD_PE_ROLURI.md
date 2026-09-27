@@ -35,7 +35,7 @@ primul care cade dacă un widget cere un endpoint pe care rolul curent nu-l poat
 | Soft delete | `IsDeleted` pe toate tabelele principale | Orice agregat filtrează `IsDeleted = 0`; o consultație ștearsă nu are ce căuta într-un contor |
 | Erori business | `THROW 5xxxx` în SP → `SqlException` → `Result<T>` | **Nu se aplică**: un dashboard read-only nu are erori de business. Fără coduri noi în `SqlErrorCodes.cs` |
 | Autorizare | `[HasAccess(ModuleCodes.X, AccessLevel.Read)]` pe endpoint; FE `useHasAccess()` + `MODULE` | §3–§4: un singur atribut pe endpoint **nu e suficient** pentru un payload compozit |
-| Migrări | DbUp, 2 faze: `Scripts/Migrations/NNNN_*.sql` (o dată, journal `SchemaVersions`) + `Scripts/StoredProcedures/*.sql` (re-rulate la fiecare execuție, `NullJournal`). Ultima migrare: **`0056_CreateFiscalReceipts.sql`** | Migrarea nouă pornește de la **`0057`**; SP-urile sunt `CREATE OR ALTER`, deci re-deployabile |
+| Migrări | DbUp, 2 faze: `Scripts/Migrations/NNNN_*.sql` (o dată, journal `SchemaVersions`) + `Scripts/StoredProcedures/*.sql` (re-rulate la fiecare execuție, `NullJournal`). Ultima migrare: **`0057_RetirePhantomModules.sql`** | Migrarea nouă pornește de la **`0058`**; SP-urile sunt `CREATE OR ALTER`, deci re-deployabile |
 | Rezultate paginate | `PagedResult<T>` + wrapper `{Entity}PagedResponse` cu `PagedResult` + `Stats` | Dashboard-ul **nu paginează**: listele sunt „top N", cu link „vezi tot" spre pagina de listă |
 | Rezultate multiple | `QueryMultipleAsync` + `ReadAsync`/`ReadSingleAsync` (precedent: `ConsultationBilling_GetPaged`, 3 result sets) | Același pattern; §8.1 explică de ce result set-urile trebuie să fie **fixe**, nu condiționate de parametri |
 | Response API | `ApiResponse<T>` = `{ success, data, message, errors }`; interceptorul axios returnează `response.data`, deci fișierele `*.api.ts` întorc `Promise<ApiResponse<T>>` | §10: hook-ul accesează `.data`, **nu** `.data.data` |
@@ -196,8 +196,8 @@ Tot ce urmează e verificat împotriva migrărilor existente. Coloanele citate e
 | Tip/denumire programare („Consultație generală", ca în mock) | `Appointments` **nu are** tip. Are doar `Notes NVARCHAR(2000)` liber. Mock-ul afișează un câmp care nu există |
 | „Timp mediu de așteptare" | Nu există marcaj de check-in / început real al consultației |
 | Venit pe medic | `Payments` se leagă de `ConsultationId` → `Consultations.DoctorId`. Se poate, prin JOIN. Dar expune financiar pe medic — decizie de business, nu tehnică |
-| Documente emise (trimiteri, concedii) | `DocumentsController` există, dar e protejat pe `consultations`, nu pe `documents` — modulul `documents` e seed-uit și **nu e folosit de nicio rută sau controller**. Gap preexistent, semnalat în §15 |
-| Rapoarte | Modulul `reports` e seed-uit (`clinic_manager = Full`), dar **nu există nicio rută `/reports`** în `ROUTE_MODULES` și niciun controller. Widget-urile analitice ale managerului trebuie legate de module existente (`payments`, `invoices`, `appointments`), nu de `reports` |
+| Documente emise (trimiteri, concedii) | Feature-ul nu există. `DocumentsController` servește atașamentele investigațiilor (`dbo.Documents` din 0036), nu trimiteri/scrisori — de aceea e protejat corect pe `consultations`. Modulul `documents` a fost **retras în migrarea 0057** |
+| Rapoarte | Modulul `reports` a fost **retras în migrarea 0057** — era seed-uit cu `clinic_manager = Full` fără nicio rută, controller sau pagină. Widget-urile analitice ale managerului se leagă de module existente (`payments`, `invoices`, `appointments`) |
 
 ---
 
@@ -471,7 +471,7 @@ Acoperire existentă (nu se atinge nimic):
 | Total/încasat per consultație | `IX_ConsultationServices_Consultation`, `IX_Payments_Consultation (ConsultationId, IsCancelled) INCLUDE (Amount, PaidAt)` ✅ |
 | Activitate recentă | `IX_AuditLogs_ClinicId_ChangedAt (ClinicId, ChangedAt DESC) INCLUDE (EntityType, EntityId, Action, ChangedBy)` ✅ |
 
-Lipsuri reale, de acoperit în migrarea `0057`:
+Lipsuri reale, de acoperit în migrarea `0058`:
 
 | # | Index nou | De ce |
 |---|---|---|
@@ -486,13 +486,13 @@ Lipsuri reale, de acoperit în migrarea `0057`:
 Toate sunt filtrate (`WHERE`), deci ieftine la scriere: nu ating rândurile care nu satisfac predicatul.
 Toate respectă convenția existentă `IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = …)`.
 
-### 8.5 Migrarea `0057_DashboardIndexes.sql`
+### 8.5 Migrarea `0058_DashboardIndexes.sql`
 
 Migrarea **nu creează nicio tabelă**. Dashboard-ul citește exclusiv din ce există. Conține:
 
 ```sql
 -- =============================================================================
--- Migrare 0057: Indecși pentru agregatele de dashboard
+-- Migrare 0058: Indecși pentru agregatele de dashboard
 --
 -- Dashboard-ul nu introduce entități noi — citește din tabelele existente. Ce
 -- lipsea erau indecșii pentru coloanele după care agregă: CreatedAt la pacienți,
@@ -501,7 +501,7 @@ Migrarea **nu creează nicio tabelă**. Dashboard-ul citește exclusiv din ce ex
 --
 -- Toți sunt filtrați, deci nu cresc costul de scriere pe rândurile care nu intră
 -- în predicat.
--- Rollback: Scripts/Rollback/0057_Rollback_DashboardIndexes.sql
+-- Rollback: Scripts/Rollback/0058_Rollback_DashboardIndexes.sql
 -- =============================================================================
 
 SET NOCOUNT ON;
@@ -562,12 +562,12 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes
         WHERE IsDeleted = 0 AND LockoutEnd IS NOT NULL;
 GO
 
-PRINT N'Migrarea 0057_DashboardIndexes finalizata cu succes.';
+PRINT N'Migrarea 0058_DashboardIndexes finalizata cu succes.';
 GO
 ```
 
 > Notă `DataUrmatoareiVizite`: coloana e adăugată în `0012_Consultations_Extended.sql` prin
-> `ALTER TABLE … ADD`. Migrarea 0057 rulează după, deci coloana există. Dacă se decide să nu se
+> `ALTER TABLE … ADD`. Migrarea 0058 rulează după, deci coloana există. Dacă se decide să nu se
 > folosească widget-ul de reveniri, indexul #5 se omite — nu are alt consumator.
 
 ### 8.6 `Dashboard_GetClinicalKpis`
@@ -1309,7 +1309,7 @@ src/ValyanClinic.Infrastructure/Data/StoredProcedures/DashboardProcedures.cs
 src/ValyanClinic.Infrastructure/DependencyInjection.cs          ← AddScoped
 src/ValyanClinic.API/Controllers/DashboardController.cs
 
-src/ValyanClinic.Infrastructure/Data/Scripts/Migrations/0057_DashboardIndexes.sql
+src/ValyanClinic.Infrastructure/Data/Scripts/Migrations/0058_DashboardIndexes.sql
 src/ValyanClinic.Infrastructure/Data/Scripts/StoredProcedures/
 ├── Dashboard_GetClinicalKpis.sql
 ├── Dashboard_GetAgenda.sql
@@ -1944,8 +1944,8 @@ neutilizat într-un widget oprește build-ul) + Vitest + build; `contract` valid
 | # | Constatare | Impact pe dashboard | Propunere |
 |---|---|---|---|
 | 1 | **`ICurrentUser` nu expune `DoctorId`; JWT nu are claim-ul** | Blochează orice widget „ale mele" | §8.3, soluția B (rezolvare în SP din `@UserId`) |
-| 2 | **Modulul `reports` e seed-uit (`clinic_manager = Full`) dar nu există nicio rută, controller sau pagină** | Widget-urile analitice nu se pot lega de `reports` | Se leagă de `payments`/`invoices`/`appointments`. `reports` rămâne rezervat pentru un modul viitor real |
-| 3 | **Modulul `documents` e seed-uit, dar `DocumentsController` e protejat pe `consultations`** | Un widget „documente emise" ar avea autorizare ambiguă | În afara scopului. Merită un ticket separat: sau se aliniază controller-ul la `documents`, sau se retrage modulul din seed |
+| 2 | **Modulul `reports` era seed-uit (`clinic_manager = Full`) fără nicio rută, controller sau pagină** | Drept acordabil în /permissions/roles care nu deschidea nimic | **Rezolvat**: retras în migrarea 0057 (`IsActive = 0`), constante eliminate. Widget-urile analitice se leagă de `payments`/`invoices`/`appointments` |
+| 3 | **Modulul `documents` era seed-uit, iar `DocumentsController` e protejat pe `consultations`** | Părea o nepotrivire de aliniat | **Rezolvat**: nu era o nepotrivire. `dbo.Documents` (0036) e depozitul de atașamente ale investigațiilor, deci `consultations` e garda corectă; alinierea la `documents` ar fi dat recepției (`consultations = None`, `documents = Write`) acces la conținut clinic. Modulul, destinat trimiterilor/scrisorilor, e retras în 0057; motivul e documentat în controller |
 | 4 | **`Appointments` nu are tip/serviciu** | Mock-ul afișează „Consultație generală", „Ecografie abdominală" — câmp inexistent. Agenda reală nu poate arăta asta | Agenda arată pacient / oră / medic / status. Dacă se dorește tipul, e o schimbare de schemă la `Appointments`, nu la dashboard |
 | 5 | **`SecurityEvents.ClinicId` e NULL-abil, indecșii nu au `ClinicId` în cheie** | Widget-ul de securitate face scan; rândurile fără clinică trebuie tratate explicit | Indexul #6 din §8.4 + filtrul `(ClinicId = @ClinicId OR ClinicId IS NULL)` |
 | 6 | **Trei convenții de timp în schemă** (`SYSDATETIME` / `GETDATE` / `SYSUTCDATETIME`) | „Azi" e ambiguu; `SecurityEvents` e decalat | `@Today` de la handler + `@SinceUtc` separat (§8.2). Merită un ticket de uniformizare a schemei |
@@ -1972,7 +1972,7 @@ neutilizat într-un widget oprește build-ul) + Vitest + build; `contract` valid
 | **D9** | Preferințe per utilizator (§11) intră în v1 sau faza 2? | **Faza 2.** Preset-urile trebuie validate în uz înainte de a fi configurabile |
 | **D10** | Fereastra „buletine noi" (7 zile) și „reveniri" (14 zile) sunt corecte clinic? | De confirmat cu medicii; sunt parametri de SP, ușor de schimbat |
 | **D11** | `@ExpiryDays = 60` pentru avize CMR / asigurări? | Rezonabil; de confirmat |
-| **D12** | Se creează ticket separat pentru gap-urile #2, #3, #6 din §15? | **Da** — nu sunt probleme de dashboard și nu trebuie rezolvate în acest PR |
+| **D12** | Se creează ticket separat pentru gap-urile #2, #3, #6 din §15? | #2 și #3 (`reports` / `documents`) sunt **rezolvate** în migrarea 0057. #6 (cele trei convenții de timp în schemă) rămâne un ticket separat |
 | **D13** | Se introduce `IEffectivePermissions` (§9.3) ca sursă unică pentru permisiunile efective, folosită și de `ModuleAccessAuthorizationHandler`? | **Da.** Refactorizare mică, elimină un round-trip per încărcare de dashboard și previne două implementări de cache |
 
 ---
@@ -1997,7 +1997,7 @@ Lista rămâne aici ca urmă a ce s-a schimbat și de ce.
 | `z.number({ invalid_type_error: '…' })`, `z.boolean().default(false)` | Zod 4 a redenumit parametrul în `error`; schemele reale folosesc `.nullable().optional()` și nu pun `.default()` | ✅ corectat, cu motivul |
 | `SqlExceptionHelper.Make(int number, string message = "…")`, prin `FormatterServices.GetUninitializedObject` | `internal static Make(int number)` — **un** parametru; reflection peste `SqlErrorCollection`/`SqlError` | ✅ corectat |
 | `Result<T>` fără `Forbidden` | Există și `Result<T>.Forbidden(...)` → 403 | ✅ adăugat |
-| Exemplu R6 cu `0031`; „ultima migrare" implicit veche | Ultima migrare: **`0056_CreateFiscalReceipts.sql`** | ✅ corectat + comanda de verificare |
+| Exemplu R6 cu `0031`; „ultima migrare" implicit veche | Ultima migrare: **`0057_RetirePhantomModules.sql`** | ✅ corectat + comanda de verificare |
 | `SqlErrorCodes` „coduri complete", oprit la 50508 | Codurile merg până la **50645**; harta range-urilor lipsea | ✅ marcat ca extras + hartă de range-uri |
 | `ModuleCodes` fără `Tariffs` | `Tariffs` există (0053). Modulele nu vin toate din 0011: `anm`/0030, `audit`/0045, `settings`/0047, `tariffs`/0053 | ✅ completat |
 | `authStore` fără `idleTimeoutMinutes` | Câmpul există, e persistat și vine de la server la login/refresh | ✅ adăugat, cu `AuthUser` complet |
@@ -2017,7 +2017,7 @@ repede, cu comenzile de verificat.
 | Pas | Conținut | Livrabil verificabil |
 |---|---|---|
 | **0** | Confirmarea deciziilor D1–D12 | Acest document, adnotat |
-| **1** | `0057_DashboardIndexes.sql` + `.\migrate.ps1` | Indecșii există în `sys.indexes`; niciun plan de execuție existent nu regresează |
+| **1** | `0058_DashboardIndexes.sql` + `.\migrate.ps1` | Indecșii există în `sys.indexes`; niciun plan de execuție existent nu regresează |
 | **2** | Cele 5 SP-uri + teste de integrare | SP-uri apelabile din SSMS; izolarea multi-tenant și garda `@IncludeClinical` dovedite prin test |
 | **3** | DTO-uri, `IDashboardRepository`, `DashboardRepository`, `DashboardProcedures`, DI | `dotnet build` verde |
 | **4** | Catalog + preset-uri + handler + validator + controller | Testele de handler și de catalog verzi; `GET /api/v1/Dashboard` întoarce date reale în Swagger |

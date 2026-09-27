@@ -953,10 +953,8 @@ public static class ModuleCodes
     public const string Appointments  = "appointments";
     public const string Consultations = "consultations";
     public const string Prescriptions = "prescriptions";
-    public const string Documents     = "documents";
     public const string Invoices      = "invoices";
     public const string Payments      = "payments";
-    public const string Reports       = "reports";
     public const string Nomenclature  = "nomenclature";
     public const string Users         = "users";
     public const string Clinic        = "clinic";
@@ -967,15 +965,17 @@ public static class ModuleCodes
     public const string Tariffs       = "tariffs";   // seed în 0053
 }
 
-// Modulele NU sunt toate în migrarea 0011: `anm` vine din 0030, `audit` din 0045,
+// 15 module active. NU sunt toate în migrarea 0011: `anm` vine din 0030, `audit` din 0045,
 // `settings` din 0047, `tariffs` din 0053 — fiecare cu propriile granturi pe roluri.
 // `audit` și `settings` sunt acordate DOAR rolului admin.
 //
-// `reports` și `documents` sunt seed-uite în 0011, dar nu au nicio rută sau controller
-// aliniat pe ele (DocumentsController e protejat pe `consultations`). Nu le folosi ca
-// modul de acces pentru un feature nou fără să rezolvi mai întâi acea discrepanță.
+// RETRASE în migrarea 0057 (IsActive = 0 în BD, constante eliminate): `reports` și
+// `documents`, seed-uite în 0011 pentru feature-uri care nu s-au construit niciodată.
+// Apăreau ca drepturi acordabile în /permissions/roles fără să deschidă nimic.
 //
 // MODULE din client/src/hooks/useHasAccess.ts trebuie să rămână sincron cu acest fișier.
+// Invarianta „fiecare constantă = un modul activ în BD, și invers" e verificată de
+// ModuleSeedTests (ValyanClinic.IntegrationTests), în ambele direcții.
 
 // src/ValyanClinic.Application/Common/Enums/AccessLevel.cs
 public enum AccessLevel
@@ -1903,6 +1903,8 @@ internal static class SqlExceptionHelper
 | `Task<Guid> CreateAsync(Guid clinicId, Guid patientId, /* +45 */)` | Semnătură pozițională lungă: două `Guid?` vecine se pot inversa tăcut, iar fiecare câmp nou rupe toate mock-urile | `Task<Guid> CreateAsync({Entity}CreateData data, Guid createdBy, CancellationToken ct)` — vezi §8 |
 | `currentUser.IsAdmin` | Membrul nu există pe `ICurrentUser` | `currentUser.IsInRole(Roles.Admin)` |
 | `currentUser.DoctorId` | Nu există nici pe interfață, nici ca claim în JWT | SP-ul rezolvă `Users.DoctorId` din `@UserId` |
+| Cod de modul în `ModuleCodes` fără modul activ în `dbo.Modules` | `Permission_GetEffectiveByUser` filtrează `IsActive = 1`, deci `[HasAccess]` pe el refuză **toți** utilizatorii cu 403, indistinct de un refuz legitim | Seed-ează modulul într-o migrare **și** apoi adaugă constanta. `ModuleSeedTests` prinde ambele direcții |
+| Mutarea `DocumentsController` pe `ModuleCodes.Documents` | Regresie de securitate: recepția (`consultations = None`, `documents = Write`) ar câștiga acces la atașamente clinice, asistenta (`Read`/`None`) l-ar pierde | Rămâne pe `Consultations` — vezi comentariul din controller |
 
 ### Frontend
 
@@ -2271,13 +2273,17 @@ RAISERROR('Nu s-a găsit.', 16, 1)  -- ← nu folosi
 ### R6 — Migration order secvențial
 
 ```
-# Ultima migrare din repo: 0056_CreateFiscalReceipts.sql
-# Următoarea migrare pornește de la 0057 — verifică întotdeauna cu:
+# Ultima migrare din repo: 0057_RetirePhantomModules.sql
+# Următoarea migrare pornește de la 0058 — verifică întotdeauna cu:
 #   ls src/ValyanClinic.Infrastructure/Data/Scripts/Migrations/ | sort | tail -1
 
-0057_NumeDescriptiv.sql    ← corect
-0059_NumeDescriptiv.sql    ← greșit (a sărit 0058)
+0058_NumeDescriptiv.sql    ← corect
+0060_NumeDescriptiv.sql    ← greșit (a sărit 0059)
 ```
+
+Fiecare migrare are un pandant manual în `Scripts/Rollback/{NNNN}_Rollback_{Nume}.sql`.
+Folder-ul NU e preluat de DbUp (filtrele sunt `.Scripts.Migrations.` și
+`.Scripts.StoredProcedures.`), deci scripturile de rollback se rulează explicit.
 
 DbUp rulează în două faze (`DatabaseMigrator.cs`): `Scripts/Migrations/` o singură dată,
 cu journal în `SchemaVersions`, apoi `Scripts/StoredProcedures/` la **fiecare** execuție,

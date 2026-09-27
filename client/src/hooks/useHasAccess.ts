@@ -12,16 +12,20 @@ export const ACCESS_LEVEL = {
 export type AccessLevelValue = (typeof ACCESS_LEVEL)[keyof typeof ACCESS_LEVEL];
 
 /// Coduri module — identice cu ModuleCodes din backend.
+///
+/// `reports` și `documents` au fost retrase în migrarea 0057: erau seed-uite în 0011
+/// pentru feature-uri care nu s-au construit niciodată, apăreau ca drepturi acordabile
+/// în ecranul de permisiuni și intrau în payload-ul de la login fără să deschidă nimic.
+/// Modulele sunt IsActive = 0 în BD, deci un cod readăugat aici fără reactivarea din BD
+/// ar produce un 403 tăcut. Vezi capul migrării înainte de a le reintroduce.
 export const MODULE = {
   Dashboard: 'dashboard',
   Patients: 'patients',
   Appointments: 'appointments',
   Consultations: 'consultations',
   Prescriptions: 'prescriptions',
-  Documents: 'documents',
   Invoices: 'invoices',
   Payments: 'payments',
-  Reports: 'reports',
   Nomenclature: 'nomenclature',
   Users: 'users',
   Clinic: 'clinic',
