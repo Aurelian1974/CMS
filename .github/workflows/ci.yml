@@ -26,6 +26,10 @@ jobs:
           --collect:"XPlat Code Coverage"
           --settings tests/coverlet.runsettings
           --results-directory ./coverage-results
+      - run: >
+          dotnet test tests/ValyanClinic.FiscalBridge.Tests
+          -c Release --no-build
+          --logger "console;verbosity=minimal"
       - name: Upload backend coverage
         uses: actions/upload-artifact@v4
         if: always()

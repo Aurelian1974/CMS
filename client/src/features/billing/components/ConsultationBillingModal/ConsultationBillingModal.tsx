@@ -14,7 +14,9 @@ import {
   PAYMENT_STATUS_LABELS, RECEIPT_STATUS, formatInvoiceNumber, invoiceStatusVariant,
   paymentStatusVariant, receiptIsUnresolved, receiptStatusVariant,
 } from '../../constants/billing.constants'
-import type { CreatePaymentResult, FiscalReceiptListDto, PaymentDto } from '../../types/billing.types'
+import type { CreatePaymentResult, PaymentDto } from '../../types/billing.types'
+import { useFiscalPrint } from '../../fiscal/useFiscalPrint'
+import { BridgeJournalCheck } from '../BridgeJournalCheck'
 import { ServiceLinesEditor } from '../ServiceLinesEditor'
 import { CollectPaymentModal } from '../CollectPaymentModal'
 import { IssueInvoiceModal } from '../IssueInvoiceModal'
@@ -25,22 +27,17 @@ import styles from './ConsultationBillingModal.module.scss'
 export interface ConsultationBillingModalProps {
   consultationId: string | null
   onClose: () => void
-  /** Acțiunile pe un bon netipărit (tipărire prin fiscal bridge). */
-  renderReceiptActions?: (receipt: FiscalReceiptListDto) => React.ReactNode
-  /** Apelat după o plată care a generat bon fiscal — pornește tipărirea. */
-  onReceiptCreated?: (receiptId: string) => void
 }
 
 const consultationStatusVariant = (code: string): BadgeVariant =>
   code === 'FACTURATA' ? 'info' : code === 'FINALIZATA' ? 'success' : code === 'BLOCATA' ? 'danger' : 'warning'
 
 /** Fișa de încasare a unei consultații: servicii, plăți, bonuri fiscale, facturi. */
-export const ConsultationBillingModal = ({
-  consultationId, onClose, renderReceiptActions, onReceiptCreated,
-}: ConsultationBillingModalProps) => {
+export const ConsultationBillingModal = ({ consultationId, onClose }: ConsultationBillingModalProps) => {
   const { canWrite, canRead } = useHasAccess()
   const { successMsg, errorMsg, showSuccess, showError, clearMessages } = useFeedback()
   const [cancelError, setCancelError] = useState<string | null>(null)
+  const { print, printingId } = useFiscalPrint()
   const canCollect = canWrite(MODULE.Payments)
   const canInvoice = canWrite(MODULE.Invoices)
   const canReadInvoices = canRead(MODULE.Invoices)
@@ -64,10 +61,18 @@ export const ConsultationBillingModal = ({
   // Mesajele unei consultații nu se păstrează la deschiderea alteia
   useEffect(() => { clearMessages() }, [consultationId, clearMessages])
 
+  const handlePrint = async (receiptId: string) => {
+    clearMessages()
+    const summary = await print(receiptId)
+    if (summary.outcome === 'PRINTED') showSuccess(summary.message)
+    else showError(new Error(summary.message))
+  }
+
   const handlePaymentDone = (result: CreatePaymentResult) => {
     setCollectOpen(false)
     showSuccess(result.isDuplicate ? 'Plata fusese deja înregistrată.' : 'Plata a fost înregistrată.')
-    if (result.fiscalReceiptId && !result.isDuplicate) onReceiptCreated?.(result.fiscalReceiptId)
+    // Bonul se tipărește imediat după încasare; la o plată duplicat, doar manual (poate fi deja tipărit)
+    if (result.fiscalReceiptId && !result.isDuplicate) void handlePrint(result.fiscalReceiptId)
   }
 
   const handleDownloadPdf = async (id: string, series: string, number: number) => {
@@ -210,8 +215,12 @@ export const ConsultationBillingModal = ({
                           {canCollect && receiptIsUnresolved(r.statusCode) && (
                             <button type="button" className={styles.linkPrimary} onClick={() => setReconcileId(r.id)}>Reconciliere</button>
                           )}
-                          {canCollect && (r.statusCode === RECEIPT_STATUS.Pending || r.statusCode === RECEIPT_STATUS.Failed)
-                            && renderReceiptActions?.(r)}
+                          {canCollect && (r.statusCode === RECEIPT_STATUS.Pending || r.statusCode === RECEIPT_STATUS.Failed) && (
+                            <button type="button" className={styles.linkPrimary} disabled={!!printingId}
+                              onClick={() => { void handlePrint(r.id) }}>
+                              {printingId === r.id ? 'Se tipărește…' : r.statusCode === RECEIPT_STATUS.Failed ? 'Reîncearcă' : 'Tipărește'}
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -289,6 +298,7 @@ export const ConsultationBillingModal = ({
 
       <ReconcileReceiptModal
         receiptId={reconcileId}
+        extra={reconcileId && <BridgeJournalCheck receiptId={reconcileId} />}
         onClose={() => setReconcileId(null)}
         onDone={(printed) => {
           setReconcileId(null)

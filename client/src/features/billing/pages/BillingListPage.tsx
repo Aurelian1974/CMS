@@ -10,6 +10,7 @@ import { useBillingConsultations } from '../hooks/useBilling'
 import { PAYMENT_STATUS_LABELS, paymentStatusVariant, receiptStatusVariant } from '../constants/billing.constants'
 import type { BillingConsultationListDto, PaymentStatusFilter } from '../types/billing.types'
 import { ConsultationBillingModal } from '../components/ConsultationBillingModal'
+import { FiscalStationModal } from '../components/FiscalStationModal'
 import styles from './BillingListPage.module.scss'
 
 const IconAlert = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -26,6 +27,7 @@ export const BillingListPage = () => {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [openId, setOpenId] = useState<string | null>(null)
+  const [stationOpen, setStationOpen] = useState(false)
 
   const { data: resp, isError } = useBillingConsultations({
     search: search || undefined,
@@ -90,7 +92,15 @@ export const BillingListPage = () => {
 
   return (
     <div className={styles.page}>
-      <PageHeader title="Încasări" subtitle="Consultații finalizate — servicii, plăți, bonuri fiscale și facturi" />
+      <PageHeader
+        title="Încasări"
+        subtitle="Consultații finalizate — servicii, plăți, bonuri fiscale și facturi"
+        actions={
+          <button className={styles.btnSecondary} onClick={() => setStationOpen(true)}>
+            <IconPrint /> Casa de marcat
+          </button>
+        }
+      />
 
       <div className={styles.statsBar}>
         <div className={styles.statCard}>
@@ -173,6 +183,8 @@ export const BillingListPage = () => {
         consultationId={openId}
         onClose={() => setOpenId(null)}
       />
+
+      <FiscalStationModal isOpen={stationOpen} onClose={() => setStationOpen(false)} />
     </div>
   )
 }

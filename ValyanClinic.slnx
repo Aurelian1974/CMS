@@ -3,10 +3,12 @@
     <Project Path="src/ValyanClinic.API/ValyanClinic.API.csproj" />
     <Project Path="src/ValyanClinic.Application/ValyanClinic.Application.csproj" />
     <Project Path="src/ValyanClinic.Domain/ValyanClinic.Domain.csproj" />
+    <Project Path="src/ValyanClinic.FiscalBridge/ValyanClinic.FiscalBridge.csproj" />
     <Project Path="src/ValyanClinic.Infrastructure/ValyanClinic.Infrastructure.csproj" />
     <Project Path="src/ValyanClinic.Shared/ValyanClinic.Shared.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/ValyanClinic.FiscalBridge.Tests/ValyanClinic.FiscalBridge.Tests.csproj" />
     <Project Path="tests/ValyanClinic.IntegrationTests/ValyanClinic.IntegrationTests.csproj" />
     <Project Path="tests/ValyanClinic.Tests/ValyanClinic.Tests.csproj" />
   </Folder>
