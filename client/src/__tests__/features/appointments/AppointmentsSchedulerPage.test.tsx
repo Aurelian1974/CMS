@@ -37,6 +37,7 @@ const mockSchedulerData = [
     statusId: 's1',
     statusName: 'Programat',
     statusCode: 'PROGRAMAT',
+    blocksSlot: true,
     notes: 'Control periodic',
   },
   {
@@ -50,6 +51,7 @@ const mockSchedulerData = [
     statusId: 's2',
     statusName: 'Confirmat',
     statusCode: 'CONFIRMAT',
+    blocksSlot: true,
     notes: null,
   },
 ]

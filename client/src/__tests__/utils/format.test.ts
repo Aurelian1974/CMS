@@ -6,6 +6,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   toLocalDateISO,
+  minutesOfLocal,
+  isSameLocalDay,
   formatDate,
   formatDateTime,
   formatCurrency,
@@ -196,5 +198,20 @@ describe('getInitials', () => {
     expect(getInitials(null, null)).toBe('?');
     expect(getInitials(undefined, undefined)).toBe('?');
     expect(getInitials()).toBe('?');
+  });
+});
+
+describe('minutesOfLocal', () => {
+  it('should return minutes since local midnight', () => {
+    expect(minutesOfLocal('2026-03-15T09:30:00')).toBe(570);
+    expect(minutesOfLocal(new Date(2026, 2, 15, 0, 5))).toBe(5);
+  });
+});
+
+describe('isSameLocalDay', () => {
+  it('should compare calendar days in local time', () => {
+    const day = new Date(2026, 2, 15);
+    expect(isSameLocalDay('2026-03-15T23:59:00', day)).toBe(true);
+    expect(isSameLocalDay('2026-03-16T00:00:00', day)).toBe(false);
   });
 });

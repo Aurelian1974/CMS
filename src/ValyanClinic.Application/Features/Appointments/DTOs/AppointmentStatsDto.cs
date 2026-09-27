@@ -8,4 +8,5 @@ public sealed class AppointmentStatsDto
     public int ConfirmedCount { get; init; }
     public int CompletedCount { get; init; }
     public int CancelledCount { get; init; }
+    public int NoShowCount { get; init; }
 }

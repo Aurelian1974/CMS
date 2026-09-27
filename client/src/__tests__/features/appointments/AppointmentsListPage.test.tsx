@@ -66,6 +66,7 @@ const defaultAppointmentsReturn = {
         confirmedCount: 3,
         completedCount: 2,
         cancelledCount: 1,
+        noShowCount: 5,
       },
     },
   },
@@ -244,6 +245,12 @@ describe('AppointmentsListPage', () => {
       render(<AppointmentsListPage />)
       // "1" may match multiple elements; check stat label exists
       expect(screen.getAllByText('Anulate').length).toBeGreaterThanOrEqual(1)
+    })
+
+    it('afișează countul neprezentări', () => {
+      render(<AppointmentsListPage />)
+      expect(screen.getByText('5')).toBeInTheDocument()
+      expect(screen.getByText('Neprezentări')).toBeInTheDocument()
     })
   })
 

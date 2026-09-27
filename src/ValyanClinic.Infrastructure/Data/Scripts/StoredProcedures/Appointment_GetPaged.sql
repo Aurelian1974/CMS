@@ -4,105 +4,113 @@ GO
 
 -- ============================================================================
 -- SP: Appointment_GetPaged
--- Descriere: Returnează programări paginate cu filtre + total count + statistici
--- Result sets: (1) items paginate, (2) totalCount, (3) statistici
+-- Result sets: (1) pagina curentă, (2) totalCount, (3) statistici pe selecție
+-- Toate filtrele au o singură definiție (#Base); statisticile ignoră DOAR
+-- filtrul de status, ca statusurile să rămână navigabile din carduri.
 -- ============================================================================
 CREATE OR ALTER PROCEDURE dbo.Appointment_GetPaged
     @ClinicId   UNIQUEIDENTIFIER,
-    @Search     NVARCHAR(200) = NULL,
+    @Search     NVARCHAR(200)    = NULL,
     @DoctorId   UNIQUEIDENTIFIER = NULL,
     @StatusId   UNIQUEIDENTIFIER = NULL,
-    @DateFrom   DATETIME2(0) = NULL,
-    @DateTo     DATETIME2(0) = NULL,
-    @Page       INT = 1,
-    @PageSize   INT = 20,
-    @SortBy     NVARCHAR(50) = 'StartTime',
-    @SortDir    NVARCHAR(4) = 'desc'
+    @DateFrom   DATETIME2(0)     = NULL,
+    @DateTo     DATETIME2(0)     = NULL,
+    @Page       INT              = 1,
+    @PageSize   INT              = 20,
+    @SortBy     NVARCHAR(50)     = 'StartTime',
+    @SortDir    NVARCHAR(4)      = 'desc'
 AS
 BEGIN
     SET NOCOUNT ON;
 
-    ;WITH FilteredAppointments AS (
-        SELECT
-            a.Id, a.ClinicId, a.PatientId, a.DoctorId,
-            a.StartTime, a.EndTime, a.StatusId, a.Notes,
-            a.IsDeleted, a.CreatedAt, a.CreatedBy,
-            CONCAT(p.LastName, ' ', p.FirstName) AS PatientName,
-            p.PhoneNumber AS PatientPhone,
-            CONCAT(d.LastName, ' ', d.FirstName) AS DoctorName,
-            sp.Name AS SpecialtyName,
-            s.Name AS StatusName,
-            s.Code AS StatusCode,
-            CONCAT(cu.LastName, ' ', cu.FirstName) AS CreatedByName
-        FROM dbo.Appointments a
-        INNER JOIN dbo.Patients p  ON p.Id = a.PatientId
-        INNER JOIN dbo.Doctors d   ON d.Id = a.DoctorId
-        LEFT  JOIN dbo.Specialties sp ON sp.Id = d.SpecialtyId
-        INNER JOIN dbo.AppointmentStatuses s ON s.Id = a.StatusId
-        LEFT  JOIN dbo.Users cu ON cu.Id = a.CreatedBy
-        WHERE a.ClinicId = @ClinicId
-          AND a.IsDeleted = 0
-          AND (@DoctorId IS NULL OR a.DoctorId = @DoctorId)
-          AND (@StatusId IS NULL OR a.StatusId = @StatusId)
-          AND (@DateFrom IS NULL OR a.StartTime >= @DateFrom)
-          AND (@DateTo   IS NULL OR a.StartTime < DATEADD(DAY, 1, @DateTo))
-          AND (@Search IS NULL OR @Search = ''
-               OR CONCAT(p.LastName, ' ', p.FirstName) LIKE '%' + @Search + '%'
-               OR CONCAT(d.LastName, ' ', d.FirstName) LIKE '%' + @Search + '%'
-               OR a.Notes LIKE '%' + @Search + '%')
-    )
+    SET @Page     = CASE WHEN ISNULL(@Page, 1) < 1 THEN 1 ELSE @Page END;
+    SET @PageSize = CASE WHEN ISNULL(@PageSize, 20) < 1 THEN 20
+                         WHEN @PageSize > 200          THEN 200
+                         ELSE @PageSize END;
 
-    -- Result set 1: pagină curentă
+    -- Colația BD e case-sensitive → normalizare explicită
+    SET @SortBy = CASE LOWER(LTRIM(RTRIM(ISNULL(@SortBy, N''))))
+                    WHEN N'patientname' THEN N'PatientName'
+                    WHEN N'doctorname'  THEN N'DoctorName'
+                    WHEN N'statusname'  THEN N'StatusName'
+                    WHEN N'createdat'   THEN N'CreatedAt'
+                    ELSE N'StartTime'
+                  END;
+    SET @SortDir = CASE WHEN LOWER(LTRIM(RTRIM(ISNULL(@SortDir, N'')))) = N'asc' THEN N'asc' ELSE N'desc' END;
+
+    -- Escape pentru caracterele speciale LIKE: [ % _
+    DECLARE @Pattern NVARCHAR(410) = NULL;
+    IF NULLIF(LTRIM(RTRIM(@Search)), N'') IS NOT NULL
+        SET @Pattern = N'%'
+            + REPLACE(REPLACE(REPLACE(LTRIM(RTRIM(@Search)), N'[', N'[[]'), N'%', N'[%]'), N'_', N'[_]')
+            + N'%';
+
+    SELECT
+        a.Id, a.ClinicId, a.PatientId, a.DoctorId,
+        a.StartTime, a.EndTime, a.StatusId, a.Notes,
+        a.IsDeleted, a.CreatedAt, a.CreatedBy,
+        CONCAT(p.LastName, N' ', p.FirstName)   AS PatientName,
+        p.PhoneNumber                           AS PatientPhone,
+        CONCAT(d.LastName, N' ', d.FirstName)   AS DoctorName,
+        sp.Name                                 AS SpecialtyName,
+        s.Name                                  AS StatusName,
+        s.Code                                  AS StatusCode,
+        CONCAT(cu.LastName, N' ', cu.FirstName) AS CreatedByName
+    INTO #Base
+    FROM dbo.Appointments a
+    INNER JOIN dbo.Patients p            ON p.Id  = a.PatientId
+    INNER JOIN dbo.Doctors d             ON d.Id  = a.DoctorId
+    INNER JOIN dbo.AppointmentStatuses s ON s.Id  = a.StatusId
+    LEFT  JOIN dbo.Specialties sp        ON sp.Id = d.SpecialtyId
+    LEFT  JOIN dbo.Users cu              ON cu.Id = a.CreatedBy
+    WHERE a.ClinicId  = @ClinicId
+      AND a.IsDeleted = 0
+      AND (@DoctorId IS NULL OR a.DoctorId = @DoctorId)
+      AND (@DateFrom IS NULL OR a.StartTime >= @DateFrom)
+      AND (@DateTo   IS NULL OR a.StartTime <  DATEADD(DAY, 1, @DateTo))
+      AND (@Pattern IS NULL
+           OR CONCAT(p.LastName, N' ', p.FirstName) COLLATE Latin1_General_CI_AI LIKE @Pattern
+           OR CONCAT(d.LastName, N' ', d.FirstName) COLLATE Latin1_General_CI_AI LIKE @Pattern
+           OR a.Notes COLLATE Latin1_General_CI_AI LIKE @Pattern)
+    OPTION (RECOMPILE);
+
+    -- Result set 1: pagina curentă (tiebreaker pe Id → paginare stabilă)
     SELECT Id, ClinicId, PatientId, DoctorId, StartTime, EndTime, StatusId, Notes,
            IsDeleted, CreatedAt, CreatedBy, PatientName, PatientPhone, DoctorName,
            SpecialtyName, StatusName, StatusCode, CreatedByName
-    FROM FilteredAppointments
+    FROM #Base
+    WHERE (@StatusId IS NULL OR StatusId = @StatusId)
     ORDER BY
-        CASE WHEN @SortDir = 'asc' THEN
-            CASE @SortBy
-                WHEN 'PatientName' THEN PatientName
-                WHEN 'DoctorName'  THEN DoctorName
-                WHEN 'StatusName'  THEN StatusName
-                WHEN 'StartTime'   THEN CONVERT(NVARCHAR(30), StartTime, 126)
-                WHEN 'CreatedAt'   THEN CONVERT(NVARCHAR(30), CreatedAt, 126)
-                ELSE CONVERT(NVARCHAR(30), StartTime, 126)
-            END
+        CASE WHEN @SortDir = N'asc' THEN
+            CASE @SortBy WHEN N'PatientName' THEN PatientName
+                         WHEN N'DoctorName'  THEN DoctorName
+                         WHEN N'StatusName'  THEN StatusName
+                         WHEN N'CreatedAt'   THEN CONVERT(NVARCHAR(30), CreatedAt, 126)
+                         ELSE CONVERT(NVARCHAR(30), StartTime, 126) END
         END ASC,
-        CASE WHEN @SortDir = 'desc' THEN
-            CASE @SortBy
-                WHEN 'PatientName' THEN PatientName
-                WHEN 'DoctorName'  THEN DoctorName
-                WHEN 'StatusName'  THEN StatusName
-                WHEN 'StartTime'   THEN CONVERT(NVARCHAR(30), StartTime, 126)
-                WHEN 'CreatedAt'   THEN CONVERT(NVARCHAR(30), CreatedAt, 126)
-                ELSE CONVERT(NVARCHAR(30), StartTime, 126)
-            END
-        END DESC
+        CASE WHEN @SortDir = N'desc' THEN
+            CASE @SortBy WHEN N'PatientName' THEN PatientName
+                         WHEN N'DoctorName'  THEN DoctorName
+                         WHEN N'StatusName'  THEN StatusName
+                         WHEN N'CreatedAt'   THEN CONVERT(NVARCHAR(30), CreatedAt, 126)
+                         ELSE CONVERT(NVARCHAR(30), StartTime, 126) END
+        END DESC,
+        Id ASC
     OFFSET (@Page - 1) * @PageSize ROWS FETCH NEXT @PageSize ROWS ONLY;
 
-    -- Result set 2: total count
-    SELECT COUNT(*)
-    FROM dbo.Appointments a
-    WHERE a.ClinicId = @ClinicId
-      AND a.IsDeleted = 0
-      AND (@DoctorId IS NULL OR a.DoctorId = @DoctorId)
-      AND (@StatusId IS NULL OR a.StatusId = @StatusId)
-      AND (@DateFrom IS NULL OR a.StartTime >= @DateFrom)
-      AND (@DateTo   IS NULL OR a.StartTime < DATEADD(DAY, 1, @DateTo))
-      AND (@Search IS NULL OR @Search = ''
-           OR EXISTS (SELECT 1 FROM dbo.Patients p WHERE p.Id = a.PatientId AND CONCAT(p.LastName, ' ', p.FirstName) LIKE '%' + @Search + '%')
-           OR EXISTS (SELECT 1 FROM dbo.Doctors d WHERE d.Id = a.DoctorId AND CONCAT(d.LastName, ' ', d.FirstName) LIKE '%' + @Search + '%')
-           OR a.Notes LIKE '%' + @Search + '%');
+    -- Result set 2: total count (aceleași filtre)
+    SELECT COUNT(*) FROM #Base WHERE (@StatusId IS NULL OR StatusId = @StatusId);
 
-    -- Result set 3: statistici globale clinică
+    -- Result set 3: statistici pe selecție, fără filtrul de status
     SELECT
-        COUNT(*) AS TotalAppointments,
-        SUM(CASE WHEN s.Code = 'PROGRAMAT'  THEN 1 ELSE 0 END) AS ScheduledCount,
-        SUM(CASE WHEN s.Code = 'CONFIRMAT'  THEN 1 ELSE 0 END) AS ConfirmedCount,
-        SUM(CASE WHEN s.Code = 'FINALIZAT'  THEN 1 ELSE 0 END) AS CompletedCount,
-        SUM(CASE WHEN s.Code = 'ANULAT'     THEN 1 ELSE 0 END) AS CancelledCount
-    FROM dbo.Appointments a
-    INNER JOIN dbo.AppointmentStatuses s ON s.Id = a.StatusId
-    WHERE a.ClinicId = @ClinicId AND a.IsDeleted = 0;
+        COUNT(*)                                                             AS TotalAppointments,
+        ISNULL(SUM(CASE WHEN StatusCode = 'PROGRAMAT'    THEN 1 ELSE 0 END), 0) AS ScheduledCount,
+        ISNULL(SUM(CASE WHEN StatusCode = 'CONFIRMAT'    THEN 1 ELSE 0 END), 0) AS ConfirmedCount,
+        ISNULL(SUM(CASE WHEN StatusCode = 'FINALIZAT'    THEN 1 ELSE 0 END), 0) AS CompletedCount,
+        ISNULL(SUM(CASE WHEN StatusCode = 'ANULAT'       THEN 1 ELSE 0 END), 0) AS CancelledCount,
+        ISNULL(SUM(CASE WHEN StatusCode = 'NEPREZENTARE' THEN 1 ELSE 0 END), 0) AS NoShowCount
+    FROM #Base;
+
+    DROP TABLE #Base;
 END;
 GO

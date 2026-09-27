@@ -31065,6 +31065,9 @@
             "type": "string",
             "nullable": true
           },
+          "blocksSlot": {
+            "type": "boolean"
+          },
           "notes": {
             "type": "string",
             "nullable": true
@@ -31122,6 +31125,10 @@
             "format": "int32"
           },
           "cancelledCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "noShowCount": {
             "type": "integer",
             "format": "int32"
           }

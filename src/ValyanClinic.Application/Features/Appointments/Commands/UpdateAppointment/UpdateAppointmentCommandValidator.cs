@@ -23,6 +23,8 @@ public sealed class UpdateAppointmentCommandValidator : AbstractValidator<Update
             .NotEmpty().WithMessage("Data și ora de sfârșit sunt obligatorii.")
             .GreaterThan(x => x.StartTime).WithMessage("Ora de sfârșit trebuie să fie după ora de început.");
 
+        Include(new AppointmentDurationRules<UpdateAppointmentCommand>(x => x.StartTime, x => x.EndTime));
+
         RuleFor(x => x.Notes)
             .MaximumLength(2000).WithMessage("Observațiile nu pot depăși 2000 de caractere.")
             .When(x => !string.IsNullOrEmpty(x.Notes));

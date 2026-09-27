@@ -21,6 +21,7 @@ import { ListPageToolbar } from '@/components/ui/ListPageToolbar'
 import { AppointmentFormModal } from '../components/AppointmentFormModal/AppointmentFormModal'
 import { AppointmentDetailModal } from '../components/AppointmentDetailModal/AppointmentDetailModal'
 import { IconPlus, IconExcel } from '@/components/ui/Icons'
+import { appointmentsApi } from '@/api/endpoints/appointments.api'
 import styles from './AppointmentsListPage.module.scss'
 
 // \u2500\u2500 Icoane specifice paginii \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
@@ -57,6 +58,8 @@ const formatDateTime = (dateStr: string): string => {
 }
 
 const ALL_STATUSES = 'all'
+/** Plafonul exportului = pageSize maxim acceptat de API (GetAppointmentsQueryValidator) */
+const EXPORT_MAX_ROWS = 200
 
 // ── Componenta principală ─────────────────────────────────────────────────────
 export const AppointmentsListPage = () => {
@@ -180,27 +183,46 @@ export const AppointmentsListPage = () => {
     })
   }
 
-  // Date transformate pentru export
-  const buildExportData = useCallback(() =>
-    appointments.map(a => ({
-      patientName:   a.patientName,
-      doctorName:    a.doctorName,
-      specialtyName: a.specialtyName ?? '—',
-      startTime:     formatDateTime(a.startTime),
-      endTime:       formatTime(a.endTime),
-      statusName:    a.statusName,
-      notes:         a.notes ?? '—',
-      createdAt:     a.createdAt ? formatDate(a.createdAt) : '—',
-    }))
-  , [appointments])
-
-  // ── Export handler ──────────────────────────────────────────────────────────
-  const handleExcelExport = useCallback(() => {
-    gridRef.current?.exportExcel({
-      fileName: 'programari',
-      customData: buildExportData(),
-    })
-  }, [buildExportData])
+  // Export pe tot setul filtrat (nu doar pagina curentă), plafonat la EXPORT_MAX_ROWS
+  const [isExporting, setIsExporting] = useState(false)
+  const handleExcelExport = useCallback(async () => {
+    setIsExporting(true)
+    try {
+      const resp = await appointmentsApi.getAll({
+        page: 1,
+        pageSize: EXPORT_MAX_ROWS,
+        search:   search || undefined,
+        doctorId,
+        statusId: statusFilter === ALL_STATUSES ? undefined : statusFilter,
+        dateFrom,
+        dateTo,
+        sortBy,
+        sortDir,
+      })
+      const rows = resp.data?.pagedResult?.items ?? []
+      gridRef.current?.exportExcel({
+        fileName: 'programari',
+        customData: rows.map(a => ({
+          patientName:   a.patientName,
+          doctorName:    a.doctorName,
+          specialtyName: a.specialtyName ?? '—',
+          startTime:     formatDateTime(a.startTime),
+          endTime:       formatTime(a.endTime),
+          statusName:    a.statusName,
+          notes:         a.notes ?? '—',
+          createdAt:     a.createdAt ? formatDate(a.createdAt) : '—',
+        })),
+      })
+      const total = resp.data?.pagedResult?.totalCount ?? 0
+      if (total > rows.length) {
+        showSuccess(`Exportul conține primele ${rows.length} din ${total} programări. Restrânge filtrele pentru un export complet.`)
+      }
+    } catch (err) {
+      showError(err)
+    } finally {
+      setIsExporting(false)
+    }
+  }, [search, doctorId, statusFilter, dateFrom, dateTo, sortBy, sortDir, showSuccess, showError])
 
   // ── Grid server-side callbacks ─────────────────────────────────────────────
   const handlePaginationChanged = useCallback((e: PaginationChangedEvent) => {
@@ -302,7 +324,7 @@ export const AppointmentsListPage = () => {
             <button className={styles.btnSecondary} onClick={() => navigate('/appointments/scheduler')}>
               <IconScheduler /> Scheduler
             </button>
-            <button className={styles.btnSecondary} onClick={handleExcelExport}>
+            <button className={styles.btnSecondary} onClick={handleExcelExport} disabled={isExporting}>
               <IconExcel /> Export Excel
             </button>
             {canEdit && (
@@ -349,6 +371,13 @@ export const AppointmentsListPage = () => {
           <div className={styles.statContent}>
             <span className={styles.statValue}>{stats?.cancelledCount ?? 0}</span>
             <span className={styles.statLabel}>Anulate</span>
+          </div>
+        </div>
+        <div className={styles.statCard}>
+          <div className={`${styles.statIcon} ${styles['statIcon--orange']}`}><IconX /></div>
+          <div className={styles.statContent}>
+            <span className={styles.statValue}>{stats?.noShowCount ?? 0}</span>
+            <span className={styles.statLabel}>Neprezentări</span>
           </div>
         </div>
       </div>
@@ -426,21 +455,13 @@ export const AppointmentsListPage = () => {
           // Sortare
           triStateSort
           multiSortKey="ctrl"
-          // Filtrare
-          showFilterRow
-          // Selecție
-          rowSelection="multiple"
-          // Grupare
-          showGroupPanel
-          groupDefaultExpanded={1}
+          // Fără filtrare/grupare pe coloane: paginarea e server-side, ar opera doar pe pagina curentă
           // Toolbar & Context Menu
           toolbar
           contextMenu
           // Status Bar
           statusBar={[
             { type: 'total-count' },
-            { type: 'filtered-count' },
-            { type: 'selected-count' },
           ]}
           // Aspect
           alternateRows

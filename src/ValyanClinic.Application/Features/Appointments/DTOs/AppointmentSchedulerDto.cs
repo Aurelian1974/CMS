@@ -13,5 +13,7 @@ public sealed class AppointmentSchedulerDto
     public Guid StatusId { get; init; }
     public string StatusName { get; init; } = string.Empty;
     public string StatusCode { get; init; } = string.Empty;
+    /// <summary>False pentru ANULAT / NEPREZENTARE — slotul e liber.</summary>
+    public bool BlocksSlot { get; init; }
     public string? Notes { get; init; }
 }

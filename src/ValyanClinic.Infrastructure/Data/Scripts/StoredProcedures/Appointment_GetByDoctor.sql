@@ -22,6 +22,7 @@ BEGIN
         CONCAT(d.LastName, ' ', d.FirstName) AS DoctorName,
         a.StartTime, a.EndTime,
         a.StatusId, s.Name AS StatusName, s.Code AS StatusCode,
+        s.BlocksSlot,
         a.Notes
     FROM dbo.Appointments a
     INNER JOIN dbo.Patients p ON p.Id = a.PatientId
@@ -29,9 +30,10 @@ BEGIN
     INNER JOIN dbo.AppointmentStatuses s ON s.Id = a.StatusId
     WHERE a.ClinicId = @ClinicId
       AND a.IsDeleted = 0
-      AND a.StartTime >= @DateFrom
+      -- suprapunere de interval: include și programările începute înainte de @DateFrom
       AND a.StartTime < DATEADD(DAY, 1, @DateTo)
+      AND a.EndTime   > @DateFrom
       AND (@DoctorId IS NULL OR a.DoctorId = @DoctorId)
-    ORDER BY a.StartTime;
+    ORDER BY a.StartTime, a.Id;
 END;
 GO

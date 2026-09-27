@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAppointmentsForScheduler, useAppointmentStatuses, useCreateAppointment, useUpdateAppointment } from '../hooks/useAppointments'
+import { useAppointmentsForScheduler, useCreateAppointment, useUpdateAppointment } from '../hooks/useAppointments'
 import { MODULE, useHasAccess } from '@/hooks/useHasAccess'
+import { isSameLocalDay, minutesOfLocal } from '@/utils/format'
 import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
 import { usePatientLookup } from '@/features/patients/hooks/usePatients'
 import { useClinicSchedule, useDoctorSchedules } from '@/features/clinic/hooks/useSchedule'
@@ -121,13 +122,8 @@ const formatTimeShort = (dateStr: string): string => {
 
 /** Calculeaza pozitia si latime event ca procente relativ la timeline */
 const getEventPosition = (startTime: string, endTime: string, tsMin: number, tsMax: number): { left: string, width: string } => {
-  const start = new Date(startTime)
-  const end = new Date(endTime)
-  const startMinutes = start.getHours() * 60 + start.getMinutes()
-  const endMinutes = end.getHours() * 60 + end.getMinutes()
-
-  const leftPct  = minutesToPercent(startMinutes, tsMin, tsMax)
-  const rightPct = minutesToPercent(endMinutes,   tsMin, tsMax)
+  const leftPct  = minutesToPercent(minutesOfLocal(startTime), tsMin, tsMax)
+  const rightPct = minutesToPercent(minutesOfLocal(endTime),   tsMin, tsMax)
   const widthPct = Math.max(rightPct - leftPct, 2) // minim 2%
 
   return { left: `${leftPct}%`, width: `${widthPct}%` }
@@ -224,14 +220,9 @@ const getDefaultAppointmentTimes = (
     ? Math.max(effFrom, roundUpToNearestMinutes(nowMin, 15))
     : effFrom
 
-  const dateStr = formatDateISO(date)
-  const dayApts = appointments.filter(a => a.doctorId === doctorId && a.startTime.startsWith(dateStr))
-  const bookedRanges = dayApts
-    .map(a => {
-      const s = new Date(a.startTime)
-      const e = new Date(a.endTime)
-      return { from: s.getHours() * 60 + s.getMinutes(), to: e.getHours() * 60 + e.getMinutes() }
-    })
+  const bookedRanges = appointments
+    .filter(a => a.doctorId === doctorId && a.blocksSlot && isSameLocalDay(a.startTime, date))
+    .map(a => ({ from: minutesOfLocal(a.startTime), to: minutesOfLocal(a.endTime) }))
     .sort((a, b) => a.from - b.from)
 
   while (startMin + DEFAULT_APPOINTMENT_DURATION <= effTo) {
@@ -333,15 +324,14 @@ const computeFreeSlots = (
   const effTo   = Math.min(clinicTo,   docTo)
   if (effTo <= effFrom) return -1
 
-  const totalSlots = Math.floor((effTo - effFrom) / slotMin)
-  const dateStr = formatDateISO(date)
-  const dayApts = appointments.filter(a => a.doctorId === doctorId && a.startTime.startsWith(dateStr))
-  let booked = 0
-  for (const apt of dayApts) {
-    const dur = (new Date(apt.endTime).getTime() - new Date(apt.startTime).getTime()) / 60000
-    booked += Math.ceil(dur / slotMin)
+  // Doar programările care ocupă slotul, și doar porțiunea din fereastra efectivă de lucru
+  let bookedMinutes = 0
+  for (const apt of appointments) {
+    if (apt.doctorId !== doctorId || !apt.blocksSlot || !isSameLocalDay(apt.startTime, date)) continue
+    const overlap = Math.min(minutesOfLocal(apt.endTime), effTo) - Math.max(minutesOfLocal(apt.startTime), effFrom)
+    bookedMinutes += Math.max(0, overlap)
   }
-  return Math.max(0, totalSlots - booked)
+  return Math.max(0, Math.floor((effTo - effFrom - bookedMinutes) / slotMin))
 }
 
 // ── Tooltip ───────────────────────────────────────────────────────────────────
@@ -399,18 +389,12 @@ export const AppointmentsSchedulerPage = () => {
   const { data: patientLookupResp } = usePatientLookup()
   const { data: clinicScheduleResp }  = useClinicSchedule()
   const { data: doctorSchedulesResp } = useDoctorSchedules()
-  const { data: statusesResp } = useAppointmentStatuses()
 
   const appointments       = useMemo(() => schedulerResp?.data      ?? [], [schedulerResp])
   const doctorLookup       = useMemo(() => doctorLookupResp?.data   ?? [], [doctorLookupResp])
   const patientLookup      = useMemo(() => patientLookupResp?.data  ?? [], [patientLookupResp])
   const clinicSchedule     = useMemo(() => clinicScheduleResp?.data ?? [], [clinicScheduleResp])
   const allDoctorSchedules = useMemo(() => doctorSchedulesResp?.data ?? [], [doctorSchedulesResp])
-  /** statusId → ocupă slotul (ANULAT / NEPREZENTARE îl eliberează) */
-  const blocksSlotByStatus = useMemo(
-    () => new Map((statusesResp?.data ?? []).map(s => [s.id, s.blocksSlot])),
-    [statusesResp],
-  )
 
   // Ziua săptămânii curentă (1=Luni … 7=Duminică)
   const jsDow    = currentDate.getDay()
@@ -607,13 +591,9 @@ export const AppointmentsSchedulerPage = () => {
     }
     const newEnd = newStart + durationMin
     // Pre-verificare locală a suprapunerii — evită un 409 previzibil
-    const movedBlocksSlot = blocksSlotByStatus.get(apt.statusId) ?? true
-    const overlaps = movedBlocksSlot && (groupedByDoctor.get(doctorId) ?? []).some(a => {
-      if (a.id === apt.id || !(blocksSlotByStatus.get(a.statusId) ?? true)) return false
-      const s = new Date(a.startTime)
-      const en = new Date(a.endTime)
-      return s.getHours() * 60 + s.getMinutes() < newEnd && en.getHours() * 60 + en.getMinutes() > newStart
-    })
+    const overlaps = apt.blocksSlot && (groupedByDoctor.get(doctorId) ?? []).some(a =>
+      a.id !== apt.id && a.blocksSlot &&
+      minutesOfLocal(a.startTime) < newEnd && minutesOfLocal(a.endTime) > newStart)
     if (overlaps) {
       showDndError('Slotul este deja ocupat pentru acest doctor.')
       dragInfoRef.current = null
@@ -638,7 +618,7 @@ export const AppointmentsSchedulerPage = () => {
     })
     dragInfoRef.current = null
     setDraggingId(null)
-  }, [currentDate, updateAppointment, tlStart, tlEnd, clinicEntry, doctorTodayMap, blocksSlotByStatus, groupedByDoctor, showDndError])
+  }, [currentDate, updateAppointment, tlStart, tlEnd, clinicEntry, doctorTodayMap, groupedByDoctor, showDndError])
 
   // Tooltip handlers
   const handleEventMouseEnter = useCallback((e: React.MouseEvent, apt: AppointmentSchedulerDto) => {

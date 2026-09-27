@@ -9,6 +9,20 @@ export const toLocalDateISO = (date: Date): string => {
   return `${y}-${m}-${d}`
 }
 
+/// Minutele de la miezul nopții, în ora locală (independent de formatul string-ului ISO)
+export const minutesOfLocal = (iso: string | Date): number => {
+  const d = new Date(iso)
+  return d.getHours() * 60 + d.getMinutes()
+}
+
+/// Aceeași zi calendaristică locală — fără presupuneri despre sufixul Z / offset
+export const isSameLocalDay = (iso: string | Date, date: Date): boolean => {
+  const d = new Date(iso)
+  return d.getFullYear() === date.getFullYear()
+    && d.getMonth() === date.getMonth()
+    && d.getDate() === date.getDate()
+}
+
 /// Formatare dată: dd.MM.yyyy
 export const formatDate = (date: string | Date): string =>
   new Intl.DateTimeFormat('ro-RO', {

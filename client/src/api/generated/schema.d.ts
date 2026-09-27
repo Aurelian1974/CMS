@@ -18834,6 +18834,7 @@ export interface components {
             statusId?: string;
             statusName?: string | null;
             statusCode?: string | null;
+            blocksSlot?: boolean;
             notes?: string | null;
         };
         AppointmentSchedulerDtoIEnumerableApiResponse: {
@@ -18855,6 +18856,8 @@ export interface components {
             completedCount?: number;
             /** Format: int32 */
             cancelledCount?: number;
+            /** Format: int32 */
+            noShowCount?: number;
         };
         AppointmentStatusDto: {
             /** Format: uuid */
