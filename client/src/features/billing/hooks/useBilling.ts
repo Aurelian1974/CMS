@@ -1,6 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { billingApi, consultationServicesApi } from '@/api/endpoints/billing.api'
 import { consultationKeys } from '@/features/consultations/hooks/useConsultations'
+import { dashboardKeys } from '@/features/dashboard/hooks/useDashboard'
 import { invoiceKeys } from '@/features/invoices/hooks/useInvoices'
 import type {
   CreatePaymentPayload,
@@ -28,6 +29,7 @@ const invalidateBilling = (qc: QueryClient) => Promise.all([
   qc.invalidateQueries({ queryKey: billingKeys.all }),
   qc.invalidateQueries({ queryKey: invoiceKeys.all }),
   qc.invalidateQueries({ queryKey: consultationKeys.all }),
+  qc.invalidateQueries({ queryKey: dashboardKeys.all }),
 ])
 
 // ── Queries ──────────────────────────────────────────────────────────────────

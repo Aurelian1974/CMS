@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { consultationsApi } from '@/api/endpoints/consultations.api'
+import { dashboardKeys } from '@/features/dashboard/hooks/useDashboard'
 import type {
   GetConsultationsParams,
   CreateConsultationPayload,
@@ -43,6 +44,7 @@ export const useCreateConsultation = () => {
     mutationFn: (payload: CreateConsultationPayload) => consultationsApi.create(payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: consultationKeys.lists() })
+      qc.invalidateQueries({ queryKey: dashboardKeys.all })
     },
   })
 }
@@ -53,6 +55,7 @@ export const useUpdateConsultation = () => {
     mutationFn: (payload: UpdateConsultationPayload) => consultationsApi.update(payload),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: consultationKeys.lists() })
+      qc.invalidateQueries({ queryKey: dashboardKeys.all })
     },
   })
 }
@@ -63,6 +66,7 @@ export const useDeleteConsultation = () => {
     mutationFn: (id: string) => consultationsApi.delete(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: consultationKeys.lists() })
+      qc.invalidateQueries({ queryKey: dashboardKeys.all })
     },
   })
 }

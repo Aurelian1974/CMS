@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData, type QueryClient } from '@tanstack/react-query'
 import { appointmentsApi } from '@/api/endpoints/appointments.api'
+import { dashboardKeys } from '@/features/dashboard/hooks/useDashboard'
 import type {
   GetAppointmentsParams,
   CreateAppointmentPayload,
@@ -89,6 +90,7 @@ const invalidateAppointments = (qc: QueryClient, id?: string) => {
   qc.invalidateQueries({ queryKey: [...appointmentKeys.all, 'scheduler'] })
   qc.invalidateQueries({ queryKey: [...appointmentKeys.all, 'by-patient'] })
   if (id) qc.invalidateQueries({ queryKey: appointmentKeys.detail(id) })
+  qc.invalidateQueries({ queryKey: dashboardKeys.all })
 }
 
 // ── Creare programare ────────────────────────────────────────────────────────

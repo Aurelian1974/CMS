@@ -1,5 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { invoicesApi } from '@/api/endpoints/invoices.api'
+import { dashboardKeys } from '@/features/dashboard/hooks/useDashboard'
 import type { CreateInvoicePayload, GetInvoicesParams, StornoInvoicePayload } from '../types/invoice.types'
 
 export const invoiceKeys = {
@@ -37,6 +38,7 @@ const useInvoiceMutation = <TVars, TResult>(mutationFn: (vars: TVars) => Promise
       qc.invalidateQueries({ queryKey: invoiceKeys.all }),
       qc.invalidateQueries({ queryKey: BILLING_KEY }),
       qc.invalidateQueries({ queryKey: CONSULTATIONS_KEY }),
+      qc.invalidateQueries({ queryKey: dashboardKeys.all }),
     ]),
   })
 }
