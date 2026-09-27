@@ -7854,6 +7854,100 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/Dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    trendDays?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DashboardDtoApiResponse"];
+                        "application/json": components["schemas"]["DashboardDtoApiResponse"];
+                        "text/json": components["schemas"]["DashboardDtoApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/Departments": {
         parameters: {
             query?: never;
@@ -20320,6 +20414,280 @@ export interface components {
             ublCategoryCode?: string | null;
             exemptionReasonCode?: string | null;
             exemptionReasonText?: string | null;
+        };
+        DashboardActivityDto: {
+            /** Format: uuid */
+            id?: string;
+            entityType?: string | null;
+            /** Format: uuid */
+            entityId?: string;
+            action?: string | null;
+            /** Format: date-time */
+            changedAt?: string;
+            changedByName?: string | null;
+        };
+        DashboardAgendaDto: {
+            appointments?: components["schemas"]["DashboardAgendaItemDto"][] | null;
+            openConsultations?: components["schemas"]["DashboardOpenConsultationDto"][] | null;
+            labResults?: components["schemas"]["DashboardLabResultDto"][] | null;
+        };
+        DashboardAgendaItemDto: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: date-time */
+            startTime?: string;
+            /** Format: date-time */
+            endTime?: string;
+            /** Format: uuid */
+            patientId?: string;
+            patientName?: string | null;
+            patientPhone?: string | null;
+            /** Format: uuid */
+            doctorId?: string;
+            doctorName?: string | null;
+            statusCode?: string | null;
+            statusName?: string | null;
+            notes?: string | null;
+            /** Format: uuid */
+            consultationId?: string | null;
+            consultationStatusCode?: string | null;
+        };
+        DashboardAppointmentPointDto: {
+            /** Format: date */
+            date?: string;
+            /** Format: int32 */
+            totalCount?: number;
+            /** Format: int32 */
+            completedCount?: number;
+            /** Format: int32 */
+            cancelledCount?: number;
+            /** Format: int32 */
+            noShowCount?: number;
+        };
+        DashboardClinicalKpisDto: {
+            /** Format: int32 */
+            appointmentsToday?: number | null;
+            /** Format: int32 */
+            appointmentsTodayRemaining?: number | null;
+            /** Format: int32 */
+            consultationsToday?: number | null;
+            /** Format: int32 */
+            consultationsOpen?: number | null;
+            /** Format: int32 */
+            followUpsDue?: number | null;
+            /** Format: int32 */
+            patientsNewThisMonth?: number | null;
+            /** Format: int32 */
+            prescriptionsDraft?: number | null;
+            /** Format: int32 */
+            prescriptionsWithTransmissionError?: number | null;
+        };
+        DashboardDoctorWorkloadDto: {
+            /** Format: uuid */
+            doctorId?: string;
+            doctorName?: string | null;
+            specialtyName?: string | null;
+            /** Format: int32 */
+            appointmentCount?: number;
+            /** Format: int32 */
+            completedCount?: number;
+            /** Format: int32 */
+            noShowCount?: number;
+            /** Format: int32 */
+            scheduledMinutes?: number;
+        };
+        DashboardDto: {
+            /** Format: date-time */
+            generatedAt?: string;
+            /** Format: date */
+            today?: string;
+            widgetIds?: string[] | null;
+            clinicalKpis?: components["schemas"]["DashboardClinicalKpisDto"];
+            agenda?: components["schemas"]["DashboardAgendaDto"];
+            financial?: components["schemas"]["DashboardFinancialDto"];
+            trends?: components["schemas"]["DashboardTrendsDto"];
+            health?: components["schemas"]["DashboardHealthDto"];
+        };
+        DashboardDtoApiResponse: {
+            success?: boolean;
+            data?: components["schemas"]["DashboardDto"];
+            message?: string | null;
+            errors?: {
+                [key: string]: string[];
+            } | null;
+        };
+        DashboardExpiringInsuranceDto: {
+            /** Format: uuid */
+            patientId?: string;
+            patientName?: string | null;
+            phoneNumber?: string | null;
+            insuranceNumber?: string | null;
+            /** Format: date */
+            insuranceExpiry?: string;
+            /** Format: int32 */
+            daysLeft?: number;
+        };
+        DashboardExpiringLicenseDto: {
+            /** Format: uuid */
+            doctorId?: string;
+            doctorName?: string | null;
+            licenseNumber?: string | null;
+            /** Format: date */
+            licenseExpiresAt?: string;
+            /** Format: int32 */
+            daysLeft?: number;
+        };
+        DashboardFinancialDto: {
+            kpis?: components["schemas"]["DashboardFinancialKpisDto"];
+            unpaid?: components["schemas"]["DashboardUnpaidItemDto"][] | null;
+            receiptIssues?: components["schemas"]["DashboardReceiptIssueDto"][] | null;
+        };
+        DashboardFinancialKpisDto: {
+            /** Format: double */
+            revenueToday?: number | null;
+            /** Format: double */
+            revenueThisMonth?: number | null;
+            /** Format: int32 */
+            invoicesThisMonthCount?: number | null;
+            /** Format: double */
+            invoicesThisMonthNetTotal?: number | null;
+            /** Format: int32 */
+            unpaidCount?: number | null;
+            /** Format: int32 */
+            partialCount?: number | null;
+            /** Format: double */
+            outstandingTotal?: number | null;
+            /** Format: int32 */
+            receiptsNeedingAttentionCount?: number | null;
+        };
+        DashboardHealthDto: {
+            securityEvents?: components["schemas"]["DashboardSecurityEventDto"][] | null;
+            lockedUsers?: components["schemas"]["DashboardLockedUserDto"][] | null;
+            expiringLicenses?: components["schemas"]["DashboardExpiringLicenseDto"][] | null;
+            expiringInsurance?: components["schemas"]["DashboardExpiringInsuranceDto"][] | null;
+            syncFreshness?: components["schemas"]["DashboardSyncFreshnessDto"][] | null;
+            activity?: components["schemas"]["DashboardActivityDto"][] | null;
+        };
+        DashboardLabResultDto: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: date */
+            resultDate?: string | null;
+            /** Format: date */
+            collectionDate?: string | null;
+            /** Format: uuid */
+            patientId?: string;
+            patientName?: string | null;
+            laboratory?: string | null;
+            bulletinNumber?: string | null;
+            /** Format: uuid */
+            consultationId?: string | null;
+            /** Format: int32 */
+            abnormalCount?: number;
+        };
+        DashboardLockedUserDto: {
+            /** Format: uuid */
+            id?: string;
+            fullName?: string | null;
+            email?: string | null;
+            /** Format: date-time */
+            lockoutEnd?: string;
+            /** Format: int32 */
+            failedLoginAttempts?: number;
+            /** Format: date-time */
+            lastLoginAt?: string | null;
+        };
+        DashboardNoShowDto: {
+            /** Format: int32 */
+            totalScheduled?: number;
+            /** Format: int32 */
+            noShowCount?: number;
+            /** Format: double */
+            noShowRate?: number;
+        };
+        DashboardOpenConsultationDto: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: date-time */
+            date?: string;
+            /** Format: uuid */
+            patientId?: string;
+            patientName?: string | null;
+            /** Format: uuid */
+            doctorId?: string;
+            doctorName?: string | null;
+            diagnostic?: string | null;
+            motiv?: string | null;
+            /** Format: int32 */
+            daysOpen?: number;
+        };
+        DashboardReceiptIssueDto: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            consultationId?: string;
+            statusCode?: string | null;
+            statusName?: string | null;
+            /** Format: date-time */
+            createdAt?: string;
+            patientName?: string | null;
+        };
+        DashboardRevenuePointDto: {
+            /** Format: date */
+            date?: string;
+            /** Format: double */
+            amount?: number;
+            /** Format: int32 */
+            paymentCount?: number;
+        };
+        DashboardSecurityEventDto: {
+            /** Format: uuid */
+            id?: string;
+            eventType?: string | null;
+            succeeded?: boolean;
+            /** Format: date-time */
+            occurredAt?: string;
+            emailAttempted?: string | null;
+            ipAddress?: string | null;
+            userFullName?: string | null;
+        };
+        DashboardSyncFreshnessDto: {
+            source?: string | null;
+            /** Format: date-time */
+            lastSuccessAt?: string | null;
+            lastStatus?: string | null;
+            /** Format: date-time */
+            lastRunAt?: string | null;
+        };
+        DashboardTopServiceDto: {
+            serviceName?: string | null;
+            /** Format: double */
+            quantity?: number;
+            /** Format: double */
+            totalValue?: number;
+        };
+        DashboardTrendsDto: {
+            revenue?: components["schemas"]["DashboardRevenuePointDto"][] | null;
+            appointments?: components["schemas"]["DashboardAppointmentPointDto"][] | null;
+            noShow?: components["schemas"]["DashboardNoShowDto"];
+            doctorWorkload?: components["schemas"]["DashboardDoctorWorkloadDto"][] | null;
+            topServices?: components["schemas"]["DashboardTopServiceDto"][] | null;
+        };
+        DashboardUnpaidItemDto: {
+            /** Format: uuid */
+            consultationId?: string;
+            /** Format: date-time */
+            date?: string;
+            /** Format: uuid */
+            patientId?: string;
+            patientName?: string | null;
+            /** Format: double */
+            total?: number;
+            /** Format: double */
+            paid?: number;
+            /** Format: double */
+            balance?: number;
+            paymentStatus?: string | null;
         };
         DepartmentDto: {
             /** Format: uuid */

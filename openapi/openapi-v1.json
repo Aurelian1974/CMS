@@ -12683,6 +12683,146 @@
         }
       }
     },
+    "/api/v1/Dashboard": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "parameters": [
+          {
+            "name": "trendDays",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 30
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringApiResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardDtoApiResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardDtoApiResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardDtoApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/Departments": {
       "get": {
         "tags": [
@@ -35351,6 +35491,797 @@
             "nullable": true
           },
           "exemptionReasonText": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardActivityDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "entityType": {
+            "type": "string",
+            "nullable": true
+          },
+          "entityId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "action": {
+            "type": "string",
+            "nullable": true
+          },
+          "changedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "changedByName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardAgendaDto": {
+        "type": "object",
+        "properties": {
+          "appointments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardAgendaItemDto"
+            },
+            "nullable": true
+          },
+          "openConsultations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardOpenConsultationDto"
+            },
+            "nullable": true
+          },
+          "labResults": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardLabResultDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardAgendaItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "patientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patientName": {
+            "type": "string",
+            "nullable": true
+          },
+          "patientPhone": {
+            "type": "string",
+            "nullable": true
+          },
+          "doctorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "doctorName": {
+            "type": "string",
+            "nullable": true
+          },
+          "statusCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "statusName": {
+            "type": "string",
+            "nullable": true
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true
+          },
+          "consultationId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "consultationStatusCode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardAppointmentPointDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "totalCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completedCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cancelledCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "noShowCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardClinicalKpisDto": {
+        "type": "object",
+        "properties": {
+          "appointmentsToday": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "appointmentsTodayRemaining": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "consultationsToday": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "consultationsOpen": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "followUpsDue": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "patientsNewThisMonth": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "prescriptionsDraft": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "prescriptionsWithTransmissionError": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardDoctorWorkloadDto": {
+        "type": "object",
+        "properties": {
+          "doctorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "doctorName": {
+            "type": "string",
+            "nullable": true
+          },
+          "specialtyName": {
+            "type": "string",
+            "nullable": true
+          },
+          "appointmentCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "completedCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "noShowCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "scheduledMinutes": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardDto": {
+        "type": "object",
+        "properties": {
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "today": {
+            "type": "string",
+            "format": "date"
+          },
+          "widgetIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "clinicalKpis": {
+            "$ref": "#/components/schemas/DashboardClinicalKpisDto"
+          },
+          "agenda": {
+            "$ref": "#/components/schemas/DashboardAgendaDto"
+          },
+          "financial": {
+            "$ref": "#/components/schemas/DashboardFinancialDto"
+          },
+          "trends": {
+            "$ref": "#/components/schemas/DashboardTrendsDto"
+          },
+          "health": {
+            "$ref": "#/components/schemas/DashboardHealthDto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardDtoApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "data": {
+            "$ref": "#/components/schemas/DashboardDto"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardExpiringInsuranceDto": {
+        "type": "object",
+        "properties": {
+          "patientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patientName": {
+            "type": "string",
+            "nullable": true
+          },
+          "phoneNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "insuranceNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "insuranceExpiry": {
+            "type": "string",
+            "format": "date"
+          },
+          "daysLeft": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardExpiringLicenseDto": {
+        "type": "object",
+        "properties": {
+          "doctorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "doctorName": {
+            "type": "string",
+            "nullable": true
+          },
+          "licenseNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "licenseExpiresAt": {
+            "type": "string",
+            "format": "date"
+          },
+          "daysLeft": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardFinancialDto": {
+        "type": "object",
+        "properties": {
+          "kpis": {
+            "$ref": "#/components/schemas/DashboardFinancialKpisDto"
+          },
+          "unpaid": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardUnpaidItemDto"
+            },
+            "nullable": true
+          },
+          "receiptIssues": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardReceiptIssueDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardFinancialKpisDto": {
+        "type": "object",
+        "properties": {
+          "revenueToday": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "revenueThisMonth": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "invoicesThisMonthCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "invoicesThisMonthNetTotal": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "unpaidCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "partialCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "outstandingTotal": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "receiptsNeedingAttentionCount": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardHealthDto": {
+        "type": "object",
+        "properties": {
+          "securityEvents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardSecurityEventDto"
+            },
+            "nullable": true
+          },
+          "lockedUsers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardLockedUserDto"
+            },
+            "nullable": true
+          },
+          "expiringLicenses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardExpiringLicenseDto"
+            },
+            "nullable": true
+          },
+          "expiringInsurance": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardExpiringInsuranceDto"
+            },
+            "nullable": true
+          },
+          "syncFreshness": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardSyncFreshnessDto"
+            },
+            "nullable": true
+          },
+          "activity": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardActivityDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardLabResultDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resultDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "collectionDate": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "patientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patientName": {
+            "type": "string",
+            "nullable": true
+          },
+          "laboratory": {
+            "type": "string",
+            "nullable": true
+          },
+          "bulletinNumber": {
+            "type": "string",
+            "nullable": true
+          },
+          "consultationId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "abnormalCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardLockedUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "lockoutEnd": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "failedLoginAttempts": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "lastLoginAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardNoShowDto": {
+        "type": "object",
+        "properties": {
+          "totalScheduled": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "noShowCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "noShowRate": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardOpenConsultationDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "patientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patientName": {
+            "type": "string",
+            "nullable": true
+          },
+          "doctorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "doctorName": {
+            "type": "string",
+            "nullable": true
+          },
+          "diagnostic": {
+            "type": "string",
+            "nullable": true
+          },
+          "motiv": {
+            "type": "string",
+            "nullable": true
+          },
+          "daysOpen": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardReceiptIssueDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "consultationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "statusCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "statusName": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "patientName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardRevenuePointDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "amount": {
+            "type": "number",
+            "format": "double"
+          },
+          "paymentCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardSecurityEventDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventType": {
+            "type": "string",
+            "nullable": true
+          },
+          "succeeded": {
+            "type": "boolean"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "emailAttempted": {
+            "type": "string",
+            "nullable": true
+          },
+          "ipAddress": {
+            "type": "string",
+            "nullable": true
+          },
+          "userFullName": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardSyncFreshnessDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastSuccessAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "lastRunAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardTopServiceDto": {
+        "type": "object",
+        "properties": {
+          "serviceName": {
+            "type": "string",
+            "nullable": true
+          },
+          "quantity": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalValue": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardTrendsDto": {
+        "type": "object",
+        "properties": {
+          "revenue": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardRevenuePointDto"
+            },
+            "nullable": true
+          },
+          "appointments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardAppointmentPointDto"
+            },
+            "nullable": true
+          },
+          "noShow": {
+            "$ref": "#/components/schemas/DashboardNoShowDto"
+          },
+          "doctorWorkload": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardDoctorWorkloadDto"
+            },
+            "nullable": true
+          },
+          "topServices": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardTopServiceDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardUnpaidItemDto": {
+        "type": "object",
+        "properties": {
+          "consultationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "patientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patientName": {
+            "type": "string",
+            "nullable": true
+          },
+          "total": {
+            "type": "number",
+            "format": "double"
+          },
+          "paid": {
+            "type": "number",
+            "format": "double"
+          },
+          "balance": {
+            "type": "number",
+            "format": "double"
+          },
+          "paymentStatus": {
             "type": "string",
             "nullable": true
           }
