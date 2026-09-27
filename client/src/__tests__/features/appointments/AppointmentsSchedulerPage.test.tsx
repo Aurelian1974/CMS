@@ -70,8 +70,15 @@ const defaultDoctorLookupReturn = {
 
 vi.mock('@/features/appointments/hooks/useAppointments', () => ({
   useAppointmentsForScheduler: vi.fn(() => defaultSchedulerReturn),
+  useAppointmentStatuses: vi.fn(() => ({ data: { data: [] } })),
   useCreateAppointment: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateAppointment: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
+}))
+
+const fullAccess = { canRead: () => true, canWrite: () => true, hasFull: () => true }
+vi.mock('@/hooks/useHasAccess', () => ({
+  MODULE: { Appointments: 'appointments' },
+  useHasAccess: vi.fn(() => fullAccess),
 }))
 
 vi.mock('@/features/doctors/hooks/useDoctors', () => ({

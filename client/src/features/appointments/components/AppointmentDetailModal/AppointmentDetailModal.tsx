@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { useAppointmentDetail } from '../../hooks/useAppointments'
 import { formatDate, formatDateTime } from '@/utils/format'
 import type { AppointmentDetailDto } from '../../types/appointment.types'
@@ -5,6 +6,7 @@ import { AppModal } from '@/components/ui/AppModal'
 import { AppBadge, type BadgeVariant } from '@/components/ui/AppBadge'
 import { AppButton } from '@/components/ui/AppButton'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { AppointmentStatusActions } from '../AppointmentStatusActions/AppointmentStatusActions'
 import styles from './AppointmentDetailModal.module.scss'
 
 const getStatusVariant = (code: string | null): BadgeVariant => {
@@ -29,6 +31,9 @@ interface AppointmentDetailModalProps {
   onClose: () => void
   appointmentId: string | null
   onEdit?: () => void
+  /** Drept de scriere — afișează acțiunile rapide de status */
+  canWrite?: boolean
+  onStatusChanged?: (message: string) => void
 }
 
 export const AppointmentDetailModal = ({
@@ -36,7 +41,12 @@ export const AppointmentDetailModal = ({
   onClose,
   appointmentId,
   onEdit,
+  canWrite = false,
+  onStatusChanged,
 }: AppointmentDetailModalProps) => {
+  const [actionError, setActionError] = useState<string | null>(null)
+  useEffect(() => { setActionError(null) }, [appointmentId, isOpen])
+
   const { data: resp, isLoading, isError } = useAppointmentDetail(
     appointmentId ?? '',
     isOpen && !!appointmentId,
@@ -85,9 +95,20 @@ export const AppointmentDetailModal = ({
   )
 
   const footerContent = (
-    <AppButton variant="outline-secondary" size="sm" onClick={onClose}>
-      Închide
-    </AppButton>
+    <>
+      {hasData && (
+        <AppointmentStatusActions
+          appointmentId={appointment.id}
+          currentStatusCode={appointment.statusCode}
+          canWrite={canWrite}
+          onSuccess={msg => { setActionError(null); onStatusChanged?.(msg) }}
+          onError={setActionError}
+        />
+      )}
+      <AppButton variant="outline-secondary" size="sm" onClick={onClose}>
+        Închide
+      </AppButton>
+    </>
   )
 
   return (
@@ -98,6 +119,10 @@ export const AppointmentDetailModal = ({
       header={headerContent}
       footer={footerContent}
     >
+      {actionError && (
+        <div className="alert alert-danger py-2 mb-3" role="alert">{actionError}</div>
+      )}
+
       {isLoading && (
         <div className={styles.bodyLoading}>
           <LoadingSpinner size="sm" />

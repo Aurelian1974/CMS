@@ -14,6 +14,7 @@ import { FormDatePicker } from '@/components/forms/FormDatePicker'
 import { formatDate, toLocalDateISO } from '@/utils/format'
 import { phoneCellTemplate } from '@/components/data-display/PhoneCell'
 import { useFeedback } from '@/hooks/useFeedback'
+import { MODULE, useHasAccess } from '@/hooks/useHasAccess'
 import { ConfirmDeleteDialog } from '@/components/ui/ConfirmDeleteDialog'
 import { FeedbackAlerts } from '@/components/ui/FeedbackAlerts'
 import { ListPageToolbar } from '@/components/ui/ListPageToolbar'
@@ -83,7 +84,12 @@ export const AppointmentsListPage = () => {
   const [deleteTarget, setDeleteTarget] = useState<AppointmentDto | null>(null)
 
   // Mesaje feedback
-  const { successMsg, showSuccess, setSuccessMsg } = useFeedback()
+  const { successMsg, errorMsg, showSuccess, showError, setSuccessMsg, setErrorMsg } = useFeedback()
+
+  // Drepturi: Write = creare/editare/status, Full = ștergere definitivă
+  const { canWrite, hasFull } = useHasAccess()
+  const canEdit = canWrite(MODULE.Appointments)
+  const canDelete = hasFull(MODULE.Appointments)
 
   // Mini form pentru filtrele de dată (necesar pentru FormDatePicker)
   const { control: filterDateControl } = useForm<{ dateFrom: string; dateTo: string }>({
@@ -159,8 +165,8 @@ export const AppointmentsListPage = () => {
         setEditingAppointment(null)
         showSuccess(isEdit ? 'Programarea a fost actualizată cu succes.' : 'Programarea a fost creată cu succes.')
       },
-      onError: () => {
-        setServerError('A apărut o eroare. Te rugăm să încerci din nou.')
+      onError: (err: Error) => {
+        setServerError(err.message)
       },
     })
   }
@@ -169,8 +175,8 @@ export const AppointmentsListPage = () => {
   const handleConfirmDelete = () => {
     if (!deleteTarget) return
     deleteAppointment.mutate(deleteTarget.id, {
-      onSuccess: () => { setDeleteTarget(null); showSuccess('Programarea a fost anulată cu succes.') },
-      onError: () => { setDeleteTarget(null) },
+      onSuccess: () => { setDeleteTarget(null); showSuccess('Programarea a fost ștearsă.') },
+      onError: (err: Error) => { setDeleteTarget(null); showError(err) },
     })
   }
 
@@ -251,10 +257,10 @@ export const AppointmentsListPage = () => {
   const actionsTemplate = useCallback((row: AppointmentDto) => (
     <ActionButtons
       onView={() => handleOpenDetail(row)}
-      onEdit={() => handleOpenEdit(row)}
-      onDelete={() => setDeleteTarget(row)}
+      onEdit={canEdit ? () => handleOpenEdit(row) : undefined}
+      onDelete={canDelete ? () => setDeleteTarget(row) : undefined}
     />
-  ), [])
+  ), [canEdit, canDelete])
 
   // ── Column definitions ─────────────────────────────────────────────────────
   const columnDefs = useMemo<ColDef<AppointmentDto>[]>(() => [
@@ -299,9 +305,11 @@ export const AppointmentsListPage = () => {
             <button className={styles.btnSecondary} onClick={handleExcelExport}>
               <IconExcel /> Export Excel
             </button>
-            <button className={styles.btnPrimary} onClick={handleOpenCreate}>
-              <IconPlus /> Programare nouă
-            </button>
+            {canEdit && (
+              <button className={styles.btnPrimary} onClick={handleOpenCreate}>
+                <IconPlus /> Programare nouă
+              </button>
+            )}
           </>
         }
       />
@@ -444,7 +452,10 @@ export const AppointmentsListPage = () => {
 
       <FeedbackAlerts
         successMsg={successMsg}
+        errorMsg={errorMsg}
         onDismissSuccess={() => setSuccessMsg(null)}
+        onDismissError={() => setErrorMsg(null)}
+        errorClass="mt-3"
       />
 
       {/* Modal creare/editare */}
@@ -464,7 +475,9 @@ export const AppointmentsListPage = () => {
         isOpen={!!detailAppointmentId}
         onClose={() => setDetailAppointmentId(null)}
         appointmentId={detailAppointmentId}
-        onEdit={handleEditFromDetail}
+        onEdit={canEdit ? handleEditFromDetail : undefined}
+        canWrite={canEdit}
+        onStatusChanged={showSuccess}
       />
 
       <ConfirmDeleteDialog
@@ -472,13 +485,13 @@ export const AppointmentsListPage = () => {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
         isLoading={deleteAppointment.isPending}
-        title="Confirmare anulare"
+        title="Confirmare ștergere"
         message={
           deleteTarget ? (
-            <>Sigur dorești să anulezi programarea pacientului <strong>{deleteTarget.patientName}</strong> din {formatDateTime(deleteTarget.startTime)}?</>
+            <>Programarea pacientului <strong>{deleteTarget.patientName}</strong> din {formatDateTime(deleteTarget.startTime)} va fi ștearsă definitiv. Pentru anulare folosește acțiunea <strong>Anulează</strong> din detaliile programării.</>
           ) : null
         }
-        confirmLabel="Anulează programarea"
+        confirmLabel="Șterge definitiv"
         cancelLabel="Renunță"
       />
     </div>

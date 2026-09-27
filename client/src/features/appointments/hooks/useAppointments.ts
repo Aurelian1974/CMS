@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData, type QueryClient } from '@tanstack/react-query'
 import { appointmentsApi } from '@/api/endpoints/appointments.api'
 import type {
   GetAppointmentsParams,
@@ -19,7 +19,7 @@ export const appointmentKeys = {
   statuses:  () => [...appointmentKeys.all, 'statuses'] as const,
 }
 
-// ── Nomenclator statusuri (se schimbă rar → cache lung) ─────────────────────────────
+// ── Nomenclator statusuri (se schimbă rar → cache lung) ───────────────────────
 export const useAppointmentStatuses = () =>
   useQuery({
     queryKey: appointmentKeys.statuses(),
@@ -53,15 +53,19 @@ export const useAppointmentsForScheduler = (dateFrom: string, dateTo: string, do
     staleTime: 30 * 1000,
   })
 
+// ── Invalidare comună după orice scriere (listă + scheduler + detaliu) ────────
+const invalidateAppointments = (qc: QueryClient, id?: string) => {
+  qc.invalidateQueries({ queryKey: appointmentKeys.lists() })
+  qc.invalidateQueries({ queryKey: [...appointmentKeys.all, 'scheduler'] })
+  if (id) qc.invalidateQueries({ queryKey: appointmentKeys.detail(id) })
+}
+
 // ── Creare programare ────────────────────────────────────────────────────────
 export const useCreateAppointment = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: CreateAppointmentPayload) => appointmentsApi.create(payload),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: appointmentKeys.lists() })
-      qc.invalidateQueries({ queryKey: [...appointmentKeys.all, 'scheduler'] })
-    },
+    onSuccess: () => invalidateAppointments(qc),
   })
 }
 
@@ -70,10 +74,7 @@ export const useUpdateAppointment = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: UpdateAppointmentPayload) => appointmentsApi.update(payload),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: appointmentKeys.lists() })
-      qc.invalidateQueries({ queryKey: [...appointmentKeys.all, 'scheduler'] })
-    },
+    onSuccess: (_data, variables) => invalidateAppointments(qc, variables.id),
   })
 }
 
@@ -82,9 +83,7 @@ export const useUpdateAppointmentStatus = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: UpdateAppointmentStatusPayload) => appointmentsApi.updateStatus(payload),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: appointmentKeys.all })
-    },
+    onSuccess: (_data, variables) => invalidateAppointments(qc, variables.id),
   })
 }
 
@@ -93,8 +92,6 @@ export const useDeleteAppointment = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => appointmentsApi.delete(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: appointmentKeys.lists() })
-    },
+    onSuccess: (_data, id) => invalidateAppointments(qc, id),
   })
 }

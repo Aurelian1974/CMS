@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAppointmentsForScheduler, useCreateAppointment, useUpdateAppointment } from '../hooks/useAppointments'
+import { useAppointmentsForScheduler, useAppointmentStatuses, useCreateAppointment, useUpdateAppointment } from '../hooks/useAppointments'
+import { MODULE, useHasAccess } from '@/hooks/useHasAccess'
 import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
 import { usePatientLookup } from '@/features/patients/hooks/usePatients'
 import { useClinicSchedule, useDoctorSchedules } from '@/features/clinic/hooks/useSchedule'
@@ -369,6 +370,17 @@ export const AppointmentsSchedulerPage = () => {
   const dragInfoRef = useRef<{ apt: AppointmentSchedulerDto; offsetMinutes: number; durationMin: number } | null>(null)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const wasDraggingRef = useRef(false)
+  const [dndError, setDndError] = useState<string | null>(null)
+  const dndErrorTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  const { canWrite } = useHasAccess()
+  const canEdit = canWrite(MODULE.Appointments)
+
+  const showDndError = useCallback((message: string) => {
+    clearTimeout(dndErrorTimer.current)
+    setDndError(message)
+    dndErrorTimer.current = setTimeout(() => setDndError(null), 6000)
+  }, [])
 
   // Date din API — intervalul variază cu modul de vizualizare
   const { rangeFrom, rangeTo, weekDays, monthDays } = useMemo(() => {
@@ -387,12 +399,18 @@ export const AppointmentsSchedulerPage = () => {
   const { data: patientLookupResp } = usePatientLookup()
   const { data: clinicScheduleResp }  = useClinicSchedule()
   const { data: doctorSchedulesResp } = useDoctorSchedules()
+  const { data: statusesResp } = useAppointmentStatuses()
 
   const appointments       = useMemo(() => schedulerResp?.data      ?? [], [schedulerResp])
   const doctorLookup       = useMemo(() => doctorLookupResp?.data   ?? [], [doctorLookupResp])
   const patientLookup      = useMemo(() => patientLookupResp?.data  ?? [], [patientLookupResp])
   const clinicSchedule     = useMemo(() => clinicScheduleResp?.data ?? [], [clinicScheduleResp])
   const allDoctorSchedules = useMemo(() => doctorSchedulesResp?.data ?? [], [doctorSchedulesResp])
+  /** statusId → ocupă slotul (ANULAT / NEPREZENTARE îl eliberează) */
+  const blocksSlotByStatus = useMemo(
+    () => new Map((statusesResp?.data ?? []).map(s => [s.id, s.blocksSlot])),
+    [statusesResp],
+  )
 
   // Ziua săptămânii curentă (1=Luni … 7=Duminică)
   const jsDow    = currentDate.getDay()
@@ -489,6 +507,7 @@ export const AppointmentsSchedulerPage = () => {
 
   /** Click pe un slot gol din timeline — deschide formularul de creare pre-completat */
   const handleSlotClick = useCallback((e: React.MouseEvent<HTMLDivElement>, doctorId: string) => {
+    if (!canEdit) return
     // Ignoră click-urile imediat după drag & drop
     if (wasDraggingRef.current) return
     // Ignoră click-urile pe event bars (propagate din copil)
@@ -507,11 +526,12 @@ export const AppointmentsSchedulerPage = () => {
     })
     setServerError(null)
     setFormModalOpen(true)
-  }, [currentDate, tlStart, tlEnd])
+  }, [currentDate, tlStart, tlEnd, canEdit])
 
   /** Click pe o programare existentă — deschide formularul de editare */
-  const handleEventClick = useCallback((e: React.MouseEvent, apt: AppointmentSchedulerDto) => {
+  const handleEventClick = useCallback((e: React.MouseEvent | React.KeyboardEvent, apt: AppointmentSchedulerDto) => {
     e.stopPropagation()
+    if (!canEdit) return
     // Ignoră click-urile imediat după drag & drop
     if (wasDraggingRef.current) return
     setTooltip(null)
@@ -519,7 +539,7 @@ export const AppointmentsSchedulerPage = () => {
     setFormCreateDefaults(undefined)
     setServerError(null)
     setFormModalOpen(true)
-  }, [])
+  }, [canEdit])
 
   const handleFormClose = useCallback(() => {
     setFormModalOpen(false)
@@ -535,8 +555,8 @@ export const AppointmentsSchedulerPage = () => {
         setEditingSchedulerApt(null)
         setServerError(null)
       },
-      onError: () => {
-        setServerError('A apărut o eroare. Te rugăm să încerci din nou.')
+      onError: (err: Error) => {
+        setServerError(err.message)
       },
     })
   }, [createAppointment, updateAppointment])
@@ -586,6 +606,20 @@ export const AppointmentsSchedulerPage = () => {
       return
     }
     const newEnd = newStart + durationMin
+    // Pre-verificare locală a suprapunerii — evită un 409 previzibil
+    const movedBlocksSlot = blocksSlotByStatus.get(apt.statusId) ?? true
+    const overlaps = movedBlocksSlot && (groupedByDoctor.get(doctorId) ?? []).some(a => {
+      if (a.id === apt.id || !(blocksSlotByStatus.get(a.statusId) ?? true)) return false
+      const s = new Date(a.startTime)
+      const en = new Date(a.endTime)
+      return s.getHours() * 60 + s.getMinutes() < newEnd && en.getHours() * 60 + en.getMinutes() > newStart
+    })
+    if (overlaps) {
+      showDndError('Slotul este deja ocupat pentru acest doctor.')
+      dragInfoRef.current = null
+      setDraggingId(null)
+      return
+    }
     const dateStr = formatDateISO(currentDate)
     const startH = Math.floor(newStart / 60)
     const startM = Math.round(newStart % 60)
@@ -600,13 +634,11 @@ export const AppointmentsSchedulerPage = () => {
       statusId:  apt.statusId,
       notes:     apt.notes,
     }, {
-      onError: (err) => {
-        console.error('[Scheduler DnD] Eroare la mutarea programării:', err)
-      },
+      onError: (err: Error) => showDndError(err.message),
     })
     dragInfoRef.current = null
     setDraggingId(null)
-  }, [currentDate, updateAppointment, tlStart, tlEnd, clinicEntry, doctorTodayMap])
+  }, [currentDate, updateAppointment, tlStart, tlEnd, clinicEntry, doctorTodayMap, blocksSlotByStatus, groupedByDoctor, showDndError])
 
   // Tooltip handlers
   const handleEventMouseEnter = useCallback((e: React.MouseEvent, apt: AppointmentSchedulerDto) => {
@@ -651,9 +683,11 @@ export const AppointmentsSchedulerPage = () => {
           <button className={styles.btnSecondary} onClick={() => navigate('/appointments')}>
             <IconList /> Vizualizare tabel
           </button>
-          <button className={styles.btnPrimary} onClick={handleOpenCreate}>
-            <IconPlus /> Programare nouă
-          </button>
+          {canEdit && (
+            <button className={styles.btnPrimary} onClick={handleOpenCreate}>
+              <IconPlus /> Programare nouă
+            </button>
+          )}
         </div>
       </div>
 
@@ -704,6 +738,10 @@ export const AppointmentsSchedulerPage = () => {
           </div>
         )}
       </div>
+
+      {dndError && (
+        <div className="alert alert-danger py-2 mb-2" role="alert">{dndError}</div>
+      )}
 
       {/* Scheduler Grid */}
       <div className={styles.schedulerWrapper}>
@@ -798,7 +836,7 @@ export const AppointmentsSchedulerPage = () => {
                           data-event-bar="true"
                           className={`${styles.eventBar} ${modifier}${draggingId === apt.id ? ` ${styles['eventBar--dragging']}` : ''}`}
                           style={{ left, width }}
-                          draggable
+                          draggable={canEdit}
                           onDragStart={e => handleDragStart(e, apt)}
                           onDragEnd={handleDragEnd}
                           onClick={e => handleEventClick(e, apt)}

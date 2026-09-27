@@ -9,7 +9,7 @@
  * - Dialog confirmare ștergere
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, within } from '@testing-library/react'
+import { render, screen, fireEvent, within, act } from '@testing-library/react'
 import { AppointmentsListPage } from '@/features/appointments/pages/AppointmentsListPage'
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
@@ -106,6 +106,12 @@ vi.mock('@/features/doctors/hooks/useDoctors', () => ({
   useDoctorLookup: vi.fn(() => defaultDoctorLookupReturn),
 }))
 
+const fullAccess = { canRead: () => true, canWrite: () => true, hasFull: () => true }
+vi.mock('@/hooks/useHasAccess', () => ({
+  MODULE: { Appointments: 'appointments' },
+  useHasAccess: vi.fn(() => fullAccess),
+}))
+
 vi.mock('@/features/patients/hooks/usePatients', () => ({
   usePatientLookup: vi.fn(() => ({ data: { data: [] } })),
 }))
@@ -154,14 +160,18 @@ vi.mock('@/utils/format', () => ({
 }))
 
 // ── Import mocks to manipulate ───────────────────────────────────────────────
-import { useAppointments, useDeleteAppointment } from '@/features/appointments/hooks/useAppointments'
+import { useAppointments, useDeleteAppointment, useCreateAppointment } from '@/features/appointments/hooks/useAppointments'
 import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
+import { useHasAccess } from '@/hooks/useHasAccess'
+import { AppointmentFormModal } from '@/features/appointments/components/AppointmentFormModal/AppointmentFormModal'
 
 // ── Test Suite ────────────────────────────────────────────────────────────────
 
 describe('AppointmentsListPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(useHasAccess).mockReturnValue(fullAccess as unknown as ReturnType<typeof useHasAccess>)
+    vi.mocked(useCreateAppointment).mockReturnValue({ mutate: vi.fn(), isPending: false } as unknown as ReturnType<typeof useCreateAppointment>)
     vi.mocked(useAppointments).mockReturnValue(defaultAppointmentsReturn as ReturnType<typeof useAppointments>)
     vi.mocked(useDeleteAppointment).mockReturnValue(defaultDeleteReturn as unknown as ReturnType<typeof useDeleteAppointment>)
     vi.mocked(useDoctorLookup).mockReturnValue(defaultDoctorLookupReturn as ReturnType<typeof useDoctorLookup>)
@@ -301,6 +311,31 @@ describe('AppointmentsListPage', () => {
   })
 
   // ── Empty data ────────────────────────────────────────────────────────────
+
+  describe('permisiuni', () => {
+    it('ascunde butonul Programare nouă fără drept de scriere', () => {
+      vi.mocked(useHasAccess).mockReturnValue(
+        { canRead: () => true, canWrite: () => false, hasFull: () => false } as unknown as ReturnType<typeof useHasAccess>)
+      render(<AppointmentsListPage />)
+      expect(screen.queryByText('Programare nouă')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('erori server', () => {
+    it('transmite formularului mesajul real de eroare (nu textul generic)', () => {
+      const serverMessage = 'Există deja o programare în acest interval orar.'
+      vi.mocked(useCreateAppointment).mockReturnValue({
+        mutate: vi.fn((_payload: unknown, opts: { onError: (e: Error) => void }) => opts.onError(new Error(serverMessage))),
+        isPending: false,
+      } as unknown as ReturnType<typeof useCreateAppointment>)
+
+      render(<AppointmentsListPage />)
+      const { onSubmit } = vi.mocked(AppointmentFormModal).mock.calls.at(-1)![0]
+      act(() => onSubmit({ patientId: 'p1', doctorId: 'd1', startTime: '2025-03-15T09:00:00', endTime: '2025-03-15T09:30:00' }))
+
+      expect(vi.mocked(AppointmentFormModal).mock.calls.at(-1)![0].serverError).toBe(serverMessage)
+    })
+  })
 
   describe('date goale', () => {
     it('afișează 0 în stat cards când nu sunt date', () => {
