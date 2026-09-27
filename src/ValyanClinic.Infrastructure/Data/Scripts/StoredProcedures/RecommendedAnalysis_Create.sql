@@ -27,10 +27,10 @@ BEGIN
     IF EXISTS (
         SELECT 1 FROM dbo.Consultations c
         INNER JOIN dbo.ConsultationStatuses s ON s.Id = c.StatusId
-        WHERE c.Id = @ConsultationId AND c.ClinicId = @ClinicId AND s.Code = 'BLOCATA'
+        WHERE c.Id = @ConsultationId AND c.ClinicId = @ClinicId AND s.Code <> 'INLUCRU'
     )
     BEGIN
-        ;THROW 50021, N'Consultatia este blocata si nu poate fi modificata.', 1;
+        ;THROW 50021, N'Consultatia este finalizata si nu mai poate fi modificata.', 1;
     END;
 
     DECLARE @AnalysisName NVARCHAR(500) = (SELECT Name FROM dbo.Analyses WHERE Id = @AnalysisId);

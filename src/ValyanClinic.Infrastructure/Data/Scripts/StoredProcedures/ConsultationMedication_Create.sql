@@ -37,9 +37,9 @@ BEGIN
             ;THROW 50020, N'Consultația nu a fost găsită.', 1;
         END;
 
-        IF @StatusCode = N'BLOCATA'
+        IF @StatusCode <> N'INLUCRU'
         BEGIN
-            ;THROW 50021, N'Consultația este blocată și nu poate fi modificată.', 1;
+            ;THROW 50021, N'Consultația este finalizată și nu mai poate fi modificată.', 1;
         END;
 
         IF NOT EXISTS (SELECT 1 FROM dbo.Cnas_Drug

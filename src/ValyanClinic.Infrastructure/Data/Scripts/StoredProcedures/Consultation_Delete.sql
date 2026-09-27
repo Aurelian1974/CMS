@@ -19,14 +19,20 @@ BEGIN
         ;THROW 50020, N'Consultația nu a fost găsită.', 1;
     END;
 
-    -- Nu permite ștergerea consultațiilor blocate
+    -- Nu permite ștergerea consultațiilor blocate sau facturate
     IF EXISTS (
         SELECT 1 FROM dbo.Consultations c
         INNER JOIN dbo.ConsultationStatuses s ON s.Id = c.StatusId
-        WHERE c.Id = @Id AND c.ClinicId = @ClinicId AND s.Code = 'BLOCATA'
+        WHERE c.Id = @Id AND c.ClinicId = @ClinicId AND s.Code IN ('BLOCATA', 'FACTURATA')
     )
     BEGIN
-        ;THROW 50022, N'Consultația este blocată și nu poate fi ștearsă.', 1;
+        ;THROW 50022, N'Consultația este blocată sau facturată și nu poate fi ștearsă.', 1;
+    END;
+
+    -- Încasările (chiar și fără document fiscal) păstrează consultația
+    IF EXISTS (SELECT 1 FROM dbo.Payments WHERE ConsultationId = @Id AND ClinicId = @ClinicId AND IsCancelled = 0)
+    BEGIN
+        ;THROW 50022, N'Consultația are încasări înregistrate și nu poate fi ștearsă.', 1;
     END;
 
     -- Audit: captează valorile vechi

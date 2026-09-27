@@ -26,10 +26,10 @@ BEGIN
         SELECT 1 FROM dbo.RecommendedAnalyses ra
         INNER JOIN dbo.Consultations c ON c.Id = ra.ConsultationId
         INNER JOIN dbo.ConsultationStatuses s ON s.Id = c.StatusId
-        WHERE ra.Id = @Id AND s.Code = 'BLOCATA'
+        WHERE ra.Id = @Id AND s.Code <> 'INLUCRU'
     )
     BEGIN
-        ;THROW 50021, N'Consultatia este blocata si nu poate fi modificata.', 1;
+        ;THROW 50021, N'Consultatia este finalizata si nu mai poate fi modificata.', 1;
     END;
 
     UPDATE dbo.RecommendedAnalyses

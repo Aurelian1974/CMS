@@ -31,10 +31,10 @@ BEGIN
     IF EXISTS (
         SELECT 1 FROM dbo.Consultations c
         INNER JOIN dbo.ConsultationStatuses s ON s.Id = c.StatusId
-        WHERE c.Id = @ConsultationId AND c.ClinicId = @ClinicId AND s.Code = 'BLOCATA'
+        WHERE c.Id = @ConsultationId AND c.ClinicId = @ClinicId AND s.Code <> 'INLUCRU'
     )
     BEGIN
-        ;THROW 50021, N'Consultația este blocată și nu poate fi modificată.', 1;
+        ;THROW 50021, N'Consultația este finalizată și nu mai poate fi modificată.', 1;
     END;
 
     MERGE dbo.ConsultationAnamnesis AS t

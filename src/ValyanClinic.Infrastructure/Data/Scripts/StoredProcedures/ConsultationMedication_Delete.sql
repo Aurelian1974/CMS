@@ -29,9 +29,9 @@ BEGIN
             ;THROW 50026, N'Medicamentul din tratament nu a fost găsit.', 1;
         END;
 
-        IF @StatusCode = N'BLOCATA'
+        IF @StatusCode <> N'INLUCRU'
         BEGIN
-            ;THROW 50021, N'Consultația este blocată și nu poate fi modificată.', 1;
+            ;THROW 50021, N'Consultația este finalizată și nu mai poate fi modificată.', 1;
         END;
 
         DECLARE @OldValues NVARCHAR(MAX) = (

@@ -4,7 +4,7 @@ GO
 -- ============================================================================
 -- SP: Investigation_Create
 -- Creaza o investigatie paraclinica noua si returneaza Id-ul.
--- Verifica existenta consultatiei si ca nu este blocata.
+-- Verifica existenta consultatiei si ca este inca in lucru.
 -- ============================================================================
 CREATE OR ALTER PROCEDURE dbo.Investigation_Create
     @ClinicId           UNIQUEIDENTIFIER,
@@ -34,10 +34,10 @@ BEGIN
     IF EXISTS (
         SELECT 1 FROM dbo.Consultations c
         INNER JOIN dbo.ConsultationStatuses s ON s.Id = c.StatusId
-        WHERE c.Id = @ConsultationId AND c.ClinicId = @ClinicId AND s.Code = 'BLOCATA'
+        WHERE c.Id = @ConsultationId AND c.ClinicId = @ClinicId AND s.Code <> 'INLUCRU'
     )
     BEGIN
-        ;THROW 50021, N'Consultatia este blocata si nu poate fi modificata.', 1;
+        ;THROW 50021, N'Consultatia este finalizata si nu mai poate fi modificata.', 1;
     END;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.InvestigationTypeDefinitions WHERE TypeCode = @InvestigationType AND IsActive = 1)

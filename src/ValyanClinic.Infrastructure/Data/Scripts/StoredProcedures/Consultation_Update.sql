@@ -7,7 +7,7 @@ GO
 -- Descriere: Actualizează header-ul unei consultații + tab-urile încă pe
 -- coloane vechi (Investigații/Analize/Diagnostic/Concluzii).
 -- Anamneză și Examen Clinic se actualizează prin SP-urile dedicate Upsert.
--- Nu permite update pe consultații blocate.
+-- Permis doar pe consultații în lucru (INLUCRU).
 -- ============================================================================
 CREATE OR ALTER PROCEDURE dbo.Consultation_Update
     @Id                         UNIQUEIDENTIFIER,
@@ -48,13 +48,23 @@ BEGIN
         ;THROW 50020, N'Consultația nu a fost găsită.', 1;
     END;
 
+    -- Doar consultațiile în lucru se modifică (inclusiv tranziția la FINALIZATA);
+    -- FINALIZATA / FACTURATA / BLOCATA sunt read-only pe server, nu doar în UI
     IF EXISTS (
         SELECT 1 FROM dbo.Consultations c
         INNER JOIN dbo.ConsultationStatuses s ON s.Id = c.StatusId
-        WHERE c.Id = @Id AND c.ClinicId = @ClinicId AND s.Code = 'BLOCATA'
+        WHERE c.Id = @Id AND c.ClinicId = @ClinicId AND s.Code <> 'INLUCRU'
     )
     BEGIN
-        ;THROW 50021, N'Consultația este blocată și nu poate fi modificată.', 1;
+        ;THROW 50021, N'Consultația este finalizată și nu mai poate fi modificată.', 1;
+    END;
+
+    -- FACTURATA și BLOCATA se setează doar prin fluxurile dedicate (facturare / blocare)
+    IF @StatusId IS NOT NULL AND NOT EXISTS (
+        SELECT 1 FROM dbo.ConsultationStatuses WHERE Id = @StatusId AND Code IN ('INLUCRU', 'FINALIZATA')
+    )
+    BEGIN
+        ;THROW 50021, N'Statusul consultației nu poate fi setat manual.', 1;
     END;
 
     DECLARE @OldValues NVARCHAR(MAX);

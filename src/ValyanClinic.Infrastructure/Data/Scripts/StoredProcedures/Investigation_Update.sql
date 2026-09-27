@@ -4,7 +4,7 @@ GO
 -- ============================================================================
 -- SP: Investigation_Update
 -- Actualizeaza StructuredData, Narrative, Status si meta-date asociate.
--- Nu permite update pe consultatii blocate sau pe investigatii sterse.
+-- Permis doar pe consultatii in lucru si pe investigatii nesterse.
 -- ============================================================================
 CREATE OR ALTER PROCEDURE dbo.Investigation_Update
     @Id                 UNIQUEIDENTIFIER,
@@ -35,10 +35,10 @@ BEGIN
     IF EXISTS (
         SELECT 1 FROM dbo.Consultations c
         INNER JOIN dbo.ConsultationStatuses s ON s.Id = c.StatusId
-        WHERE c.Id = @ConsultationId AND c.ClinicId = @ClinicId AND s.Code = 'BLOCATA'
+        WHERE c.Id = @ConsultationId AND c.ClinicId = @ClinicId AND s.Code <> 'INLUCRU'
     )
     BEGIN
-        ;THROW 50021, N'Consultatia este blocata si nu poate fi modificata.', 1;
+        ;THROW 50021, N'Consultatia este finalizata si nu mai poate fi modificata.', 1;
     END;
 
     UPDATE dbo.ConsultationInvestigations
