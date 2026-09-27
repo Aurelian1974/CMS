@@ -47,6 +47,8 @@ test.describe('API — endpoint-uri critice accesibile pentru admin', () => {
 
 test.describe('API — nu există 401 la navigarea completă', () => {
   test('zero erori 401 la parcurgerea tuturor paginilor principale', async ({ page }) => {
+    // ~20 de rute × 1,5 s depășesc timeout-ul implicit de 30 s
+    test.setTimeout(90_000);
     const allErrors: string[] = [];
 
     page.on('response', (r) => {
@@ -67,6 +69,9 @@ test.describe('API — nu există 401 la navigarea completă', () => {
       '/medical-titles',
       '/clinic',
       '/invoices',
+      '/billing',
+      '/tariffs',
+      '/settings/financial',
       '/appointments',
       '/consultations',
       '/prescriptions',
