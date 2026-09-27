@@ -16,7 +16,17 @@ export const appointmentKeys = {
   detail:    (id: string) => [...appointmentKeys.details(), id] as const,
   scheduler: (dateFrom: string, dateTo: string, doctorId?: string) =>
     [...appointmentKeys.all, 'scheduler', { dateFrom, dateTo, doctorId }] as const,
+  statuses:  () => [...appointmentKeys.all, 'statuses'] as const,
 }
+
+// ── Nomenclator statusuri (se schimbă rar → cache lung) ─────────────────────────────
+export const useAppointmentStatuses = () =>
+  useQuery({
+    queryKey: appointmentKeys.statuses(),
+    queryFn: () => appointmentsApi.getStatuses(),
+    staleTime: 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+  })
 
 // ── Listare paginată ──────────────────────────────────────────────────────────
 export const useAppointments = (params: GetAppointmentsParams) =>

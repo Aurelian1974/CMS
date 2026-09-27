@@ -156,4 +156,14 @@ public sealed class AppointmentRepository(DapperContext context) : IAppointmentR
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct));
     }
+
+    public async Task<IEnumerable<AppointmentStatusDto>> GetStatusesAsync(CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        return await connection.QueryAsync<AppointmentStatusDto>(
+            new CommandDefinition(
+                AppointmentProcedures.GetStatuses,
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+    }
 }

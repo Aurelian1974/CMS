@@ -34,6 +34,9 @@ public interface IAppointmentRepository
 
     /// <summary>Soft delete programare.</summary>
     Task DeleteAsync(Guid id, Guid clinicId, Guid deletedBy, CancellationToken ct);
+
+    /// <summary>Nomenclator statusuri + tranziții permise.</summary>
+    Task<IEnumerable<AppointmentStatusDto>> GetStatusesAsync(CancellationToken ct);
 }
 
 /// <summary>Rezultatul combinat din GetPagedAsync — date paginate + statistici.</summary>

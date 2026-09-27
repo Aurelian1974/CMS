@@ -12,4 +12,5 @@ public static class AppointmentProcedures
     public const string UpdateStatus   = "dbo.Appointment_UpdateStatus";
     public const string Delete         = "dbo.Appointment_Delete";
     public const string CheckConflict  = "dbo.Appointment_CheckConflict";
+    public const string GetStatuses    = "dbo.Appointment_GetStatuses";
 }

@@ -1,9 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { appointmentSchema, type AppointmentFormData } from '../../schemas/appointment.schema'
-import type { AppointmentDto, CreateAppointmentPayload, UpdateAppointmentPayload, PatientLookupDto } from '../../types/appointment.types'
+import type { AppointmentDto, CreateAppointmentPayload, UpdateAppointmentPayload } from '../../types/appointment.types'
+import type { PatientLookupDto } from '@/features/patients/types/patient.types'
 import type { DoctorLookupDto } from '@/features/doctors/types/doctor.types'
+import { useAppointmentStatuses } from '../../hooks/useAppointments'
 import { AppModal } from '@/components/ui/AppModal'
 import { FormInput } from '@/components/forms/FormInput'
 import { FormSelect } from '@/components/forms/FormSelect'
@@ -58,15 +60,6 @@ const TimeSelect = ({ value, onChange, hasError }: TimeSelectProps) => {
     </div>
   )
 }
-const APPOINTMENT_STATUS_OPTIONS = [
-  { value: 'a1000000-0000-0000-0000-000000000001', label: 'Programat' },
-  { value: 'a1000000-0000-0000-0000-000000000002', label: 'Confirmat' },
-  { value: 'a1000000-0000-0000-0000-000000000003', label: 'Finalizat' },
-  { value: 'a1000000-0000-0000-0000-000000000004', label: 'Anulat' },
-  { value: 'a1000000-0000-0000-0000-000000000005', label: 'Neprezentare' },
-]
-
-const DEFAULT_STATUS_ID = 'a1000000-0000-0000-0000-000000000001' // Programat
 
 interface CreateDefaults {
   doctorId?: string
@@ -100,6 +93,14 @@ export const AppointmentFormModal = ({
 }: AppointmentFormModalProps) => {
   const isEdit = !!editData
 
+  const { data: statusesResp } = useAppointmentStatuses()
+  const statusOptions = useMemo(
+    () => (statusesResp?.data ?? []).map(s => ({ value: s.id, label: s.name })),
+    [statusesResp],
+  )
+  // Status implicit la creare = primul din nomenclator (SortOrder minim)
+  const defaultStatusId = statusOptions[0]?.value ?? ''
+
   const {
     handleSubmit,
     reset,
@@ -112,7 +113,7 @@ export const AppointmentFormModal = ({
     resolver: zodResolver(appointmentSchema) as any,
     defaultValues: {
       patientId: '', doctorId: '', date: '', startTime: '', endTime: '',
-      statusId: DEFAULT_STATUS_ID, notes: '',
+      statusId: '', notes: '',
     },
   })
 
@@ -147,11 +148,19 @@ export const AppointmentFormModal = ({
         date:      createDefaults?.date ?? toLocalDateISO(new Date()),
         startTime: createDefaults?.startTime ?? '',
         endTime:   createDefaults?.endTime ?? '',
-        statusId:  DEFAULT_STATUS_ID,
+        statusId:  '',
         notes:     '',
       })
     }
   }, [isOpen, editData, createDefaults, reset])
+
+  // Nomenclatorul poate sosi după deschidere — se completează doar statusul, fără reset
+  const statusIdValue = watch('statusId')
+  useEffect(() => {
+    if (isOpen && !isEdit && !statusIdValue && defaultStatusId) {
+      setValue('statusId', defaultStatusId)
+    }
+  }, [isOpen, isEdit, statusIdValue, defaultStatusId, setValue])
 
   const handleFormSubmit = (data: AppointmentFormData) => {
     const payload: CreateAppointmentPayload = {
@@ -288,7 +297,7 @@ export const AppointmentFormModal = ({
             name="statusId"
             control={control}
             label="Status"
-            options={APPOINTMENT_STATUS_OPTIONS}
+            options={statusOptions}
             showClearButton
           />
         </div>

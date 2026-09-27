@@ -7,7 +7,7 @@ import type {
   CreatePatientPayload,
   UpdatePatientPayload,
 } from '@/features/patients/types/patient.types'
-import type { PatientLookupDto } from '@/features/appointments/types/appointment.types'
+import type { PatientLookupDto } from '@/features/patients/types/patient.types'
 
 export const patientsApi = {
   getAll: (params: GetPatientsParams): Promise<ApiResponse<PatientsPagedResponse>> =>

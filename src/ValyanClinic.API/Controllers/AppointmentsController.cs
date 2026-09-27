@@ -9,6 +9,7 @@ using ValyanClinic.Application.Features.Appointments.Commands.DeleteAppointment;
 using ValyanClinic.Application.Features.Appointments.Queries.GetAppointments;
 using ValyanClinic.Application.Features.Appointments.Queries.GetAppointmentById;
 using ValyanClinic.Application.Features.Appointments.Queries.GetAppointmentsForScheduler;
+using ValyanClinic.Application.Features.Appointments.Queries.GetAppointmentStatuses;
 
 namespace ValyanClinic.API.Controllers;
 
@@ -64,6 +65,13 @@ public class AppointmentsController : BaseApiController
         var result = await Mediator.Send(query, ct);
         return HandleResult(result);
     }
+
+    /// <summary>Nomenclator statusuri programări + tranziții permise.</summary>
+    [HttpGet("statuses")]
+    [HasAccess(ModuleCodes.Appointments, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IEnumerable<AppointmentStatusDto>>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetStatuses(CancellationToken ct)
+        => HandleResult(await Mediator.Send(new GetAppointmentStatusesQuery(), ct));
 
     /// <summary>Creare programare nouă.</summary>
     [HttpPost]

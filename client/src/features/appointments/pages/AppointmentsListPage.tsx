@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { AppDataGrid } from '@/components/data-display/AppDataGrid'
 import type { ColDef, GridApi, PaginationChangedEvent, SortChangedEvent } from '@/components/data-display/AppDataGrid'
-import type { AppointmentDto, AppointmentStatusFilter, CreateAppointmentPayload, UpdateAppointmentPayload } from '../types/appointment.types'
-import { useAppointments, useDeleteAppointment, useCreateAppointment, useUpdateAppointment } from '../hooks/useAppointments'
+import type { AppointmentDto, CreateAppointmentPayload, UpdateAppointmentPayload } from '../types/appointment.types'
+import { useAppointments, useAppointmentStatuses, useDeleteAppointment, useCreateAppointment, useUpdateAppointment } from '../hooks/useAppointments'
 import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
 import { usePatientLookup } from '@/features/patients/hooks/usePatients'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
@@ -55,20 +55,14 @@ const formatDateTime = (dateStr: string): string => {
   return `${d.toLocaleDateString('ro-RO', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${d.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })}`
 }
 
-/** Mapare filtru status → GUID statusId real din DB */
-const APPOINTMENT_STATUS_IDS: Record<Exclude<AppointmentStatusFilter, 'all'>, string> = {
-  scheduled: 'a1000000-0000-0000-0000-000000000001',
-  confirmed: 'a1000000-0000-0000-0000-000000000002',
-  completed: 'a1000000-0000-0000-0000-000000000003',
-  cancelled: 'a1000000-0000-0000-0000-000000000004',
-}
+const ALL_STATUSES = 'all'
 
 // ── Componenta principală ─────────────────────────────────────────────────────
 export const AppointmentsListPage = () => {
   const navigate = useNavigate()
   const gridRef = useRef<GridApi<AppointmentDto>>(null)
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<AppointmentStatusFilter>('all')
+  const [statusFilter, setStatusFilter] = useState<string>(ALL_STATUSES)
   const [doctorId, setDoctorId] = useState<string | undefined>(undefined)
   const [dateFrom, setDateFrom] = useState<string | undefined>(undefined)
   const [dateTo, setDateTo] = useState<string | undefined>(undefined)
@@ -102,7 +96,7 @@ export const AppointmentsListPage = () => {
     pageSize,
     search:   search || undefined,
     doctorId,
-    statusId: statusFilter === 'all' ? undefined : APPOINTMENT_STATUS_IDS[statusFilter],
+    statusId: statusFilter === ALL_STATUSES ? undefined : statusFilter,
     dateFrom,
     dateTo,
     sortBy,
@@ -112,6 +106,7 @@ export const AppointmentsListPage = () => {
   // Date auxiliare
   const { data: doctorLookupResp } = useDoctorLookup()
   const { data: patientLookupResp } = usePatientLookup()
+  const { data: statusesResp } = useAppointmentStatuses()
 
   // Mutații
   const deleteAppointment = useDeleteAppointment()
@@ -124,6 +119,11 @@ export const AppointmentsListPage = () => {
 
   const doctorLookup = doctorLookupResp?.data ?? []
   const patientLookup = patientLookupResp?.data ?? []
+  const statuses = useMemo(() => statusesResp?.data ?? [], [statusesResp])
+  const statusOptions = useMemo(() => [
+    { value: ALL_STATUSES, label: 'Toate' },
+    ...statuses.map(s => ({ value: s.id, label: s.name })),
+  ], [statuses])
 
   // ── Handlers CRUD modale ───────────────────────────────────────────────────
   const handleOpenCreate = () => {
@@ -352,13 +352,7 @@ export const AppointmentsListPage = () => {
         searchPlaceholder="Caută după pacient, doctor, observații..."
         statusFilter={statusFilter}
         onStatusChange={s => { setStatusFilter(s); setPage(1) }}
-        statusOptions={[
-          { value: 'all' as AppointmentStatusFilter, label: 'Toate' },
-          { value: 'scheduled' as AppointmentStatusFilter, label: 'Programate' },
-          { value: 'confirmed' as AppointmentStatusFilter, label: 'Confirmate' },
-          { value: 'completed' as AppointmentStatusFilter, label: 'Finalizate' },
-          { value: 'cancelled' as AppointmentStatusFilter, label: 'Anulate' },
-        ]}
+        statusOptions={statusOptions}
         filters={
           <>
             <div className={styles.filterGroup}>

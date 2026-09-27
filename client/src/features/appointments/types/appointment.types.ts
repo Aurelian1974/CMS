@@ -1,44 +1,18 @@
-/// DTO listare programare — include câmpuri compute din SP
-export interface AppointmentDto {
-  id: string
-  clinicId: string
-  patientId: string
-  patientName: string
-  patientPhone: string | null
-  doctorId: string
-  doctorName: string
-  specialtyName: string | null
-  startTime: string
-  endTime: string
-  statusId: string
-  statusName: string
-  statusCode: string
-  notes: string | null
-  isDeleted: boolean
-  createdAt: string
-  createdByName: string | null
-}
+import type { components } from '@/api/generated/schema'
 
-/// DTO detalii programare
-export interface AppointmentDetailDto extends AppointmentDto {
-  patientCnp: string | null
-  patientEmail: string | null
-  doctorMedicalCode: string | null
-  updatedAt: string | null
-  updatedBy: string | null
-  updatedByName: string | null
-}
+type Schemas = components['schemas']
 
-/// Statistici programări
-export interface AppointmentStatsDto {
-  totalAppointments: number
-  scheduledCount: number
-  confirmedCount: number
-  completedCount: number
-  cancelledCount: number
-}
+// OpenAPI marchează toate câmpurile ca opționale și string-urile ca nullable;
+// API-ul le returnează mereu, iar cele de mai jos nu sunt niciodată null (NOT NULL în BD)
+type WithRequired<T, K extends keyof T> = Omit<T, K> & { [P in K]-?: NonNullable<T[P]> }
+type NameKeys = 'patientName' | 'doctorName' | 'statusName' | 'statusCode'
 
-/// Răspuns listare paginată cu statistici
+export type AppointmentDto          = WithRequired<Required<Schemas['AppointmentListDto']>, NameKeys>
+export type AppointmentDetailDto    = WithRequired<Required<Schemas['AppointmentDetailDto']>, NameKeys>
+export type AppointmentSchedulerDto = WithRequired<Required<Schemas['AppointmentSchedulerDto']>, NameKeys>
+export type AppointmentStatsDto     = Required<Schemas['AppointmentStatsDto']>
+export type AppointmentStatusDto    = WithRequired<Required<Schemas['AppointmentStatusDto']>, 'name' | 'code'>
+
 export interface AppointmentsPagedResponse {
   pagedResult: {
     items: AppointmentDto[]
@@ -52,7 +26,11 @@ export interface AppointmentsPagedResponse {
   stats: AppointmentStatsDto
 }
 
-/// Parametri query listare programări
+export type CreateAppointmentPayload = Schemas['CreateAppointmentCommand']
+export type UpdateAppointmentPayload = { id: string } & Schemas['UpdateAppointmentRequest']
+export type UpdateAppointmentStatusPayload = { id: string } & Required<Schemas['UpdateAppointmentStatusRequest']>
+
+/// Parametri query listare — nu fac parte din contract (query string)
 export interface GetAppointmentsParams {
   page: number
   pageSize: number
@@ -63,51 +41,4 @@ export interface GetAppointmentsParams {
   dateTo?: string
   sortBy?: string
   sortDir?: 'asc' | 'desc'
-}
-
-/// Payload creare programare
-export interface CreateAppointmentPayload {
-  patientId: string
-  doctorId: string
-  startTime: string
-  endTime: string
-  statusId?: string | null
-  notes?: string | null
-}
-
-/// Payload actualizare programare
-export interface UpdateAppointmentPayload extends CreateAppointmentPayload {
-  id: string
-}
-
-/// Payload actualizare status programare
-export interface UpdateAppointmentStatusPayload {
-  id: string
-  statusId: string
-}
-
-/// Filtru status
-export type AppointmentStatusFilter = 'all' | 'scheduled' | 'confirmed' | 'completed' | 'cancelled'
-
-/// DTO pentru vizualizarea scheduler
-export interface AppointmentSchedulerDto {
-  id: string
-  patientId: string
-  patientName: string
-  doctorId: string
-  doctorName: string
-  startTime: string
-  endTime: string
-  statusId: string
-  statusName: string
-  statusCode: string
-  notes: string | null
-}
-
-/// Patient lookup (pentru selectare pacient în formular)
-export interface PatientLookupDto {
-  id: string
-  fullName: string
-  cnp: string
-  phoneNumber: string | null
 }

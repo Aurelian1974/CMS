@@ -1,3 +1,8 @@
+import type { components } from '@/api/generated/schema'
+
+/// Lookup pacient (selectare în formulare) — fullName e mereu populat de SP
+export type PatientLookupDto = Required<components['schemas']['PatientLookupDto']> & { fullName: string }
+
 /// DTO listare pacient — include câmpuri compute din SP
 export interface PatientDto {
   id: string

@@ -85,8 +85,17 @@ const defaultDeleteReturn = {
   isPending: false,
 }
 
+const mockStatuses = [
+  { id: 's1', code: 'PROGRAMAT',    name: 'Programat',    sortOrder: 1, blocksSlot: true,  allowedNextCodes: 'CONFIRMAT,FINALIZAT,ANULAT,NEPREZENTARE' },
+  { id: 's2', code: 'CONFIRMAT',    name: 'Confirmat',    sortOrder: 2, blocksSlot: true,  allowedNextCodes: 'PROGRAMAT,FINALIZAT,ANULAT,NEPREZENTARE' },
+  { id: 's3', code: 'FINALIZAT',    name: 'Finalizat',    sortOrder: 3, blocksSlot: true,  allowedNextCodes: null },
+  { id: 's4', code: 'ANULAT',       name: 'Anulat',       sortOrder: 4, blocksSlot: false, allowedNextCodes: 'PROGRAMAT' },
+  { id: 's5', code: 'NEPREZENTARE', name: 'Neprezentare', sortOrder: 5, blocksSlot: false, allowedNextCodes: 'PROGRAMAT' },
+]
+
 vi.mock('@/features/appointments/hooks/useAppointments', () => ({
   useAppointments: vi.fn(() => defaultAppointmentsReturn),
+  useAppointmentStatuses: vi.fn(() => ({ data: { data: mockStatuses } })),
   useDeleteAppointment: vi.fn(() => defaultDeleteReturn),
   useCreateAppointment: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
   useUpdateAppointment: vi.fn(() => ({ mutate: vi.fn(), isPending: false })),
@@ -243,12 +252,12 @@ describe('AppointmentsListPage', () => {
       expect(doctorSelect).toBeDefined()
     })
 
-    it('afișează pills status', () => {
+    it('afișează pills status din nomenclator', () => {
       render(<AppointmentsListPage />)
       expect(screen.getByText('Toate')).toBeInTheDocument()
-      // "Programate" apare de 2 ori (pill + stat card label)
-      const programatePills = screen.getAllByText('Programate')
-      expect(programatePills.length).toBeGreaterThanOrEqual(1)
+      for (const s of mockStatuses) {
+        expect(screen.getByText(s.name)).toBeInTheDocument()
+      }
     })
 
     it('afișează câmpuri de dată (De la / Până la)', () => {

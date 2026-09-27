@@ -1845,6 +1845,98 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/Appointments/statuses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AppointmentStatusDtoIEnumerableApiResponse"];
+                        "application/json": components["schemas"]["AppointmentStatusDtoIEnumerableApiResponse"];
+                        "text/json": components["schemas"]["AppointmentStatusDtoIEnumerableApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/Appointments/{id}/status": {
         parameters: {
             query?: never;
@@ -18763,6 +18855,24 @@ export interface components {
             completedCount?: number;
             /** Format: int32 */
             cancelledCount?: number;
+        };
+        AppointmentStatusDto: {
+            /** Format: uuid */
+            id?: string;
+            name?: string | null;
+            code?: string | null;
+            /** Format: int32 */
+            sortOrder?: number;
+            blocksSlot?: boolean;
+            allowedNextCodes?: string | null;
+        };
+        AppointmentStatusDtoIEnumerableApiResponse: {
+            success?: boolean;
+            data?: components["schemas"]["AppointmentStatusDto"][] | null;
+            message?: string | null;
+            errors?: {
+                [key: string]: string[];
+            } | null;
         };
         AppointmentsPagedResponse: {
             pagedResult: components["schemas"]["AppointmentListDtoPagedResult"];
