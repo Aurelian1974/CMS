@@ -87,6 +87,8 @@ public static class DependencyInjection
         services.AddScoped<ISecurityEventRepository, SecurityEventRepository>();
         services.AddScoped<IICD10Repository, ICD10Repository>();
         services.AddScoped<IUserMenuPreferenceRepository, UserMenuPreferenceRepository>();
+        services.AddScoped<ITariffRepository, TariffRepository>();
+        services.AddScoped<IConsultationServiceRepository, ConsultationServiceRepository>();
 
         // ===== Servicii =====
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();

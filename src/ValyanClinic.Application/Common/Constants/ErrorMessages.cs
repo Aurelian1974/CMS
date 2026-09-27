@@ -61,8 +61,21 @@ public static class ErrorMessages
 
     public static class Invoice
     {
-        public const string AlreadyPaid = "Factura este deja achitată.";
-        public const string NotFound    = "Factura nu a fost găsită.";
+        public const string NotFound = "Factura nu a fost găsită.";
+    }
+
+    public static class Tariff
+    {
+        public const string ServiceNotFound = "Serviciul nu a fost găsit.";
+        public const string VatRateNotFound = "Regimul TVA nu a fost găsit.";
+    }
+
+    public static class Billing
+    {
+        public const string ConsultationServiceNotFound = "Linia de serviciu nu a fost găsită.";
+        public const string PaymentNotFound             = "Încasarea nu a fost găsită.";
+        public const string FiscalReceiptNotFound       = "Bonul fiscal nu a fost găsit.";
+        public const string InvoiceSeriesNotFound       = "Seria de facturi nu a fost găsită.";
     }
 
     public static class Auth

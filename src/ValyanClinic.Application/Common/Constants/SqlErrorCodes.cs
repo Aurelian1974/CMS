@@ -34,9 +34,48 @@ public static class SqlErrorCodes
     // ====== Buletine analize (AnalysesResults) ======
     public const int AnalysesResultNotFound = 50401;
 
-    // ====== Facturi ======
-    public const int InvoiceAlreadyPaid = 50030;
-    public const int InvoiceNotFound    = 50031;
+    // ====== Modul financiar (range 50600–50699) ======
+    // Facturare consultație
+    public const int BillingConsultationNotFinalized = 50600;
+    public const int BillingConsultationLocked       = 50601;
+    public const int BillingNoServices               = 50602;
+    public const int ConsultationServiceInvalidQty   = 50603;
+    public const int ConsultationServiceNotFound     = 50604;
+    // Tarife
+    public const int MedicalServiceCodeDuplicate = 50610;
+    public const int MedicalServiceNotFound      = 50611;
+    public const int MedicalServiceUnavailable   = 50612;
+    public const int MedicalServiceConcurrency   = 50613;
+    public const int MedicalServicePriceInvalid  = 50614;
+    public const int ServiceCategoryInvalid      = 50615;
+    public const int VatRateInvalid              = 50616;
+    public const int VatRateCodeDuplicate        = 50617;
+    public const int VatRateNotFound             = 50618;
+    // Facturi
+    public const int InvoiceNotFound              = 50620;
+    public const int InvoiceAlreadyExists         = 50621;
+    public const int InvoiceCorrectionNotAllowed  = 50622;
+    public const int InvoiceSupplierIncomplete    = 50623;
+    public const int InvoiceSeriesUnavailable     = 50624;
+    public const int InvoiceSeriesDuplicate       = 50625;
+    public const int InvoiceCannotStorno          = 50626;
+    public const int InvoiceCustomerInvalid       = 50627;
+    public const int InvoiceSeriesDefaultInactive = 50628;
+    public const int InvoiceSeriesNotFound        = 50629;
+    // Plăți
+    public const int PaymentNotFound          = 50630;
+    public const int PaymentExceedsBalance    = 50631;
+    public const int PaymentAlreadyPaid       = 50632;
+    public const int PaymentFiscalFullAmount  = 50633;
+    public const int PaymentCannotCancel      = 50634;
+    public const int PaymentMethodInvalid     = 50635;
+    // Bonuri fiscale
+    public const int FiscalReceiptNotFound          = 50640;
+    public const int FiscalReceiptInvalidTransition = 50641;
+    public const int FiscalMappingMissing           = 50642;
+    public const int FiscalReceiptNumberRequired    = 50643;
+    public const int FiscalReceiptUnresolved        = 50644;
+    public const int FiscalDisabled                 = 50645;
 
     // ====== Rețete ======
     public const int PrescriptionExpired           = 50040;
