@@ -102,6 +102,7 @@ vi.mock('@/features/appointments/components/AppointmentFormModal/AppointmentForm
 
 import { useAppointmentsForScheduler } from '@/features/appointments/hooks/useAppointments'
 import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
+import { useHasAccess } from '@/hooks/useHasAccess'
 
 // ── Test Suite ────────────────────────────────────────────────────────────────
 
@@ -110,6 +111,41 @@ describe('AppointmentsSchedulerPage', () => {
     vi.clearAllMocks()
     vi.mocked(useAppointmentsForScheduler).mockReturnValue(defaultSchedulerReturn as unknown as ReturnType<typeof useAppointmentsForScheduler>)
     vi.mocked(useDoctorLookup).mockReturnValue(defaultDoctorLookupReturn as unknown as ReturnType<typeof useDoctorLookup>)
+    vi.mocked(useHasAccess).mockReturnValue(fullAccess as unknown as ReturnType<typeof useHasAccess>)
+  })
+
+  // ── Permisiuni și accesibilitate ──────────────────────────────────────────────
+
+  describe('permisiuni', () => {
+    const readOnly = { canRead: () => true, canWrite: () => false, hasFull: () => false }
+
+    it('should hide Programare nouă and disable dragging without write access', () => {
+      vi.mocked(useHasAccess).mockReturnValue(readOnly as unknown as ReturnType<typeof useHasAccess>)
+      render(<AppointmentsSchedulerPage />)
+
+      expect(screen.queryByText('Programare nouă')).not.toBeInTheDocument()
+      const bar = screen.getByRole('button', { name: /Ion Popescu/ })
+      expect(bar).toHaveAttribute('draggable', 'false')
+    })
+
+    it('should make event bars draggable with write access', () => {
+      render(<AppointmentsSchedulerPage />)
+      expect(screen.getByRole('button', { name: /Ion Popescu/ })).toHaveAttribute('draggable', 'true')
+    })
+  })
+
+  describe('accesibilitate', () => {
+    it('should expose event bars as focusable buttons with a descriptive label', () => {
+      render(<AppointmentsSchedulerPage />)
+      const bar = screen.getByRole('button', { name: /Maria Vasilescu.*Confirmat/ })
+      expect(bar).toHaveAttribute('tabindex', '0')
+    })
+
+    it('should label the date navigation buttons', () => {
+      render(<AppointmentsSchedulerPage />)
+      expect(screen.getByRole('button', { name: 'Ziua anterioară' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Ziua următoare' })).toBeInTheDocument()
+    })
   })
 
   // ── Header ────────────────────────────────────────────────────────────────

@@ -80,6 +80,22 @@ public sealed class UpdateAppointmentStatusCommandHandlerTests
 
     // ── Generic SQL error ─────────────────────────────────────────────────────
 
+    [Theory]
+    [InlineData(SqlErrorCodes.AppointmentConflict, 409)]
+    [InlineData(SqlErrorCodes.AppointmentInvalidTransition, 400)]
+    [InlineData(SqlErrorCodes.AppointmentInvalidStatus, 400)]
+    public async Task Handle_BusinessSqlError_MapsToExpectedStatus(int sqlNumber, int expectedStatus)
+    {
+        _repo.UpdateStatusAsync(
+                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(),
+                Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+             .Throws(SqlExceptionHelper.Make(sqlNumber));
+
+        var result = await CreateHandler().Handle(ValidCommand(), default);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(expectedStatus, result.StatusCode);
+    }
     [Fact]
     public async Task Handle_GenericSqlError_ReturnsFailure()
     {

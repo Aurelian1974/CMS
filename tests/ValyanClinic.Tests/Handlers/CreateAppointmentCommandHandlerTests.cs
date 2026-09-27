@@ -77,6 +77,16 @@ public sealed class CreateAppointmentCommandHandlerTests
     // ── Erori business ────────────────────────────────────────────────────────
 
     [Fact]
+    public async Task Handle_OverrideSchedule_DisablesScheduleEnforcement()
+    {
+        await CreateHandler().Handle(ValidCommand() with { OverrideSchedule = true }, default);
+
+        await _repo.Received(1).CreateAsync(
+            Arg.Is<AppointmentWriteData>(d => !d.EnforceSchedule),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Handle_AppointmentConflict_ReturnsConflict()
     {
         RepoThrows(SqlErrorCodes.AppointmentConflict);
