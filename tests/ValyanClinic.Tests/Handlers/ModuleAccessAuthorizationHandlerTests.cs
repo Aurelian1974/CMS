@@ -27,7 +27,7 @@ public sealed class ModuleAccessAuthorizationHandlerTests
     private readonly IMemoryCache _cache = new MemoryCache(Options.Create(new MemoryCacheOptions()));
 
     private ModuleAccessAuthorizationHandler CreateHandler()
-        => new(_repo, _cache);
+        => new(new CachedEffectivePermissions(_repo, _cache));
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 

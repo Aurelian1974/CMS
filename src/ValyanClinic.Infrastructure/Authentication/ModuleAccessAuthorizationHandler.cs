@@ -1,20 +1,15 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Caching.Memory;
-using ValyanClinic.Application.Common.Constants;
-using ValyanClinic.Application.Common.Enums;
 using ValyanClinic.Application.Common.Interfaces;
 
 namespace ValyanClinic.Infrastructure.Authentication;
 
 /// <summary>
 /// ASP.NET Core authorization handler care verifică permisiunile efective ale utilizatorului.
-/// Permisiunile sunt cachuite per utilizator și versiune globală pentru performanță.
-/// Cache-ul este pre-populat la login, evitând un DB call la primul request post-autentificare.
+/// Permisiunile vin din <see cref="IEffectivePermissions"/> — cache per utilizator și versiune
+/// globală, pre-populat la login/refresh, partajat cu handler-ele de feature (ex. dashboard).
 /// </summary>
-public sealed class ModuleAccessAuthorizationHandler(
-    IPermissionRepository permissionRepository,
-    IMemoryCache cache)
+public sealed class ModuleAccessAuthorizationHandler(IEffectivePermissions effectivePermissions)
     : AuthorizationHandler<ModuleAccessRequirement>
 {
     protected override async Task HandleRequirementAsync(
@@ -28,26 +23,10 @@ public sealed class ModuleAccessAuthorizationHandler(
             || !Guid.TryParse(context.User.FindFirst("roleId")?.Value, out var roleId))
             return;
 
-        // Caută permisiunile în cache sau le încarcă din DB.
-        // Cache-ul e pre-populat de LoginCommandHandler/RefreshTokenCommandHandler
-        // și invalidat prin incrementarea versiunii globale la orice modificare de permisiuni.
-        var currentVersion = cache.Get<long>(PermissionCacheKeys.Version);
-        var cacheKey = PermissionCacheKeys.ForUser(userId, currentVersion);
-
-        if (!cache.TryGetValue(cacheKey, out Dictionary<string, int>? permissions))
-        {
-            var effectivePermissions = await permissionRepository.GetEffectiveByUserAsync(
-                userId, roleId, CancellationToken.None);
-
-            permissions = effectivePermissions.ToDictionary(
-                p => p.ModuleCode,
-                p => p.AccessLevel);
-
-            cache.Set(cacheKey, permissions, PermissionCacheKeys.Ttl);
-        }
+        var permissions = await effectivePermissions.GetLevelsAsync(userId, roleId, CancellationToken.None);
 
         // Verificare: nivelul efectiv >= nivelul minim cerut
-        if (permissions!.TryGetValue(requirement.Module, out var userLevel)
+        if (permissions.TryGetValue(requirement.Module, out var userLevel)
             && userLevel >= (int)requirement.MinimumLevel)
         {
             context.Succeed(requirement);

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -51,6 +52,9 @@ public static class DependencyInjection
         services.Configure<RateLimitingOptions>(configuration.GetSection(RateLimitingOptions.SectionName));
         services.Configure<CnasOptions>(configuration.GetSection(CnasOptions.SectionName));
         services.Configure<AnmOptions>(configuration.GetSection(AnmOptions.SectionName));
+        services.Configure<DashboardOptions>(configuration.GetSection(DashboardOptions.SectionName));
+
+        services.TryAddSingleton(TimeProvider.System);
 
         // ===== Baza de date =====
         services.AddSingleton<DapperContext>();
@@ -94,6 +98,7 @@ public static class DependencyInjection
         services.AddScoped<IFiscalReceiptRepository, FiscalReceiptRepository>();
         services.AddScoped<IInvoiceRepository, InvoiceRepository>();
         services.AddScoped<IFinancialSettingsRepository, FinancialSettingsRepository>();
+        services.AddScoped<IDashboardRepository, DashboardRepository>();
 
         // ===== Servicii =====
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
@@ -181,6 +186,7 @@ public static class DependencyInjection
 
         // ===== Autorizare dinamică — RBAC cu [HasAccess] =====
         services.AddMemoryCache();
+        services.AddScoped<IEffectivePermissions, CachedEffectivePermissions>();
         services.AddScoped<IAuthorizationHandler, ModuleAccessAuthorizationHandler>();
         services.AddSingleton<IAuthorizationPolicyProvider, ModuleAccessPolicyProvider>();
 

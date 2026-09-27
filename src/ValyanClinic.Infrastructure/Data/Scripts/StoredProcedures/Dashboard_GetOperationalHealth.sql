@@ -8,6 +8,7 @@ GO
 -- restul schemei în ora locală.
 -- Result sets: 1) evenimente de securitate eșuate  2) conturi blocate
 --              3) avize CMR  4) asigurări pacienți  5) prospețime nomenclatoare
+--              6) activitate recentă (AuditLogs)
 -- ============================================================================
 CREATE OR ALTER PROCEDURE dbo.Dashboard_GetOperationalHealth
     @ClinicId   UNIQUEIDENTIFIER,
@@ -104,5 +105,18 @@ BEGIN
         LastSuccessAt = (SELECT MAX(l.FinishedAt) FROM dbo.NomenclatorSyncLog l WHERE l.Status = N'Success'),
         LastStatus    = (SELECT TOP (1) l.Status FROM dbo.NomenclatorSyncLog l ORDER BY l.StartedAt DESC),
         LastRunAt     = (SELECT MAX(l.StartedAt) FROM dbo.NomenclatorSyncLog l);
+
+    -- ── 6. Activitate recentă — fără OldValues/NewValues (pot conține date clinice) ──
+    SELECT TOP (@Top)
+        al.Id,
+        al.EntityType,
+        al.EntityId,
+        al.Action,
+        al.ChangedAt,
+        ChangedByName = CASE WHEN u.Id IS NULL THEN NULL ELSE CONCAT(u.LastName, N' ', u.FirstName) END
+    FROM dbo.AuditLogs al
+    LEFT JOIN dbo.Users u ON u.Id = al.ChangedBy
+    WHERE al.ClinicId = @ClinicId
+    ORDER BY al.ChangedAt DESC;
 END;
 GO

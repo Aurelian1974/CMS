@@ -8,11 +8,13 @@ GO
 -- peste zilele de zero minte despre formă. @Days e plafonat și aici, nu doar în
 -- validator, ca să protejeze baza de orice apelant.
 -- Result sets: 1) încasări/zi  2) programări/zi  3) rată neprezentare  4) încărcare medici
+--              5) top servicii în luna curentă
 -- ============================================================================
 CREATE OR ALTER PROCEDURE dbo.Dashboard_GetTrends
     @ClinicId UNIQUEIDENTIFIER,
     @Today    DATE,
-    @Days     INT = 30
+    @Days     INT = 30,
+    @Top      INT = 10
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -105,6 +107,25 @@ BEGIN
       AND d.IsActive = 1
     GROUP BY d.Id, d.LastName, d.FirstName, sp.Name
     ORDER BY ScheduledMinutes DESC, DoctorName;
+
+    -- ── 5. Top servicii — liniile consultațiilor finalizate/facturate din lună ──
+    DECLARE @MonthStart DATE = DATEFROMPARTS(YEAR(@Today), MONTH(@Today), 1);
+    DECLARE @NextMonth  DATE = DATEADD(MONTH, 1, @MonthStart);
+
+    SELECT TOP (@Top)
+        ServiceName = cs.ServiceName,
+        Quantity    = SUM(cs.Quantity),
+        TotalValue  = SUM(cs.LineTotal)
+    FROM dbo.ConsultationServices cs
+    INNER JOIN dbo.Consultations c          ON c.Id = cs.ConsultationId
+    INNER JOIN dbo.ConsultationStatuses cst ON cst.Id = c.StatusId
+    WHERE cs.ClinicId = @ClinicId
+      AND cs.IsDeleted = 0
+      AND c.IsDeleted = 0
+      AND cst.Code IN (N'FINALIZATA', N'FACTURATA')
+      AND c.Date >= @MonthStart AND c.Date < @NextMonth
+    GROUP BY cs.ServiceName
+    ORDER BY TotalValue DESC, ServiceName;
 
     DROP TABLE #Days;
 END;

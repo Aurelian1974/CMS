@@ -5,6 +5,7 @@ using Microsoft.Data.SqlClient;
 using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Interfaces;
 using ValyanClinic.Application.Features.Payments.DTOs;
+using ValyanClinic.Application.Features.Dashboard.Widgets;
 using ValyanClinic.IntegrationTests.Fixtures;
 
 namespace ValyanClinic.IntegrationTests.Repositories;
@@ -289,5 +290,51 @@ public sealed class DashboardProceduresTests(IntegrationTestFixture fixture) : I
         var freshness = (await multi.ReadAsync()).Select(r => (string)r.Source).ToList();
 
         Assert.Equal(["ANM", "CNAS"], freshness);
+    }
+
+    // ── Repository: maparea Dapper pe toate bundle-urile ─────────────────────
+
+    [Fact]
+    public async Task Repository_AllBundles_MapEverySection()
+    {
+        using var scope = NewScope();
+        var patientId = await NewPatientAsync();
+        var doctorId = await FirstDoctorAsync();
+        var appointmentId = await NewAppointmentAsync(patientId, doctorId, 9, notes: "Control");
+        await NewConsultationAsync(patientId, doctorId, ConsultationStatusIds.InProgress, appointmentId);
+
+        var data = await Fixture.GetRepository<IDashboardRepository>().GetAsync(
+            new DashboardQueryData(
+                ClinicId, UserId, DateOnly.FromDateTime(TestDay), DateTime.UtcNow.AddDays(-1),
+                Enum.GetValues<DashboardBundle>().ToHashSet(),
+                OnlyMine: false, IncludeClinical: true, TrendDays: 30),
+            Ct);
+
+        Assert.True(data.ClinicalKpis!.AppointmentsToday >= 1);
+        Assert.Contains(data.Agenda!.Appointments!, a => a.Id == appointmentId && a.Notes == "Control");
+        Assert.NotNull(data.Financial!.Kpis);
+        Assert.Equal(30, data.Trends!.Revenue!.Count);
+        Assert.Equal(DateOnly.FromDateTime(TestDay), data.Trends.Revenue[^1].Date);
+        Assert.NotNull(data.Trends.NoShow);
+        Assert.NotNull(data.Trends.TopServices);
+        Assert.Equal(2, data.Health!.SyncFreshness!.Count);
+        Assert.NotNull(data.Health.Activity);
+    }
+
+    [Fact]
+    public async Task Repository_OnlyRequestedBundles_AreExecuted()
+    {
+        var data = await Fixture.GetRepository<IDashboardRepository>().GetAsync(
+            new DashboardQueryData(
+                ClinicId, UserId, DateOnly.FromDateTime(TestDay), DateTime.UtcNow.AddDays(-1),
+                new HashSet<DashboardBundle> { DashboardBundle.Clinical },
+                OnlyMine: false, IncludeClinical: false, TrendDays: 30),
+            Ct);
+
+        Assert.NotNull(data.ClinicalKpis);
+        Assert.Null(data.Agenda);
+        Assert.Null(data.Financial);
+        Assert.Null(data.Trends);
+        Assert.Null(data.Health);
     }
 }
