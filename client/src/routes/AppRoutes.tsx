@@ -15,6 +15,8 @@ const AppointmentDetailPage  = lazy(() => import('../features/appointments/pages
 const ConsultationsPage  = lazy(() => import('../features/consultations/pages/ConsultationsListPage'))
 const PrescriptionsPage  = lazy(() => import('../features/prescriptions/pages/PrescriptionsListPage'))
 const InvoicesPage       = lazy(() => import('../features/invoices/pages/InvoicesListPage'))
+const BillingPage        = lazy(() => import('../features/billing/pages/BillingListPage'))
+const FinancialSettingsPage = lazy(() => import('../features/settings/pages/FinancialSettingsPage'))
 const TariffsPage        = lazy(() => import('../features/tariffs/pages/TariffsListPage'))
 const DoctorsPage        = lazy(() => import('../features/doctors/pages/DoctorsListPage'))
 const DoctorDetailPage   = lazy(() => import('../features/doctors/pages/DoctorDetailPage'))
@@ -68,6 +70,7 @@ export const AppRoutes = () => (
           <Route path="/appointments/:id"       element={<AppointmentDetailPage />} />
           <Route path="/consultations"   element={<ConsultationsPage />} />
           <Route path="/prescriptions"   element={<PrescriptionsPage />} />
+          <Route path="/billing"         element={<BillingPage />} />
           <Route path="/invoices"        element={<InvoicesPage />} />
           <Route path="/tariffs"         element={<TariffsPage />} />
           <Route path="/doctors"         element={<DoctorsPage />} />
@@ -82,6 +85,7 @@ export const AppRoutes = () => (
           <Route path="/permissions/roles" element={<RolePermissionsPage />} />
           <Route path="/permissions/users" element={<UserOverridesPage />} />
           <Route path="/settings/security"  element={<SecuritySettingsPage />} />
+          <Route path="/settings/financial" element={<FinancialSettingsPage />} />
           <Route path="/audit/security"     element={<SecurityEventsPage />} />
           <Route path="/schedule"          element={<SchedulePage />} />
           <Route path="/medicamente"             element={<MedicamentePage />} />

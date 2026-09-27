@@ -1,0 +1,151 @@
+@import '@/styles/variables';
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.typeSwitch {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 3px;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius;
+  background: $gray-50;
+}
+
+%typeBtn {
+  padding: 0.35rem 0.9rem;
+  border: none;
+  border-radius: $border-radius-sm;
+  font-size: 0.84rem;
+  cursor: pointer;
+}
+
+.typeOption {
+  @extend %typeBtn;
+  background: transparent;
+  color: $gray-500;
+
+  &:hover { color: $gray-700; }
+}
+
+.typeActive {
+  @extend %typeBtn;
+  background: $card-bg;
+  color: $primary-darker;
+  font-weight: 600;
+  box-shadow: $box-shadow-sm;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem 0.9rem;
+  align-items: end;
+}
+
+.span2 { grid-column: span 2; }
+.span3 { grid-column: span 3; }
+
+.checkbox {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.85rem;
+  color: $gray-700;
+  cursor: pointer;
+}
+
+.sectionTitle {
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid $gray-200;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: $gray-700;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+
+  th {
+    text-align: left;
+    font-weight: 600;
+    color: $gray-600;
+    padding: 0.45rem 0.6rem;
+    border-bottom: 1px solid $gray-200;
+    background: $gray-100;
+  }
+
+  td {
+    padding: 0.45rem 0.6rem;
+    border-bottom: 1px solid $gray-100;
+    color: $gray-700;
+  }
+}
+
+.right { text-align: right !important; }
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.lineRow {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-end;
+}
+
+.lineName  { flex: 1; min-width: 0; }
+.lineQty   { width: 90px; }
+.linePrice { width: 120px; }
+.lineVat   { width: 190px; }
+
+.lineTotal {
+  width: 100px;
+  padding-bottom: 0.55rem;
+  text-align: right;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: $gray-700;
+}
+
+.removeBtn {
+  width: 30px;
+  height: 30px;
+  margin-bottom: 4px;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-sm;
+  background: $card-bg;
+  color: $gray-500;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { background: rgba($danger, 0.1); color: darken($danger, 20%); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}
+
+.addLink {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: $primary-dark;
+  font-size: 0.82rem;
+  cursor: pointer;
+
+  &:hover { text-decoration: underline; }
+}
+
+.error { font-size: 0.8rem; color: darken($danger, 20%); }
+.muted { font-size: 0.78rem; font-weight: 400; color: $gray-400; }
+
+.hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: $gray-500;
+}

@@ -1,0 +1,122 @@
+@import '@/styles/variables';
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: $gray-700;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.meta  { font-size: 0.8rem; color: $gray-500; }
+.muted { font-size: 0.8rem; color: $gray-400; }
+.small { font-size: 0.78rem; color: $gray-500; }
+.strong { font-weight: 600; }
+
+.label {
+  margin-bottom: 0.2rem;
+  font-size: 0.72rem;
+  color: $gray-400;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.link {
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid $warning;
+  border-radius: $border-radius-sm;
+  background: rgba($warning, 0.12);
+
+  button {
+    padding: 0;
+    border: none;
+    background: none;
+    color: $primary-dark;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover { text-decoration: underline; }
+  }
+}
+
+.parties {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+
+  > div {
+    padding: 0.75rem 1rem;
+    border: 1px solid $gray-200;
+    border-radius: $border-radius;
+    background: $gray-50;
+  }
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    text-align: left;
+    font-weight: 600;
+    color: $gray-600;
+    padding: 0.45rem 0.6rem;
+    border-bottom: 1px solid $gray-200;
+    background: $gray-100;
+  }
+
+  td {
+    padding: 0.45rem 0.6rem;
+    border-bottom: 1px solid $gray-100;
+  }
+}
+
+.right { text-align: right !important; white-space: nowrap; }
+
+.totals {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.vatSummary {
+  font-size: 0.78rem;
+  color: $gray-500;
+}
+
+.totalBox {
+  min-width: 260px;
+
+  > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.2rem 0;
+  }
+}
+
+.grand {
+  margin-top: 0.3rem;
+  padding-top: 0.4rem !important;
+  border-top: 2px solid $gray-200;
+  font-size: 1rem;
+  font-weight: 700;
+  color: $primary-darker;
+}
+
+.notes {
+  padding: 0.6rem 0.8rem;
+  border-radius: $border-radius-sm;
+  background: $gray-50;
+  font-size: 0.8rem;
+  color: $gray-600;
+  white-space: pre-line;
+}

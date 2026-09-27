@@ -1,0 +1,13 @@
+@import '@/styles/variables';
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.description {
+  font-size: 0.875rem;
+  color: $gray-600;
+  line-height: 1.5;
+}

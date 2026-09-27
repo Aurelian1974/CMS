@@ -34,6 +34,8 @@ import {
   X,
   Star,
   Tag,
+  Wallet,
+  Settings2,
 } from 'lucide-react';
 import { useUiStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
@@ -109,8 +111,10 @@ const NAV_SECTIONS: NavSection[] = [
   {
     section: 'Financiar',
     items: [
-      { to: '/invoices', label: 'Facturi', icon: <Receipt size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
-      { to: '/tariffs',  label: 'Tarife',  icon: <Tag     size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/billing',            label: 'Încasări',          icon: <Wallet   size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/invoices',           label: 'Facturi',           icon: <Receipt  size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/tariffs',            label: 'Tarife',            icon: <Tag      size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/settings/financial', label: 'Setări financiare', icon: <Settings2 size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
     ],
   },
   {

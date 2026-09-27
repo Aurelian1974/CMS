@@ -33,8 +33,10 @@ import {
   Heart, HeartPulse, Wind, Thermometer, Activity, Droplets, Droplet, CircleDot,
   Ribbon, Hospital, ClipboardCheck, BedDouble, Home, Accessibility,
   NotebookPen, Users, AlertTriangle, ShieldAlert,
-  Lock, User, Cake, Phone, Mail, Calendar, MapPin,
+  Lock, User, Cake, Phone, Mail, Calendar, MapPin, Receipt,
 } from 'lucide-react'
+import { ConsultationServicesTab } from '../services/ConsultationServicesTab'
+import { MODULE, useHasAccess } from '@/hooks/useHasAccess'
 import { ScrisoareMedicalaModal } from '../components/ScrisoareMedicalaModal/ScrisoareMedicalaModal'
 import styles from './ConsultationsListPage.module.scss'
 
@@ -64,6 +66,7 @@ const getConsultationStatusVariant = (code: string | null): BadgeVariant => {
   switch (code.toUpperCase()) {
     case 'INLUCRU':    return 'warning'
     case 'FINALIZATA': return 'success'
+    case 'FACTURATA':  return 'info'
     case 'BLOCATA':    return 'danger'
     default:           return 'neutral'
   }
@@ -86,7 +89,7 @@ const CONSULTATION_STATUS_IDS: Record<Exclude<ConsultationStatusFilter, 'all'>, 
   locked:    'c2000000-0000-0000-0000-000000000003',
 }
 
-type Tab = 'anamneza' | 'examen' | 'investigatii' | 'analize' | 'diagnostic' | 'concluzii'
+type Tab = 'anamneza' | 'examen' | 'investigatii' | 'analize' | 'diagnostic' | 'concluzii' | 'servicii'
 
 const TAB_ICONS: Record<Tab, React.ReactNode> = {
   anamneza:     <MessageSquareText size={16} />,
@@ -95,6 +98,7 @@ const TAB_ICONS: Record<Tab, React.ReactNode> = {
   analize:      <FlaskConical size={16} />,
   diagnostic:   <ClipboardList size={16} />,
   concluzii:    <CheckCircle2 size={16} />,
+  servicii:     <Receipt size={16} />,
 }
 
 const TABS: { key: Tab; label: string; num: number }[] = [
@@ -104,6 +108,7 @@ const TABS: { key: Tab; label: string; num: number }[] = [
   { key: 'analize',      label: 'Analize Medicale',      num: 4 },
   { key: 'diagnostic',   label: 'Diagnostic & Tratament', num: 5 },
   { key: 'concluzii',    label: 'Concluzii',             num: 6 },
+  { key: 'servicii',     label: 'Servicii',              num: 7 },
 ]
 
 function formatTime(dateStr: string): string {
@@ -265,9 +270,13 @@ export const ConsultationsListPage = () => {
     },
   })
 
-  const isLocked   = detail?.statusCode?.toUpperCase() === 'BLOCATA'
-  const isFinalized = detail?.statusCode?.toUpperCase() === 'FINALIZATA'
-  const isEditable = isCreating || (!isLocked && !isFinalized)
+  const statusCode  = detail?.statusCode?.toUpperCase()
+  const isLocked    = statusCode === 'BLOCATA'
+  const isBilled    = statusCode === 'FACTURATA'
+  const isFinalized = statusCode === 'FINALIZATA'
+  // Serverul acceptă modificări clinice doar pe INLUCRU (Consultation_Update / Upsert* → 50021)
+  const isEditable = isCreating || !detail || statusCode === 'INLUCRU'
+  const { canWrite } = useHasAccess()
 
   // Refetch-urile după salvările la schimbarea tab-ului nu trebuie să suprascrie ce tastează
   // utilizatorul între timp: formularul se inițializează din server o singură dată per consultație.
@@ -540,7 +549,8 @@ export const ConsultationsListPage = () => {
     }
 
     // Pentru consultație existentă, salvăm doar dacă e editabilă și avem ID
-    if (selectedId && !isLocked && !isFinalized
+    // Tab-ul „Servicii" își salvează singur fiecare linie — nu are nimic de salvat la plecare
+    if (selectedId && isEditable && previousTab !== 'servicii'
         && !createConsultation.isPending && !updateConsultation.isPending) {
       const v = form.getValues()
       try {
@@ -870,6 +880,9 @@ export const ConsultationsListPage = () => {
             {/* Locked banner */}
             {isLocked && (
               <div className={styles.lockedBanner}><Lock size={14} /> Consultație blocată — doar citire</div>
+            )}
+            {isBilled && (
+              <div className={styles.lockedBanner}><Lock size={14} /> Consultație facturată — doar citire. Corecțiile se fac prin stornarea documentului fiscal.</div>
             )}
 
             {/* Page header — matching Razor template */}
@@ -1500,6 +1513,28 @@ export const ConsultationsListPage = () => {
                     </div>
                   )}
 
+                  {/* ── Servicii efectuate (baza bonului / facturii) ── */}
+                  {activeTab === 'servicii' && (
+                    <div className={styles.formSection}>
+                      <h3 className={styles.sectionTitle}>
+                        <span className={styles.sectionIcon}><Receipt size={18} /></span>
+                        Servicii efectuate
+                      </h3>
+                      {selectedId && detail && !isCreating ? (
+                        <ConsultationServicesTab
+                          consultationId={selectedId}
+                          statusCode={detail.statusCode ?? null}
+                          canWrite={canWrite(MODULE.Consultations)}
+                          onError={setServerError}
+                        />
+                      ) : (
+                        <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                          Salvează consultația ca draft pentru a putea adăuga servicii.
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                 </div>
 
                 {/* Footer — matching Razor consultation-footer */}
@@ -1566,7 +1601,7 @@ export const ConsultationsListPage = () => {
                     </>
                   )}
 
-                  {!isCreating && isFinalized && (
+                  {!isCreating && (isFinalized || isBilled) && (
                     <>
                       <div className={styles.footerInfo} />
                       <div className={styles.footerActions}>

@@ -35,3 +35,9 @@ export interface NomenclatureItem {
   code: string
   isActive: boolean
 }
+
+/// DTO generat din OpenAPI cu toate câmpurile prezente (generatorul le marchează opționale
+/// și nullable). Doar cheile din `Nullable` rămân `| null` — cele nullable și în C#.
+export type ApiDto<T, Nullable extends keyof T = never> = {
+  [P in keyof T]-?: P extends Nullable ? Exclude<T[P], undefined> : NonNullable<T[P]>
+}

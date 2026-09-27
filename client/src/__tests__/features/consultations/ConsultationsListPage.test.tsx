@@ -144,8 +144,9 @@ vi.mock('@/features/appointments/hooks/useAppointments', () => ({
 }))
 
 vi.mock('@/store/authStore', () => ({
-  useAuthStore: vi.fn((selector: (s: { user: { id: string; role: string; doctorId: string | null } }) => unknown) =>
-    selector({ user: { id: 'u1', role: 'admin', doctorId: null } })
+  // `permissions` e citit de useHasAccess (tab-ul Servicii)
+  useAuthStore: vi.fn((selector: (s: { user: { id: string; role: string; doctorId: string | null }; permissions: unknown[] }) => unknown) =>
+    selector({ user: { id: 'u1', role: 'admin', doctorId: null }, permissions: [] })
   ),
 }))
 

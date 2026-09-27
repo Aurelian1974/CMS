@@ -1,0 +1,104 @@
+@import '@/styles/variables';
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+
+  th {
+    text-align: left;
+    font-weight: 600;
+    color: $gray-600;
+    padding: 0.5rem 0.6rem;
+    border-bottom: 1px solid $gray-200;
+    background: $gray-100;
+  }
+
+  td {
+    padding: 0.5rem 0.6rem;
+    border-bottom: 1px solid $gray-100;
+    color: $gray-700;
+    vertical-align: middle;
+  }
+
+  tfoot td {
+    border-bottom: none;
+    border-top: 2px solid $gray-200;
+    font-weight: 600;
+  }
+}
+
+.right     { text-align: right !important; }
+.strong    { font-weight: 600; }
+.total     { font-size: 1rem; font-weight: 700; color: $primary-darker; }
+.code      { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; color: $gray-600; }
+.muted     { color: $gray-400; font-size: 0.75rem; }
+.empty     { text-align: center; color: $gray-400; padding: 1.25rem !important; }
+.qtyCol    { width: 110px; text-align: right !important; }
+.actionCol { width: 44px; text-align: center; }
+
+.qtyInput {
+  width: 90px;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid $gray-300;
+  border-radius: $border-radius-sm;
+  font-size: 0.85rem;
+  text-align: right;
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 2px rgba($primary, 0.2);
+  }
+}
+
+.deleteBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: $border-radius-sm;
+  background: transparent;
+  color: $gray-400;
+  cursor: pointer;
+
+  &:hover:not(:disabled) { background: rgba($danger, 0.12); color: darken($danger, 20%); }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+.addRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.select {
+  flex: 1;
+  min-width: 0;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid $gray-300;
+  border-radius: $border-radius-sm;
+  background: $card-bg;
+  font-size: 0.85rem;
+  color: $gray-700;
+
+  &:focus {
+    outline: none;
+    border-color: $primary;
+    box-shadow: 0 0 0 2px rgba($primary, 0.2);
+  }
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: $gray-500;
+}

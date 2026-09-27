@@ -1,0 +1,94 @@
+@import '@/styles/variables';
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: $gray-50;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+}
+
+.label {
+  font-size: 0.72rem;
+  color: $gray-400;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.value       { font-size: 0.95rem; color: $gray-700; }
+.valueStrong { font-size: 1.1rem; font-weight: 700; color: $primary-darker; }
+
+.tenders {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tenderRow {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.method { flex: 1; min-width: 0; }
+.amount { width: 170px; }
+
+.removeBtn {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 4px;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius-sm;
+  background: $card-bg;
+  color: $gray-500;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover { background: rgba($danger, 0.1); color: darken($danger, 20%); }
+}
+
+.addLink {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: $primary-dark;
+  font-size: 0.82rem;
+  cursor: pointer;
+
+  &:hover { text-decoration: underline; }
+}
+
+.error {
+  font-size: 0.8rem;
+  color: darken($danger, 20%);
+}
+
+.info {
+  padding: 0.6rem 0.8rem;
+  border-left: 3px solid $info;
+  border-radius: $border-radius-sm;
+  background: rgba($info, 0.1);
+  font-size: 0.82rem;
+  color: $gray-700;
+}
+
+.infoMuted {
+  font-size: 0.8rem;
+  color: $gray-500;
+}

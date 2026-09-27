@@ -30,8 +30,11 @@ export const ROUTE_MODULES = {
   '/prescriptions':   ['prescriptions'],
 
   // Financiar
-  '/invoices':        ['invoices'],
-  '/tariffs':         ['tariffs'],
+  '/billing':            ['payments'],
+  '/invoices':           ['invoices'],
+  '/tariffs':            ['tariffs'],
+  // Seriile de facturi cer invoices, adresa bridge-ului / mapările cer payments
+  '/settings/financial': ['invoices', 'payments'],
 
   // Administrare
   '/doctors':           ['users'],
