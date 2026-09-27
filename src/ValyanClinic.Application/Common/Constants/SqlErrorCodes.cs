@@ -11,8 +11,16 @@ public static class SqlErrorCodes
     public const int PatientNotFound     = 50002;
 
     // ====== Programări ======
-    public const int AppointmentConflict  = 50010;
-    public const int AppointmentNotFound  = 50011;
+    public const int AppointmentConflict           = 50010;
+    public const int AppointmentNotFound           = 50011;
+    public const int AppointmentPatientNotInClinic = 50012;
+    public const int AppointmentDoctorNotInClinic  = 50013;
+    public const int AppointmentInvalidStatus      = 50014;
+    public const int AppointmentHasConsultation    = 50015;
+    public const int AppointmentOutsideSchedule    = 50016;
+    public const int AppointmentInvalidTransition  = 50017;
+    public const int AppointmentInvalidTimeRange   = 50018;
+    public const int AppointmentConcurrency        = 50019;
 
     // ====== Consultații ======
     public const int ConsultationNotFound = 50020;

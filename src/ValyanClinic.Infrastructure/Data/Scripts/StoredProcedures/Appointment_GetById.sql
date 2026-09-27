@@ -28,7 +28,8 @@ BEGIN
         a.Notes, a.IsDeleted, a.CreatedAt,
         CONCAT(cu.LastName, ' ', cu.FirstName) AS CreatedByName,
         a.UpdatedAt, a.UpdatedBy,
-        CONCAT(uu.LastName, ' ', uu.FirstName) AS UpdatedByName
+        CONCAT(uu.LastName, ' ', uu.FirstName) AS UpdatedByName,
+        a.RowVersion
     FROM dbo.Appointments a
     INNER JOIN dbo.Patients p ON p.Id = a.PatientId
     INNER JOIN dbo.Doctors d  ON d.Id = a.DoctorId

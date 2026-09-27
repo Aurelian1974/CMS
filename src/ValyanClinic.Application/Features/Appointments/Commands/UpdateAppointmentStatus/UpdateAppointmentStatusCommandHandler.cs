@@ -29,6 +29,10 @@ public sealed class UpdateAppointmentStatusCommandHandler(
         {
             return Result<bool>.NotFound(ErrorMessages.Appointment.NotFound);
         }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.AppointmentConflict)
+        {
+            return Result<bool>.Conflict(ex.Message);
+        }
         catch (SqlException ex) when (ex.Number >= 50000 && ex.Number < 60000)
         {
             return Result<bool>.Failure(ex.Message);

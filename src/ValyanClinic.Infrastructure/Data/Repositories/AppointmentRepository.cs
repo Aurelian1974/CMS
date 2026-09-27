@@ -78,11 +78,7 @@ public sealed class AppointmentRepository(DapperContext context) : IAppointmentR
                 cancellationToken: ct));
     }
 
-    public async Task<Guid> CreateAsync(
-        Guid clinicId, Guid patientId, Guid doctorId,
-        DateTime startTime, DateTime endTime,
-        Guid? statusId, string? notes,
-        Guid createdBy, CancellationToken ct)
+    public async Task<Guid> CreateAsync(AppointmentWriteData data, CancellationToken ct)
     {
         using var connection = context.CreateConnection();
         return await connection.ExecuteScalarAsync<Guid>(
@@ -90,24 +86,21 @@ public sealed class AppointmentRepository(DapperContext context) : IAppointmentR
                 AppointmentProcedures.Create,
                 new
                 {
-                    ClinicId = clinicId,
-                    PatientId = patientId,
-                    DoctorId = doctorId,
-                    StartTime = startTime,
-                    EndTime = endTime,
-                    StatusId = statusId,
-                    Notes = notes,
-                    CreatedBy = createdBy
+                    data.ClinicId,
+                    data.PatientId,
+                    data.DoctorId,
+                    data.StartTime,
+                    data.EndTime,
+                    data.StatusId,
+                    data.Notes,
+                    data.EnforceSchedule,
+                    CreatedBy = data.ActorId
                 },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct));
     }
 
-    public async Task UpdateAsync(
-        Guid id, Guid clinicId, Guid patientId, Guid doctorId,
-        DateTime startTime, DateTime endTime,
-        Guid? statusId, string? notes,
-        Guid updatedBy, CancellationToken ct)
+    public async Task UpdateAsync(Guid id, byte[]? rowVersion, AppointmentWriteData data, CancellationToken ct)
     {
         using var connection = context.CreateConnection();
         await connection.ExecuteAsync(
@@ -116,14 +109,16 @@ public sealed class AppointmentRepository(DapperContext context) : IAppointmentR
                 new
                 {
                     Id = id,
-                    ClinicId = clinicId,
-                    PatientId = patientId,
-                    DoctorId = doctorId,
-                    StartTime = startTime,
-                    EndTime = endTime,
-                    StatusId = statusId,
-                    Notes = notes,
-                    UpdatedBy = updatedBy
+                    data.ClinicId,
+                    data.PatientId,
+                    data.DoctorId,
+                    data.StartTime,
+                    data.EndTime,
+                    data.StatusId,
+                    data.Notes,
+                    data.EnforceSchedule,
+                    RowVersion = rowVersion,
+                    UpdatedBy = data.ActorId
                 },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct));

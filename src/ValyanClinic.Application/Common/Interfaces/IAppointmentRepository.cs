@@ -24,18 +24,10 @@ public interface IAppointmentRepository
         CancellationToken ct);
 
     /// <summary>Creare programare — returnează ID-ul generat.</summary>
-    Task<Guid> CreateAsync(
-        Guid clinicId, Guid patientId, Guid doctorId,
-        DateTime startTime, DateTime endTime,
-        Guid? statusId, string? notes,
-        Guid createdBy, CancellationToken ct);
+    Task<Guid> CreateAsync(AppointmentWriteData data, CancellationToken ct);
 
-    /// <summary>Actualizare programare.</summary>
-    Task UpdateAsync(
-        Guid id, Guid clinicId, Guid patientId, Guid doctorId,
-        DateTime startTime, DateTime endTime,
-        Guid? statusId, string? notes,
-        Guid updatedBy, CancellationToken ct);
+    /// <summary>Actualizare programare; <paramref name="rowVersion"/> null = fără verificare de concurență.</summary>
+    Task UpdateAsync(Guid id, byte[]? rowVersion, AppointmentWriteData data, CancellationToken ct);
 
     /// <summary>Actualizare doar status programare.</summary>
     Task UpdateStatusAsync(Guid id, Guid clinicId, Guid statusId, Guid updatedBy, CancellationToken ct);

@@ -13,8 +13,14 @@ public static class ErrorMessages
 
     public static class Appointment
     {
-        public const string Conflict = "Există deja o programare în acest interval orar.";
-        public const string NotFound = "Programarea nu a fost găsită.";
+        public const string Conflict          = "Există deja o programare în acest interval orar.";
+        public const string NotFound          = "Programarea nu a fost găsită.";
+        public const string InvalidStatus     = "Statusul selectat nu este valid.";
+        public const string HasConsultation   = "Programarea are o consultație asociată și nu poate fi ștearsă.";
+        public const string OutsideSchedule   = "Intervalul selectat este în afara programului clinicii sau al doctorului.";
+        public const string InvalidTransition = "Tranziția de status nu este permisă.";
+        public const string InvalidTimeRange  = "Ora de sfârșit trebuie să fie după ora de început.";
+        public const string Concurrency       = "Programarea a fost modificată de alt utilizator. Reîncarcă datele.";
     }
 
     public static class Consultation

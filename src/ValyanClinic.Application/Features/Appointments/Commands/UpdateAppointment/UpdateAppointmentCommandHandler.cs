@@ -18,14 +18,17 @@ public sealed class UpdateAppointmentCommandHandler(
         {
             await repository.UpdateAsync(
                 request.Id,
-                currentUser.ClinicId,
-                request.PatientId,
-                request.DoctorId,
-                request.StartTime,
-                request.EndTime,
-                request.StatusId,
-                request.Notes,
-                currentUser.Id,
+                request.RowVersion,
+                new AppointmentWriteData(
+                    ClinicId:        currentUser.ClinicId,
+                    PatientId:       request.PatientId,
+                    DoctorId:        request.DoctorId,
+                    StartTime:       request.StartTime,
+                    EndTime:         request.EndTime,
+                    StatusId:        request.StatusId,
+                    Notes:           request.Notes,
+                    EnforceSchedule: true,
+                    ActorId:         currentUser.Id),
                 cancellationToken);
 
             return Result<bool>.Success(true);
@@ -37,6 +40,18 @@ public sealed class UpdateAppointmentCommandHandler(
         catch (SqlException ex) when (ex.Number == SqlErrorCodes.AppointmentConflict)
         {
             return Result<bool>.Conflict(ErrorMessages.Appointment.Conflict);
+        }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.AppointmentConcurrency)
+        {
+            return Result<bool>.Conflict(ErrorMessages.Appointment.Concurrency);
+        }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.AppointmentPatientNotInClinic)
+        {
+            return Result<bool>.NotFound(ErrorMessages.Patient.NotFound);
+        }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.AppointmentDoctorNotInClinic)
+        {
+            return Result<bool>.NotFound(ErrorMessages.Doctor.NotFound);
         }
         catch (SqlException ex) when (ex.Number >= 50000 && ex.Number < 60000)
         {

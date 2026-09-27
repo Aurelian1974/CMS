@@ -18674,6 +18674,8 @@ export interface components {
             /** Format: uuid */
             updatedBy?: string | null;
             updatedByName?: string | null;
+            /** Format: byte */
+            rowVersion?: string | null;
         };
         AppointmentDetailDtoApiResponse: {
             success?: boolean;
@@ -21900,6 +21902,8 @@ export interface components {
             /** Format: uuid */
             statusId?: string | null;
             notes?: string | null;
+            /** Format: byte */
+            rowVersion?: string | null;
         };
         UpdateAppointmentStatusRequest: {
             /** Format: uuid */

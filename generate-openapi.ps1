@@ -27,7 +27,7 @@ Write-Host "=== Generare schema OpenAPI ===" -ForegroundColor Cyan
 
 # 1. Build
 Write-Host "1. Build ValyanClinic.API..." -ForegroundColor Yellow
-dotnet build $apiProject -c Debug --nologo -q
+dotnet build $apiProject -c Debug --nologo -v q
 if ($LASTEXITCODE -ne 0) { throw "Build eșuat." }
 
 # 2. Export schema (rulare API în modul special, fără HTTP)

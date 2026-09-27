@@ -36,16 +36,16 @@ public sealed class CreateAppointmentCommandHandlerTests
         StatusId: null,
         Notes: null);
 
+    private void RepoThrows(int sqlNumber) =>
+        _repo.CreateAsync(Arg.Any<AppointmentWriteData>(), Arg.Any<CancellationToken>())
+             .Throws(SqlExceptionHelper.Make(sqlNumber));
+
     // ── Happy path ────────────────────────────────────────────────────────────
 
     [Fact]
     public async Task Handle_ValidCommand_ReturnsCreated()
     {
-        _repo.CreateAsync(
-                ClinicId, Arg.Any<Guid>(), Arg.Any<Guid>(),
-                Arg.Any<DateTime>(), Arg.Any<DateTime>(),
-                Arg.Any<Guid?>(), Arg.Any<string?>(),
-                UserId, Arg.Any<CancellationToken>())
+        _repo.CreateAsync(Arg.Any<AppointmentWriteData>(), Arg.Any<CancellationToken>())
              .Returns(NewId);
 
         var result = await CreateHandler().Handle(ValidCommand(), default);
@@ -58,33 +58,28 @@ public sealed class CreateAppointmentCommandHandlerTests
     [Fact]
     public async Task Handle_UsesClinicIdAndUserIdFromCurrentUser()
     {
-        _repo.CreateAsync(
-                ClinicId, Arg.Any<Guid>(), Arg.Any<Guid>(),
-                Arg.Any<DateTime>(), Arg.Any<DateTime>(),
-                Arg.Any<Guid?>(), Arg.Any<string?>(),
-                UserId, Arg.Any<CancellationToken>())
+        _repo.CreateAsync(Arg.Any<AppointmentWriteData>(), Arg.Any<CancellationToken>())
              .Returns(NewId);
 
-        await CreateHandler().Handle(ValidCommand(), default);
+        var command = ValidCommand();
+        await CreateHandler().Handle(command, default);
 
         await _repo.Received(1).CreateAsync(
-            ClinicId, Arg.Any<Guid>(), Arg.Any<Guid>(),
-            Arg.Any<DateTime>(), Arg.Any<DateTime>(),
-            Arg.Any<Guid?>(), Arg.Any<string?>(),
-            UserId, Arg.Any<CancellationToken>());
+            Arg.Is<AppointmentWriteData>(d =>
+                d.ClinicId == ClinicId &&
+                d.ActorId == UserId &&
+                d.PatientId == command.PatientId &&
+                d.DoctorId == command.DoctorId &&
+                d.EnforceSchedule),
+            Arg.Any<CancellationToken>());
     }
 
-    // ── Conflict ──────────────────────────────────────────────────────────────
+    // ── Erori business ────────────────────────────────────────────────────────
 
     [Fact]
     public async Task Handle_AppointmentConflict_ReturnsConflict()
     {
-        _repo.CreateAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(),
-                Arg.Any<DateTime>(), Arg.Any<DateTime>(),
-                Arg.Any<Guid?>(), Arg.Any<string?>(),
-                Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-             .Throws(MakeSqlException(SqlErrorCodes.AppointmentConflict));
+        RepoThrows(SqlErrorCodes.AppointmentConflict);
 
         var result = await CreateHandler().Handle(ValidCommand(), default);
 
@@ -92,26 +87,31 @@ public sealed class CreateAppointmentCommandHandlerTests
         Assert.Equal(409, result.StatusCode);
     }
 
-    // ── Generic SQL error ─────────────────────────────────────────────────────
-
-    [Fact]
-    public async Task Handle_GenericSqlError_ReturnsFailure()
+    [Theory]
+    [InlineData(SqlErrorCodes.AppointmentPatientNotInClinic)]
+    [InlineData(SqlErrorCodes.AppointmentDoctorNotInClinic)]
+    public async Task Handle_EntityFromAnotherClinic_ReturnsNotFound(int sqlNumber)
     {
-        _repo.CreateAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(),
-                Arg.Any<DateTime>(), Arg.Any<DateTime>(),
-                Arg.Any<Guid?>(), Arg.Any<string?>(),
-                Arg.Any<Guid>(), Arg.Any<CancellationToken>())
-             .Throws(MakeSqlException(50999));
+        RepoThrows(sqlNumber);
+
+        var result = await CreateHandler().Handle(ValidCommand(), default);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(404, result.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(SqlErrorCodes.AppointmentInvalidStatus)]
+    [InlineData(SqlErrorCodes.AppointmentOutsideSchedule)]
+    [InlineData(SqlErrorCodes.AppointmentInvalidTimeRange)]
+    [InlineData(50999)]
+    public async Task Handle_OtherBusinessSqlError_ReturnsFailure(int sqlNumber)
+    {
+        RepoThrows(sqlNumber);
 
         var result = await CreateHandler().Handle(ValidCommand(), default);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(400, result.StatusCode);
     }
-
-    // ── Helper ────────────────────────────────────────────────────────────────
-
-    private static Microsoft.Data.SqlClient.SqlException MakeSqlException(int number)
-        => SqlExceptionHelper.Make(number);
 }

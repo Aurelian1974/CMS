@@ -26,4 +26,6 @@ public sealed class AppointmentDetailDto
     public DateTime? UpdatedAt { get; init; }
     public Guid? UpdatedBy { get; init; }
     public string? UpdatedByName { get; init; }
+    /// <summary>Token de concurență optimistă — se retrimite la Update.</summary>
+    public byte[]? RowVersion { get; init; }
 }

@@ -19,6 +19,13 @@ BEGIN
         ;THROW 50011, N'Programarea nu a fost găsită.', 1;
     END;
 
+    -- O programare cu consultație activă nu se șterge (Consultations.AppointmentId ar rămâne orfan)
+    IF EXISTS (SELECT 1 FROM dbo.Consultations
+               WHERE AppointmentId = @Id AND ClinicId = @ClinicId AND IsDeleted = 0)
+    BEGIN
+        ;THROW 50015, N'Programarea are o consultație asociată și nu poate fi ștearsă. Anulează-o în schimb.', 1;
+    END;
+
     -- Audit: captează valorile vechi ÎNAINTE de ștergere
     DECLARE @OldValues NVARCHAR(MAX);
     SELECT @OldValues = (

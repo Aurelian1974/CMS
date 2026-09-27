@@ -1,4 +1,5 @@
 using System.Net;
+using Microsoft.Data.SqlClient;
 using ValyanClinic.Application.Common.Models;
 
 namespace ValyanClinic.API.Middleware;
@@ -16,6 +17,26 @@ public sealed class GlobalExceptionHandlerMiddleware(
         try
         {
             await next(context);
+        }
+        // 547 = FK/CHECK, 2601/2627 = unique — date invalide trimise de client, nu eroare de server
+        catch (SqlException sqlEx) when (sqlEx.Number is 547 or 2601 or 2627)
+        {
+            var correlationId = context.Items["CorrelationId"]?.ToString() ?? "N/A";
+
+            logger.LogWarning(sqlEx,
+                "Violare de constrângere SQL. CorrelationId: {CorrelationId}, Path: {Path}, Number: {Number}",
+                correlationId,
+                context.Request.Path,
+                sqlEx.Number);
+
+            context.Response.StatusCode  = (int)HttpStatusCode.BadRequest;
+            context.Response.ContentType = "application/json";
+
+            await context.Response.WriteAsJsonAsync(new ApiResponse<object>(
+                Success: false,
+                Data: null,
+                Message: "Datele trimise fac referire la înregistrări inexistente sau duplicate.",
+                Errors: null));
         }
         catch (Exception ex)
         {

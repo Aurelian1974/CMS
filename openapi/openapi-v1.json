@@ -30747,6 +30747,11 @@
           "updatedByName": {
             "type": "string",
             "nullable": true
+          },
+          "rowVersion": {
+            "type": "string",
+            "format": "byte",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -40528,6 +40533,11 @@
           },
           "notes": {
             "type": "string",
+            "nullable": true
+          },
+          "rowVersion": {
+            "type": "string",
+            "format": "byte",
             "nullable": true
           }
         },

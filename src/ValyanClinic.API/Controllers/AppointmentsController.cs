@@ -90,7 +90,8 @@ public class AppointmentsController : BaseApiController
             request.StartTime,
             request.EndTime,
             request.StatusId,
-            request.Notes);
+            request.Notes,
+            request.RowVersion);
 
         var result = await Mediator.Send(command, ct);
         return HandleResult(result);
@@ -127,6 +128,7 @@ public sealed record UpdateAppointmentRequest(
     DateTime StartTime,
     DateTime EndTime,
     Guid? StatusId,
-    string? Notes);
+    string? Notes,
+    byte[]? RowVersion = null);
 
 public sealed record UpdateAppointmentStatusRequest(Guid StatusId);
