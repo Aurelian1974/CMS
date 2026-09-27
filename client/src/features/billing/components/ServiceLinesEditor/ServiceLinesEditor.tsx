@@ -112,7 +112,10 @@ export const ServiceLinesEditor = ({
                     disabled={busy}
                     onChange={(e) => setDrafts((d) => ({ ...d, [line.id]: e.target.value }))}
                     onBlur={() => commitQuantity(line)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
+                    onKeyDown={(e) => {
+                      // Editorul stă și în formularul consultației — Enter nu trebuie să-l trimită
+                      if (e.key === 'Enter') { e.preventDefault(); e.currentTarget.blur() }
+                    }}
                   />
                 ) : formatNumber(line.quantity, line.quantity % 1 === 0 ? 0 : 3)}
               </td>
@@ -150,6 +153,7 @@ export const ServiceLinesEditor = ({
           </select>
           <input type="number" className={styles.qtyInput} min={0.001} max={MAX_QUANTITY} step={1}
             aria-label="Cantitate" value={quantity} disabled={busy}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAdd() } }}
             onChange={(e) => setQuantity(e.target.value)} />
           <AppButton type="button" variant="primary" size="sm" disabled={!canAdd} onClick={handleAdd}>
             Adaugă
