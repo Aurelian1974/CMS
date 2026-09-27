@@ -2,7 +2,17 @@
 
 Fișier de referință pentru Claude (AI assistant). Conține tot ce e necesar ca să lucrez eficient în acest proiect fără explorare repetitivă.
 
-> **Principiu**: Niciun exemplu din acest document nu conține placeholder `// ...` — tot codul este real și copiat din codebase.
+> **Principiu**: Niciun exemplu din acest document nu conține placeholder `// ...` — tot codul
+> este real și copiat din codebase.
+>
+> **Ultima verificare a exemplelor împotriva codului: 2026-09-27.** Documentul e o referință
+> normativă: dacă un exemplu de aici nu compilează, exemplul e greșit, nu codul. Când
+> refactorizezi un pattern (semnătură de repository, props de wrapper, formă de răspuns API),
+> actualizează secțiunea corespunzătoare în același PR.
+>
+> Repere care se învechesc cel mai repede, de verificat înainte de a te baza pe ele:
+> ultima migrare (`ls src/ValyanClinic.Infrastructure/Data/Scripts/Migrations/ | sort | tail -1`),
+> codurile din `SqlErrorCodes.cs`, lista de module din `ModuleCodes.cs` ↔ `useHasAccess.ts`.
 
 ---
 
@@ -23,6 +33,8 @@ Fișier de referință pentru Claude (AI assistant). Conține tot ce e necesar c
 | Forms | react-hook-form 7.x + Zod 4.x |
 | HTTP client | Axios (cu interceptori pentru JWT + refresh) |
 | UI components | Bootstrap 5 + Syncfusion EJ2 + module.scss |
+| Rich text | TipTap 3.x (`FormRichText`) · Syncfusion RTE doar în `components/icd10/` |
+| Icoane | lucide-react |
 | Testing BE | xunit + NSubstitute + coverlet |
 | Testing FE | Vitest + Playwright |
 
@@ -47,12 +59,15 @@ CMS/
 │       ├── api/generated/schema.d.ts  # auto-generat din openapi-v1.json
 │       ├── features/{feature}/
 │       │   ├── components/             # modale/sub-componente specifice
-│       │   ├── hooks/                  # use{Feature}s.ts
+│       │   ├── hooks/                  # use{Feature}s.ts (useConsultations.ts, usePatients.ts)
 │       │   ├── pages/                  # {Feature}ListPage.tsx + .module.scss
 │       │   ├── schemas/                # {feature}.schema.ts
 │       │   └── types/                  # {feature}.types.ts
 │       ├── components/
-│       │   ├── forms/                  # FormInput, FormSelect, FormRichText, etc.
+│       │   ├── forms/                  # FormInput, FormSelect, FormDatePicker,
+│       │   │                            # FormPhoneInput, FormRichText (TipTap),
+│       │   │                            # AddressAutocomplete, AddressFields,
+│       │   │                            # CaenCodeMultiSelect
 │       │   ├── ui/                     # AppButton, AppBadge, ErrorBoundary, etc.
 │       │   └── icd10/                  # ICD10SearchBox, PrimaryDiagnosisSelector, etc.
 │       ├── store/                      # authStore.ts, uiStore.ts
@@ -153,7 +168,7 @@ src/ValyanClinic.Infrastructure/Data/Scripts/
 
 client/src/features/{feature}/
 ├── components/{Entity}FormModal.tsx
-├── hooks/{feature}.hooks.ts                     ← queries + mutations
+├── hooks/use{Entity}s.ts                        ← queries + mutations (useConsultations.ts)
 ├── pages/{Entity}ListPage.tsx + .module.scss
 ├── schemas/{feature}.schema.ts
 └── types/{feature}.types.ts
@@ -192,56 +207,42 @@ public sealed record GetConsultationsQuery(
     : IRequest<Result<ConsultationsPagedResponse>>;
 
 // Fișier: Features/Consultations/Commands/CreateConsultation/CreateConsultationCommand.cs
-// Create — câmpuri din record TREBUIE SĂ COINCIDĂ EXACT cu parametrii IConsultationRepository.CreateAsync
-// (nu se modifică unul fără celălalt!)
+// Create — comandă cu mulți parametri. Anamneza și Examenul Clinic NU sunt aici:
+// migrarea 0035 le-a mutat în tabele proprii, iar clientul le trimite după creare
+// prin PUT /{id}/anamnesis și PUT /{id}/exam (vezi §4 Pattern-uri frontend).
 public sealed record CreateConsultationCommand(
-    Guid     PatientId,
-    Guid     DoctorId,
-    Guid?    AppointmentId,
+    Guid PatientId,
+    Guid DoctorId,
+    Guid? AppointmentId,
     DateTime Date,
-    string?  Motiv,
-    string?  IstoricMedicalPersonal,
-    string?  TratamentAnterior,
-    string?  IstoricBoalaActuala,
-    string?  IstoricFamilial,
-    string?  FactoriDeRisc,
-    string?  AlergiiConsultatie,
-    string?  StareGenerala,
-    string?  Tegumente,
-    string?  Mucoase,
-    decimal? Greutate,
-    int?     Inaltime,
-    int?     TensiuneSistolica,
-    int?     TensiuneDiastolica,
-    int?     Puls,
-    int?     FrecventaRespiratorie,
-    decimal? Temperatura,
-    int?     SpO2,
-    string?  Edeme,
-    decimal? Glicemie,
-    string?  GanglioniLimfatici,
-    string?  ExamenClinic,
-    string?  AlteObservatiiClinice,
-    string?  Investigatii,
-    string?  AnalizeMedicale,
-    string?  Diagnostic,
-    string?  DiagnosticCodes,
-    string?  Recomandari,
-    string?  Observatii,
-    string?  Concluzii,
-    bool     EsteAfectiuneOncologica,
-    bool     AreIndicatieInternare,
-    bool     SaEliberatPrescriptie,
-    string?  SeriePrescriptie,
-    bool     SaEliberatConcediuMedical,
-    string?  SerieConcediuMedical,
-    bool     SaEliberatIngrijiriDomiciliu,
-    bool     SaEliberatDispozitiveMedicale,
+    // Tab 3: Investigații
+    string? Investigatii,
+    // Tab 4: Analize Medicale
+    string? AnalizeMedicale,
+    // Tab 5: Diagnostic & Tratament
+    string? Diagnostic,
+    string? DiagnosticCodes,
+    string? Recomandari,
+    string? Observatii,
+    // Tab 6: Concluzii
+    string? Concluzii,
+    bool EsteAfectiuneOncologica,
+    bool AreIndicatieInternare,
+    bool SaEliberatPrescriptie,
+    string? SeriePrescriptie,
+    bool SaEliberatConcediuMedical,
+    string? SerieConcediuMedical,
+    bool SaEliberatIngrijiriDomiciliu,
+    bool SaEliberatDispozitiveMedicale,
     DateTime? DataUrmatoareiVizite,
-    string?  NoteUrmatoareaVizita,
-    Guid?    StatusId)
-    : IRequest<Result<Guid>>;
+    string? NoteUrmatoareaVizita,
+    Guid? StatusId
+) : IRequest<Result<Guid>>;
 ```
+
+> **Comenzile cu mulți parametri NU se propagă în semnătura repository-ului.**
+> `IConsultationRepository.CreateAsync` primește un singur record de date
+> (`ConsultationCreateData`) — vezi §8. Handler-ul face traducerea. Motivul e în §2a.
 
 ### 2a. Handler — CreateAsync → `Result<Guid>.Created(id)`
 
@@ -256,55 +257,34 @@ public sealed class CreateConsultationCommandHandler(
     {
         try
         {
-            var id = await repository.CreateAsync(
-                currentUser.ClinicId,
-                request.PatientId,
-                request.DoctorId,
-                request.AppointmentId,
-                request.Date,
-                request.Motiv,
-                request.IstoricMedicalPersonal,
-                request.TratamentAnterior,
-                request.IstoricBoalaActuala,
-                request.IstoricFamilial,
-                request.FactoriDeRisc,
-                request.AlergiiConsultatie,
-                request.StareGenerala,
-                request.Tegumente,
-                request.Mucoase,
-                request.Greutate,
-                request.Inaltime,
-                request.TensiuneSistolica,
-                request.TensiuneDiastolica,
-                request.Puls,
-                request.FrecventaRespiratorie,
-                request.Temperatura,
-                request.SpO2,
-                request.Edeme,
-                request.Glicemie,
-                request.GanglioniLimfatici,
-                request.ExamenClinic,
-                request.AlteObservatiiClinice,
-                request.Investigatii,
-                request.AnalizeMedicale,
-                request.Diagnostic,
-                request.DiagnosticCodes,
-                request.Recomandari,
-                request.Observatii,
-                request.Concluzii,
-                request.EsteAfectiuneOncologica,
-                request.AreIndicatieInternare,
-                request.SaEliberatPrescriptie,
-                request.SeriePrescriptie,
-                request.SaEliberatConcediuMedical,
-                request.SerieConcediuMedical,
-                request.SaEliberatIngrijiriDomiciliu,
-                request.SaEliberatDispozitiveMedicale,
-                request.DataUrmatoareiVizite,
-                request.NoteUrmatoareaVizita,
-                request.StatusId,
-                currentUser.Id,              // ← audit: createdBy = ultimul arg
-                cancellationToken);
+            // Traducere comandă → record de date. ClinicId vine din ICurrentUser,
+            // niciodată din comandă: clientul nu-și alege tenantul.
+            var data = new ConsultationCreateData(
+                ClinicId: currentUser.ClinicId,
+                PatientId: request.PatientId,
+                DoctorId: request.DoctorId,
+                AppointmentId: request.AppointmentId,
+                Date: request.Date,
+                Investigatii: request.Investigatii,
+                AnalizeMedicale: request.AnalizeMedicale,
+                Diagnostic: request.Diagnostic,
+                DiagnosticCodes: request.DiagnosticCodes,
+                Recomandari: request.Recomandari,
+                Observatii: request.Observatii,
+                Concluzii: request.Concluzii,
+                EsteAfectiuneOncologica: request.EsteAfectiuneOncologica,
+                AreIndicatieInternare: request.AreIndicatieInternare,
+                SaEliberatPrescriptie: request.SaEliberatPrescriptie,
+                SeriePrescriptie: request.SeriePrescriptie,
+                SaEliberatConcediuMedical: request.SaEliberatConcediuMedical,
+                SerieConcediuMedical: request.SerieConcediuMedical,
+                SaEliberatIngrijiriDomiciliu: request.SaEliberatIngrijiriDomiciliu,
+                SaEliberatDispozitiveMedicale: request.SaEliberatDispozitiveMedicale,
+                DataUrmatoareiVizite: request.DataUrmatoareiVizite,
+                NoteUrmatoareaVizita: request.NoteUrmatoareaVizita,
+                StatusId: request.StatusId);
+
+            var id = await repository.CreateAsync(data, currentUser.Id, cancellationToken);
 
             return Result<Guid>.Created(id); // 201
         }
@@ -315,6 +295,17 @@ public sealed class CreateConsultationCommandHandler(
     }
 }
 ```
+
+> **De ce record de date și nu 47 de parametri?** Semnătura
+> `CreateAsync(data, createdBy, ct)` are 3 parametri indiferent câte câmpuri
+> adaugi în `ConsultationCreateData`. Consecințele practice:
+> - mock-urile din teste rămân `Arg.Any<ConsultationCreateData>()` — un câmp nou
+>   nu rupe niciun test care nu-l verifică (vezi §Patterns de test);
+> - argumentele sunt numite, deci două `Guid?` consecutive nu se pot inversa tăcut;
+> - `record` e imutabil, deci se poate loga sau compara ca un tot.
+>
+> Aceeași formă pentru `UpdateAsync(ConsultationUpdateData, updatedBy, ct)`.
+> `DeleteAsync` rămâne pozițional — are 3 argumente, un record ar fi ceremonie inutilă.
 
 ### 2b. Handler — UpdateAsync → `Result<bool>.Success(true)`
 
@@ -332,13 +323,16 @@ public sealed class UpdateConsultationCommandHandler(
     {
         try
         {
-            await repository.UpdateAsync(   // ← void Task, nu returnează nimic
-                request.Id,
-                currentUser.ClinicId,
-                request.PatientId,
-                // ... toți parametrii în exact aceeași ordine ca IConsultationRepository.UpdateAsync
-                request.StatusId,
-                currentUser.Id,             // ← audit: updatedBy
+            var data = new ConsultationUpdateData(
+                Id: request.Id,
+                ClinicId: currentUser.ClinicId,   // din ICurrentUser, nu din comandă
+                PatientId: request.PatientId,
+                // ... restul câmpurilor, toate cu argumente numite
+                StatusId: request.StatusId);
+
+            await repository.UpdateAsync(       // ← void Task, nu returnează nimic
+                data,
+                currentUser.Id,                 // ← audit: updatedBy
                 cancellationToken);
 
             return Result<bool>.Success(true); // 200
@@ -464,14 +458,6 @@ public sealed class CreateConsultationCommandValidator : AbstractValidator<Creat
             .GreaterThan(DateTime.MinValue).WithMessage("Data consultației nu este validă.");
 
         // String opțional cu MaximumLength — folosiți When() pentru nullable
-        RuleFor(x => x.Motiv)
-            .MaximumLength(4000).WithMessage("Motivul nu poate depăși 4000 de caractere.")
-            .When(x => !string.IsNullOrEmpty(x.Motiv));
-
-        RuleFor(x => x.ExamenClinic)
-            .MaximumLength(4000).WithMessage("Examenul clinic nu poate depăși 4000 de caractere.")
-            .When(x => !string.IsNullOrEmpty(x.ExamenClinic));
-
         RuleFor(x => x.Diagnostic)
             .MaximumLength(4000).WithMessage("Diagnosticul nu poate depăși 4000 de caractere.")
             .When(x => !string.IsNullOrEmpty(x.Diagnostic));
@@ -480,17 +466,27 @@ public sealed class CreateConsultationCommandValidator : AbstractValidator<Creat
             .MaximumLength(2000).WithMessage("Codurile de diagnostic nu pot depăși 2000 de caractere.")
             .When(x => !string.IsNullOrEmpty(x.DiagnosticCodes));
 
-        // Numeric cu range
-        RuleFor(x => x.TensiuneSistolica)
-            .InclusiveBetween(40, 300).WithMessage("Tensiunea sistolică trebuie să fie între 40 și 300.")
-            .When(x => x.TensiuneSistolica.HasValue);
+        RuleFor(x => x.Recomandari)
+            .MaximumLength(4000).WithMessage("Recomandările nu pot depăși 4000 de caractere.")
+            .When(x => !string.IsNullOrEmpty(x.Recomandari));
 
-        RuleFor(x => x.SpO2)
-            .InclusiveBetween(50, 100).WithMessage("SpO2 trebuie să fie între 50 și 100.")
-            .When(x => x.SpO2.HasValue);
+        RuleFor(x => x.Observatii)
+            .MaximumLength(4000).WithMessage("Observațiile nu pot depăși 4000 de caractere.")
+            .When(x => !string.IsNullOrEmpty(x.Observatii));
     }
 }
 ```
+
+> Regulă cu range numeric — nu există pe `CreateConsultationCommand` (valorile vitale au
+> trecut la `UpdateConsultationExamCommand` în 0035). Forma reală, din
+> `UpdateConsultationExamCommandValidator`:
+>
+> ```csharp
+> RuleFor(x => x.SpO2).InclusiveBetween(0, 100).When(x => x.SpO2.HasValue);
+> ```
+>
+> Acolo `WithMessage` lipsește intenționat pe regulile de range: mesajul implicit al
+> FluentValidation e suficient de explicit pentru un interval numeric.
 
 ### 4. Result\<T\> și PagedResult\<T\>
 
@@ -503,6 +499,7 @@ Result<T>.Failure("mesaj", 422)    // custom HTTP code
 Result<T>.NotFound("mesaj")        // 404 — entitate negăsită
 Result<T>.Conflict("mesaj")        // 409 — duplicat/conflict
 Result<T>.Unauthorized("mesaj")    // 401
+Result<T>.Forbidden("mesaj")       // 403 — autentificat, dar fără drept
 
 // PagedResult<T> — structura returnată de GetPaged
 public sealed class PagedResult<T>
@@ -522,13 +519,33 @@ public sealed class PagedResult<T>
 
 ```csharp
 // src/ValyanClinic.Application/Common/Interfaces/ICurrentUser.cs
-// Implementat din JWT claims în Infrastructure
+// Setul COMPLET al interfeței. Implementat în Infrastructure/Authentication/CurrentUser.cs,
+// care citește JWT claims și ARUNCĂ UnauthorizedAccessException dacă un claim lipsește.
 
-currentUser.ClinicId   // Guid — multi-tenancy: ORICE query la DB filtrează după acesta
-currentUser.Id         // Guid — userId pentru audit: CreatedBy, UpdatedBy, DeletedBy
-currentUser.Role       // string
-currentUser.IsAdmin    // bool
+currentUser.Id         // Guid   — userId pentru audit: CreatedBy, UpdatedBy, DeletedBy
+currentUser.ClinicId   // Guid   — multi-tenancy: ORICE query la DB filtrează după acesta
+currentUser.RoleId     // Guid   — claim "roleId"; folosit la citirea permisiunilor efective
+currentUser.Email      // string
+currentUser.FullName   // string — claim "fullName"
+currentUser.Role       // string — CODUL rolului (lowercase), vezi Roles.cs
+currentUser.IsInRole(Roles.Admin)   // bool — comparare ordinală, case-sensitive
 ```
+
+**Nu există `IsAdmin`.** Verificarea de rol se face cu `IsInRole(Roles.Admin)`, iar
+constantele din `Roles.cs` sunt obligatorii: claim-ul poartă codul lowercase, iar
+`IsInRole` compară ordinal — un `"Admin"` scris cu majusculă dă 403 fără niciun mesaj.
+
+**Nu există `DoctorId`.** Nici interfața, nici JWT-ul nu au legătura user→doctor
+(`JwtTokenService` emite doar `sub`, `jti`, `email`, `clinicId`, `fullName`, `role`,
+`roleId`). Pentru a filtra după medicul curent, SP-ul rezolvă `Users.DoctorId` din
+`@UserId` — o valoare de `doctorId` primită de la client nu poate fi folosită la
+filtrare, pentru că ar permite citirea datelor altui medic.
+
+**Permisiunile efective nu se citesc din `ICurrentUser`.** Vin din
+`IPermissionRepository.GetEffectiveByUserAsync(userId, roleId, ct)`, care combină
+`RoleModulePermissions` cu `UserModuleOverrides`. `ModuleAccessAuthorizationHandler`
+le ține în `IMemoryCache` sub cheile din `PermissionCacheKeys` (TTL 5 min, pre-populat
+la login/refresh), deci după orice `[HasAccess]` cache-ul e deja cald.
 
 ### 6. DapperContext — implementare completă
 
@@ -550,8 +567,8 @@ public sealed class DapperContext(IConfiguration configuration)
 ### 7a. Dapper — ExecuteScalarAsync (Create returnează ID)
 
 ```csharp
-// Consultations use QueryFirstOrDefault on INSERT+SELECT path, dar pattern generic:
-public async Task<Guid> CreateAsync(Guid clinicId, ..., CancellationToken ct)
+public async Task<Guid> CreateAsync(
+    ConsultationCreateData data, Guid createdBy, CancellationToken ct)
 {
     using var connection = context.CreateConnection();
     return await connection.ExecuteScalarAsync<Guid>(
@@ -559,16 +576,22 @@ public async Task<Guid> CreateAsync(Guid clinicId, ..., CancellationToken ct)
             ConsultationProcedures.Create,
             new
             {
-                ClinicId  = clinicId,
-                PatientId = patientId,
-                DoctorId  = doctorId,
+                data.ClinicId,          // numele parametrului SP se deduce din numele
+                data.PatientId,         // proprietății — @ClinicId, @PatientId, ...
+                data.DoctorId,
+                data.AppointmentId,
+                data.Date,
                 // ... câmpuri rând cu rând, fără scurtături
-                CreatedBy = createdBy
+                CreatedBy = createdBy   // singurul cu nume explicit: nu vine din `data`
             },
             commandType: CommandType.StoredProcedure,
             cancellationToken: ct));
 }
 ```
+
+> `new { data.ClinicId, ... }` folosește proiecția de membru din C#: numele
+> parametrului Dapper e numele proprietății. Nu scrie `ClinicId = data.ClinicId` —
+> e redundant și deschide ușa la o nepotrivire între nume și valoare.
 
 ### 7b. Dapper — QueryFirstOrDefaultAsync (GetById)
 
@@ -631,7 +654,8 @@ public async Task<ConsultationPagedResult> GetPagedAsync(
 // src/ValyanClinic.Application/Common/Interfaces/IConsultationRepository.cs
 public interface IConsultationRepository
 {
-    // Paginate + filtre + stats → returnează wrapper custom (nu PagedResult<T> direct)
+    // Paginate + filtre + stats → returnează wrapper custom (nu PagedResult<T> direct).
+    // Filtrele rămân parametri: sunt puține, toate scalare, niciunul obligatoriu.
     Task<ConsultationPagedResult> GetPagedAsync(
         Guid clinicId, string? search, Guid? doctorId, Guid? statusId,
         DateTime? dateFrom, DateTime? dateTo,
@@ -641,16 +665,71 @@ public interface IConsultationRepository
     // GetById returnează T? (null dacă negăsit) — nu aruncă excepție
     Task<ConsultationDetailDto?> GetByIdAsync(Guid id, Guid clinicId, CancellationToken ct);
 
-    // Create returnează Guid (id-ul entității create)
-    Task<Guid> CreateAsync(Guid clinicId, Guid patientId, Guid doctorId, /* ... */ CancellationToken ct);
+    Task<ConsultationDetailDto?> GetByAppointmentIdAsync(
+        Guid appointmentId, Guid clinicId, CancellationToken ct);
+
+    Task<IEnumerable<ConsultationListDto>> GetByPatientAsync(
+        Guid patientId, Guid clinicId, CancellationToken ct);
+
+    // Create/Update: RECORD DE DATE + audit, nu zeci de parametri poziționali.
+    // Create returnează Guid (id-ul entității create).
+    Task<Guid> CreateAsync(ConsultationCreateData data, Guid createdBy, CancellationToken ct);
 
     // Update returnează Task (void) — SP aruncă THROW dacă negăsit
-    Task UpdateAsync(Guid id, Guid clinicId, /* ... */ Guid updatedBy, CancellationToken ct);
+    Task UpdateAsync(ConsultationUpdateData data, Guid updatedBy, CancellationToken ct);
 
-    // Delete returnează Task (void) — SP aruncă THROW dacă negăsit
+    // Delete rămâne pozițional — 3 argumente, un record ar fi ceremonie inutilă
     Task DeleteAsync(Guid id, Guid clinicId, Guid deletedBy, CancellationToken ct);
+
+    // Sub-entități cu tabel propriu (0035) — upsert dedicat, DTO ca payload
+    Task UpsertAnamnesisAsync(
+        Guid consultationId, Guid clinicId, ConsultationAnamnesisDto data,
+        Guid updatedBy, CancellationToken ct);
+
+    Task UpsertExamAsync(
+        Guid consultationId, Guid clinicId, ConsultationExamDto data,
+        Guid updatedBy, CancellationToken ct);
 }
+
+// Wrapper-ul pentru GetPaged (rânduri + statistici)
+public sealed record ConsultationPagedResult(
+    PagedResult<ConsultationListDto> Paged,
+    ConsultationStatsDto Stats);
+
+// Record-ul de date pentru Create. Definit în ACELAȘI fișier cu interfața.
+public sealed record ConsultationCreateData(
+    Guid ClinicId,
+    Guid PatientId,
+    Guid DoctorId,
+    Guid? AppointmentId,
+    DateTime Date,
+    string? Investigatii,
+    string? AnalizeMedicale,
+    string? Diagnostic,
+    string? DiagnosticCodes,
+    string? Recomandari,
+    string? Observatii,
+    string? Concluzii,
+    bool EsteAfectiuneOncologica,
+    bool AreIndicatieInternare,
+    bool SaEliberatPrescriptie,
+    string? SeriePrescriptie,
+    bool SaEliberatConcediuMedical,
+    string? SerieConcediuMedical,
+    bool SaEliberatIngrijiriDomiciliu,
+    bool SaEliberatDispozitiveMedicale,
+    DateTime? DataUrmatoareiVizite,
+    string? NoteUrmatoareaVizita,
+    Guid? StatusId);
+
+// ConsultationUpdateData = același set + Id, tot în acest fișier.
 ```
+
+**Regula de formă:** peste ~6 câmpuri de business, semnătura primește un
+`{Entity}CreateData` / `{Entity}UpdateData` — `record` imutabil, definit lângă
+interfață, cu `ClinicId` inclus. Argumentele de audit (`createdBy` / `updatedBy` /
+`deletedBy`) și `CancellationToken` rămân pe semnătură, în afara record-ului: vin din
+`ICurrentUser`, nu din payload-ul cererii, iar separarea face vizibil acest lucru.
 
 ### 9. BaseApiController — implementare completă
 
@@ -768,6 +847,13 @@ services.AddScoped<IConsultationRepository, ConsultationRepository>();   // nou 
 ```csharp
 // src/ValyanClinic.Application/Common/Constants/SqlErrorCodes.cs
 // Coduri aruncate din SP prin THROW (nu RAISERROR). Range: 50000–59999.
+//
+// EXTRAS, nu lista completă — fișierul real merge până la 50645. Înainte de a aloca
+// un cod nou, citește fișierul; range-urile ocupate azi:
+//   500xx pacienți/programări/consultații/facturi/rețete/auth
+//   501xx specialități · 502xx clinică, locații, departamente, bănci, adrese, contacte
+//   503xx doctori ȘI titluri medicale (vezi nota de mai jos) · 504xx personal medical
+//   505xx utilizatori · 506xx financiar (tarife, servicii, plăți, facturi, bonuri)
 public static class SqlErrorCodes
 {
     public const int PatientCnpDuplicate             = 50001;
@@ -878,7 +964,18 @@ public static class ModuleCodes
     public const string Anm           = "anm";
     public const string Audit         = "audit";
     public const string Settings      = "settings";
+    public const string Tariffs       = "tariffs";   // seed în 0053
 }
+
+// Modulele NU sunt toate în migrarea 0011: `anm` vine din 0030, `audit` din 0045,
+// `settings` din 0047, `tariffs` din 0053 — fiecare cu propriile granturi pe roluri.
+// `audit` și `settings` sunt acordate DOAR rolului admin.
+//
+// `reports` și `documents` sunt seed-uite în 0011, dar nu au nicio rută sau controller
+// aliniat pe ele (DocumentsController e protejat pe `consultations`). Nu le folosi ca
+// modul de acces pentru un feature nou fără să rezolvi mai întâi acea discrepanță.
+//
+// MODULE din client/src/hooks/useHasAccess.ts trebuie să rămână sincron cu acest fișier.
 
 // src/ValyanClinic.Application/Common/Enums/AccessLevel.cs
 public enum AccessLevel
@@ -1241,7 +1338,7 @@ export const consultationKeys = {
 ### 3. Hooks — query + mutations (inclusiv delete)
 
 ```typescript
-// client/src/features/consultations/hooks/consultations.hooks.ts
+// client/src/features/consultations/hooks/useConsultations.ts
 
 // ─── Queries ───────────────────────────────────────────────────────────────
 export const useConsultations = (params: GetConsultationsParams) =>
@@ -1298,54 +1395,80 @@ export const useDeleteConsultation = () => {
 
 ### 4. API client
 
+**Interceptorul de răspuns din `axiosInstance.ts` face deja `(response) => response.data`.**
+Deci `api.get(...)` întoarce `ApiResponse<T>`, nu `AxiosResponse`. Fișierele `*.api.ts`
+declară asta în tipul de retur și **nu** mai despachetează nimic; consumatorul (hook-ul
+sau componenta) citește `.data`.
+
 ```typescript
 // client/src/api/endpoints/consultations.api.ts
+import api from '@/api/axiosInstance'
+import type { ApiResponse } from '@/types/common.types'
+
 export const consultationsApi = {
-  getAll:  (params: GetConsultationsParams) =>
-             api.get('/api/v1/Consultations', { params })
-                .then(r => r.data.data),
+  getAll: (params: GetConsultationsParams): Promise<ApiResponse<ConsultationsPagedResponse>> =>
+    api.get('/api/v1/Consultations', { params }),
 
-  getById: (id: string) =>
-             api.get(`/api/v1/Consultations/${id}`)
-                .then(r => r.data.data),
+  getById: (id: string): Promise<ApiResponse<ConsultationDetailDto>> =>
+    api.get(`/api/v1/Consultations/${id}`),
 
-  create:  (payload: CreateConsultationPayload) =>
-             api.post('/api/v1/Consultations', payload)
-                .then(r => r.data.data),
+  create: (payload: CreateConsultationPayload): Promise<ApiResponse<string>> =>
+    api.post('/api/v1/Consultations', payload),
 
-  update:  ({ id, ...data }: UpdateConsultationPayload) =>
-             api.put(`/api/v1/Consultations/${id}`, data)
-                .then(r => r.data.data),
+  update: ({ id, ...data }: UpdateConsultationPayload): Promise<ApiResponse<boolean>> =>
+    api.put(`/api/v1/Consultations/${id}`, data),
 
-  delete:  (id: string) =>
-             api.delete(`/api/v1/Consultations/${id}`)
-                .then(r => r.data.data),
+  delete: (id: string): Promise<ApiResponse<boolean>> =>
+    api.delete(`/api/v1/Consultations/${id}`),
 }
 ```
+
+`ApiResponse<T>` = `{ success, data: T | null, message, errors }` (`types/common.types.ts`).
+
+> **Nu scrie `.then(r => r.data.data)`** — cu interceptorul de mai sus ai deja
+> `ApiResponse<T>` în mână, deci `r.data` e valoarea, iar `r.data.data` e `undefined`.
+>
+> `consultations.api.ts` e cazul special în care fișierul de API face și transformare:
+> `getById` primește de la server un DTO ierarhic (`anamnesis` / `exam` ca sub-obiecte,
+> după 0035) și îl aplatizează pentru formular, iar `create` sparge payload-ul în
+> POST header + PUT `/anamnesis` + PUT `/exam`. E o excepție documentată în fișier,
+> nu un pattern de copiat.
 
 ### 5. Zod schema
 
 ```typescript
 // client/src/features/consultations/schemas/consultation.schema.ts
 export const consultationSchema = z.object({
-  patientId:  z.string().min(1, 'Pacientul este obligatoriu'),
-  doctorId:   z.string().min(1, 'Doctorul este obligatoriu'),
-  date:       z.string().min(1, 'Data consultației este obligatorie'),
-  motiv:      z.string().max(4000, 'Maxim 4000 caractere').optional().or(z.literal('')),
-  greutate:   z.number({ invalid_type_error: 'Valoare numerică' })
-               .min(1).max(500).nullable().optional(),
-  spO2:       z.number().int().min(50).max(100).nullable().optional(),
+  patientId: z.string().min(1, 'Pacientul este obligatoriu'),
+  doctorId:  z.string().min(1, 'Doctorul este obligatoriu'),
+  date:      z.string().min(1, 'Data consultației este obligatorie'),
+  // Text opțional: `.optional().or(z.literal(''))` — un input golit trimite '',
+  // nu undefined, deci ambele forme trebuie acceptate.
+  motiv:     z.string().max(4000, 'Maxim 4000 caractere').optional().or(z.literal('')),
+  // Numeric opțional: `.nullable().optional()` — inputul Syncfusion dă null la golire.
+  greutate:  z.number().nullable().optional(),
+  spO2:      z.number().int().nullable().optional(),
   esteAfectiuneOncologica: z.boolean().optional(),
-  // câmpuri boolean simple — default false
-  saEliberatPrescriptie:   z.boolean().default(false),
 })
 export type ConsultationFormData = z.infer<typeof consultationSchema>
 ```
 
-### 6. react-hook-form cu Controller
+> **Zod 4** — `z.number({ invalid_type_error: '...' })` nu mai există; parametrul se
+> numește `error`. Schemele din proiect nu personalizează mesajul de tip: pe un câmp
+> numeric opțional, mesajul implicit nu ajunge la utilizator.
+>
+> Evită `.default(false)` pe boolean-uri: face câmpul opțional la intrare dar obligatoriu
+> în `z.infer`, ceea ce desincronizează tipul formularului de payload-ul API. Folosește
+> `.optional()` în schemă și `defaultValues` în `useForm`.
+
+### 6. react-hook-form — `name` + `control`, fără `<Controller>`
+
+Wrapper-ele de formular apelează `useController` **în interior**. Primesc `name` +
+`control` direct și afișează singure mesajul de eroare din `fieldState`. Nu le
+împachetezi în `<Controller>` — ar fi două `useController` pe același câmp.
 
 ```typescript
-const { handleSubmit, reset, control, register, formState: { errors } } =
+const { handleSubmit, reset, control, formState: { errors } } =
   useForm<ConsultationFormData>({
     resolver: zodResolver(consultationSchema),
     defaultValues: {
@@ -1354,30 +1477,51 @@ const { handleSubmit, reset, control, register, formState: { errors } } =
       date:                    '',
       motiv:                   '',
       esteAfectiuneOncologica: false,
-      saEliberatPrescriptie:   false,
     },
   })
 
-// Wrappers pentru form fields — toate acceptă field + error props:
-// FormInput, FormSelect, FormTextArea, FormDatePicker,
-// FormRichText (Syncfusion RTE), FormCheckbox, FormSwitch
-
-<Controller
-  name="date"
-  control={control}
-  render={({ field, fieldState: { error } }) => (
-    <FormDatePicker field={field} error={error?.message} label="Data consultației" />
-  )}
-/>
-
-<Controller
+// Parametrul generic e obligatoriu: dă type-safety pe `name` (o cheie inexistentă
+// în ConsultationFormData e eroare de compilare, nu un câmp care nu se leagă).
+<FormInput<ConsultationFormData>
   name="motiv"
   control={control}
-  render={({ field, fieldState: { error } }) => (
-    <FormRichText field={field} error={error?.message} label="Motivul consultației" />
-  )}
+  label="Motivul consultației"
+  multiline
+  rows={4}
+  maxLength={4000}
+/>
+
+<FormDatePicker<ConsultationFormData>
+  name="date"
+  control={control}
+  label="Data consultației"
+  required
+/>
+
+<FormSelect<ConsultationFormData>
+  name="doctorId"
+  control={control}
+  label="Doctor"
+  dataSource={doctorOptions}
+  fields={{ text: 'label', value: 'value' }}
+  allowFiltering
 />
 ```
+
+Wrapper-ele care EXISTĂ în `client/src/components/forms/`:
+
+| Component | Bază | Note |
+|---|---|---|
+| `FormInput` | Syncfusion `TextBoxComponent` | `multiline` + `rows` acoperă cazul textarea |
+| `FormSelect` | Syncfusion `DropDownListComponent` | `allowFiltering`, `showClearButton` |
+| `FormDatePicker` | Syncfusion `DatePickerComponent` | format `dd.MM.yyyy`, `locale='ro'` |
+| `FormPhoneInput` | `react-phone-number-input` | nu Syncfusion |
+| `FormRichText` | **TipTap** (`@tiptap/react` + StarterKit) | toolbar cu icoane `lucide-react` |
+| `AddressAutocomplete`, `AddressFields`, `CaenCodeMultiSelect` | compuse | specifice domeniului |
+
+**Nu există `FormTextArea`, `FormCheckbox`, `FormSwitch`.** Pentru textarea →
+`FormInput` cu `multiline`. Pentru boolean → `<input type="checkbox">` cu `register()`,
+ca în formularele existente.
 
 ### 7. Zustand store (auth)
 
@@ -1391,22 +1535,43 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       user:            null,
       accessToken:     null,   // in memorie, exclus din partialize
-      permissions:     [],
+      permissions:     [],     // ModulePermission[] = { module, level, isOverridden }
       isAuthenticated: false,
       isBootstrapping: true,   // "inca nu stim" != "neautentificat"
-      setAuth: (user, accessToken, permissions) =>
-        set({ user, accessToken, permissions, isAuthenticated: true }),
-      // ...
+      // Fereastra de inactivitate a ROLULUI, in minute. Vine de la server la fiecare
+      // login si refresh, deci o modificare din ecranul de administrare a securitatii
+      // se aplica la urmatoarea reimprospatare, fara redeploy.
+      idleTimeoutMinutes: 0,
+      setAuth: (user, accessToken, permissions, idleTimeoutMinutes) =>
+        set((state) => ({
+          user, accessToken, permissions, isAuthenticated: true,
+          // Pastram valoarea anterioara daca raspunsul nu o contine, ca sa nu
+          // dezactivam accidental cronometrul.
+          idleTimeoutMinutes: idleTimeoutMinutes ?? state.idleTimeoutMinutes,
+        })),
+      // + updateToken, updatePermissions, clearMustChangePassword,
+      //   finishBootstrap, clearAuth
     }),
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => sessionStorage),
       // accessToken lipseste intentionat
-      partialize: (s) => ({ user: s.user, permissions: s.permissions, isAuthenticated: s.isAuthenticated }),
+      partialize: (s) => ({
+        user: s.user, permissions: s.permissions,
+        isAuthenticated: s.isAuthenticated, idleTimeoutMinutes: s.idleTimeoutMinutes,
+      }),
     },
   ),
 )
 ```
+
+`AuthUser` (definit o singura data, in `features/auth/types/auth.types.ts`, importat de
+store) are `id`, `email`, `fullName`, `role` (`UserRole` = codul lowercase), `roleId`,
+`clinicId`, `doctorId: string | null`, `mustChangePassword?`.
+
+> `user.doctorId` exista pe CLIENT, dar nu e o sursa de autoritate: serverul nu are
+> claim-ul si nu accepta un `doctorId` trimis de client ca filtru (vezi §5 ICurrentUser).
+> Foloseste-l doar pentru afisare si pentru pre-selectarea medicului in formulare.
 
 Reconstruirea sesiunii la incarcarea paginii se face in `useSessionBootstrap`, cu
 apelul de refresh deduplicat la nivel de modul — rotatia e atomica pe server, deci
@@ -1444,13 +1609,10 @@ folosit în client dar absent din `MODULE` este eroare de tip și **rupe
 
 ## Patterns de test (backend)
 
-### Handler test — structură și reguli critice
+### Handler test — structură și reguli
 
 ```csharp
-// REGULĂ CRITICĂ: numărul de Arg.Any<>() în mock TREBUIE SĂ COINCIDĂ EXACT
-// cu numărul de parametri din IConsultationRepository.CreateAsync / UpdateAsync / DeleteAsync.
-// Orice discrepanță → NSubstitute nu recunoaște apelul → testul pică.
-
+// Fișier real: tests/ValyanClinic.Tests/Handlers/CreateConsultationCommandHandlerTests.cs
 public sealed class CreateConsultationCommandHandlerTests
 {
     // Guid-uri fixe cu prefix distinctiv pentru debugging (A=ClinicId, B=UserId, C=new)
@@ -1469,36 +1631,13 @@ public sealed class CreateConsultationCommandHandlerTests
 
     private CreateConsultationCommandHandler CreateHandler() => new(_repo, _currentUser);
 
-    // Builder cu TOȚI parametrii expliciți folosind named args
-    // Câmpurile opționale = null/false — aceasta este forma canonică
+    // Builder cu TOȚI parametrii expliciți, argumente numite (R7).
+    // Câmpurile opționale = null/false — forma canonică.
     private static CreateConsultationCommand ValidCommand() => new(
         PatientId: Guid.NewGuid(),
         DoctorId: Guid.NewGuid(),
         AppointmentId: null,
         Date: DateTime.UtcNow.AddHours(1),
-        Motiv: "Durere de cap",
-        IstoricMedicalPersonal: null,
-        TratamentAnterior: null,
-        IstoricBoalaActuala: null,
-        IstoricFamilial: null,
-        FactoriDeRisc: null,
-        AlergiiConsultatie: null,
-        StareGenerala: null,
-        Tegumente: null,
-        Mucoase: null,
-        Greutate: null,
-        Inaltime: null,
-        TensiuneSistolica: null,
-        TensiuneDiastolica: null,
-        Puls: null,
-        FrecventaRespiratorie: null,
-        Temperatura: null,
-        SpO2: null,
-        Edeme: null,
-        Glicemie: null,
-        GanglioniLimfatici: null,
-        ExamenClinic: null,
-        AlteObservatiiClinice: null,
         Investigatii: null,
         AnalizeMedicale: null,
         Diagnostic: null,
@@ -1521,24 +1660,10 @@ public sealed class CreateConsultationCommandHandlerTests
     [Fact]
     public async Task Handle_ValidCommand_ReturnsCreated()
     {
-        // Arrange — Arg.Any<>() pentru FIECARE parametru din IConsultationRepository.CreateAsync
-        // (47 params business + CancellationToken = 48 total în acest caz)
-        _repo.CreateAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(),       // clinicId, patientId, doctorId
-                Arg.Any<Guid?>(), Arg.Any<DateTime>(),                    // appointmentId, date
-                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(),                   // stareGenerala, tegumente, mucoase
-                Arg.Any<decimal?>(), Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<int?>(),
-                Arg.Any<int?>(), Arg.Any<int?>(), Arg.Any<decimal?>(), Arg.Any<int?>(),
-                Arg.Any<string?>(), Arg.Any<decimal?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(), Arg.Any<string?>(),
-                Arg.Any<string?>(),
-                Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<string?>(),
-                Arg.Any<bool>(), Arg.Any<string?>(), Arg.Any<bool>(), Arg.Any<bool>(),
-                Arg.Any<DateTime?>(), Arg.Any<string?>(), Arg.Any<Guid?>(),
-                Arg.Any<Guid>(), Arg.Any<CancellationToken>())            // createdBy, ct
+        // Arrange — un Arg.Any<>() per parametru al semnăturii: data, createdBy, ct.
+        // Record-ul de date (§8) e UN singur argument, deci mock-ul nu se schimbă
+        // când se adaugă un câmp în ConsultationCreateData.
+        _repo.CreateAsync(Arg.Any<ConsultationCreateData>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
              .Returns(NewId);
 
         // Act
@@ -1553,25 +1678,23 @@ public sealed class CreateConsultationCommandHandlerTests
     [Fact]
     public async Task Handle_UsesClinicIdAndUserIdFromCurrentUser()
     {
-        // Verifică că handler injectează valorile din ICurrentUser (nu din command)
-        _repo.CreateAsync(
-                Arg.Any<Guid>(), /* ... toate */ Arg.Any<CancellationToken>())
+        _repo.CreateAsync(Arg.Any<ConsultationCreateData>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
              .Returns(NewId);
 
         await CreateHandler().Handle(ValidCommand(), default);
 
-        // Verificare: clinicId și createdBy vin din _currentUser
+        // Arg.Is<T>(predicat) pentru a inspecta un câmp din record — testul verifică
+        // exact ce contează (tenantul și autorul), fără să enumere restul câmpurilor.
         await _repo.Received(1).CreateAsync(
-            ClinicId,            // ← currentUser.ClinicId
-            Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid?>(), Arg.Any<DateTime>(),
-            /* ... */ Arg.Any<CancellationToken>());
+            Arg.Is<ConsultationCreateData>(d => d.ClinicId == ClinicId),
+            UserId,                              // ← currentUser.Id, valoare exactă
+            Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task Handle_SqlError_ReturnsFailure()
+    public async Task Handle_GenericSqlError_ReturnsFailure()
     {
-        _repo.CreateAsync(
-                Arg.Any<Guid>(), /* ... toate */ Arg.Any<CancellationToken>())
+        _repo.CreateAsync(Arg.Any<ConsultationCreateData>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
              .Throws(SqlExceptionHelper.Make(50999));
 
         var result = await CreateHandler().Handle(ValidCommand(), default);
@@ -1581,6 +1704,19 @@ public sealed class CreateConsultationCommandHandlerTests
     }
 }
 ```
+
+**Reguli care se aplică oricărui test de handler:**
+
+1. **Numărul de `Arg.Any<>()` = numărul de parametri ai semnăturii, nu numărul de
+   câmpuri.** Cu record de date (§8) sunt 3: `Arg.Any<{Entity}CreateData>()`,
+   `Arg.Any<Guid>()`, `Arg.Any<CancellationToken>()`. O discrepanță → NSubstitute nu
+   recunoaște apelul, `.Returns()` nu se aplică, iar testul pică pe `null`/`default`.
+2. **`Arg.Is<T>(predicat)` peste enumerarea tuturor argumentelor.** Verifică doar câmpul
+   pe care testul îl afirmă. Așa un câmp nou nu rupe testele existente.
+3. **Valoare exactă pentru ce vine din `ICurrentUser`** (`UserId`, nu `Arg.Any<Guid>()`) —
+   e chiar afirmația testului.
+4. **Un `Guid` fix per rol semantic**, cu prefix distinctiv, ca un mesaj de eșec să spună
+   ce s-a inversat.
 
 ### Delete handler test — prindere specifică NotFound (404)
 
@@ -1681,26 +1817,14 @@ public sealed class CreateConsultationCommandValidatorTests
 {
     private readonly CreateConsultationCommandValidator _validator = new();
 
-    // Builder cu date minime valide
+    // Builder cu date minime valide, argumente numite (R7)
     private static CreateConsultationCommand MinimalValid() => new(
         PatientId: Guid.NewGuid(),
         DoctorId:  Guid.NewGuid(),
         AppointmentId: null,
         Date: DateTime.UtcNow.AddDays(1),
-        Motiv: "Consult",
-        IstoricMedicalPersonal: null,
-        TratamentAnterior: null,
-        IstoricBoalaActuala: null,
-        IstoricFamilial: null,
-        FactoriDeRisc: null,
-        AlergiiConsultatie: null,
-        StareGenerala: null, Tegumente: null, Mucoase: null,
-        Greutate: null, Inaltime: null,
-        TensiuneSistolica: null, TensiuneDiastolica: null,
-        Puls: null, FrecventaRespiratorie: null,
-        Temperatura: null, SpO2: null, Edeme: null, Glicemie: null,
-        GanglioniLimfatici: null, ExamenClinic: null, AlteObservatiiClinice: null,
-        Investigatii: null, AnalizeMedicale: null,
+        Investigatii: null,
+        AnalizeMedicale: null,
         Diagnostic: null, DiagnosticCodes: null,
         Recomandari: null, Observatii: null, Concluzii: null,
         EsteAfectiuneOncologica: false, AreIndicatieInternare: false,
@@ -1719,6 +1843,7 @@ public sealed class CreateConsultationCommandValidatorTests
     [Fact]
     public void PatientId_WhenEmpty_ShouldHaveError()
     {
+        // `with` pe record: un singur câmp schimbat, restul rămâne forma canonică
         var cmd = MinimalValid() with { PatientId = Guid.Empty };
         _validator.TestValidate(cmd)
                   .ShouldHaveValidationErrorFor(x => x.PatientId)
@@ -1726,36 +1851,39 @@ public sealed class CreateConsultationCommandValidatorTests
     }
 
     [Fact]
-    public void Motiv_WhenTooLong_ShouldHaveError()
+    public void Diagnostic_WhenTooLong_ShouldHaveError()
     {
-        var cmd = MinimalValid() with { Motiv = new string('x', 4001) };
+        var cmd = MinimalValid() with { Diagnostic = new string('x', 4001) };
         _validator.TestValidate(cmd)
-                  .ShouldHaveValidationErrorFor(x => x.Motiv)
-                  .WithErrorMessage("Motivul nu poate depăși 4000 de caractere.");
+                  .ShouldHaveValidationErrorFor(x => x.Diagnostic)
+                  .WithErrorMessage("Diagnosticul nu poate depăși 4000 de caractere.");
     }
 }
 ```
+
+> `WithErrorMessage` compară textul exact. Dacă schimbi un mesaj în validator, testul
+> pică — intenționat: mesajul ajunge la utilizator, deci e parte din contract.
 
 ### SqlExceptionHelper — crearea SqlException cu Number custom
 
 ```csharp
 // tests/ValyanClinic.Tests/TestHelpers/SqlExceptionHelper.cs
-// SqlException nu are constructor public — creat prin reflection
-public static class SqlExceptionHelper
+// SqlException nu poate fi instanțiată direct (constructor intern) → reflection:
+// se construiește un SqlErrorCollection, în el un SqlError cu infoNumber = number,
+// apoi excepția din colecție.
+internal static class SqlExceptionHelper
 {
-    public static SqlException Make(int number, string message = "Test SQL Error")
-    {
-        var exception = (SqlException)FormatterServices
-            .GetUninitializedObject(typeof(SqlException));
-        // ... setează Number prin reflection
-        return exception;
-    }
+    internal static SqlException Make(int number) { /* reflection peste Microsoft.Data.SqlClient */ }
 }
 
 // Folosire:
 .Throws(SqlExceptionHelper.Make(SqlErrorCodes.ConsultationNotFound))
-.Throws(SqlExceptionHelper.Make(50999))  // cod generic
+.Throws(SqlExceptionHelper.Make(50999))  // cod generic din range
 ```
+
+> **Semnătura are UN singur parametru** — `Make(int number)`. Nu există parametru de
+> mesaj: handler-ele se ramifică pe `ex.Number`, nu pe text. Helper-ul e `internal`,
+> deci vizibil doar în `ValyanClinic.Tests`.
 
 ---
 
@@ -1772,6 +1900,9 @@ public static class SqlExceptionHelper
 | `if (result == null) throw new NotFoundException()` | Excepțiile ca flow control nu sunt folosite în acest proiect | `return Result<T>.NotFound(ErrorMessages.X.NotFound)` |
 | `services.AddTransient<DapperContext>()` | DapperContext este Singleton (o instanță per aplicație) | `services.AddSingleton<DapperContext>()` |
 | Constructor public pe `Result<T>` | Constructorul e `private` — există doar factory methods | `Result<T>.Success()`, `.Created()`, `.NotFound()`, etc. |
+| `Task<Guid> CreateAsync(Guid clinicId, Guid patientId, /* +45 */)` | Semnătură pozițională lungă: două `Guid?` vecine se pot inversa tăcut, iar fiecare câmp nou rupe toate mock-urile | `Task<Guid> CreateAsync({Entity}CreateData data, Guid createdBy, CancellationToken ct)` — vezi §8 |
+| `currentUser.IsAdmin` | Membrul nu există pe `ICurrentUser` | `currentUser.IsInRole(Roles.Admin)` |
+| `currentUser.DoctorId` | Nu există nici pe interfață, nici ca claim în JWT | SP-ul rezolvă `Users.DoctorId` din `@UserId` |
 
 ### Frontend
 
@@ -1781,7 +1912,9 @@ public static class SqlExceptionHelper
 | Import neutilizat (`useCallback`, `useState`, etc.) | ESLint `no-unused-vars = error` → CI pică la lint | Șterge imediat importul dacă nu îl folosești |
 | `import { GridComponent } from '@syncfusion/ej2-react-grids'` | Nu folosim GridComponent direct — avem wrapper `AppDataGrid` | `import { AppDataGrid } from '@/components/data-display/AppDataGrid'` |
 | Scriere manuală în `schema.d.ts` | Fișierul e auto-generat — orice editare manuală va fi suprascrisă | Modifică API-ul, regenerează cu `npm run gen:api` |
-| `api.get(...)` fără `.then(r => r.data.data)` | Răspunsul backend e `ApiResponse<T>` — datele sunt în `.data.data` | `api.get(...).then(r => r.data.data)` |
+| `api.get(...).then(r => r.data.data)` | Interceptorul din `axiosInstance.ts` returnează deja `response.data`, deci `r` **este** `ApiResponse<T>`; `r.data.data` e `undefined` | `api.get(...)` tipizat `Promise<ApiResponse<T>>`; consumatorul citește `.data` |
+| `<Controller render={({ field }) => <FormInput field={field} />} />` | Wrapper-ele apelează `useController` intern — ai două controllere pe același câmp | `<FormInput<FormData> name="x" control={control} />` |
+| `<FormTextArea>`, `<FormCheckbox>`, `<FormSwitch>` | Nu există în `components/forms/` | `FormInput` cu `multiline`; checkbox nativ cu `register()` |
 | `useQuery` cu `queryKey: ['consultations']` (static) | Invalidarea nu va funcționa corect pentru filtre diferite | Folosește `consultationKeys.list(params)` din fișierul de keys |
 
 ---
@@ -1866,13 +1999,20 @@ import { Link } from 'react-router-dom'
 ```typescript
 // Aceste CSS-uri sunt deja importate în main.tsx — NU le reimporta în componente
 import '@syncfusion/ej2-base/styles/bootstrap5.css'
+import '@syncfusion/ej2-buttons/styles/bootstrap5.css'
 import '@syncfusion/ej2-inputs/styles/bootstrap5.css'
-import '@syncfusion/ej2-dropdowns/styles/bootstrap5.css'
+import '@syncfusion/ej2-lists/styles/bootstrap5.css'
+import '@syncfusion/ej2-popups/styles/bootstrap5.css'
+import '@syncfusion/ej2-navigations/styles/bootstrap5.css'
 import '@syncfusion/ej2-calendars/styles/bootstrap5.css'
-import '@syncfusion/ej2-richtexteditor/styles/bootstrap5.css'
+import '@syncfusion/ej2-dropdowns/styles/bootstrap5.css'
+import '@syncfusion/ej2-splitbuttons/styles/bootstrap5.css'
 import '@syncfusion/ej2-grids/styles/bootstrap5.css'
-// + buttons, lists, popups, navigations, splitbuttons
+import '@syncfusion/ej2-richtexteditor/styles/bootstrap5.css'
 ```
+
+`main.tsx` configurează și localizarea: `registerLicense`, `L10n`, `loadCldr`,
+`setCulture`, `setCurrencyCode`. Nu le duplica în componente.
 
 ### Componente folosite — import-uri corecte
 
@@ -1904,17 +2044,21 @@ import { DatePickerComponent } from '@syncfusion/ej2-react-calendars'
 // strictMode={false}             — permite editare manuală
 // Returnează Date object în args.value → convertit la string cu toLocalDateISO()
 
-// ─── Rich Text Editor ──────────────────────────────────────────────────────
+// ─── Rich Text Editor — ATENȚIE: DOUĂ editoare diferite în proiect ─────────
+// 1. FormRichText (components/forms/FormRichText) = TipTap, NU Syncfusion.
+//    Pentru orice câmp de text bogat dintr-un formular → FOLOSEȘTE FormRichText.
+//
+// 2. Syncfusion RTE apare DOAR în components/icd10/ (PrimaryDiagnosisSelector,
+//    SecondaryDiagnosesList), unde editorul e împletit cu selecția de coduri ICD-10.
+//    Nu extinde acest uz la componente noi.
 import {
-  RichTextEditorComponent,
-  Inject,
-  Toolbar, Link, Image, HtmlEditor, Count, QuickToolbar,
-  ToolbarType
+  RichTextEditorComponent, Inject,
+  Toolbar, Link, HtmlEditor, Count, QuickToolbar, Resize, ToolbarType
 } from '@syncfusion/ej2-react-richtexteditor'
-// Wrapper existent: FormRichText — FOLOSEȘTE FormRichText
-// OBLIGATORIU: <Inject services={[Toolbar, Link, Image, HtmlEditor, Count, QuickToolbar]} />
-// Fără <Inject> → toolbar nu apare (eroare silențioasă!)
-// Toolbar pattern:
+// OBLIGATORIU în interiorul componentei:
+// <Inject services={[Toolbar, Link, HtmlEditor, Count, QuickToolbar, Resize]} />
+// Fără <Inject> → toolbar-ul nu apare, fără nicio eroare în consolă.
+// `Image` NU e injectat: încărcarea de imagini nu e activată nicăieri.
 const TOOLBAR_ITEMS = [
   'Bold', 'Italic', 'Underline', 'StrikeThrough', '|',
   'OrderedList', 'UnorderedList', '|',
@@ -1923,7 +2067,7 @@ const TOOLBAR_ITEMS = [
   'Undo', 'Redo',
 ]
 // toolbarSettings={{ items: TOOLBAR_ITEMS, enableFloating: false, type: ToolbarType.Expand }}
-// value și onChange: folosește ref + onChange callback (nu value prop direct)
+// value + change: ref pentru citire, nu prop controlat
 const rteRef = useRef<RichTextEditorComponent | null>(null)
 const handleChange = useCallback(() => {
   onChange(rteRef.current?.value ?? '')
@@ -2059,11 +2203,24 @@ pentru aceeași coloană. Preferințele pur locale (ex: secțiuni colapsate) ră
 ### R1 — Multi-tenancy obligatoriu
 
 ```csharp
-// ORICE query la DB trece ClinicId din ICurrentUser
+// ORICE query pe date ale clinicii trece ClinicId din ICurrentUser
 var result = await repository.GetPagedAsync(currentUser.ClinicId, ...);
 
-// SP: WHERE c.ClinicId = @ClinicId — OBLIGATORIU, fără excepție
+// SP: WHERE c.ClinicId = @ClinicId — obligatoriu pe orice tabel cu coloana ClinicId
 ```
+
+**Singura excepție: nomenclatoarele naționale.** `Anm_Drug`, `Anm_SyncLog`, `Cnas_*`
+(inclusiv `Cnas_ICD10`), `NomenclatorSyncLog`, tabelele geografice (`Counties`, `Localities`,
+`LocationTypes`) și `CaenCodes` sunt date de referință comune tuturor clinicilor și **nu au
+coloană `ClinicId`** — un filtru pe clinică acolo n-ar compila. Legăturile per clinică
+(`ClinicCaenCodes`, `ClinicLocations`) au `ClinicId` și se filtrează normal.
+
+Regula rămâne: *dacă tabelul are `ClinicId`, filtrul e obligatoriu.*
+
+**Atenție la `SecurityEvents`:** are `ClinicId`, dar **NULL-abil** — un login eșuat cu un
+email necunoscut nu are clinică de atribuit. Un `WHERE ClinicId = @ClinicId` simplu ascunde
+exact rândurile care interesează. Forma corectă:
+`WHERE (ClinicId = @ClinicId OR ClinicId IS NULL)`.
 
 ### R2 — Soft delete pentru toate entitățile principale
 
@@ -2114,9 +2271,18 @@ RAISERROR('Nu s-a găsit.', 16, 1)  -- ← nu folosi
 ### R6 — Migration order secvențial
 
 ```
-0031_CreateConsultations.sql    ← corect
-0033_CreateConsultations.sql    ← greșit (a sărit 0032)
+# Ultima migrare din repo: 0056_CreateFiscalReceipts.sql
+# Următoarea migrare pornește de la 0057 — verifică întotdeauna cu:
+#   ls src/ValyanClinic.Infrastructure/Data/Scripts/Migrations/ | sort | tail -1
+
+0057_NumeDescriptiv.sql    ← corect
+0059_NumeDescriptiv.sql    ← greșit (a sărit 0058)
 ```
+
+DbUp rulează în două faze (`DatabaseMigrator.cs`): `Scripts/Migrations/` o singură dată,
+cu journal în `SchemaVersions`, apoi `Scripts/StoredProcedures/` la **fiecare** execuție,
+cu `NullJournal` — de aceea SP-urile sunt `CREATE OR ALTER` și pot fi editate liber, în
+timp ce o migrare deja aplicată nu se mai modifică niciodată.
 
 ### R7 — Named arguments la record constructors cu mulți parametri
 
@@ -2136,17 +2302,23 @@ private static CreateConsultationCommand ValidCommand() => new(
 ### R8 — Orice modificare la IRepository → actualizează TOȚI mock-ii din teste
 
 ```csharp
-// Dacă adaugi un parametru la IConsultationRepository.CreateAsync:
-// 1. Adaugi câmpul în CreateConsultationCommand (record)
-// 2. Adaugi parametrul în IConsultationRepository.CreateAsync (interfață)
-// 3. Adaugi parametrul în ConsultationRepository.CreateAsync (implementare)
-// 4. Actualizezi SP-ul SQL
-// 5. Actualizezi TOȚI mock-ii din teste:
-//    - CreateConsultationCommandHandlerTests → mock .Returns + mock .Received
-//    - ValidCommand() builder → adaugi noul câmp
-//    - MinimalValid() builder → adaugi noul câmp
-// Dacă omit pasul 5 → CI pică cu "number of args mismatch from NSubstitute"
-
+// Ca să adaugi un câmp la crearea unei consultații:
+// 1. Câmp nou în CreateConsultationCommand (record)
+// 2. Câmp nou în ConsultationCreateData (record de date, lângă interfață)
+// 3. Maparea în CreateConsultationCommandHandler (argument numit)
+// 4. Parametrul Dapper în ConsultationRepository.CreateAsync (`new { data.CampNou }`)
+// 5. Parametrul @CampNou în SP + coloana în migrare
+// 6. Builder-ele din teste: ValidCommand() și MinimalValid() — compilarea le cere,
+//    pentru că record-ul n-are constructor implicit
+// 7. Regenerezi contractul: generate-openapi.ps1 → npm run gen:api (R9)
+//
+// Pasul care NU mai e necesar: mock-urile. `Arg.Any<ConsultationCreateData>()` rămâne
+// valid indiferent câte câmpuri are record-ul. De aceea semnătura primește un record
+// și nu parametri poziționali.
+//
+// ATENȚIE la repository-urile care ÎNCĂ au semnături poziționale lungi: acolo pasul 6
+// include și fiecare `Arg.Any<>()` din fiecare mock, altfel NSubstitute nu recunoaște
+// apelul și testul pică pe o valoare default, nu cu un mesaj clar.
 ```
 
 ### R9 — OpenAPI contract — regenerare după orice schimbare de endpoint
@@ -2211,12 +2383,20 @@ git add -A ; git commit -m "feat: ..." ; git push origin main
 | Zustand | 4.x |
 | Zod | 4.x |
 | react-hook-form | 7.x |
-| Axios | **1.13.5 (pinned)** |
+| Axios | `^1.13.5` în package.json · **1.13.5** în package-lock.json |
 | Syncfusion EJ2 | 32.x |
+| TipTap | 3.x (`@tiptap/react`, `starter-kit`, `extension-link/underline/placeholder`) |
+| lucide-react | 0.577.x |
 | @dnd-kit/core | 6.3.1 |
 | @dnd-kit/sortable | 10.0.0 |
 | @dnd-kit/utilities | 3.2.2 |
 
-> ⚠️ **Axios — NU face upgrade fără verificare manuală.**  
-> Pe 31 martie 2025 pachetul `axios@1.14.1` a conținut malware (supply chain attack).  
+> ⚠️ **Axios — NU face upgrade fără verificare manuală.**
+> Pe 31 martie 2025 pachetul `axios@1.14.1` a conținut malware (supply chain attack).
 > Versiunea sigură confirmată: `1.13.5`. Verifică înainte de orice `npm update axios`.
+>
+> **Versiunea NU e blocată în `package.json`** — acolo e `^1.13.5`, un interval caret care
+> acceptă orice `1.x` ulterior. Ce ține azi versiunea la 1.13.5 e **`package-lock.json`**,
+> respectat de `npm ci` (folosit în CI). Un `npm install axios` sau `npm update axios` local
+> poate ridica versiunea în interval. Dacă intenția e blocare reală, scrie `"axios": "1.13.5"`
+> fără caret.
