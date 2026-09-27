@@ -15,6 +15,7 @@ const AppointmentDetailPage  = lazy(() => import('../features/appointments/pages
 const ConsultationsPage  = lazy(() => import('../features/consultations/pages/ConsultationsListPage'))
 const PrescriptionsPage  = lazy(() => import('../features/prescriptions/pages/PrescriptionsListPage'))
 const InvoicesPage       = lazy(() => import('../features/invoices/pages/InvoicesListPage'))
+const TariffsPage        = lazy(() => import('../features/tariffs/pages/TariffsListPage'))
 const DoctorsPage        = lazy(() => import('../features/doctors/pages/DoctorsListPage'))
 const DoctorDetailPage   = lazy(() => import('../features/doctors/pages/DoctorDetailPage'))
 const UsersPage          = lazy(() => import('../features/users/pages/UsersListPage'))
@@ -68,6 +69,7 @@ export const AppRoutes = () => (
           <Route path="/consultations"   element={<ConsultationsPage />} />
           <Route path="/prescriptions"   element={<PrescriptionsPage />} />
           <Route path="/invoices"        element={<InvoicesPage />} />
+          <Route path="/tariffs"         element={<TariffsPage />} />
           <Route path="/doctors"         element={<DoctorsPage />} />
           <Route path="/doctors/:id"      element={<DoctorDetailPage />} />
           <Route path="/users"           element={<UsersPage />} />

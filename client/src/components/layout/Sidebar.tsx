@@ -33,6 +33,7 @@ import {
   Search,
   X,
   Star,
+  Tag,
 } from 'lucide-react';
 import { useUiStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
@@ -109,6 +110,7 @@ const NAV_SECTIONS: NavSection[] = [
     section: 'Financiar',
     items: [
       { to: '/invoices', label: 'Facturi', icon: <Receipt size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+      { to: '/tariffs',  label: 'Tarife',  icon: <Tag     size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
     ],
   },
   {

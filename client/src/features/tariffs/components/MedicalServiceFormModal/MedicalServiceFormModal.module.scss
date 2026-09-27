@@ -1,0 +1,34 @@
+@import '@/styles/variables';
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.grow     { flex: 1; min-width: 180px; }
+.code     { width: 170px; }
+.duration { width: 150px; }
+.price    { width: 170px; }
+.date     { width: 170px; }
+
+.sectionTitle {
+  margin-top: 0.25rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid $gray-200;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: $gray-700;
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: $gray-500;
+}

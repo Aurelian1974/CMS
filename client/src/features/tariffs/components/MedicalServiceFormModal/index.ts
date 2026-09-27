@@ -1,0 +1,1 @@
+export { MedicalServiceFormModal } from './MedicalServiceFormModal'

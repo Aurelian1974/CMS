@@ -29,6 +29,7 @@ export const MODULE = {
   Anm: 'anm',
   Audit: 'audit',
   Settings: 'settings',
+  Tariffs: 'tariffs',
 } as const;
 
 export type ModuleCode = (typeof MODULE)[keyof typeof MODULE];

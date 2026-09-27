@@ -31,6 +31,7 @@ export const ROUTE_MODULES = {
 
   // Financiar
   '/invoices':        ['invoices'],
+  '/tariffs':         ['tariffs'],
 
   // Administrare
   '/doctors':           ['users'],
