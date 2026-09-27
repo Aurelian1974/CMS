@@ -1,0 +1,71 @@
+@import '@/styles/variables';
+
+.card {
+  background: $card-bg;
+  border-radius: $border-radius-lg;
+  padding: 1.5rem;
+  box-shadow: $box-shadow-sm;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid $gray-200;
+}
+
+.titleGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: $gray-700;
+  margin: 0;
+}
+
+.count {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: $gray-500;
+  background: $gray-100;
+  border-radius: 20px;
+  padding: 0.2rem 0.625rem;
+}
+
+.link {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: $primary-dark;
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover {
+    color: $primary-darker;
+    text-decoration: underline;
+  }
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  max-height: 26rem;
+  overflow-y: auto;
+}
+
+.empty {
+  font-size: 0.875rem;
+  color: $gray-400;
+  text-align: center;
+  padding: 1.5rem 0;
+}
