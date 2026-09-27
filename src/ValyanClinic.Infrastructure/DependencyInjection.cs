@@ -89,6 +89,11 @@ public static class DependencyInjection
         services.AddScoped<IUserMenuPreferenceRepository, UserMenuPreferenceRepository>();
         services.AddScoped<ITariffRepository, TariffRepository>();
         services.AddScoped<IConsultationServiceRepository, ConsultationServiceRepository>();
+        services.AddScoped<IBillingRepository, BillingRepository>();
+        services.AddScoped<IPaymentRepository, PaymentRepository>();
+        services.AddScoped<IFiscalReceiptRepository, FiscalReceiptRepository>();
+        services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+        services.AddScoped<IFinancialSettingsRepository, FinancialSettingsRepository>();
 
         // ===== Servicii =====
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
@@ -97,6 +102,7 @@ public static class DependencyInjection
         services.AddScoped<IAnmNomenclatorService, AnmNomenclatorService>();
         services.AddScoped<ILabPdfParser, LabPdfParser>();
         services.AddSingleton<IPrescriptionPdfGenerator, PrescriptionPdfGenerator>();
+        services.AddSingleton<IInvoicePdfGenerator, InvoicePdfGenerator>();
         services.AddSingleton<ISipeClient, DisabledSipeClient>();
         services.AddHostedService<CnasSyncHostedService>();
         services.AddHostedService<AnmSyncHostedService>();

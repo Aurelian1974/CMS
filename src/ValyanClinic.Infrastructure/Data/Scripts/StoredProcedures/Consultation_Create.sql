@@ -46,6 +46,12 @@ BEGIN
     IF @StatusId IS NULL
         SET @StatusId = 'C2000000-0000-0000-0000-000000000001';
 
+    -- FACTURATA și BLOCATA se setează doar prin fluxurile dedicate (facturare / blocare)
+    IF NOT EXISTS (SELECT 1 FROM dbo.ConsultationStatuses WHERE Id = @StatusId AND Code IN ('INLUCRU', 'FINALIZATA'))
+    BEGIN
+        ;THROW 50021, N'Statusul consultației nu poate fi setat manual.', 1;
+    END;
+
     DECLARE @NewId UNIQUEIDENTIFIER = NEWID();
 
     INSERT INTO dbo.Consultations

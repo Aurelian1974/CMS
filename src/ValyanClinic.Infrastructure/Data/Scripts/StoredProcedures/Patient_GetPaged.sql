@@ -39,6 +39,12 @@ BEGIN
     DECLARE @SortBy_       NVARCHAR(50)     = @SortBy;
     DECLARE @SortDir_      NVARCHAR(4)      = @SortDir;
 
+    -- Numele coloanei vine fie PascalCase (default-ul controller-ului), fie camelCase
+    -- (numele câmpului din grid). Normalizăm ca să avem un singur set de mapări mai jos.
+    SET @SortBy_ = ISNULL(@SortBy_, 'lastName');
+    IF LEN(@SortBy_) > 0
+        SET @SortBy_ = LOWER(LEFT(@SortBy_, 1)) + SUBSTRING(@SortBy_, 2, LEN(@SortBy_));
+
     DECLARE @Offset INT = (@Page_ - 1) * @PageSize_;
     DECLARE @SearchTerm NVARCHAR(202) = '%' + ISNULL(@Search_, '') + '%';
 
@@ -126,44 +132,73 @@ BEGIN
            p.PhoneNumber LIKE @SearchTerm OR
            p.PatientCode LIKE @SearchTerm)
     ORDER BY
+        -- Coloane text. Fiecare tip de date are propriul bloc: un singur CASE
+        -- nu poate returna simultan NVARCHAR, INT și DATE.
         CASE WHEN @SortDir_ = 'asc' THEN
             CASE @SortBy_
-                WHEN 'patientCode' THEN p.PatientCode
-                WHEN 'PatientCode' THEN p.PatientCode
-                WHEN 'firstName'   THEN p.FirstName
-                WHEN 'FirstName'   THEN p.FirstName
-                WHEN 'lastName'    THEN p.LastName
-                WHEN 'LastName'    THEN p.LastName
-                WHEN 'fullName'    THEN p.LastName
-                WHEN 'FullName'    THEN p.LastName
-                WHEN 'email'       THEN p.Email
-                WHEN 'Email'       THEN p.Email
-                WHEN 'cnp'         THEN p.Cnp
-                WHEN 'Cnp'         THEN p.Cnp
-                WHEN 'genderName'  THEN g.Name
-                WHEN 'GenderName'  THEN g.Name
-                ELSE p.LastName
+                WHEN 'patientCode'       THEN p.PatientCode
+                WHEN 'firstName'         THEN p.FirstName
+                WHEN 'lastName'          THEN p.LastName
+                WHEN 'fullName'          THEN p.LastName + ' ' + p.FirstName
+                WHEN 'email'             THEN p.Email
+                WHEN 'cnp'               THEN p.Cnp
+                WHEN 'genderName'        THEN g.Name
+                WHEN 'bloodTypeName'     THEN bt.Name
+                WHEN 'primaryDoctorName' THEN pd_doc.DoctorName
+                WHEN 'phoneNumber'       THEN p.PhoneNumber
             END
         END ASC,
         CASE WHEN @SortDir_ = 'desc' THEN
             CASE @SortBy_
-                WHEN 'patientCode' THEN p.PatientCode
-                WHEN 'PatientCode' THEN p.PatientCode
-                WHEN 'firstName'   THEN p.FirstName
-                WHEN 'FirstName'   THEN p.FirstName
-                WHEN 'lastName'    THEN p.LastName
-                WHEN 'LastName'    THEN p.LastName
-                WHEN 'fullName'    THEN p.LastName
-                WHEN 'FullName'    THEN p.LastName
-                WHEN 'email'       THEN p.Email
-                WHEN 'Email'       THEN p.Email
-                WHEN 'cnp'         THEN p.Cnp
-                WHEN 'Cnp'         THEN p.Cnp
-                WHEN 'genderName'  THEN g.Name
-                WHEN 'GenderName'  THEN g.Name
-                ELSE p.LastName
+                WHEN 'patientCode'       THEN p.PatientCode
+                WHEN 'firstName'         THEN p.FirstName
+                WHEN 'lastName'          THEN p.LastName
+                WHEN 'fullName'          THEN p.LastName + ' ' + p.FirstName
+                WHEN 'email'             THEN p.Email
+                WHEN 'cnp'               THEN p.Cnp
+                WHEN 'genderName'        THEN g.Name
+                WHEN 'bloodTypeName'     THEN bt.Name
+                WHEN 'primaryDoctorName' THEN pd_doc.DoctorName
+                WHEN 'phoneNumber'       THEN p.PhoneNumber
             END
-        END DESC
+        END DESC,
+
+        -- Coloane numerice / booleene
+        CASE WHEN @SortDir_ = 'asc' THEN
+            CASE @SortBy_
+                WHEN 'allergyCount' THEN ISNULL(ac.AllergyCount, 0)
+                WHEN 'isActive'     THEN CAST(p.IsActive AS INT)
+            END
+        END ASC,
+        CASE WHEN @SortDir_ = 'desc' THEN
+            CASE @SortBy_
+                WHEN 'allergyCount' THEN ISNULL(ac.AllergyCount, 0)
+                WHEN 'isActive'     THEN CAST(p.IsActive AS INT)
+            END
+        END DESC,
+
+        -- Coloane de tip dată. Vârsta crește invers proporțional cu data nașterii,
+        -- deci 'age' ascendent = BirthDate descendent.
+        CASE WHEN @SortDir_ = 'asc' THEN
+            CASE @SortBy_
+                WHEN 'birthDate'       THEN p.BirthDate
+                WHEN 'insuranceExpiry' THEN p.InsuranceExpiry
+                WHEN 'createdAt'       THEN CAST(p.CreatedAt AS DATE)
+            END
+        END ASC,
+        CASE WHEN @SortDir_ = 'desc' THEN
+            CASE @SortBy_
+                WHEN 'birthDate'       THEN p.BirthDate
+                WHEN 'insuranceExpiry' THEN p.InsuranceExpiry
+                WHEN 'createdAt'       THEN CAST(p.CreatedAt AS DATE)
+            END
+        END DESC,
+        CASE WHEN @SortBy_ = 'age' AND @SortDir_ = 'asc'  THEN p.BirthDate END DESC,
+        CASE WHEN @SortBy_ = 'age' AND @SortDir_ = 'desc' THEN p.BirthDate END ASC,
+
+        -- Tie-break stabil: fără el, paginarea poate repeta sau sări rânduri
+        -- când valoarea de sortare e identică (OFFSET/FETCH nu garantează ordinea).
+        p.LastName ASC, p.FirstName ASC, p.Id ASC
     OFFSET @Offset ROWS FETCH NEXT @PageSize_ ROWS ONLY
     OPTION (RECOMPILE);
 
