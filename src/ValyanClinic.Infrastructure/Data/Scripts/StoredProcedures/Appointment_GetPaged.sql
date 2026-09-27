@@ -55,7 +55,9 @@ BEGIN
         sp.Name                                 AS SpecialtyName,
         s.Name                                  AS StatusName,
         s.Code                                  AS StatusCode,
-        CONCAT(cu.LastName, N' ', cu.FirstName) AS CreatedByName
+        CONCAT(cu.LastName, N' ', cu.FirstName) AS CreatedByName,
+        -- CAST: SELECT INTO ar crea o coloană rowversion nouă în #Base
+        CAST(a.RowVersion AS BINARY(8))         AS RowVersion
     INTO #Base
     FROM dbo.Appointments a
     INNER JOIN dbo.Patients p            ON p.Id  = a.PatientId
@@ -77,7 +79,7 @@ BEGIN
     -- Result set 1: pagina curentă (tiebreaker pe Id → paginare stabilă)
     SELECT Id, ClinicId, PatientId, DoctorId, StartTime, EndTime, StatusId, Notes,
            IsDeleted, CreatedAt, CreatedBy, PatientName, PatientPhone, DoctorName,
-           SpecialtyName, StatusName, StatusCode, CreatedByName
+           SpecialtyName, StatusName, StatusCode, CreatedByName, RowVersion
     FROM #Base
     WHERE (@StatusId IS NULL OR StatusId = @StatusId)
     ORDER BY

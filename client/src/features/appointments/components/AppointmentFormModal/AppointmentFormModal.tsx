@@ -1,64 +1,135 @@
 import { useEffect, useMemo } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { appointmentSchema, type AppointmentFormData } from '../../schemas/appointment.schema'
+import { appointmentSchema, toMinutes, type AppointmentFormData } from '../../schemas/appointment.schema'
 import type { AppointmentDto, CreateAppointmentPayload, UpdateAppointmentPayload } from '../../types/appointment.types'
 import type { PatientLookupDto } from '@/features/patients/types/patient.types'
 import type { DoctorLookupDto } from '@/features/doctors/types/doctor.types'
-import { useAppointmentStatuses } from '../../hooks/useAppointments'
+import type { ClinicScheduleDto, DoctorScheduleDto } from '@/features/clinic/types/schedule.types'
+import { useAppointmentConflicts, useAppointmentStatuses, type ConflictCheckParams } from '../../hooks/useAppointments'
+import { useClinicSchedule, useDoctorSchedules } from '@/features/clinic/hooks/useSchedule'
+import { useDebounce } from '@/hooks/useDebounce'
 import { AppModal } from '@/components/ui/AppModal'
 import { FormInput } from '@/components/forms/FormInput'
 import { FormSelect } from '@/components/forms/FormSelect'
 import { FormDatePicker } from '@/components/forms/FormDatePicker'
 import { AppButton } from '@/components/ui/AppButton'
-import { toLocalDateISO } from '@/utils/format'
+import { minutesOfLocal, toLocalDateISO } from '@/utils/format'
 import styles from './AppointmentFormModal.module.scss'
+
 // ── Time picker inline ────────────────────────────────────────────────────────
-const TIME_HOURS    = Array.from({ length: 14 }, (_, i) => i + 7)   // 07–20
-const TIME_MINUTES  = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]
+/** Fereastra implicită când programul nu e configurat */
+const FALLBACK_FROM_MIN = 7 * 60
+const FALLBACK_TO_MIN   = 20 * 60
+const MINUTE_STEP       = 5
+const DEFAULT_DURATION  = 30
+
+const pad = (n: number) => String(n).padStart(2, '0')
+const minutesToTime = (total: number) => `${pad(Math.floor(total / 60))}:${pad(total % 60)}`
+
+const addMinutesToTime = (time: string, minutes: number): string =>
+  minutesToTime(toMinutes(time) + minutes)
 
 interface TimeSelectProps {
   value: string                  // "HH:mm"
   onChange: (v: string) => void
   hasError?: boolean
+  /** Fereastra permisă, în minute de la miezul nopții */
+  minMinutes: number
+  maxMinutes: number
+  ariaLabel: string
 }
 
-const pad = (n: number) => String(n).padStart(2, '0')
+const TimeSelect = ({ value, onChange, hasError, minMinutes, maxMinutes, ariaLabel }: TimeSelectProps) => {
+  const [hStr, mStr] = (value || '').split(':')
+  const hVal = hStr !== undefined && hStr !== '' && Number.isFinite(Number(hStr)) ? Number(hStr) : Math.floor(minMinutes / 60)
+  const mVal = mStr !== undefined && Number.isFinite(Number(mStr)) ? Number(mStr) : 0
 
-const addMinutesToTime = (time: string, minutes: number): string => {
-  const [h, m] = time.split(':').map(Number)
-  const total = h * 60 + m + minutes
-  return `${pad(Math.floor(total / 60))}:${pad(total % 60)}`
-}
+  // Orele din fereastră + valoarea curentă chiar dacă e în afara ei (date istorice)
+  const hours = useMemo(() => {
+    const from = Math.floor(minMinutes / 60)
+    const to   = Math.max(from, Math.floor(maxMinutes / 60))
+    const base = Array.from({ length: to - from + 1 }, (_, i) => from + i)
+    return base.includes(hVal) ? base : [...base, hVal].sort((a, b) => a - b)
+  }, [minMinutes, maxMinutes, hVal])
 
-const TimeSelect = ({ value, onChange, hasError }: TimeSelectProps) => {
-  const parts   = value ? value.split(':') : ['07', '00']
-  const hVal    = parseInt(parts[0], 10)
-  const mVal    = parseInt(parts[1], 10)
+  const minutes = useMemo(() => {
+    const base = Array.from({ length: 60 / MINUTE_STEP }, (_, i) => i * MINUTE_STEP)
+    return base.includes(mVal) ? base : [...base, mVal].sort((a, b) => a - b)
+  }, [mVal])
 
   return (
     <div className={`${styles.timeSelectGroup}${hasError ? ` ${styles['timeSelectGroup--error']}` : ''}`}>
       <select
         className={styles.timeSelectPart}
+        aria-label={`${ariaLabel} — ora`}
         value={hVal}
         onChange={e => onChange(`${pad(Number(e.target.value))}:${pad(mVal)}`)}
       >
-        {TIME_HOURS.map(h => (
+        {hours.map(h => (
           <option key={h} value={h}>{pad(h)}</option>
         ))}
       </select>
       <span className={styles.timeSelectSep}>:</span>
       <select
         className={styles.timeSelectPart}
+        aria-label={`${ariaLabel} — minutul`}
         value={mVal}
         onChange={e => onChange(`${pad(hVal)}:${pad(Number(e.target.value))}`)}
       >
-        {TIME_MINUTES.map(m => (
+        {minutes.map(m => (
           <option key={m} value={m}>{pad(m)}</option>
         ))}
       </select>
     </div>
   )
+}
+
+// ── Program de lucru ──────────────────────────────────────────────────────────
+interface ScheduleWindow {
+  fromMin: number
+  toMin: number
+  /** Motivul pentru care ziua nu e lucrătoare (clinică închisă / doctorul nu lucrează) */
+  closedReason?: string
+}
+
+/**
+ * Fereastra efectivă = program clinică ∩ program doctor pentru ziua aleasă.
+ * Aceeași regulă ca în SP: programul se aplică doar dacă este configurat.
+ */
+const computeScheduleWindow = (
+  date: string,
+  doctorId: string,
+  clinicSchedule: ClinicScheduleDto[],
+  doctorSchedules: DoctorScheduleDto[],
+): ScheduleWindow => {
+  let fromMin = FALLBACK_FROM_MIN
+  let toMin = FALLBACK_TO_MIN
+  if (!date) return { fromMin, toMin }
+
+  const jsDow = new Date(`${date}T00:00:00`).getDay()
+  const dow = jsDow === 0 ? 7 : jsDow
+
+  if (clinicSchedule.length > 0) {
+    const entry = clinicSchedule.find(e => e.dayOfWeek === dow)
+    if (!entry?.isOpen || !entry.openTime || !entry.closeTime) {
+      return { fromMin, toMin, closedReason: 'Clinica este închisă în ziua selectată.' }
+    }
+    fromMin = toMinutes(entry.openTime.slice(0, 5))
+    toMin = toMinutes(entry.closeTime.slice(0, 5))
+  }
+
+  const doctorDays = doctorSchedules.filter(e => e.doctorId === doctorId && e.dayOfWeek != null)
+  if (doctorId && doctorDays.length > 0) {
+    const day = doctorDays.find(e => e.dayOfWeek === dow)
+    if (!day?.startTime || !day.endTime) {
+      return { fromMin, toMin, closedReason: 'Doctorul nu lucrează în ziua selectată.' }
+    }
+    fromMin = Math.max(fromMin, toMinutes(day.startTime.slice(0, 5)))
+    toMin = Math.min(toMin, toMinutes(day.endTime.slice(0, 5)))
+  }
+
+  return { fromMin, toMin }
 }
 
 interface CreateDefaults {
@@ -78,6 +149,8 @@ interface AppointmentFormModalProps {
   doctorLookup: DoctorLookupDto[]
   serverError?: string | null
   createDefaults?: CreateDefaults
+  /** Acces Full — poate programa în afara programului de lucru (urgențe) */
+  canOverrideSchedule?: boolean
 }
 
 export const AppointmentFormModal = ({
@@ -90,16 +163,25 @@ export const AppointmentFormModal = ({
   doctorLookup,
   serverError,
   createDefaults,
+  canOverrideSchedule = false,
 }: AppointmentFormModalProps) => {
   const isEdit = !!editData
 
   const { data: statusesResp } = useAppointmentStatuses()
-  const statusOptions = useMemo(
-    () => (statusesResp?.data ?? []).map(s => ({ value: s.id, label: s.name })),
-    [statusesResp],
-  )
+  const { data: clinicScheduleResp } = useClinicSchedule()
+  const { data: doctorSchedulesResp } = useDoctorSchedules()
+
+  const statuses = useMemo(() => statusesResp?.data ?? [], [statusesResp])
+  // La editare se oferă doar statusul curent + tranzițiile permise din el
+  const statusOptions = useMemo(() => {
+    const current = editData ? statuses.find(s => s.id === editData.statusId) : undefined
+    const allowed = current ? new Set((current.allowedNextCodes ?? '').split(',').filter(Boolean)) : null
+    return statuses
+      .filter(s => !allowed || s.id === current!.id || allowed.has(s.code))
+      .map(s => ({ value: s.id, label: s.name }))
+  }, [statuses, editData])
   // Status implicit la creare = primul din nomenclator (SortOrder minim)
-  const defaultStatusId = statusOptions[0]?.value ?? ''
+  const defaultStatusId = statuses[0]?.id ?? ''
 
   const {
     handleSubmit,
@@ -107,13 +189,14 @@ export const AppointmentFormModal = ({
     control,
     watch,
     setValue,
+    register,
     formState: { errors },
   } = useForm<AppointmentFormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(appointmentSchema) as any,
     defaultValues: {
       patientId: '', doctorId: '', date: '', startTime: '', endTime: '',
-      statusId: '', notes: '',
+      statusId: '', notes: '', overrideSchedule: false,
     },
   })
 
@@ -121,7 +204,7 @@ export const AppointmentFormModal = ({
   const startTimeValue = watch('startTime')
   useEffect(() => {
     if (!isEdit && startTimeValue) {
-      setValue('endTime', addMinutesToTime(startTimeValue, 30), { shouldValidate: true })
+      setValue('endTime', addMinutesToTime(startTimeValue, DEFAULT_DURATION), { shouldValidate: true })
     }
   }, [isEdit, setValue, startTimeValue])
 
@@ -130,16 +213,15 @@ export const AppointmentFormModal = ({
     if (!isOpen) return
 
     if (editData) {
-      const startDate = new Date(editData.startTime)
-      const endDate = new Date(editData.endTime)
       reset({
         patientId: editData.patientId,
         doctorId:  editData.doctorId,
-        date:      editData.startTime.slice(0, 10),
-        startTime: startDate.toTimeString().slice(0, 5),
-        endTime:   endDate.toTimeString().slice(0, 5),
+        date:      toLocalDateISO(new Date(editData.startTime)),
+        startTime: minutesToTime(minutesOfLocal(editData.startTime)),
+        endTime:   minutesToTime(minutesOfLocal(editData.endTime)),
         statusId:  editData.statusId ?? '',
         notes:     editData.notes ?? '',
+        overrideSchedule: false,
       })
     } else {
       reset({
@@ -150,6 +232,7 @@ export const AppointmentFormModal = ({
         endTime:   createDefaults?.endTime ?? '',
         statusId:  '',
         notes:     '',
+        overrideSchedule: false,
       })
     }
   }, [isOpen, editData, createDefaults, reset])
@@ -162,6 +245,44 @@ export const AppointmentFormModal = ({
     }
   }, [isOpen, isEdit, statusIdValue, defaultStatusId, setValue])
 
+  // ── Program de lucru + conflicte (avertizări non-blocante) ─────────────────
+  const dateValue = watch('date')
+  const doctorIdValue = watch('doctorId')
+  const endTimeValue = watch('endTime')
+
+  const scheduleWindow = useMemo(
+    () => computeScheduleWindow(
+      dateValue, doctorIdValue, clinicScheduleResp?.data ?? [], doctorSchedulesResp?.data ?? []),
+    [dateValue, doctorIdValue, clinicScheduleResp, doctorSchedulesResp],
+  )
+
+  const hasValidInterval = /^\d{2}:\d{2}$/.test(startTimeValue ?? '') && /^\d{2}:\d{2}$/.test(endTimeValue ?? '')
+    && toMinutes(endTimeValue) > toMinutes(startTimeValue)
+
+  const scheduleWarning = useMemo(() => {
+    if (!dateValue || !hasValidInterval) return null
+    if (scheduleWindow.closedReason) return scheduleWindow.closedReason
+    const start = toMinutes(startTimeValue)
+    const end = toMinutes(endTimeValue)
+    if (start < scheduleWindow.fromMin || end > scheduleWindow.toMin) {
+      return `Intervalul este în afara programului de lucru (${minutesToTime(scheduleWindow.fromMin)}–${minutesToTime(scheduleWindow.toMin)}).`
+    }
+    return null
+  }, [dateValue, hasValidInterval, scheduleWindow, startTimeValue, endTimeValue])
+
+  const conflictParams = useMemo<ConflictCheckParams | null>(() => {
+    if (!isOpen || !doctorIdValue || !dateValue || !hasValidInterval) return null
+    return {
+      doctorId:  doctorIdValue,
+      startTime: `${dateValue}T${startTimeValue}:00`,
+      endTime:   `${dateValue}T${endTimeValue}:00`,
+      excludeId: editData?.id,
+    }
+  }, [isOpen, doctorIdValue, dateValue, hasValidInterval, startTimeValue, endTimeValue, editData])
+  const debouncedConflictParams = useDebounce(conflictParams, 400)
+  const { data: conflictsResp } = useAppointmentConflicts(debouncedConflictParams)
+  const conflicts = conflictParams ? conflictsResp?.data ?? [] : []
+
   const handleFormSubmit = (data: AppointmentFormData) => {
     const payload: CreateAppointmentPayload = {
       patientId: data.patientId,
@@ -170,8 +291,9 @@ export const AppointmentFormModal = ({
       endTime:   `${data.date}T${data.endTime}:00`,
       statusId:  data.statusId || null,
       notes:     data.notes || null,
+      overrideSchedule: canOverrideSchedule && !!scheduleWarning && !!data.overrideSchedule,
     }
-    onSubmit(isEdit ? { ...payload, id: editData!.id } : payload)
+    onSubmit(isEdit ? { ...payload, id: editData!.id, rowVersion: editData!.rowVersion } : payload)
   }
 
   if (!isOpen) return null
@@ -263,6 +385,9 @@ export const AppointmentFormModal = ({
                   value={field.value}
                   onChange={field.onChange}
                   hasError={!!errors.startTime}
+                  minMinutes={scheduleWindow.fromMin}
+                  maxMinutes={scheduleWindow.toMin}
+                  ariaLabel="Ora început"
                 />
               )}
             />
@@ -282,6 +407,9 @@ export const AppointmentFormModal = ({
                   value={field.value}
                   onChange={field.onChange}
                   hasError={!!errors.endTime}
+                  minMinutes={scheduleWindow.fromMin}
+                  maxMinutes={scheduleWindow.toMin}
+                  ariaLabel="Ora sfârșit"
                 />
               )}
             />
@@ -289,6 +417,38 @@ export const AppointmentFormModal = ({
           </div>
         </div>
       </div>
+
+      {scheduleWarning && (
+        <div className="alert alert-warning py-2 mb-0" role="alert">
+          {scheduleWarning}
+          {canOverrideSchedule && (
+            <div className="form-check mt-2 mb-0">
+              <input
+                id="appointmentOverrideSchedule"
+                type="checkbox"
+                className="form-check-input"
+                {...register('overrideSchedule')}
+              />
+              <label htmlFor="appointmentOverrideSchedule" className="form-check-label">
+                Programare în afara programului (urgență)
+              </label>
+            </div>
+          )}
+        </div>
+      )}
+
+      {conflicts.length > 0 && (
+        <div className="alert alert-warning py-2 mb-0" role="alert">
+          Intervalul se suprapune cu:
+          <ul className="mb-0 ps-3">
+            {conflicts.map(c => (
+              <li key={c.id}>
+                {c.patientName} ({minutesToTime(minutesOfLocal(c.startTime))}–{minutesToTime(minutesOfLocal(c.endTime))}, {c.statusName})
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Status */}
       <div className="row g-3">

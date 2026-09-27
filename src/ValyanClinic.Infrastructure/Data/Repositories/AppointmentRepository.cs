@@ -166,4 +166,36 @@ public sealed class AppointmentRepository(DapperContext context) : IAppointmentR
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct));
     }
+
+    public async Task<IEnumerable<AppointmentConflictDto>> GetConflictsAsync(
+        Guid clinicId, Guid doctorId, DateTime startTime, DateTime endTime, Guid? excludeId,
+        CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        return await connection.QueryAsync<AppointmentConflictDto>(
+            new CommandDefinition(
+                AppointmentProcedures.CheckConflict,
+                new
+                {
+                    ClinicId = clinicId,
+                    DoctorId = doctorId,
+                    StartTime = startTime,
+                    EndTime = endTime,
+                    ExcludeId = excludeId
+                },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+    }
+
+    public async Task<IEnumerable<AppointmentSchedulerDto>> GetByPatientAsync(
+        Guid clinicId, Guid patientId, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        return await connection.QueryAsync<AppointmentSchedulerDto>(
+            new CommandDefinition(
+                AppointmentProcedures.GetByPatient,
+                new { ClinicId = clinicId, PatientId = patientId },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+    }
 }

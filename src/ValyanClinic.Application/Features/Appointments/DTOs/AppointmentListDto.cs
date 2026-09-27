@@ -20,4 +20,6 @@ public sealed class AppointmentListDto
     public bool IsDeleted { get; init; }
     public DateTime CreatedAt { get; init; }
     public string? CreatedByName { get; init; }
+    /// <summary>Token de concurență optimistă — se retrimite la Update.</summary>
+    public byte[]? RowVersion { get; init; }
 }

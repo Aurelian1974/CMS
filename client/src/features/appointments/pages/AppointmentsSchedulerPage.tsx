@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from 'react'
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppointmentsForScheduler, useCreateAppointment, useUpdateAppointment } from '../hooks/useAppointments'
 import { MODULE, useHasAccess } from '@/hooks/useHasAccess'
@@ -141,6 +141,7 @@ const groupByDoctor = (appointments: AppointmentSchedulerDto[]): Map<string, App
 }
 
 /** Adaptează AppointmentSchedulerDto pentru AppointmentFormModal (editare) */
+// rowVersion null: mutarea din scheduler nu verifică concurența (acțiune vizuală, imediată)
 const schedulerDtoToFormEditData = (apt: AppointmentSchedulerDto): AppointmentDto => ({
   ...apt,
   clinicId: '',
@@ -149,6 +150,7 @@ const schedulerDtoToFormEditData = (apt: AppointmentSchedulerDto): AppointmentDt
   isDeleted: false,
   createdAt: '',
   createdByName: null,
+  rowVersion: null,
 })
 
 /** Rotunjește minutele la cel mai apropiat multiplu de 15 */
@@ -363,8 +365,16 @@ export const AppointmentsSchedulerPage = () => {
   const [dndError, setDndError] = useState<string | null>(null)
   const dndErrorTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-  const { canWrite } = useHasAccess()
+  const { canWrite, hasFull } = useHasAccess()
   const canEdit = canWrite(MODULE.Appointments)
+  const canOverrideSchedule = hasFull(MODULE.Appointments)
+
+  // Indicatorul „acum” se reactualizează la fiecare minut
+  const [nowTick, setNowTick] = useState(() => Date.now())
+  useEffect(() => {
+    const timer = window.setInterval(() => setNowTick(Date.now()), 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   const showDndError = useCallback((message: string) => {
     clearTimeout(dndErrorTimer.current)
@@ -621,7 +631,7 @@ export const AppointmentsSchedulerPage = () => {
   }, [currentDate, updateAppointment, tlStart, tlEnd, clinicEntry, doctorTodayMap, groupedByDoctor, showDndError])
 
   // Tooltip handlers
-  const handleEventMouseEnter = useCallback((e: React.MouseEvent, apt: AppointmentSchedulerDto) => {
+  const handleEventMouseEnter = useCallback((e: React.MouseEvent | React.FocusEvent, apt: AppointmentSchedulerDto) => {
     clearTimeout(tooltipTimer.current)
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     setTooltip({
@@ -636,7 +646,7 @@ export const AppointmentsSchedulerPage = () => {
   }, [])
 
   // Now indicator position
-  const now = new Date()
+  const now = new Date(nowTick)
   const isToday = now.toDateString() === currentDate.toDateString()
   const nowMinutes = now.getHours() * 60 + now.getMinutes()
   const nowLeftPct = ((nowMinutes - tlStart) / (tlEnd - tlStart)) * 100
@@ -649,6 +659,7 @@ export const AppointmentsSchedulerPage = () => {
     : formatDateDisplay(currentDate)
 
   const overviewDays = viewMode === 'week' ? weekDays : monthDays
+  const navUnit = viewMode === 'week' ? 'Săptămâna' : viewMode === 'month' ? 'Luna' : 'Ziua'
 
   return (
     <div className={styles.page}>
@@ -674,9 +685,9 @@ export const AppointmentsSchedulerPage = () => {
       {/* Toolbar */}
       <div className={styles.toolbar}>
         <div className={styles.dateNav}>
-          <button className={styles.navBtn} onClick={goPrev}><IconChevronLeft /></button>
+          <button className={styles.navBtn} onClick={goPrev} aria-label={`${navUnit} anterioară`}><IconChevronLeft /></button>
           <span className={styles.currentDate}>{dateLabel}</span>
-          <button className={styles.navBtn} onClick={goNext}><IconChevronRight /></button>
+          <button className={styles.navBtn} onClick={goNext} aria-label={`${navUnit} următoare`}><IconChevronRight /></button>
         </div>
 
         <button className={styles.todayBtn} onClick={goToday}>Astăzi</button>
@@ -817,6 +828,18 @@ export const AppointmentsSchedulerPage = () => {
                           className={`${styles.eventBar} ${modifier}${draggingId === apt.id ? ` ${styles['eventBar--dragging']}` : ''}`}
                           style={{ left, width }}
                           draggable={canEdit}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`${apt.patientName}, ${formatTimeShort(apt.startTime)}–${formatTimeShort(apt.endTime)}, ${apt.statusName}`}
+                          aria-describedby={tooltip?.appointment.id === apt.id ? 'scheduler-tooltip' : undefined}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              handleEventClick(e, apt)
+                            }
+                          }}
+                          onFocus={e => handleEventMouseEnter(e, apt)}
+                          onBlur={handleEventMouseLeave}
                           onDragStart={e => handleDragStart(e, apt)}
                           onDragEnd={handleDragEnd}
                           onClick={e => handleEventClick(e, apt)}
@@ -881,15 +904,22 @@ export const AppointmentsSchedulerPage = () => {
                   const isTodayDate = d.toDateString() === now.toDateString()
                   const cellMod = styles[getSlotCellMod(free)] ?? ''
                   const todayMod = isTodayDate ? ` ${styles['overviewCell--today']}` : ''
+                  const openDay = () => {
+                    setCurrentDate(new Date(d))
+                    setDoctorFilter(doctor.id)
+                    setViewMode('day')
+                  }
                   return (
                     <div
                       key={formatDateISO(d)}
                       className={`${styles.overviewCell} ${cellMod}${todayMod}`}
                       title={free < 0 ? 'Indisponibil' : `${free} sloturi libere de 30 min`}
-                      onClick={() => {
-                        setCurrentDate(new Date(d))
-                        setDoctorFilter(doctor.id)
-                        setViewMode('day')
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${doctor.fullName}, ${d.toLocaleDateString('ro-RO')}: ${free < 0 ? 'indisponibil' : `${free} sloturi libere`}`}
+                      onClick={openDay}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDay() }
                       }}
                     >
                       {free < 0 ? (
@@ -912,6 +942,8 @@ export const AppointmentsSchedulerPage = () => {
       {/* Tooltip */}
       {tooltip && (
         <div
+          id="scheduler-tooltip"
+          role="tooltip"
           className={styles.tooltip}
           style={{
             left: tooltip.x,
@@ -954,6 +986,7 @@ export const AppointmentsSchedulerPage = () => {
         patientLookup={patientLookup}
         doctorLookup={doctorLookup}
         serverError={serverError}
+        canOverrideSchedule={canOverrideSchedule}
       />
     </div>
   )

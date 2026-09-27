@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
 import { usePatientDetail } from '../../hooks/usePatients'
+import { usePatientAppointments } from '@/features/appointments/hooks/useAppointments'
+import type { AppointmentSchedulerDto } from '@/features/appointments/types/appointment.types'
+import { MODULE, useHasAccess } from '@/hooks/useHasAccess'
 import { formatDate, formatDateTime } from '@/utils/format'
 import type { PatientDetailDto, PatientAllergyDto, PatientDoctorDto, PatientEmergencyContactDto } from '../../types/patient.types'
 import { AppModal } from '@/components/ui/AppModal'
@@ -13,7 +16,7 @@ const IconPhone  = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="n
 const IconMail   = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>
 const IconShield = () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
 
-type DetailTab = 'personal' | 'contact' | 'medical' | 'doctors' | 'audit'
+type DetailTab = 'personal' | 'contact' | 'medical' | 'doctors' | 'appointments' | 'audit'
 
 interface PatientDetailModalProps {
   isOpen: boolean
@@ -39,6 +42,10 @@ const getSeverityClass = (code: string): string => {
 export const PatientDetailModal = ({ isOpen, onClose, patientId, onEdit }: PatientDetailModalProps) => {
   const [activeTab, setActiveTab] = useState<DetailTab>('personal')
   const { data: resp, isLoading, isError } = usePatientDetail(patientId ?? '', isOpen && !!patientId)
+  const { canRead } = useHasAccess()
+  const canSeeAppointments = canRead(MODULE.Appointments)
+  const { data: appointmentsResp, isLoading: appointmentsLoading } = usePatientAppointments(
+    patientId ?? '', isOpen && !!patientId && canSeeAppointments && activeTab === 'appointments')
 
   // Reset tab la deschidere
   useEffect(() => {
@@ -59,6 +66,7 @@ export const PatientDetailModal = ({ isOpen, onClose, patientId, onEdit }: Patie
         { key: 'contact',  label: 'Contact & Adresă' },
         { key: 'medical',  label: 'Medical' },
         { key: 'doctors',  label: `Medici (${doctors.length})` },
+        ...(canSeeAppointments ? [{ key: 'appointments', label: 'Programări' }] : []),
         { key: 'audit',    label: 'Audit' },
       ]
     : undefined
@@ -145,6 +153,9 @@ export const PatientDetailModal = ({ isOpen, onClose, patientId, onEdit }: Patie
           {activeTab === 'contact'  && <ContactTab patient={patient} emergencyContacts={emergencyContacts} />}
           {activeTab === 'medical'  && <MedicalTab patient={patient} allergies={allergies} />}
           {activeTab === 'doctors'  && <DoctorsTab doctors={doctors} />}
+          {activeTab === 'appointments' && (
+            <AppointmentsTab appointments={appointmentsResp?.data ?? []} isLoading={appointmentsLoading} />
+          )}
           {activeTab === 'audit'    && <AuditTab patient={patient} />}
         </>
       )}
@@ -280,7 +291,44 @@ const DoctorsTab = ({ doctors }: { doctors: PatientDoctorDto[] }) => {
   )
 }
 
-// ═══════════ Tab 5: Audit ═══════════
+// ═══════════ Tab 5: Programări ═══════════
+const formatTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })
+
+const AppointmentsTab = ({ appointments, isLoading }: { appointments: AppointmentSchedulerDto[]; isLoading: boolean }) => {
+  if (isLoading) {
+    return (
+      <div className={styles.bodyLoading}>
+        <LoadingSpinner size="sm" />
+        <span>Se încarcă programările...</span>
+      </div>
+    )
+  }
+  if (appointments.length === 0) {
+    return <p className={styles.emptyMsg}>Nicio programare înregistrată.</p>
+  }
+
+  return (
+    <div className={styles.cardList}>
+      {appointments.map(a => (
+        <div key={a.id} className={styles.card}>
+          <div className={styles.cardHeader}>
+            <span className={styles.cardName}>
+              {formatDate(a.startTime)} · {formatTime(a.startTime)}–{formatTime(a.endTime)}
+            </span>
+            <span className={styles.primaryBadge}>{a.statusName}</span>
+          </div>
+          <div className={styles.cardMeta}>
+            <span>Dr. {a.doctorName}</span>
+            {a.notes && <span>{a.notes}</span>}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ═══════════ Tab 6: Audit ═══════════
 const AuditTab = ({ patient }: { patient: PatientDetailDto }) => (
   <div className={styles.infoGrid}>
     <InfoRow label="Creat la"          value={formatDateTime(patient.createdAt)} />

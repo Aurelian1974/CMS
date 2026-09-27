@@ -113,6 +113,31 @@ describe('appointmentSchema', () => {
   // ── endTime ────────────────────────────────────────────────────────────────
 
   describe('endTime', () => {
+    it('should fail when end time is before start time', () => {
+      const result = appointmentSchema.safeParse({ ...validAppointment, startTime: '10:00', endTime: '09:30' })
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error.issues[0].path).toEqual(['endTime'])
+      }
+    })
+
+    it('should fail when duration is under 5 minutes', () => {
+      const result = appointmentSchema.safeParse({ ...validAppointment, startTime: '09:00', endTime: '09:03' })
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error.issues[0].message).toContain('5 minute')
+      }
+    })
+
+    it('should compare times numerically, not lexicographically', () => {
+      const result = appointmentSchema.safeParse({ ...validAppointment, startTime: '09:55', endTime: '10:05' })
+      expect(result.success).toBe(true)
+    })
+
+    it('should fail when time format is invalid', () => {
+      const result = appointmentSchema.safeParse({ ...validAppointment, endTime: '9:30' })
+      expect(result.success).toBe(false)
+    })
     it('eșuează când este gol', () => {
       const result = appointmentSchema.safeParse({ ...validAppointment, endTime: '' })
       expect(result.success).toBe(false)

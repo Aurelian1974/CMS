@@ -12,6 +12,7 @@ export type AppointmentDetailDto    = WithRequired<Required<Schemas['Appointment
 export type AppointmentSchedulerDto = WithRequired<Required<Schemas['AppointmentSchedulerDto']>, NameKeys>
 export type AppointmentStatsDto     = Required<Schemas['AppointmentStatsDto']>
 export type AppointmentStatusDto    = WithRequired<Required<Schemas['AppointmentStatusDto']>, 'name' | 'code'>
+export type AppointmentConflictDto  = WithRequired<Required<Schemas['AppointmentConflictDto']>, 'patientName' | 'statusName'>
 
 export interface AppointmentsPagedResponse {
   pagedResult: {

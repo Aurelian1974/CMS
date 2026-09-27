@@ -9,6 +9,7 @@ import type {
   UpdateAppointmentStatusPayload,
   AppointmentSchedulerDto,
   AppointmentStatusDto,
+  AppointmentConflictDto,
 } from '@/features/appointments/types/appointment.types'
 
 export const appointmentsApi = {
@@ -23,6 +24,12 @@ export const appointmentsApi = {
 
   getStatuses: (): Promise<ApiResponse<AppointmentStatusDto[]>> =>
     api.get('/api/v1/Appointments/statuses'),
+
+  getConflicts: (doctorId: string, startTime: string, endTime: string, excludeId?: string): Promise<ApiResponse<AppointmentConflictDto[]>> =>
+    api.get('/api/v1/Appointments/conflicts', { params: { doctorId, startTime, endTime, excludeId } }),
+
+  getByPatient: (patientId: string): Promise<ApiResponse<AppointmentSchedulerDto[]>> =>
+    api.get(`/api/v1/Appointments/by-patient/${patientId}`),
 
   create: (payload: CreateAppointmentPayload): Promise<ApiResponse<string>> =>
     api.post('/api/v1/Appointments', payload),

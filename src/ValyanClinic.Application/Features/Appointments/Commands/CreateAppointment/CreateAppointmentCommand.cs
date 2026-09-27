@@ -10,5 +10,6 @@ public sealed record CreateAppointmentCommand(
     DateTime StartTime,
     DateTime EndTime,
     Guid? StatusId,
-    string? Notes
+    string? Notes,
+    bool OverrideSchedule = false
 ) : IRequest<Result<Guid>>;

@@ -21,6 +21,8 @@ public static class ErrorMessages
         public const string InvalidTransition = "Tranziția de status nu este permisă.";
         public const string InvalidTimeRange  = "Ora de sfârșit trebuie să fie după ora de început.";
         public const string Concurrency       = "Programarea a fost modificată de alt utilizator. Reîncarcă datele.";
+        public const string ScheduleOverrideForbidden =
+            "Nu aveți dreptul să creați programări în afara programului de lucru.";
     }
 
     public static class Consultation

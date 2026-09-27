@@ -12,5 +12,6 @@ public sealed record UpdateAppointmentCommand(
     DateTime EndTime,
     Guid? StatusId,
     string? Notes,
-    byte[]? RowVersion = null
+    byte[]? RowVersion = null,
+    bool OverrideSchedule = false
 ) : IRequest<Result<bool>>;

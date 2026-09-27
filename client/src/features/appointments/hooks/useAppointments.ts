@@ -17,6 +17,9 @@ export const appointmentKeys = {
   scheduler: (dateFrom: string, dateTo: string, doctorId?: string) =>
     [...appointmentKeys.all, 'scheduler', { dateFrom, dateTo, doctorId }] as const,
   statuses:  () => [...appointmentKeys.all, 'statuses'] as const,
+  conflicts: (doctorId: string, startTime: string, endTime: string, excludeId?: string) =>
+    [...appointmentKeys.all, 'conflicts', { doctorId, startTime, endTime, excludeId }] as const,
+  byPatient: (patientId: string) => [...appointmentKeys.all, 'by-patient', patientId] as const,
 }
 
 // ── Nomenclator statusuri (se schimbă rar → cache lung) ───────────────────────
@@ -53,10 +56,38 @@ export const useAppointmentsForScheduler = (dateFrom: string, dateTo: string, do
     staleTime: 30 * 1000,
   })
 
+// ── Conflicte pentru un interval propus (avertizare live în formular) ──────────
+export interface ConflictCheckParams {
+  doctorId: string
+  startTime: string
+  endTime: string
+  excludeId?: string
+}
+
+export const useAppointmentConflicts = (params: ConflictCheckParams | null) =>
+  useQuery({
+    queryKey: params
+      ? appointmentKeys.conflicts(params.doctorId, params.startTime, params.endTime, params.excludeId)
+      : [...appointmentKeys.all, 'conflicts', 'idle'],
+    queryFn: () => appointmentsApi.getConflicts(params!.doctorId, params!.startTime, params!.endTime, params!.excludeId),
+    enabled: !!params,
+    staleTime: 15 * 1000,
+  })
+
+// ── Istoric programări pacient ────────────────────────────────────────────────
+export const usePatientAppointments = (patientId: string, enabled = true) =>
+  useQuery({
+    queryKey: appointmentKeys.byPatient(patientId),
+    queryFn: () => appointmentsApi.getByPatient(patientId),
+    enabled: !!patientId && enabled,
+    staleTime: 60 * 1000,
+  })
+
 // ── Invalidare comună după orice scriere (listă + scheduler + detaliu) ────────
 const invalidateAppointments = (qc: QueryClient, id?: string) => {
   qc.invalidateQueries({ queryKey: appointmentKeys.lists() })
   qc.invalidateQueries({ queryKey: [...appointmentKeys.all, 'scheduler'] })
+  qc.invalidateQueries({ queryKey: [...appointmentKeys.all, 'by-patient'] })
   if (id) qc.invalidateQueries({ queryKey: appointmentKeys.detail(id) })
 }
 
@@ -75,6 +106,8 @@ export const useUpdateAppointment = () => {
   return useMutation({
     mutationFn: (payload: UpdateAppointmentPayload) => appointmentsApi.update(payload),
     onSuccess: (_data, variables) => invalidateAppointments(qc, variables.id),
+    // Un eșec (ex. 409 concurență) poate însemna date vechi în cache → reîmprospătare
+    onError: (_err, variables) => invalidateAppointments(qc, variables.id),
   })
 }
 

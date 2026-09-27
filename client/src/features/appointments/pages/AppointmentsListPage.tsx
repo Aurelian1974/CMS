@@ -100,7 +100,7 @@ export const AppointmentsListPage = () => {
   })
 
   // Date reale din API — paginare + sortare + filtrare complet server-side
-  const { data: appointmentsResp, isError } = useAppointments({
+  const { data: appointmentsResp, isError, isLoading, isFetching, error } = useAppointments({
     page,
     pageSize,
     search:   search || undefined,
@@ -306,7 +306,7 @@ export const AppointmentsListPage = () => {
     return (
       <div className={styles.page}>
         <div className="alert alert-danger m-4">
-          Nu s-au putut încărca datele. Verifică conexiunea la server.
+          {error instanceof Error ? error.message : 'Nu s-au putut încărca datele. Verifică conexiunea la server.'}
         </div>
       </div>
     )
@@ -442,7 +442,7 @@ export const AppointmentsListPage = () => {
           rowData={appointments}
           columnDefs={columnDefs}
           initialSort={[{ field: 'startTime', direction: 'desc' }]}
-          loading={!appointmentsResp}
+          loading={isLoading || isFetching}
           getRowId={(row) => row.id}
           // Paginare (server-side)
           pagination
@@ -489,6 +489,7 @@ export const AppointmentsListPage = () => {
         patientLookup={patientLookup}
         doctorLookup={doctorLookup}
         serverError={serverError}
+        canOverrideSchedule={canDelete}
       />
 
       {/* Modal detalii vizualizare */}

@@ -1937,6 +1937,197 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/Appointments/conflicts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    doctorId?: string;
+                    startTime?: string;
+                    endTime?: string;
+                    excludeId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AppointmentConflictDtoIEnumerableApiResponse"];
+                        "application/json": components["schemas"]["AppointmentConflictDtoIEnumerableApiResponse"];
+                        "text/json": components["schemas"]["AppointmentConflictDtoIEnumerableApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/Appointments/by-patient/{patientId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    patientId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["AppointmentSchedulerDtoIEnumerableApiResponse"];
+                        "application/json": components["schemas"]["AppointmentSchedulerDtoIEnumerableApiResponse"];
+                        "text/json": components["schemas"]["AppointmentSchedulerDtoIEnumerableApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/Appointments/{id}/status": {
         parameters: {
             query?: never;
@@ -18732,6 +18923,24 @@ export interface components {
                 [key: string]: string[];
             } | null;
         };
+        AppointmentConflictDto: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: date-time */
+            startTime?: string;
+            /** Format: date-time */
+            endTime?: string;
+            patientName?: string | null;
+            statusName?: string | null;
+        };
+        AppointmentConflictDtoIEnumerableApiResponse: {
+            success?: boolean;
+            data?: components["schemas"]["AppointmentConflictDto"][] | null;
+            message?: string | null;
+            errors?: {
+                [key: string]: string[];
+            } | null;
+        };
         AppointmentDetailDto: {
             /** Format: uuid */
             id?: string;
@@ -18803,6 +19012,8 @@ export interface components {
             /** Format: date-time */
             createdAt?: string;
             createdByName?: string | null;
+            /** Format: byte */
+            rowVersion?: string | null;
         };
         AppointmentListDtoPagedResult: {
             items?: components["schemas"]["AppointmentListDto"][] | null;
@@ -19788,6 +19999,7 @@ export interface components {
             /** Format: uuid */
             statusId?: string | null;
             notes?: string | null;
+            overrideSchedule?: boolean;
         };
         CreateClinicAddressCommand: {
             addressType?: string | null;
@@ -22017,6 +22229,7 @@ export interface components {
             notes?: string | null;
             /** Format: byte */
             rowVersion?: string | null;
+            overrideSchedule?: boolean;
         };
         UpdateAppointmentStatusRequest: {
             /** Format: uuid */

@@ -25,7 +25,7 @@ public sealed class CreateAppointmentCommandHandler(
                     EndTime:         request.EndTime,
                     StatusId:        request.StatusId,
                     Notes:           request.Notes,
-                    EnforceSchedule: true,
+                    EnforceSchedule: !request.OverrideSchedule,
                     ActorId:         currentUser.Id),
                 cancellationToken);
 

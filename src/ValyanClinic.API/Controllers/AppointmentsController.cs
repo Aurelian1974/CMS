@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Enums;
@@ -10,6 +11,8 @@ using ValyanClinic.Application.Features.Appointments.Queries.GetAppointments;
 using ValyanClinic.Application.Features.Appointments.Queries.GetAppointmentById;
 using ValyanClinic.Application.Features.Appointments.Queries.GetAppointmentsForScheduler;
 using ValyanClinic.Application.Features.Appointments.Queries.GetAppointmentStatuses;
+using ValyanClinic.Application.Features.Appointments.Queries.GetAppointmentConflicts;
+using ValyanClinic.Application.Features.Appointments.Queries.GetPatientAppointments;
 
 namespace ValyanClinic.API.Controllers;
 
@@ -73,6 +76,26 @@ public class AppointmentsController : BaseApiController
     public async Task<IActionResult> GetStatuses(CancellationToken ct)
         => HandleResult(await Mediator.Send(new GetAppointmentStatusesQuery(), ct));
 
+    /// <summary>Programările care ocupă un interval propus (evită un 409 la submit).</summary>
+    [HttpGet("conflicts")]
+    [HasAccess(ModuleCodes.Appointments, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IEnumerable<AppointmentConflictDto>>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetConflicts(
+        [FromQuery] Guid doctorId,
+        [FromQuery] DateTime startTime,
+        [FromQuery] DateTime endTime,
+        [FromQuery] Guid? excludeId,
+        CancellationToken ct)
+        => HandleResult(await Mediator.Send(
+            new GetAppointmentConflictsQuery(doctorId, startTime, endTime, excludeId), ct));
+
+    /// <summary>Istoricul programărilor unui pacient.</summary>
+    [HttpGet("by-patient/{patientId:guid}")]
+    [HasAccess(ModuleCodes.Appointments, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IEnumerable<AppointmentSchedulerDto>>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetByPatient(Guid patientId, CancellationToken ct)
+        => HandleResult(await Mediator.Send(new GetPatientAppointmentsQuery(patientId), ct));
+
     /// <summary>Creare programare nouă.</summary>
     [HttpPost]
     [HasAccess(ModuleCodes.Appointments, AccessLevel.Write)]
@@ -80,6 +103,9 @@ public class AppointmentsController : BaseApiController
     public async Task<IActionResult> Create(
         [FromBody] CreateAppointmentCommand command, CancellationToken ct)
     {
+        if (command.OverrideSchedule && !await CanOverrideScheduleAsync())
+            return ScheduleOverrideForbidden<Guid>();
+
         var result = await Mediator.Send(command, ct);
         return HandleResult(result);
     }
@@ -91,6 +117,9 @@ public class AppointmentsController : BaseApiController
     public async Task<IActionResult> Update(
         Guid id, [FromBody] UpdateAppointmentRequest request, CancellationToken ct)
     {
+        if (request.OverrideSchedule && !await CanOverrideScheduleAsync())
+            return ScheduleOverrideForbidden<bool>();
+
         var command = new UpdateAppointmentCommand(
             id,
             request.PatientId,
@@ -99,7 +128,8 @@ public class AppointmentsController : BaseApiController
             request.EndTime,
             request.StatusId,
             request.Notes,
-            request.RowVersion);
+            request.RowVersion,
+            request.OverrideSchedule);
 
         var result = await Mediator.Send(command, ct);
         return HandleResult(result);
@@ -126,6 +156,19 @@ public class AppointmentsController : BaseApiController
         var result = await Mediator.Send(new DeleteAppointmentCommand(id), ct);
         return HandleResult(result);
     }
+
+    // Suprascrierea programului de lucru (urgențe) cere acces Full pe modul
+    private async Task<bool> CanOverrideScheduleAsync()
+    {
+        var authorization = HttpContext.RequestServices.GetRequiredService<IAuthorizationService>();
+        var outcome = await authorization.AuthorizeAsync(
+            User, null, new ModuleAccessRequirement(ModuleCodes.Appointments, AccessLevel.Full));
+        return outcome.Succeeded;
+    }
+
+    private ObjectResult ScheduleOverrideForbidden<T>() =>
+        StatusCode(StatusCodes.Status403Forbidden,
+            new ApiResponse<T>(false, default, ErrorMessages.Appointment.ScheduleOverrideForbidden, null));
 }
 
 // ===== Request models (separare de MediatR command — omite Id, vine din rută) =====
@@ -137,6 +180,7 @@ public sealed record UpdateAppointmentRequest(
     DateTime EndTime,
     Guid? StatusId,
     string? Notes,
-    byte[]? RowVersion = null);
+    byte[]? RowVersion = null,
+    bool OverrideSchedule = false);
 
 public sealed record UpdateAppointmentStatusRequest(Guid StatusId);

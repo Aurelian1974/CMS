@@ -37,6 +37,14 @@ public interface IAppointmentRepository
 
     /// <summary>Nomenclator statusuri + tranziții permise.</summary>
     Task<IEnumerable<AppointmentStatusDto>> GetStatusesAsync(CancellationToken ct);
+
+    /// <summary>Programările care ocupă intervalul propus (max. 5).</summary>
+    Task<IEnumerable<AppointmentConflictDto>> GetConflictsAsync(
+        Guid clinicId, Guid doctorId, DateTime startTime, DateTime endTime, Guid? excludeId,
+        CancellationToken ct);
+
+    /// <summary>Istoricul programărilor unui pacient (cele mai recente primele).</summary>
+    Task<IEnumerable<AppointmentSchedulerDto>> GetByPatientAsync(Guid clinicId, Guid patientId, CancellationToken ct);
 }
 
 /// <summary>Rezultatul combinat din GetPagedAsync — date paginate + statistici.</summary>
