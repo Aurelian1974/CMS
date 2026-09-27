@@ -136,3 +136,11 @@
     max-width: 100%;
   }
 }
+
+// Hint discret sub un câmp (ex. auto-completare din CNP)
+.fieldHint {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.72rem;
+  color: $gray-400;
+}

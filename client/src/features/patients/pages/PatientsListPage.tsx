@@ -1,10 +1,12 @@
-import { useState, useRef, useCallback, useMemo } from 'react'
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { AppDataGrid } from '@/components/data-display/AppDataGrid'
 import type { ColDef, GridApi, PaginationChangedEvent, SortChangedEvent } from '@/components/data-display/AppDataGrid'
-import type { PatientDto, PatientStatusFilter } from '../types/patient.types'
+import type { PatientDto, PatientStatusFilter, GetPatientsParams } from '../types/patient.types'
 import type { PatientFormData } from '../schemas/patient.schema'
-import { usePatients, useCreatePatient, useUpdatePatient, useDeletePatient } from '../hooks/usePatients'
+import { usePatients, usePatientDetail, useCreatePatient, useUpdatePatient, useDeletePatient } from '../hooks/usePatients'
+import { buildPatientPayload } from '../utils/patientPayload'
+import { patientsApi } from '@/api/endpoints/patients.api'
 import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
 import { useGenders, useBloodTypes, useAllergyTypes, useAllergySeverities } from '@/features/nomenclature/hooks/useNomenclatureLookups'
 import { PatientFormModal } from '../components/PatientFormModal/PatientFormModal'
@@ -13,7 +15,9 @@ import { ActionButtons } from '@/components/data-display/ActionButtons'
 import { AppBadge, ActiveBadge, type BadgeVariant } from '@/components/ui/AppBadge'
 import { IconPlus, IconExcel } from '@/components/ui/Icons'
 import { formatDate, getInitials } from '@/utils/format'
+import { useDebounce } from '@/hooks/useDebounce'
 import { useFeedback } from '@/hooks/useFeedback'
+import { MODULE, useHasAccess } from '@/hooks/useHasAccess'
 import { ConfirmDeleteDialog } from '@/components/ui/ConfirmDeleteDialog'
 import { FeedbackAlerts } from '@/components/ui/FeedbackAlerts'
 import { ListPageToolbar } from '@/components/ui/ListPageToolbar'
@@ -48,14 +52,38 @@ const getSeverityLabel = (code: string | null): string => {
   }
 }
 
+/** Zile rămase până la expirarea asigurării (negativ = deja expirată). */
+const daysUntil = (isoDate: string): number => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const target = new Date(isoDate)
+  target.setHours(0, 0, 0, 0)
+  return Math.round((target.getTime() - today.getTime()) / 86_400_000)
+}
+
+/** Prag sub care asigurarea e semnalizată ca "expiră curând". */
+const INSURANCE_WARNING_DAYS = 30
+
+/** Numărul maxim de pacienți descărcați pentru exportul Excel. */
+const EXPORT_MAX_ROWS = 5000
+
 // ── Componenta principală ─────────────────────────────────────────────────────
 export const PatientsListPage = () => {
   const gridRef = useRef<GridApi<PatientDto>>(null)
+
+  // Permisiuni — backend-ul impune [HasAccess], UI-ul doar reflectă nivelul
+  const { canWrite } = useHasAccess()
+  const canModify = canWrite(MODULE.Patients)
+
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<PatientStatusFilter>('all')
   const [genderId, setGenderId] = useState<string | undefined>(undefined)
   const [bloodTypeId, setBloodTypeId] = useState<string | undefined>(undefined)
   const [hasAllergies, setHasAllergies] = useState<boolean | undefined>(undefined)
+  const [doctorId, setDoctorId] = useState<string | undefined>(undefined)
+
+  // Căutarea e trimisă la server doar după o pauză de tastare (evită un request/tastă)
+  const debouncedSearch = useDebounce(search, 350)
 
   // Starea grid-ului server-side (pagina, sortare)
   const [page, setPage] = useState(1)
@@ -63,9 +91,9 @@ export const PatientsListPage = () => {
   const [sortBy, setSortBy] = useState('fullName')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
 
-  // Modal formular
+  // Modal formular — ținem doar id-ul; datele complete se încarcă din API
   const [modalOpen, setModalOpen] = useState(false)
-  const [editingPatient, setEditingPatient] = useState<PatientDto | null>(null)
+  const [editingPatientId, setEditingPatientId] = useState<string | null>(null)
 
   // Modal detalii pacient (read-only)
   const [detailPatientId, setDetailPatientId] = useState<string | null>(null)
@@ -73,21 +101,37 @@ export const PatientsListPage = () => {
   // Confirmare ștergere
   const [deleteTarget, setDeleteTarget] = useState<PatientDto | null>(null)
 
+  // Export Excel (descarcă toate rândurile filtrate, nu doar pagina curentă)
+  const [isExporting, setIsExporting] = useState(false)
+
   // Mesaje feedback
   const { successMsg, errorMsg, showSuccess, showError, setSuccessMsg, setErrorMsg } = useFeedback()
 
-  // Date reale din API — paginare + sortare + filtrare complet server-side
-  const { data: patientsResp, isError } = usePatients({
+  // Parametrii de filtrare — reutilizați și la export ca să exporte exact ce se vede
+  const queryParams = useMemo<GetPatientsParams>(() => ({
     page,
     pageSize,
-    search:      search || undefined,
+    search:      debouncedSearch || undefined,
     genderId,
     bloodTypeId,
+    doctorId,
     hasAllergies,
     isActive: statusFilter === 'all' ? undefined : statusFilter === 'active',
     sortBy,
     sortDir,
-  })
+  }), [page, pageSize, debouncedSearch, genderId, bloodTypeId, doctorId, hasAllergies, statusFilter, sortBy, sortDir])
+
+  // Date reale din API — paginare + sortare + filtrare complet server-side
+  const { data: patientsResp, isError, isFetching } = usePatients(queryParams)
+
+  // Datele complete ale pacientului editat (pacient + alergii + medici + contacte).
+  // Obligatoriu: salvarea sincronizează sub-colecțiile, deci formularul nu poate
+  // porni de la DTO-ul de listă, care nu le conține.
+  const { data: editDetailResp, isError: isEditDetailError } =
+    usePatientDetail(editingPatientId ?? '', !!editingPatientId)
+
+  const editDetail = editingPatientId ? editDetailResp?.data ?? null : null
+  const isLoadingEditDetail = !!editingPatientId && !editDetail && !isEditDetailError
 
   // Date auxiliare pentru modal
   const { data: gendersResp } = useGenders(true)
@@ -111,118 +155,51 @@ export const PatientsListPage = () => {
   const allergySeverities = allergySeveritiesResp?.data ?? []
   const doctorLookup     = doctorLookupResp?.data ?? []
 
+  // Dacă detaliile nu pot fi încărcate, nu lăsăm deschis un formular incomplet:
+  // salvarea lui ar suprascrie datele existente cu valori goale.
+  useEffect(() => {
+    if (editingPatientId && isEditDetailError) {
+      setModalOpen(false)
+      setEditingPatientId(null)
+      showError(new Error('Nu s-au putut încărca datele pacientului. Încearcă din nou.'))
+    }
+  }, [editingPatientId, isEditDetailError, showError])
+
   // ── Modal handlers ─────────────────────────────────────────────────────────
   const handleOpenCreate = () => {
-    setEditingPatient(null)
+    setEditingPatientId(null)
     setErrorMsg(null)
     setModalOpen(true)
   }
 
-  const handleOpenEdit = useCallback((patient: PatientDto) => {
-    setEditingPatient(patient)
+  const handleOpenEdit = useCallback((patientId: string) => {
+    setEditingPatientId(patientId)
     setErrorMsg(null)
     setModalOpen(true)
   }, [setErrorMsg])
 
   const handleCloseModal = () => {
     setModalOpen(false)
-    setEditingPatient(null)
+    setEditingPatientId(null)
     setErrorMsg(null)
   }
 
   const handleFormSubmit = (formData: PatientFormData) => {
-    const toNull = (v: string | undefined) => v || null
+    const payload = buildPatientPayload(formData)
 
-    if (editingPatient) {
+    if (editingPatientId) {
       updatePatient.mutate(
-        {
-          id: editingPatient.id,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          cnp: formData.cnp,
-          birthDate: toNull(formData.birthDate),
-          genderId: toNull(formData.genderId),
-          bloodTypeId: toNull(formData.bloodTypeId),
-          phoneNumber: toNull(formData.phoneNumber),
-          secondaryPhone: toNull(formData.secondaryPhone),
-          email: toNull(formData.email),
-          address: toNull(formData.address),
-          city: toNull(formData.city),
-          county: toNull(formData.county),
-          postalCode: toNull(formData.postalCode),
-          insuranceNumber: toNull(formData.insuranceNumber),
-          insuranceExpiry: toNull(formData.insuranceExpiry),
-          isInsured: formData.isInsured,
-          chronicDiseases: toNull(formData.chronicDiseases),
-          familyDoctorName: toNull(formData.familyDoctorName),
-          notes: toNull(formData.notes),
-          isActive: formData.isActive,
-          allergies: formData.allergies?.map(a => ({
-            allergyTypeId: a.allergyTypeId,
-            allergySeverityId: a.allergySeverityId,
-            allergenName: a.allergenName,
-            reaction: toNull(a.reaction),
-            onsetDate: toNull(a.onsetDate),
-            notes: toNull(a.notes),
-          })),
-          doctors: formData.doctors,
-          emergencyContacts: formData.emergencyContacts?.map(ec => ({
-            fullName: ec.fullName,
-            relationship: toNull(ec.relationship),
-            phoneNumber: ec.phoneNumber ?? '',
-            isDefault: ec.isDefault,
-            notes: toNull(ec.notes),
-          })),
-        },
+        { ...payload, id: editingPatientId, isActive: formData.isActive },
         {
           onSuccess: () => { handleCloseModal(); showSuccess('Pacientul a fost actualizat cu succes.') },
           onError: (err) => showError(err),
         },
       )
     } else {
-      createPatient.mutate(
-        {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          cnp: formData.cnp,
-          birthDate: toNull(formData.birthDate),
-          genderId: toNull(formData.genderId),
-          bloodTypeId: toNull(formData.bloodTypeId),
-          phoneNumber: toNull(formData.phoneNumber),
-          secondaryPhone: toNull(formData.secondaryPhone),
-          email: toNull(formData.email),
-          address: toNull(formData.address),
-          city: toNull(formData.city),
-          county: toNull(formData.county),
-          postalCode: toNull(formData.postalCode),
-          insuranceNumber: toNull(formData.insuranceNumber),
-          insuranceExpiry: toNull(formData.insuranceExpiry),
-          isInsured: formData.isInsured,
-          chronicDiseases: toNull(formData.chronicDiseases),
-          familyDoctorName: toNull(formData.familyDoctorName),
-          notes: toNull(formData.notes),
-          allergies: formData.allergies?.map(a => ({
-            allergyTypeId: a.allergyTypeId,
-            allergySeverityId: a.allergySeverityId,
-            allergenName: a.allergenName,
-            reaction: toNull(a.reaction),
-            onsetDate: toNull(a.onsetDate),
-            notes: toNull(a.notes),
-          })),
-          doctors: formData.doctors,
-          emergencyContacts: formData.emergencyContacts?.map(ec => ({
-            fullName: ec.fullName,
-            relationship: toNull(ec.relationship),
-            phoneNumber: ec.phoneNumber ?? '',
-            isDefault: ec.isDefault,
-            notes: toNull(ec.notes),
-          })),
-        },
-        {
-          onSuccess: () => { handleCloseModal(); showSuccess('Pacientul a fost adăugat cu succes.') },
-          onError: (err) => showError(err),
-        },
-      )
+      createPatient.mutate(payload, {
+        onSuccess: () => { handleCloseModal(); showSuccess('Pacientul a fost adăugat cu succes.') },
+        onError: (err) => showError(err),
+      })
     }
   }
 
@@ -236,28 +213,51 @@ export const PatientsListPage = () => {
   }
 
   // Date transformate pentru export — plain objects, fără template JSX
-  const buildExportData = useCallback(() =>
-    patients.map(p => ({
+  const buildExportData = useCallback((rows: PatientDto[]) =>
+    rows.map(p => ({
       fullName:              p.fullName,
       cnp:                   p.cnp,
+      age:                   p.age ?? '—',
       genderName:            p.genderName ?? '—',
       bloodTypeName:         p.bloodTypeName ?? '—',
       phoneNumber:           p.phoneNumber ?? '—',
       email:                 p.email ?? '—',
       allergyCount:          p.allergyCount,
+      maxAllergySeverity:    getSeverityLabel(p.maxAllergySeverityCode),
       primaryDoctorName:     p.primaryDoctorName ?? '—',
+      insuranceNumber:       p.insuranceNumber ?? '—',
+      insuranceExpiry:       p.insuranceExpiry ? formatDate(p.insuranceExpiry) : '—',
       isActive:              p.isActive ? 'Activ' : 'Inactiv',
       createdAt:             p.createdAt ? formatDate(p.createdAt) : '—',
     }))
-  , [patients])
+  , [])
 
   // ── Export handler ──────────────────────────────────────────────────────────
-  const handleExcelExport = useCallback(() => {
-    gridRef.current?.exportExcel({
-      fileName: 'pacienti',
-      customData: buildExportData(),
-    })
-  }, [buildExportData])
+  // Exportă TOATE rândurile care respectă filtrele curente, nu doar pagina afișată.
+  const handleExcelExport = useCallback(async () => {
+    setIsExporting(true)
+    try {
+      const resp = await patientsApi.getAll({
+        ...queryParams,
+        page: 1,
+        pageSize: EXPORT_MAX_ROWS,
+      })
+      const rows = resp?.data?.pagedResult?.items ?? []
+
+      gridRef.current?.exportExcel({
+        fileName: 'pacienti',
+        customData: buildExportData(rows),
+      })
+
+      if (totalCount > EXPORT_MAX_ROWS) {
+        showSuccess(`Export limitat la primii ${EXPORT_MAX_ROWS} pacienți din ${totalCount}. Restrânge filtrele pentru un export complet.`)
+      }
+    } catch (err) {
+      showError(err)
+    } finally {
+      setIsExporting(false)
+    }
+  }, [queryParams, buildExportData, totalCount, showSuccess, showError])
 
   // ── Grid server-side callbacks ─────────────────────────────────────────────
   const handlePaginationChanged = useCallback((e: PaginationChangedEvent) => {
@@ -285,13 +285,16 @@ export const PatientsListPage = () => {
     <span className={styles.patientName}>{row.fullName}</span>
   ), [])
 
-  const ageGenderTemplate = useCallback((row: PatientDto) => (
-    <span className={styles.patientMeta}>
-      {row.age != null ? `${row.age} ani` : ''}
-      {row.age != null && row.genderName ? ' · ' : ''}
-      {row.genderName ?? ''}
-    </span>
-  ), [])
+  const ageGenderTemplate = useCallback((row: PatientDto) => {
+    if (row.age == null && !row.genderName) return <span className={styles.muted}>—</span>
+    return (
+      <span className={styles.patientMeta}>
+        {row.age != null ? `${row.age} ani` : ''}
+        {row.age != null && row.genderName ? ' · ' : ''}
+        {row.genderName ?? ''}
+      </span>
+    )
+  }, [])
 
   const cnpTemplate = useCallback((row: PatientDto) => (
     <AppBadge variant="primary" mono>{row.cnp}</AppBadge>
@@ -300,11 +303,11 @@ export const PatientsListPage = () => {
   const bloodTypeTemplate = useCallback((row: PatientDto) =>
     row.bloodTypeName
       ? <AppBadge variant="danger">{row.bloodTypeName}</AppBadge>
-      : <span style={{ color: '#C9D3DC', fontSize: '0.78rem' }}>—</span>
+      : <span className={styles.muted}>—</span>
   , [])
 
   const allergyTemplate = useCallback((row: PatientDto) => {
-    if (row.allergyCount === 0) return <span style={{ color: '#C9D3DC', fontSize: '0.78rem' }}>—</span>
+    if (row.allergyCount === 0) return <span className={styles.muted}>—</span>
     const severityText = getSeverityLabel(row.maxAllergySeverityCode)
     return (
       <AppBadge variant={getSeverityVariant(row.maxAllergySeverityCode)}>
@@ -315,19 +318,36 @@ export const PatientsListPage = () => {
 
   const doctorTemplate = useCallback((row: PatientDto) =>
     row.primaryDoctorName
-      ? <span style={{ fontSize: '0.85rem' }}>{row.primaryDoctorName}</span>
-      : <span style={{ color: '#C9D3DC', fontSize: '0.78rem' }}>—</span>
+      ? <span className={styles.cellText}>{row.primaryDoctorName}</span>
+      : <span className={styles.muted}>—</span>
   , [])
+
+  /// Asigurare CNAS: numărul sau semnalizarea expirării (relevant la programări / facturare)
+  const insuranceTemplate = useCallback((row: PatientDto) => {
+    if (!row.insuranceExpiry) {
+      return row.insuranceNumber
+        ? <AppBadge variant="neutral" mono>{row.insuranceNumber}</AppBadge>
+        : <span className={styles.muted}>—</span>
+    }
+
+    const days = daysUntil(row.insuranceExpiry)
+    if (days < 0)  return <AppBadge variant="danger">Expirată {formatDate(row.insuranceExpiry)}</AppBadge>
+    if (days <= INSURANCE_WARNING_DAYS)
+      return <AppBadge variant="warning">Expiră {days === 0 ? 'azi' : `în ${days} zile`}</AppBadge>
+
+    return <AppBadge variant="success">Validă {formatDate(row.insuranceExpiry)}</AppBadge>
+  }, [])
 
   const statusTemplate = useCallback((row: PatientDto) => <ActiveBadge isActive={row.isActive} />, [])
 
+  // Editarea / ștergerea sunt ascunse pentru utilizatorii cu drept doar de citire
   const actionsTemplate = useCallback((row: PatientDto) => (
     <ActionButtons
       onView={() => setDetailPatientId(row.id)}
-      onEdit={() => handleOpenEdit(row)}
-      onDelete={() => setDeleteTarget(row)}
+      onEdit={canModify ? () => handleOpenEdit(row.id) : undefined}
+      onDelete={canModify ? () => setDeleteTarget(row) : undefined}
     />
-  ), [handleOpenEdit])
+  ), [handleOpenEdit, canModify])
 
   // ── Column definitions ─────────────────────────────────────────────────────
   const columnDefs = useMemo<ColDef<PatientDto>[]>(() => [
@@ -339,12 +359,14 @@ export const PatientsListPage = () => {
       cellRenderer: ({ data }) => data ? avatarTemplate(data) : null,
     },
     { field: 'fullName', headerName: 'Pacient', flex: 2, minWidth: 150, cellRenderer: ({ data }) => data ? nameTemplate(data) : null },
-    { field: 'genderName', headerName: 'Vârstă / Sex', width: 130, minWidth: 100, cellRenderer: ({ data }) => data ? ageGenderTemplate(data) : null },
+    // Sortarea se face pe `age` (mapat pe BirthDate în SP) — nu pe genderName, cum era înainte
+    { field: 'age' as keyof PatientDto & string, headerName: 'Vârstă / Sex', width: 130, minWidth: 100, cellRenderer: ({ data }) => data ? ageGenderTemplate(data) : null },
     { field: 'cnp', headerName: 'CNP', width: 140, minWidth: 130, cellRenderer: ({ data }) => data ? cnpTemplate(data) : null },
     { field: 'bloodTypeName', headerName: 'Grupă sanguină', width: 130, minWidth: 110, cellRenderer: ({ data }) => data ? bloodTypeTemplate(data) : null },
     { field: 'allergyCount' as keyof PatientDto & string, headerName: 'Alergii', width: 150, minWidth: 120, cellRenderer: ({ data }) => data ? allergyTemplate(data) : null },
     { field: 'primaryDoctorName', headerName: 'Medic primar', flex: 1, minWidth: 130, cellRenderer: ({ data }) => data ? doctorTemplate(data) : null },
     { field: 'phoneNumber', headerName: 'Telefon', width: 160, minWidth: 130, cellRenderer: ({ data }) => phoneCellTemplate(data as unknown as Record<string, unknown>) },
+    { field: 'insuranceExpiry', headerName: 'Asigurare', width: 165, minWidth: 140, cellRenderer: ({ data }) => data ? insuranceTemplate(data) : null },
     { field: 'email', headerName: 'Email', width: 180, minWidth: 140, hide: true, ellipsis: true },
     { field: 'isActive' as keyof PatientDto & string, headerName: 'Status', width: 110, minWidth: 90, cellRenderer: ({ data }) => data ? statusTemplate(data) : null },
     { field: 'createdAt', headerName: 'Înregistrat', width: 120, minWidth: 100, hide: true, ellipsis: true, valueFormatter: ({ value }) => value ? formatDate(value as string) : '—' },
@@ -354,7 +376,30 @@ export const PatientsListPage = () => {
       pinned: 'right',
       cellRenderer: ({ data }) => data ? actionsTemplate(data) : null,
     },
-  ], [avatarTemplate, nameTemplate, ageGenderTemplate, cnpTemplate, bloodTypeTemplate, allergyTemplate, doctorTemplate, statusTemplate, actionsTemplate])
+  ], [avatarTemplate, nameTemplate, ageGenderTemplate, cnpTemplate, bloodTypeTemplate, allergyTemplate, doctorTemplate, insuranceTemplate, statusTemplate, actionsTemplate])
+
+  // Filtrarea pe coloană a grid-ului e client-side, deci ar filtra doar pagina încărcată
+  // (20 din N rânduri) — filtrele reale sunt cele din toolbar, trimise la server.
+  const defaultColDef = useMemo<Partial<ColDef<PatientDto>>>(() => ({ filterable: false }), [])
+
+  // Toolbar-ul implicit ar adăuga o căutare + exporturi care lucrează doar pe pagina
+  // curentă; păstrăm strict selectorul de coloane.
+  const gridToolbar = useMemo(() => [
+    { id: 'column-chooser', type: 'column-chooser' as const, align: 'right' as const },
+  ], [])
+
+  const hasActiveFilters =
+    !!search || statusFilter !== 'all' || !!genderId || !!bloodTypeId || !!doctorId || hasAllergies !== undefined
+
+  const handleResetFilters = useCallback(() => {
+    setSearch('')
+    setStatusFilter('all')
+    setGenderId(undefined)
+    setBloodTypeId(undefined)
+    setDoctorId(undefined)
+    setHasAllergies(undefined)
+    setPage(1)
+  }, [])
 
   // ── Render ─────────────────────────────────────────────────────────────────
   if (isError) {
@@ -375,26 +420,46 @@ export const PatientsListPage = () => {
         subtitle="Registru pacienți, alergii și medici asociați"
         actions={
           <>
-            <button className={styles.btnSecondary} onClick={handleExcelExport}>
-              <IconExcel /> Export Excel
+            <button
+              className={styles.btnSecondary}
+              onClick={handleExcelExport}
+              disabled={isExporting || totalCount === 0}
+              title={`Exportă toți cei ${totalCount} pacienți care respectă filtrele curente`}
+            >
+              <IconExcel /> {isExporting ? 'Se exportă...' : 'Export Excel'}
             </button>
-            <button className={styles.btnPrimary} onClick={handleOpenCreate}>
-              <IconPlus /> Pacient nou
-            </button>
+            {canModify && (
+              <button className={styles.btnPrimary} onClick={handleOpenCreate}>
+                <IconPlus /> Pacient nou
+              </button>
+            )}
           </>
         }
       />
 
-      {/* Stats */}
+      {/* Stats — primele trei carduri aplică filtrul corespunzător pe listă */}
       <div className={styles.statsBar}>
-        <div className={styles.statCard}>
+        <button
+          type="button"
+          className={`${styles.statCard} ${!hasActiveFilters ? styles.statCardActive : ''}`}
+          onClick={handleResetFilters}
+          aria-pressed={!hasActiveFilters}
+          title="Arată toți pacienții (șterge filtrele)"
+        >
           <div className={`${styles.statIcon} ${styles['statIcon--blue']}`}><IconUsers /></div>
           <div className={styles.statContent}>
             <span className={styles.statValue}>{stats?.totalPatients ?? totalCount}</span>
             <span className={styles.statLabel}>Total pacienți</span>
           </div>
-        </div>
-        <div className={styles.statCard}>
+        </button>
+
+        <button
+          type="button"
+          className={`${styles.statCard} ${statusFilter === 'active' ? styles.statCardActive : ''}`}
+          onClick={() => { setStatusFilter(statusFilter === 'active' ? 'all' : 'active'); setPage(1) }}
+          aria-pressed={statusFilter === 'active'}
+          title="Filtrează doar pacienții activi"
+        >
           <div className={`${styles.statIcon} ${styles['statIcon--green']}`}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
@@ -402,14 +467,22 @@ export const PatientsListPage = () => {
             <span className={styles.statValue}>{stats?.activePatients ?? 0}</span>
             <span className={styles.statLabel}>Activi</span>
           </div>
-        </div>
-        <div className={styles.statCard}>
+        </button>
+
+        <button
+          type="button"
+          className={`${styles.statCard} ${hasAllergies === true ? styles.statCardActive : ''}`}
+          onClick={() => { setHasAllergies(hasAllergies === true ? undefined : true); setPage(1) }}
+          aria-pressed={hasAllergies === true}
+          title="Filtrează pacienții cu alergii înregistrate"
+        >
           <div className={`${styles.statIcon} ${styles['statIcon--orange']}`}><IconAlert /></div>
           <div className={styles.statContent}>
             <span className={styles.statValue}>{stats?.patientsWithAllergies ?? 0}</span>
             <span className={styles.statLabel}>Cu alergii</span>
           </div>
-        </div>
+        </button>
+
         <div className={styles.statCard}>
           <div className={`${styles.statIcon} ${styles['statIcon--gray']}`}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -436,8 +509,9 @@ export const PatientsListPage = () => {
         filters={
           <>
             <div className={styles.filterGroup}>
-              <span className={styles.filterLabel}>Gen:</span>
+              <label className={styles.filterLabel} htmlFor="filter-gender">Gen:</label>
               <select
+                id="filter-gender"
                 className={styles.filterSelect}
                 value={genderId ?? ''}
                 onChange={e => { setGenderId(e.target.value || undefined); setPage(1) }}
@@ -450,8 +524,9 @@ export const PatientsListPage = () => {
             </div>
 
             <div className={styles.filterGroup}>
-              <span className={styles.filterLabel}>Grupă sang.:</span>
+              <label className={styles.filterLabel} htmlFor="filter-blood-type">Grupă sang.:</label>
               <select
+                id="filter-blood-type"
                 className={styles.filterSelect}
                 value={bloodTypeId ?? ''}
                 onChange={e => { setBloodTypeId(e.target.value || undefined); setPage(1) }}
@@ -464,8 +539,9 @@ export const PatientsListPage = () => {
             </div>
 
             <div className={styles.filterGroup}>
-              <span className={styles.filterLabel}>Alergii:</span>
+              <label className={styles.filterLabel} htmlFor="filter-allergies">Alergii:</label>
               <select
+                id="filter-allergies"
                 className={styles.filterSelect}
                 value={hasAllergies === undefined ? '' : hasAllergies ? '1' : '0'}
                 onChange={e => {
@@ -479,6 +555,28 @@ export const PatientsListPage = () => {
                 <option value="0">Fără alergii</option>
               </select>
             </div>
+
+            {/* Filtru pe medic — suportat de SP (@DoctorId), dar nefolosit înainte în UI */}
+            <div className={styles.filterGroup}>
+              <label className={styles.filterLabel} htmlFor="filter-doctor">Medic:</label>
+              <select
+                id="filter-doctor"
+                className={styles.filterSelect}
+                value={doctorId ?? ''}
+                onChange={e => { setDoctorId(e.target.value || undefined); setPage(1) }}
+              >
+                <option value="">Toți</option>
+                {doctorLookup.map(d => (
+                  <option key={d.id} value={d.id}>{d.fullName}</option>
+                ))}
+              </select>
+            </div>
+
+            {hasActiveFilters && (
+              <button type="button" className={styles.resetFiltersBtn} onClick={handleResetFilters}>
+                Șterge filtrele
+              </button>
+            )}
           </>
         }
       />
@@ -490,8 +588,12 @@ export const PatientsListPage = () => {
         rowData={patients}
         columnDefs={columnDefs}
         initialSort={[{ field: 'fullName', direction: 'asc' }]}
-        loading={!patientsResp}
+        // isFetching, nu !patientsResp: cu keepPreviousData datele vechi rămân afișate,
+        // deci altfel schimbarea de pagină / filtru nu ar arăta niciun indicator
+        loading={isFetching}
         getRowId={(row) => row.id}
+        defaultColDef={defaultColDef}
+        onRowDoubleClick={({ data }) => data && setDetailPatientId(data.id)}
         // Paginare (server-side)
         pagination
         pageSize={pageSize}
@@ -503,20 +605,15 @@ export const PatientsListPage = () => {
         // Sortare
         triStateSort
         multiSortKey="ctrl"
-        // Filtrare
-        showFilterRow
         // Selecție
         rowSelection="multiple"
-        // Grupare
-        showGroupPanel
-        groupDefaultExpanded={1}
-        // Toolbar & Context Menu
-        toolbar
+        // Toolbar & Context Menu — fără grupare / reordonare prin drag: ambele ar opera
+        // doar pe pagina încărcată, iar ordinea din grid nu e persistată nicăieri
+        toolbar={gridToolbar}
         contextMenu
-        // Status Bar
+        // Status Bar — 'filtered-count' ar repeta totalul în mod server-side
         statusBar={[
           { type: 'total-count' },
-          { type: 'filtered-count' },
           { type: 'selected-count' },
         ]}
         // Aspect
@@ -524,14 +621,15 @@ export const PatientsListPage = () => {
         enableHover
         gridLines="horizontal"
         stickyHeader
-        // Drag & Drop
-        rowDragEnabled
       />
       </div>
 
+      {/* Erorile din afara formularului (ex. ștergere eșuată) erau invizibile — acum apar aici */}
       <FeedbackAlerts
         successMsg={successMsg}
+        errorMsg={modalOpen ? null : errorMsg}
         onDismissSuccess={() => setSuccessMsg(null)}
+        onDismissError={() => setErrorMsg(null)}
       />
 
       {/* Modal creare / editare */}
@@ -540,7 +638,8 @@ export const PatientsListPage = () => {
         onClose={handleCloseModal}
         onSubmit={handleFormSubmit}
         isLoading={createPatient.isPending || updatePatient.isPending}
-        editData={editingPatient}
+        editData={editDetail}
+        isLoadingData={isLoadingEditDetail}
         genders={genders}
         bloodTypes={bloodTypes}
         allergyTypes={allergyTypes}
@@ -554,15 +653,11 @@ export const PatientsListPage = () => {
         isOpen={!!detailPatientId}
         onClose={() => setDetailPatientId(null)}
         patientId={detailPatientId}
-        onEdit={() => {
-          if (detailPatientId) {
-            const patient = patients.find(p => p.id === detailPatientId)
-            if (patient) {
-              setDetailPatientId(null)
-              handleOpenEdit(patient)
-            }
-          }
-        }}
+        onEdit={canModify && detailPatientId ? () => {
+          const id = detailPatientId
+          setDetailPatientId(null)
+          handleOpenEdit(id)
+        } : undefined}
       />
 
       <ConfirmDeleteDialog

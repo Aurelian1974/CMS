@@ -5,6 +5,7 @@ import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
 import { useGenders, useBloodTypes, useAllergyTypes, useAllergySeverities } from '@/features/nomenclature/hooks/useNomenclatureLookups'
 import { PatientFormModal } from '../components/PatientFormModal/PatientFormModal'
 import type { PatientFormData } from '../schemas/patient.schema'
+import { buildPatientPayload } from '../utils/patientPayload'
 import { formatDate, formatDateTime } from '@/utils/format'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import type { PatientDetailDto, PatientAllergyDto, PatientDoctorDto, PatientEmergencyContactDto } from '../types/patient.types'
@@ -73,46 +74,9 @@ export const PatientDetailPage = () => {
   const allergySeverities = allergySeveritiesResp?.data ?? []
   const doctorLookup = doctorLookupResp?.data ?? []
 
-  const toNull = (v: string | undefined) => v || null
-
   const handleEditSubmit = (formData: PatientFormData) => {
     updatePatient.mutate(
-      {
-        id: patient.id,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        cnp: formData.cnp,
-        birthDate: toNull(formData.birthDate),
-        genderId: toNull(formData.genderId),
-        bloodTypeId: toNull(formData.bloodTypeId),
-        phoneNumber: toNull(formData.phoneNumber),
-        secondaryPhone: toNull(formData.secondaryPhone),
-        email: toNull(formData.email),
-        address: toNull(formData.address),
-        city: toNull(formData.city),
-        county: toNull(formData.county),
-        postalCode: toNull(formData.postalCode),
-        insuranceNumber: toNull(formData.insuranceNumber),
-        insuranceExpiry: toNull(formData.insuranceExpiry),
-        isInsured: formData.isInsured,
-        chronicDiseases: toNull(formData.chronicDiseases),
-        familyDoctorName: toNull(formData.familyDoctorName),
-        notes: toNull(formData.notes),
-        isActive: formData.isActive,
-        allergies: formData.allergies?.map(a => ({
-          allergyTypeId: a.allergyTypeId,
-          allergySeverityId: a.allergySeverityId,
-          allergenName: a.allergenName,
-          notes: toNull(a.notes),
-        })),
-        doctors: formData.doctors,
-        emergencyContacts: formData.emergencyContacts?.map(ec => ({
-          fullName: ec.fullName,
-          relationship: toNull(ec.relationship),
-          phoneNumber: ec.phoneNumber ?? '',
-          isDefault: ec.isDefault,
-        })),
-      },
+      { ...buildPatientPayload(formData), id: patient.id, isActive: formData.isActive },
       {
         onSuccess: () => {
           setIsEditOpen(false)
@@ -203,7 +167,7 @@ export const PatientDetailPage = () => {
         onClose={() => { setIsEditOpen(false); setEditError(null) }}
         onSubmit={handleEditSubmit}
         isLoading={updatePatient.isPending}
-        editData={patient}
+        editData={resp.data}
         genders={genders}
         bloodTypes={bloodTypes}
         allergyTypes={allergyTypes}

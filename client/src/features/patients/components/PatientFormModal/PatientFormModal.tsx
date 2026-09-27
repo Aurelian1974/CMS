@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useForm, useFieldArray } from 'react-hook-form'
+import { useForm, useFieldArray, useWatch } from 'react-hook-form'
 import type { Path, FieldErrors } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { patientSchema, type PatientFormData } from '../../schemas/patient.schema'
-import type { PatientDto } from '../../types/patient.types'
+import type { PatientFullDetailDto } from '../../types/patient.types'
 import type { NomenclatureItem } from '@/types/common.types'
 import type { DoctorLookupDto } from '@/features/doctors/types/doctor.types'
 import { AppModal } from '@/components/ui/AppModal'
@@ -14,6 +14,8 @@ import { FormSelect } from '@/components/forms/FormSelect'
 import { FormDatePicker } from '@/components/forms/FormDatePicker'
 import { AppButton } from '@/components/ui/AppButton'
 import { AddressFields } from '@/components/forms/AddressFields'
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { parseCnp } from '@/utils/cnp'
 import styles from './PatientFormModal.module.scss'
 
 // ── Icoane inline ─────────────────────────────────────────────────────────────
@@ -44,12 +46,34 @@ const TABS: ModalTab[] = [
   { key: 'notes',    label: 'Note' },
 ]
 
+/// Valorile de pornire pentru un pacient nou.
+const EMPTY_FORM: PatientFormData = {
+  firstName: '', lastName: '', cnp: '',
+  birthDate: '', genderId: '', bloodTypeId: '',
+  phoneNumber: '', secondaryPhone: '', email: '', address: '',
+  city: '', county: '', postalCode: '',
+  insuranceNumber: '', insuranceExpiry: '',
+  isInsured: false, chronicDiseases: '', familyDoctorName: '',
+  notes: '',
+  isActive: true,
+  allergies: [],
+  doctors: [],
+  emergencyContacts: [],
+}
+
 interface PatientFormModalProps {
   isOpen: boolean
   onClose: () => void
   onSubmit: (data: PatientFormData) => void
   isLoading: boolean
-  editData: (PatientDto & { city?: string | null; county?: string | null }) | null
+  /**
+   * Datele COMPLETE ale pacientului la editare (pacient + alergii + medici + contacte).
+   * Backend-ul sincronizează integral sub-colecțiile, deci formularul trebuie populat
+   * din răspunsul `GET /Patients/{id}` — altfel salvarea ar șterge datele necompletate.
+   */
+  editData: PatientFullDetailDto | null
+  /** `true` cât timp detaliile pacientului se încarcă — formularul e blocat. */
+  isLoadingData?: boolean
   genders: NomenclatureItem[]
   bloodTypes: NomenclatureItem[]
   allergyTypes: NomenclatureItem[]
@@ -64,6 +88,7 @@ export const PatientFormModal = ({
   onSubmit,
   isLoading,
   editData,
+  isLoadingData = false,
   genders,
   bloodTypes,
   allergyTypes,
@@ -71,7 +96,7 @@ export const PatientFormModal = ({
   doctorLookup,
   serverError,
 }: PatientFormModalProps) => {
-  const isEdit = !!editData
+  const isEdit = !!editData || isLoadingData
   const [activeTab, setActiveTab] = useState<FormTab>('personal')
 
   /** When validation fails, navigate to the first tab that contains an error. */
@@ -91,23 +116,12 @@ export const PatientFormModal = ({
     reset,
     control,
     setValue,
+    getValues,
     formState: { errors },
   } = useForm<PatientFormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(patientSchema) as any,
-    defaultValues: {
-      firstName: '', lastName: '', cnp: '',
-      birthDate: '', genderId: '', bloodTypeId: '',
-      phoneNumber: '', secondaryPhone: '', email: '', address: '',
-      city: '', county: '', postalCode: '',
-      insuranceNumber: '', insuranceExpiry: '',
-      isInsured: false, chronicDiseases: '', familyDoctorName: '',
-      notes: '',
-      isActive: true,
-      allergies: [],
-      doctors: [],
-      emergencyContacts: [],
-    },
+    defaultValues: EMPTY_FORM,
   })
 
   // Field arrays
@@ -128,48 +142,75 @@ export const PatientFormModal = ({
     if (!isOpen) return
     setActiveTab('personal')
 
-    if (editData) {
-      reset({
-        firstName:          editData.firstName,
-        lastName:           editData.lastName,
-        cnp:                editData.cnp,
-        birthDate:          editData.birthDate?.slice(0, 10) ?? '',
-        genderId:           editData.genderId ?? '',
-        bloodTypeId:        editData.bloodTypeId ?? '',
-        phoneNumber:        editData.phoneNumber ?? '',
-        secondaryPhone:     '',
-        email:              editData.email ?? '',
-        address:            editData.address ?? '',
-        city:               editData.city ?? '',
-        county:             editData.county ?? '',
-        postalCode:         '',
-        insuranceNumber:    editData.insuranceNumber ?? '',
-        insuranceExpiry:    editData.insuranceExpiry?.slice(0, 10) ?? '',
-        isInsured:          false,
-        chronicDiseases:    '',
-        familyDoctorName:   '',
-        notes:              '',
-        isActive:           editData.isActive,
-        allergies:          [],
-        doctors:            [],
-        emergencyContacts:  [],
-      })
-    } else {
-      reset({
-        firstName: '', lastName: '', cnp: '',
-        birthDate: '', genderId: '', bloodTypeId: '',
-        phoneNumber: '', secondaryPhone: '', email: '', address: '',
-        city: '', county: '', postalCode: '',
-        insuranceNumber: '', insuranceExpiry: '',
-        isInsured: false, chronicDiseases: '', familyDoctorName: '',
-        notes: '',
-        isActive: true,
-        allergies: [],
-        doctors: [],
-        emergencyContacts: [],
-      })
+    if (!editData) {
+      reset(EMPTY_FORM)
+      return
     }
+
+    const p = editData.patient
+    reset({
+      firstName:          p.firstName,
+      lastName:           p.lastName,
+      cnp:                p.cnp,
+      birthDate:          p.birthDate?.slice(0, 10) ?? '',
+      genderId:           p.genderId ?? '',
+      bloodTypeId:        p.bloodTypeId ?? '',
+      phoneNumber:        p.phoneNumber ?? '',
+      secondaryPhone:     p.secondaryPhone ?? '',
+      email:              p.email ?? '',
+      address:            p.address ?? '',
+      city:               p.city ?? '',
+      county:             p.county ?? '',
+      postalCode:         p.postalCode ?? '',
+      insuranceNumber:    p.insuranceNumber ?? '',
+      insuranceExpiry:    p.insuranceExpiry?.slice(0, 10) ?? '',
+      isInsured:          p.isInsured,
+      chronicDiseases:    p.chronicDiseases ?? '',
+      familyDoctorName:   p.familyDoctorName ?? '',
+      notes:              p.notes ?? '',
+      isActive:           p.isActive,
+      // Sub-colecțiile sunt sincronizate integral la salvare — trebuie populate
+      // cu valorile existente, altfel salvarea le-ar dezactiva în baza de date.
+      allergies: editData.allergies.map(a => ({
+        allergyTypeId:     a.allergyTypeId,
+        allergySeverityId: a.allergySeverityId,
+        allergenName:      a.allergenName,
+        reaction:          a.reaction ?? '',
+        onsetDate:         a.onsetDate?.slice(0, 10) ?? '',
+        notes:             a.notes ?? '',
+      })),
+      doctors: editData.doctors.map(d => ({
+        doctorId:  d.doctorId,
+        isPrimary: d.isPrimary,
+        notes:     d.notes ?? '',
+      })),
+      emergencyContacts: editData.emergencyContacts.map(ec => ({
+        fullName:     ec.fullName,
+        relationship: ec.relationship ?? '',
+        phoneNumber:  ec.phoneNumber ?? '',
+        isDefault:    ec.isDefault,
+        notes:        ec.notes ?? '',
+      })),
+    })
   }, [isOpen, editData, reset])
+
+  // ── Auto-completare din CNP ────────────────────────────────────────────────
+  // CNP-ul codifică data nașterii și genul; le completăm doar dacă sunt încă goale,
+  // ca să nu suprascriem o corecție manuală.
+  const cnpValue = useWatch({ control, name: 'cnp' })
+
+  useEffect(() => {
+    const { birthDate, genderCode } = parseCnp(cnpValue)
+
+    if (birthDate && !getValues('birthDate')) {
+      setValue('birthDate', birthDate, { shouldDirty: true })
+    }
+
+    if (genderCode && !getValues('genderId')) {
+      const gender = genders.find(g => g.code === genderCode)
+      if (gender) setValue('genderId', gender.id, { shouldDirty: true })
+    }
+  }, [cnpValue, genders, getValues, setValue])
 
   if (!isOpen) return null
 
@@ -187,6 +228,7 @@ export const PatientFormModal = ({
         variant="primary"
         isLoading={isLoading}
         loadingText="Se salvează..."
+        disabled={isLoadingData}
       >
         {isEdit ? 'Salvează' : 'Adaugă'}
       </AppButton>
@@ -214,8 +256,17 @@ export const PatientFormModal = ({
               <div className="alert alert-danger py-2 mb-3" role="alert">{serverError}</div>
             )}
 
+            {/* Datele complete ale pacientului încă se încarcă — nu permitem editarea
+                unui formular incomplet, fiindcă salvarea sincronizează sub-colecțiile. */}
+            {isLoadingData && (
+              <div className="d-flex flex-column align-items-center justify-content-center gap-2" style={{ minHeight: 260 }}>
+                <LoadingSpinner />
+                <span className={styles.emptyHint}>Se încarcă datele pacientului...</span>
+              </div>
+            )}
+
             {/* ═══════════ TAB 1: Date personale ═══════════ */}
-            {activeTab === 'personal' && (
+            {!isLoadingData && activeTab === 'personal' && (
               <>
                 <div className="row g-3">
                   <div className="col-md-6">
@@ -248,6 +299,11 @@ export const PatientFormModal = ({
                       maxLength={13}
                       required
                     />
+                    {!errors.cnp && (
+                      <span className={styles.fieldHint}>
+                        Data nașterii și genul se completează automat.
+                      </span>
+                    )}
                   </div>
                   <div className="col-md-4">
                     <FormDatePicker<PatientFormData>
@@ -282,7 +338,7 @@ export const PatientFormModal = ({
             )}
 
             {/* ═══════════ TAB 2: Contact & Adresă ═══════════ */}
-            {activeTab === 'contact' && (
+            {!isLoadingData && activeTab === 'contact' && (
               <>
                 <div className="row g-3">
                   <div className="col-md-4">
@@ -318,7 +374,7 @@ export const PatientFormModal = ({
             )}
 
             {/* ═══════════ TAB 3: Medical & Asigurare ═══════════ */}
-            {activeTab === 'medical' && (
+            {!isLoadingData && activeTab === 'medical' && (
               <>
                 {/* Date medicale */}
                 <div className={styles.section}>
@@ -469,7 +525,7 @@ export const PatientFormModal = ({
             )}
 
             {/* ═══════════ TAB 4: Medici & Contacte ═══════════ */}
-            {activeTab === 'doctors' && (
+            {!isLoadingData && activeTab === 'doctors' && (
               <>
                 {/* Medici asociați */}
                 <div className={styles.section}>
@@ -614,7 +670,7 @@ export const PatientFormModal = ({
             )}
 
             {/* ═══════════ TAB 5: Note & Status ═══════════ */}
-            {activeTab === 'notes' && (
+            {!isLoadingData && activeTab === 'notes' && (
               <>
                 <FormInput<PatientFormData>
                   name="notes"

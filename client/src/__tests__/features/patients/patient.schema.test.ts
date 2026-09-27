@@ -18,7 +18,7 @@ import {
 const validPatient = {
   firstName: 'Ion',
   lastName: 'Popescu',
-  cnp: '1900101123456',
+  cnp: '1900101123457',
   isInsured: false,
   isActive: true,
 };
@@ -103,15 +103,15 @@ describe('patientSchema', () => {
 
   describe('cnp', () => {
     it('acceptă CNP valid cu prima cifră 1', () => {
-      expect(patientSchema.safeParse({ ...validPatient, cnp: '1900101123456' }).success).toBe(true);
+      expect(patientSchema.safeParse({ ...validPatient, cnp: '1900101123457' }).success).toBe(true);
     });
 
     it('acceptă CNP valid cu prima cifră 2 (feminin)', () => {
-      expect(patientSchema.safeParse({ ...validPatient, cnp: '2850202234567' }).success).toBe(true);
+      expect(patientSchema.safeParse({ ...validPatient, cnp: '2850202234568' }).success).toBe(true);
     });
 
     it('acceptă CNP valid cu prima cifră 9', () => {
-      expect(patientSchema.safeParse({ ...validPatient, cnp: '9010101999999' }).success).toBe(true);
+      expect(patientSchema.safeParse({ ...validPatient, cnp: '9010101999995' }).success).toBe(true);
     });
 
     it('eșuează când CNP-ul începe cu 0', () => {
@@ -137,6 +137,15 @@ describe('patientSchema', () => {
     it('eșuează când este gol', () => {
       const result = patientSchema.safeParse({ ...validPatient, cnp: '' });
       expect(result.success).toBe(false);
+    });
+
+    it('eșuează când cifra de control este greșită (13 cifre, format corect)', () => {
+      // '1900101123456' are formatul corect, dar cifra de control corectă este 7
+      const result = patientSchema.safeParse({ ...validPatient, cnp: '1900101123456' });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toContain('cifra de control');
+      }
     });
   });
 

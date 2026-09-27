@@ -71,11 +71,26 @@
   min-width: 160px;
   flex: 1;
   transition: box-shadow 0.2s, border-color 0.2s;
+  // Cardurile filtrante sunt <button> — anulăm stilul implicit
+  text-align: left;
+  font: inherit;
+  color: inherit;
 
   &:hover {
     box-shadow: 0 4px 16px rgba($primary-dark, 0.08);
     border-color: rgba($primary, 0.22);
   }
+
+  &:focus-visible {
+    outline: 2px solid rgba($primary, 0.55);
+    outline-offset: 2px;
+  }
+}
+
+// Cardul a cărui filtrare e activă în acest moment
+.statCardActive {
+  border-color: $primary;
+  box-shadow: 0 0 0 2px rgba($primary, 0.14);
 }
 
 .statIcon {
@@ -350,4 +365,32 @@
 @keyframes slideUp {
   from { transform: translateY(16px); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
+}
+
+// ── Celule grid ────────────────────────────────────────────────────────
+
+// Valoare lipsă ("—") — înlocuiește stilurile inline duplicate din pagină
+.muted {
+  color: $gray-300;
+  font-size: 0.78rem;
+}
+
+.cellText {
+  font-size: 0.85rem;
+  color: $gray-700;
+}
+
+// Buton de resetare a filtrelor active (în toolbar)
+.resetFiltersBtn {
+  background: none;
+  border: none;
+  padding: 0 4px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: $primary;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+
+  &:hover { color: $primary-dark; }
 }

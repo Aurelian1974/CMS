@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { isValidPhoneNumber } from 'react-phone-number-input'
+import { isValidCnp } from '@/utils/cnp'
 
 /// Regex CNP — 13 cifre, prima cifră 1-9
 const cnpRegex = /^[1-9]\d{12}$/
@@ -34,7 +35,11 @@ export const emergencyContactSchema = z.object({
 export const patientSchema = z.object({
   firstName:  z.string().min(1, 'Prenumele este obligatoriu').max(100, 'Maxim 100 caractere'),
   lastName:   z.string().min(1, 'Numele este obligatoriu').max(100, 'Maxim 100 caractere'),
-  cnp:        z.string().regex(cnpRegex, 'CNP-ul trebuie să aibă 13 cifre valide'),
+  // Formatul și cifra de control sunt validate separat ca să primim mesaje distincte:
+  // backend-ul (Cnp.IsValid) respinge oricum CNP-urile cu cifră de control greșită.
+  cnp:        z.string()
+                .regex(cnpRegex, 'CNP-ul trebuie să aibă 13 cifre valide')
+                .refine(isValidCnp, 'CNP invalid — cifra de control nu corespunde'),
 
   birthDate:          z.string().optional().or(z.literal('')),
   genderId:           z.string().optional().or(z.literal('')),
