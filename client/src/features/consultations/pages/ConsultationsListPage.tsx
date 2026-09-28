@@ -3,29 +3,22 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { ConsultationListDto, ConsultationDetailDto } from '../types/consultation.types'
-import { useConsultations, useConsultationDetail, useDeleteConsultation, useCreateConsultation, useUpdateConsultation, useFinalizeConsultation, consultationKeys } from '../hooks/useConsultations'
+import { useConsultationDetail, useDeleteConsultation, useCreateConsultation, useUpdateConsultation, useFinalizeConsultation, consultationKeys } from '../hooks/useConsultations'
 import { useConsultationAutosave } from '../hooks/useConsultationAutosave'
 import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard'
 import { consultationsApi } from '@/api/endpoints/consultations.api'
-import { useAppointments } from '@/features/appointments/hooks/useAppointments'
 import type { AppointmentDto } from '@/features/appointments/types/appointment.types'
 import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
 import { usePatientLookup, usePatientDetail } from '@/features/patients/hooks/usePatients'
 import { useAuthStore } from '@/store/authStore'
-import { useDebounce } from '@/hooks/useDebounce'
-import { AppBadge, type BadgeVariant } from '@/components/ui/AppBadge'
+import { AppBadge } from '@/components/ui/AppBadge'
 import { AppButton } from '@/components/ui/AppButton'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
-import { FormInput } from '@/components/forms/FormInput/FormInput'
-import { FormRichText } from '@/components/forms/FormRichText/FormRichText'
 import { FormSelect } from '@/components/forms/FormSelect/FormSelect'
-import { PrimaryDiagnosisSelector } from '@/components/icd10/PrimaryDiagnosisSelector'
-import { SecondaryDiagnosesList } from '@/components/icd10/SecondaryDiagnosesList'
 import { FormDatePicker } from '@/components/forms/FormDatePicker/FormDatePicker'
 import { formatDate } from '@/utils/format'
 import { consultationSchema, type ConsultationFormData } from '../schemas/consultation.schema'
 import { ANAMNESIS_FIELDS, EXAM_FIELDS, EMPTY_CONSULTATION_FORM, detailToFormValues } from '../constants/consultationDefaults'
-import { STARE_GENERALA_OPTIONS, TEGUMENTE_OPTIONS, MUCOASE_OPTIONS, EDEME_OPTIONS, GANGLIONI_OPTIONS } from '../constants/clinicalVocabularies'
 import {
   EMPTY_DIAGNOSIS, parseDiagnosisState, buildConsultationPayload, buildAnamnesisPayload, buildExamPayload,
   type DiagnosisState,
@@ -33,15 +26,11 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 import { InvestigationsStep } from '../investigations/InvestigationsStep'
 import { AnalizeMedicaleStep } from '../lab/AnalizeMedicaleStep'
-import { PrescribedMedicationsTable } from '../medications/components/PrescribedMedicationsTable'
-import { ConsultationPrescriptionsPanel } from '@/features/prescriptions/components/ConsultationPrescriptionsPanel'
+import { AnamnezaTab, ExamenClinicTab, DiagnosticTab, ConcluziiTab } from '../components/ConsultationTabs'
+import { ConsultationsSidebar } from '../components/ConsultationsSidebar'
+import { getConsultationStatusVariant } from '../utils/consultationDisplay'
 import {
   MessageSquareText, Stethoscope, Microscope, FlaskConical, ClipboardList, CheckCircle2,
-  FileText, ClipboardPlus, Pill, PenLine, FileCheck, CalendarClock,
-  ShieldCheck, Hand, Eye, Scale, Ruler, Hash,
-  Heart, HeartPulse, Wind, Thermometer, Activity, Droplets, Droplet, CircleDot,
-  Ribbon, Hospital, ClipboardCheck, BedDouble, Home, Accessibility,
-  NotebookPen, Users, AlertTriangle, ShieldAlert,
   Lock, User, Cake, Phone, Mail, Calendar, MapPin, Receipt,
 } from 'lucide-react'
 import { ConsultationServicesTab } from '../services/ConsultationServicesTab'
@@ -51,7 +40,6 @@ import styles from './ConsultationsListPage.module.scss'
 
 // ── SVG Icons ─────────────────────────────────────────────────────────────────
 const IconLetter  = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-const IconPlus    = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
 const IconPrint   = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
 const IconTrash   = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
 const IconEmpty   = () => <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" opacity="0.3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" /></svg>
@@ -59,42 +47,8 @@ const IconSave    = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="
 const IconCheck   = () => <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const getAppointmentStatusVariant = (code: string | null): BadgeVariant => {
-  if (!code) return 'neutral'
-  switch (code.toUpperCase()) {
-    case 'PROGRAMAT':  return 'info'
-    case 'CONFIRMAT':  return 'primary'
-    case 'FINALIZAT':  return 'success'
-    case 'ANULAT':     return 'danger'
-    default:           return 'neutral'
-  }
-}
 
-const getConsultationStatusVariant = (code: string | null): BadgeVariant => {
-  if (!code) return 'neutral'
-  switch (code.toUpperCase()) {
-    case 'INLUCRU':    return 'warning'
-    case 'FINALIZATA': return 'success'
-    case 'FACTURATA':  return 'info'
-    case 'BLOCATA':    return 'danger'
-    default:           return 'neutral'
-  }
-}
 
-function parseDiagnosticLabel(raw: string | null): string {
-  if (!raw) return '—'
-  try {
-    const data = JSON.parse(raw)
-    if (data?.primaryCode?.code) {
-      return `${data.primaryCode.code} — ${data.primaryCode.shortDescriptionRo ?? ''}`
-    }
-  } catch { /* not JSON */ }
-  return raw.length > 55 ? raw.substring(0, 55) + '…' : raw
-}
-
-const HISTORY_PAGE_SIZE = 20
-// Plafonul serverului pe o pagină (Consultation_GetPaged)
-const HISTORY_MAX_PAGE_SIZE = 200
 const AUTOSAVE_DELAY_MS = 30_000
 const MISSING_PRIMARY_DIAGNOSIS = 'Diagnosticul principal este obligatoriu la finalizare.'
 
@@ -106,15 +60,6 @@ const FIELD_LABELS: Partial<Record<keyof ConsultationFormData, string>> = {
 }
 
 const formatSavedAt = (d: Date) => d.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })
-
-// RHF aplică setValueAs și pe valoarea inițială (null), nu doar pe textul din input
-const parseOrNull = (v: unknown, parse: (s: string) => number): number | null => {
-  if (v === null || v === undefined || v === '') return null
-  const n = typeof v === 'number' ? v : parse(String(v))
-  return Number.isNaN(n) ? null : n
-}
-const toDecimalOrNull = (v: unknown) => parseOrNull(v, parseFloat)
-const toIntOrNull = (v: unknown) => parseOrNull(v, s => parseInt(s, 10))
 
 type Tab = 'anamneza' | 'examen' | 'investigatii' | 'analize' | 'diagnostic' | 'concluzii' | 'servicii'
 
@@ -137,15 +82,6 @@ const TABS: { key: Tab; label: string; num: number }[] = [
   { key: 'concluzii',    label: 'Concluzii',             num: 6 },
   { key: 'servicii',     label: 'Servicii',              num: 7 },
 ]
-
-function formatTime(dateStr: string): string {
-  const d = new Date(dateStr)
-  return d.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })
-}
-
-function formatTimeRange(start: string, end: string): string {
-  return `${formatTime(start)} - ${formatTime(end)}`
-}
 
 function getTodayISO(): string {
   const d = new Date()
@@ -194,15 +130,6 @@ export const ConsultationsListPage = () => {
   // For doctor users, auto-set the doctorId filter
   const effectiveDoctorId = isAdmin ? appointmentDoctorFilter : (user?.doctorId ?? undefined)
 
-  const { data: appointmentsResp, isError: isAppointmentsError } = useAppointments({
-    page: 1, pageSize: 100, dateFrom: todayISO, dateTo: todayISO,
-    doctorId: effectiveDoctorId,
-    sortBy: 'startTime', sortDir: 'asc',
-  })
-
-  const todayAppointments = useMemo(() => appointmentsResp?.data?.pagedResult?.items ?? [], [appointmentsResp])
-  const appointmentStats = appointmentsResp?.data?.stats
-
   // ── Detail state ────────────────────────────────────────────────────────────
   const [isCreating, setIsCreating] = useState(false)
   const [activeTab, setActiveTab] = useState<Tab>('anamneza')
@@ -222,30 +149,7 @@ export const ConsultationsListPage = () => {
     return () => clearTimeout(timer)
   }, [successMsg])
 
-  // ── History sidebar state ───────────────────────────────────────────────────
-  const [openDoctorGroups, setOpenDoctorGroups] = useState<Record<string, boolean>>({})
-  const toggleDoctorGroup = (name: string) =>
-    setOpenDoctorGroups(prev => ({ ...prev, [name]: prev[name] === false ? true : false }))
-  const [historySearch, setHistorySearch] = useState('')
-  const debouncedHistorySearch = useDebounce(historySearch.trim(), 300)
-  const [historyPageSize, setHistoryPageSize] = useState(HISTORY_PAGE_SIZE)
-
   // ── Queries ─────────────────────────────────────────────────────────────────
-  // Sidebar history: admin → filtrat opțional pe medic (grouped), doctor → proprii
-  const historyDoctorId = isAdmin ? appointmentDoctorFilter : (user?.doctorId ?? undefined)
-
-  useEffect(() => {
-    setHistoryPageSize(HISTORY_PAGE_SIZE)
-  }, [debouncedHistorySearch, historyDoctorId])
-
-  const { data: historyResp, isFetching: isHistoryFetching } = useConsultations({
-    page: 1, pageSize: historyPageSize,
-    doctorId: historyDoctorId,
-    search: debouncedHistorySearch || undefined,
-    sortBy: 'Date', sortDir: 'desc',
-  })
-  const canLoadMoreHistory = (historyResp?.data?.pagedResult?.hasNextPage ?? false) && historyPageSize < HISTORY_MAX_PAGE_SIZE
-
   const { data: detailResp, isLoading: isDetailLoading } = useConsultationDetail(selectedId ?? '', !!selectedId && !isCreating)
   const detail: ConsultationDetailDto | null = detailResp?.data ?? null
 
@@ -266,21 +170,6 @@ export const ConsultationsListPage = () => {
 
   const doctorLookup  = useMemo(() => (doctorLookupResp?.data ?? []).map(d => ({ value: d.id, label: d.fullName })), [doctorLookupResp])
   const patientLookup = useMemo(() => (patientLookupResp?.data ?? []).map(p => ({ value: p.id, label: `${p.fullName} (${p.cnp})` })), [patientLookupResp])
-
-  // ── History computed ─────────────────────────────────────────────────────────
-  const historyItems = useMemo(() => historyResp?.data?.pagedResult?.items ?? [], [historyResp])
-  // Grupăm pe medic doar când admin fără filtru selectat
-  const shouldGroup = isAdmin && !appointmentDoctorFilter
-  const groupedHistory = useMemo(() => {
-    if (!shouldGroup) return null
-    const groups: Record<string, ConsultationListDto[]> = {}
-    historyItems.forEach(c => {
-      const key = c.doctorName || 'Necunoscut'
-      if (!groups[key]) groups[key] = []
-      groups[key].push(c)
-    })
-    return groups
-  }, [shouldGroup, historyItems])
 
   // ── Form ────────────────────────────────────────────────────────────────────
   const form = useForm<ConsultationFormData>({
@@ -599,186 +488,24 @@ export const ConsultationsListPage = () => {
     }
   }
 
-  // Reactive watches for computed fields & toggle cards
-  const [wGreutate, wInaltime, wEsteOnco, wInternare, wPrescriptie, wConcediu, wIngrijiri, wDispozitive] = form.watch([
-    'greutate', 'inaltime',
-    'esteAfectiuneOncologica', 'areIndicatieInternare',
-    'saEliberatPrescriptie', 'saEliberatConcediuMedical',
-    'saEliberatIngrijiriDomiciliu', 'saEliberatDispozitiveMedicale',
-  ])
-  const imc = wGreutate && wInaltime && wInaltime > 0
-    ? (wGreutate / Math.pow(wInaltime / 100, 2)).toFixed(1)
-    : null
-
   const showDetail = isCreating || !!selectedId
 
   return (
     <div className={styles.page}>
       {/* ── Sidebar ──────────────────────────────────────────────────────────── */}
-      <aside className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>
-          <h1 className={styles.pageTitle}>Consultații</h1>
-          <AppButton variant="primary" size="sm" onClick={handleNewConsultation}>
-            <IconPlus /> Nouă
-          </AppButton>
-        </div>
-
-        {/* Doctor filter — only for admin / clinic_manager */}
-        {isAdmin && (
-          <div className={styles.doctorFilter}>
-            <select
-              className={styles.filterSelect}
-              value={appointmentDoctorFilter ?? ''}
-              onChange={e => setAppointmentDoctorFilter(e.target.value || undefined)}
-            >
-              <option value="">Toți medicii</option>
-              {(doctorLookupResp?.data ?? []).map(d => (
-                <option key={d.id} value={d.id}>{d.fullName}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Appointment stats */}
-        {appointmentStats && (
-          <div className={styles.statsCompact}>
-            <div className={styles.statMini}><span className={styles.statMiniValue}>{appointmentStats.totalAppointments}</span><span className={styles.statMiniLabel}>Total</span></div>
-            <div className={styles.statMini}><span className={`${styles.statMiniValue} ${styles['statMiniValue--orange']}`}>{appointmentStats.scheduledCount}</span><span className={styles.statMiniLabel}>Programate</span></div>
-            <div className={styles.statMini}><span className={`${styles.statMiniValue} ${styles['statMiniValue--green']}`}>{appointmentStats.confirmedCount}</span><span className={styles.statMiniLabel}>Confirmate</span></div>
-            <div className={styles.statMini}><span className={`${styles.statMiniValue} ${styles['statMiniValue--gray']}`}>{appointmentStats.completedCount}</span><span className={styles.statMiniLabel}>Finalizate</span></div>
-          </div>
-        )}
-
-        {/* Today's appointments label */}
-        <div className={styles.dateGroupLabel}>Programări azi</div>
-
-        {/* ── Scrollable area: programări + consultații anterioare ── */}
-        <div className={styles.sidebarScroll}>
-          {/* Appointment card list */}
-          <div className={styles.cardList}>
-            {isAppointmentsError && <div className={styles.listError}>Eroare la încărcarea programărilor.</div>}
-
-            {todayAppointments.map(apt => (
-              <button
-                key={apt.id}
-                className={`${styles.card} ${selectedAppointment?.id === apt.id ? styles.cardActive : ''}`}
-                onClick={() => handleSelectAppointment(apt)}
-              >
-                <div className={styles.cardTop}>
-                  <span className={styles.cardPatient}>{apt.patientName}</span>
-                  <span className={styles.cardTime}>{formatTimeRange(apt.startTime, apt.endTime)}</span>
-                </div>
-                <div className={styles.cardMiddle}>
-                  {apt.doctorName}{apt.specialtyName ? ` · ${apt.specialtyName}` : ''}
-                </div>
-                <div className={styles.cardBottom}>
-                  <AppBadge variant={getAppointmentStatusVariant(apt.statusCode)} withDot>{apt.statusName}</AppBadge>
-                </div>
-              </button>
-            ))}
-
-            {!isAppointmentsError && todayAppointments.length === 0 && (
-              <div className={styles.listEmpty}>Nicio programare pentru azi.</div>
-            )}
-          </div>
-
-          {/* ── Consultații anterioare ── */}
-          <div className={styles.historySeparator} />
-          <div className={styles.dateGroupLabel}>
-            {shouldGroup ? 'Consultații anterioare' : 'Consultații recente'}
-          </div>
-          <div className={styles.historySearch}>
-            <input
-              type="search"
-              className="form-control form-control-sm"
-              placeholder="Caută pacient, medic sau cod ICD-10..."
-              aria-label="Caută în consultații"
-              value={historySearch}
-              onChange={e => setHistorySearch(e.target.value)}
-            />
-          </div>
-
-          {historyItems.length === 0 && (
-            <div className={styles.listEmpty}>
-              {debouncedHistorySearch ? 'Nicio consultație găsită.' : 'Nicio consultație anterioară.'}
-            </div>
-          )}
-
-          {/* Admin fără filtru → grupat pe medic */}
-          {shouldGroup && groupedHistory && Object.entries(groupedHistory).map(([doctorName, cons]) => {
-            const isOpen = openDoctorGroups[doctorName] !== false
-            return (
-              <div key={doctorName} className={styles.historyDoctorGroup}>
-                <button
-                  type="button"
-                  className={styles.historyDoctorHeader}
-                  onClick={() => toggleDoctorGroup(doctorName)}
-                >
-                  <span className={styles.historyDoctorName}>Dr. {doctorName}</span>
-                  <span className={styles.historyDoctorCount}>{cons.length}</span>
-                  <span className={styles.historyChevron}>{isOpen ? '▾' : '▸'}</span>
-                </button>
-                {isOpen && (
-                  <div className={styles.historyDoctorItems}>
-                    {cons.map(c => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        className={`${styles.card} ${styles.cardHistory} ${selectedId === c.id && !isCreating ? styles.cardActive : ''}`}
-                        onClick={() => handleSelectHistoryConsultation(c)}
-                      >
-                        <div className={styles.cardTop}>
-                          <span className={styles.cardPatient}>{c.patientName}</span>
-                          <span className={styles.cardTime}>{formatDate(c.date)}</span>
-                        </div>
-                        <div className={styles.cardMiddle}>{parseDiagnosticLabel(c.diagnostic)}</div>
-                        <div className={styles.cardBottom}>
-                          <AppBadge variant={getConsultationStatusVariant(c.statusCode)} withDot>{c.statusName}</AppBadge>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-
-          {/* Admin cu filtru sau medic logat → lista plată */}
-          {!shouldGroup && historyItems.map(c => (
-            <button
-              key={c.id}
-              type="button"
-              className={`${styles.card} ${styles.cardHistory} ${selectedId === c.id && !isCreating ? styles.cardActive : ''}`}
-              onClick={() => handleSelectHistoryConsultation(c)}
-            >
-              <div className={styles.cardTop}>
-                <span className={styles.cardPatient}>{c.patientName}</span>
-                <span className={styles.cardTime}>{formatDate(c.date)}</span>
-              </div>
-              {!isAdmin && (
-                <div className={styles.cardMiddle}>{parseDiagnosticLabel(c.diagnostic)}</div>
-              )}
-              {isAdmin && (
-                <div className={styles.cardMiddle}>{c.doctorName}</div>
-              )}
-              <div className={styles.cardBottom}>
-                <AppBadge variant={getConsultationStatusVariant(c.statusCode)} withDot>{c.statusName}</AppBadge>
-              </div>
-            </button>
-          ))}
-
-          {canLoadMoreHistory && (
-            <button
-              type="button"
-              className={styles.loadMore}
-              disabled={isHistoryFetching}
-              onClick={() => setHistoryPageSize(s => Math.min(s + HISTORY_PAGE_SIZE, HISTORY_MAX_PAGE_SIZE))}
-            >
-              {isHistoryFetching ? 'Se încarcă...' : 'Încarcă mai multe'}
-            </button>
-          )}
-        </div>
-      </aside>
+      <ConsultationsSidebar
+        isAdmin={isAdmin}
+        todayISO={todayISO}
+        doctors={doctorLookupResp?.data ?? []}
+        doctorFilter={appointmentDoctorFilter}
+        onDoctorFilterChange={setAppointmentDoctorFilter}
+        effectiveDoctorId={effectiveDoctorId}
+        activeAppointmentId={selectedAppointment?.id ?? null}
+        activeConsultationId={isCreating ? null : selectedId}
+        onNew={handleNewConsultation}
+        onSelectAppointment={handleSelectAppointment}
+        onSelectConsultation={handleSelectHistoryConsultation}
+      />
 
       {/* ── Detail panel ─────────────────────────────────────────────────────── */}
       <main className={styles.detail}>
@@ -816,7 +543,7 @@ export const ConsultationsListPage = () => {
                   <p className={styles.pageHeaderSub}>{detail.patientName}</p>
                 </div>
                 <div className={styles.pageHeaderActions}>
-                  <AppBadge variant={getAppointmentStatusVariant(detail.statusCode)} withDot>
+                  <AppBadge variant={getConsultationStatusVariant(detail.statusCode)} withDot>
                     {detail.statusName}
                   </AppBadge>
                 </div>
@@ -978,227 +705,8 @@ export const ConsultationsListPage = () => {
                   aria-labelledby={`consultation-tab-${activeTab}`}
                 >
 
-                  {/* ── Anamneză ── */}
-                  {activeTab === 'anamneza' && (
-                    <div className={styles.anamnezaGrid}>
-                      <div className={styles.anamnezaCol}>
-                        <div className={styles.formSectionCompact}>
-                          <h4 className={styles.sectionTitleSm}><span className={styles.sectionIcon}><MessageSquareText size={15} /></span> Motiv Prezentare</h4>
-                          <FormRichText name="motiv" control={form.control} placeholder="Descrieți motivul prezentării pacientului la consultație..." disabled={!isEditable} height={180} />
-                        </div>
-                        <div className={styles.formSectionCompact}>
-                          <h4 className={styles.sectionTitleSm}><span className={styles.sectionIcon}><NotebookPen size={15} /></span> Istoric Medical Personal</h4>
-                          <FormRichText name="istoricMedicalPersonal" control={form.control} placeholder="Boli anterioare, intervenții chirurgicale, alergii, tratamente cronice..." disabled={!isEditable} height={180} />
-                        </div>
-                        <div className={styles.formSectionCompact}>
-                          <h4 className={styles.sectionTitleSm}><span className={styles.sectionIcon}><Pill size={15} /></span> Tratament Anterior</h4>
-                          <FormRichText name="tratamentAnterior" control={form.control} placeholder="Tratamente urmate anterior (medicație, proceduri, intervenții)..." disabled={!isEditable} height={180} />
-                        </div>
-                      </div>
-                      <div className={styles.anamnezaCol}>
-                        <div className={styles.formSectionCompact}>
-                          <h4 className={styles.sectionTitleSm}><span className={styles.sectionIcon}><FileText size={15} /></span> Istoricul Bolii Prezente</h4>
-                          <FormRichText name="istoricBoalaActuala" control={form.control} placeholder="Evoluția simptomelor, când au apărut, factori agravanți/amelioranți..." disabled={!isEditable} height={180} />
-                        </div>
-                        <div className={styles.formSectionCompact}>
-                          <h4 className={styles.sectionTitleSm}><span className={styles.sectionIcon}><Users size={15} /></span> Istoric Familial</h4>
-                          <FormRichText name="istoricFamilial" control={form.control} placeholder="Boli ereditare în familie (diabet, HTA, boli cardiace, cancer, etc.)..." disabled={!isEditable} height={180} />
-                        </div>
-                        <div className={styles.formSectionCompact}>
-                          <h4 className={styles.sectionTitleSm}><span className={styles.sectionIcon}><AlertTriangle size={15} /></span> Factori de Risc</h4>
-                          <FormRichText name="factoriDeRisc" control={form.control} placeholder="Factori de risc identificați (HTA, diabet, fumat, sedentarism, obezitate, etc.)..." disabled={!isEditable} height={180} />
-                        </div>
-                        <div className={styles.formSectionCompact}>
-                          <h4 className={styles.sectionTitleSm}><span className={styles.sectionIcon}><ShieldAlert size={15} /></span> Alergii</h4>
-                          <FormRichText name="alergiiConsultatie" control={form.control} placeholder="Alergii cunoscute (medicamente, alimente, substanțe, etc.)..." disabled={!isEditable} height={150} />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── Examen Clinic ── */}
-                  {activeTab === 'examen' && (
-                    <div className={styles.examenSection}>
-                      <h3 className={styles.sectionTitle}>
-                        <span className={styles.sectionIcon}><Stethoscope size={18} /></span>
-                        Examen Clinic General
-                      </h3>
-                      <div className={styles.examGrid}>
-                        {/* Stare Generală */}
-                        <div className={styles.examCard}>
-                          <div className={styles.examCardHeader}>
-                            <span className={styles.examIcon}><ShieldCheck size={14} /></span>
-                            <span className={styles.examCardLabel}>Stare Generală</span>
-                          </div>
-                          <select disabled={!isEditable} className={styles.examSelectInput} {...form.register('stareGenerala')}>
-                            <option value="">Selectează...</option>
-                            {STARE_GENERALA_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                          </select>
-                        </div>
-                        {/* Tegumente */}
-                        <div className={styles.examCard}>
-                          <div className={styles.examCardHeader}>
-                            <span className={styles.examIcon}><Hand size={14} /></span>
-                            <span className={styles.examCardLabel}>Tegumente</span>
-                          </div>
-                          <select disabled={!isEditable} className={styles.examSelectInput} {...form.register('tegumente')}>
-                            <option value="">Selectează...</option>
-                            {TEGUMENTE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                          </select>
-                        </div>
-                        {/* Mucoase */}
-                        <div className={styles.examCard}>
-                          <div className={styles.examCardHeader}>
-                            <span className={styles.examIcon}><Eye size={14} /></span>
-                            <span className={styles.examCardLabel}>Mucoase</span>
-                          </div>
-                          <select disabled={!isEditable} className={styles.examSelectInput} {...form.register('mucoase')}>
-                            <option value="">Selectează...</option>
-                            {MUCOASE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                          </select>
-                        </div>
-                        {/* Greutate */}
-                        <div className={styles.examCard}>
-                          <div className={styles.examCardHeader}>
-                            <span className={styles.examIcon}><Scale size={14} /></span>
-                            <span className={styles.examCardLabel}>Greutate</span>
-                          </div>
-                          <div className={styles.examCardInput}>
-                            <input type="number" step="0.1" disabled={!isEditable} className={styles.examNumInput} placeholder="70.5" {...form.register('greutate', { setValueAs: toDecimalOrNull })} />
-                            <span className={styles.examUnit}>kg</span>
-                          </div>
-                        </div>
-                        {/* Înălțime */}
-                        <div className={styles.examCard}>
-                          <div className={styles.examCardHeader}>
-                            <span className={styles.examIcon}><Ruler size={14} /></span>
-                            <span className={styles.examCardLabel}>Înălțime</span>
-                          </div>
-                          <div className={styles.examCardInput}>
-                            <input type="number" step="1" disabled={!isEditable} className={styles.examNumInput} placeholder="175" {...form.register('inaltime', { setValueAs: toIntOrNull })} />
-                            <span className={styles.examUnit}>cm</span>
-                          </div>
-                        </div>
-                        {/* IMC (computed) */}
-                        <div className={`${styles.examCard} ${imc ? styles.examCardHasValue : ''}`}>
-                          <div className={styles.examCardHeader}>
-                            <span className={styles.examIcon}><Hash size={14} /></span>
-                            <span className={styles.examCardLabel}>IMC</span>
-                          </div>
-                          {imc ? (
-                            <div className={styles.imcResult}>
-                              <span className={styles.imcValue}>{imc}</span>
-                              <span className={styles.examUnit}>kg/m²</span>
-                            </div>
-                          ) : (
-                            <span className={styles.examPlaceholder}>Completați G + Î</span>
-                          )}
-                        </div>
-                        {/* TA */}
-                        <div className={styles.examCard}>
-                          <div className={styles.examCardHeader}>
-                            <span className={styles.examIcon}><Heart size={14} /></span>
-                            <span className={styles.examCardLabel}>Tensiune Arterială</span>
-                          </div>
-                          <div className={styles.examCardInput}>
-                            <input type="number" step="1" disabled={!isEditable} className={styles.examNumInput} placeholder="120" {...form.register('tensiuneSistolica', { setValueAs: toIntOrNull })} />
-                            <span className={styles.examUnit}>/</span>
-                            <input type="number" step="1" disabled={!isEditable} className={styles.examNumInput} placeholder="80" {...form.register('tensiuneDiastolica', { setValueAs: toIntOrNull })} />
-                            <span className={styles.examUnit}>mmHg</span>
-                          </div>
-                        </div>
-                        {/* FC */}
-                        <div className={styles.examCard}>
-                          <div className={styles.examCardHeader}>
-                            <span className={styles.examIcon}><HeartPulse size={14} /></span>
-                            <span className={styles.examCardLabel}>Frecvență Cardiacă</span>
-                          </div>
-                          <div className={styles.examCardInput}>
-                            <input type="number" step="1" disabled={!isEditable} className={styles.examNumInput} placeholder="75" {...form.register('puls', { setValueAs: toIntOrNull })} />
-                            <span className={styles.examUnit}>bpm</span>
-                          </div>
-                        </div>
-                        {/* FR */}
-                        <div className={styles.examCard}>
-                          <div className={styles.examCardHeader}>
-                            <span className={styles.examIcon}><Wind size={14} /></span>
-                            <span className={styles.examCardLabel}>Frecvență Respiratorie</span>
-                          </div>
-                          <div className={styles.examCardInput}>
-                            <input type="number" step="1" disabled={!isEditable} className={styles.examNumInput} placeholder="16" {...form.register('frecventaRespiratorie', { setValueAs: toIntOrNull })} />
-                            <span className={styles.examUnit}>resp/min</span>
-                          </div>
-                        </div>
-                        {/* Temperatură */}
-                        <div className={styles.examCard}>
-                          <div className={styles.examCardHeader}>
-                            <span className={styles.examIcon}><Thermometer size={14} /></span>
-                            <span className={styles.examCardLabel}>Temperatură</span>
-                          </div>
-                          <div className={styles.examCardInput}>
-                            <input type="number" step="0.1" disabled={!isEditable} className={styles.examNumInput} placeholder="36.5" {...form.register('temperatura', { setValueAs: toDecimalOrNull })} />
-                            <span className={styles.examUnit}>°C</span>
-                          </div>
-                        </div>
-                        {/* SpO₂ */}
-                        <div className={styles.examCard}>
-                          <div className={styles.examCardHeader}>
-                            <span className={styles.examIcon}><Activity size={14} /></span>
-                            <span className={styles.examCardLabel}>SpO₂</span>
-                          </div>
-                          <div className={styles.examCardInput}>
-                            <input type="number" step="1" disabled={!isEditable} className={styles.examNumInput} placeholder="98" {...form.register('spO2', { setValueAs: toIntOrNull })} />
-                            <span className={styles.examUnit}>%</span>
-                          </div>
-                        </div>
-                        {/* Edeme */}
-                        <div className={styles.examCard}>
-                          <div className={styles.examCardHeader}>
-                            <span className={styles.examIcon}><Droplets size={14} /></span>
-                            <span className={styles.examCardLabel}>Edeme</span>
-                          </div>
-                          <select disabled={!isEditable} className={styles.examSelectInput} {...form.register('edeme')}>
-                            <option value="">Selectează...</option>
-                            {EDEME_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                          </select>
-                        </div>
-                        {/* Glicemie */}
-                        <div className={styles.examCard}>
-                          <div className={styles.examCardHeader}>
-                            <span className={styles.examIcon}><Droplet size={14} /></span>
-                            <span className={styles.examCardLabel}>Glicemie</span>
-                          </div>
-                          <div className={styles.examCardInput}>
-                            <input type="number" step="0.1" disabled={!isEditable} className={styles.examNumInput} placeholder="95" {...form.register('glicemie', { setValueAs: toDecimalOrNull })} />
-                            <span className={styles.examUnit}>mg/dL</span>
-                          </div>
-                        </div>
-                        {/* Ganglioni */}
-                        <div className={styles.examCard}>
-                          <div className={styles.examCardHeader}>
-                            <span className={styles.examIcon}><CircleDot size={14} /></span>
-                            <span className={styles.examCardLabel}>Ganglioni Limfatici</span>
-                          </div>
-                          <select disabled={!isEditable} className={styles.examSelectInput} {...form.register('ganglioniLimfatici')}>
-                            <option value="">Selectează...</option>
-                            {GANGLIONI_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
-                          </select>
-                        </div>
-                      </div>
-
-                      <h3 className={styles.sectionTitle}>
-                        <span className={styles.sectionIcon}><PenLine size={18} /></span>
-                        Examen Obiectiv Detaliat
-                      </h3>
-                      <FormInput name="examenClinic" control={form.control} label="Examen clinic general" placeholder="Aspect general, examen pe aparate și sisteme..." multiline rows={5} disabled={!isEditable} maxLength={4000} />
-
-                      <h3 className={styles.sectionTitle}>
-                        <span className={styles.sectionIcon}><ClipboardPlus size={18} /></span>
-                        Alte Observații Clinice
-                      </h3>
-                      <FormInput name="alteObservatiiClinice" control={form.control} label="Alte observații clinice" placeholder="Alte observații relevante din examenul clinic..." multiline rows={3} disabled={!isEditable} maxLength={2000} />
-                    </div>
-                  )}
+                  {activeTab === 'anamneza' && <AnamnezaTab control={form.control} isEditable={isEditable} />}
+                  {activeTab === 'examen' && <ExamenClinicTab form={form} isEditable={isEditable} />}
 
                   {/* ── Investigații (modul nou — Faza 2) ── */}
                   {activeTab === 'investigatii' && (
@@ -1248,201 +756,16 @@ export const ConsultationsListPage = () => {
                     </div>
                   )}
 
-                  {/* ── Diagnostic & Tratament ── */}
                   {activeTab === 'diagnostic' && (
-                    <div className={styles.diagnosticSection}>
-                      {/* ══ 2-Column: Primary + Secondary ══ */}
-                      <div className={styles.diagnosticColumns}>
-                        {/* Left: Primary Diagnosis */}
-                        <div className={styles.diagnosticColumnPrimary}>
-                          <PrimaryDiagnosisSelector
-                            selectedCode={diagnosis.primaryCode}
-                            onCodeChange={code => updateDiagnosis({ primaryCode: code })}
-                            details={diagnosis.primaryDetails}
-                            onDetailsChange={value => updateDiagnosis({ primaryDetails: value })}
-                            showValidation={false}
-                            disabled={!isEditable}
-                          />
-                        </div>
-                        {/* Right: Secondary Diagnoses */}
-                        <div className={styles.diagnosticColumnSecondary}>
-                          <SecondaryDiagnosesList
-                            diagnoses={diagnosis.secondary}
-                            onChange={secondary => updateDiagnosis({ secondary })}
-                            showValidation={false}
-                            disabled={!isEditable}
-                          />
-                        </div>
-                      </div>
-
-                      <div className={styles.formSection}>
-                        <h3 className={styles.sectionTitle}>
-                          <span className={styles.sectionIcon}><Pill size={18} /></span>
-                          Tratament recomandat
-                        </h3>
-                        {selectedId && !isCreating ? (
-                          <>
-                            <PrescribedMedicationsTable consultationId={selectedId} isEditable={isEditable} />
-                            <ConsultationPrescriptionsPanel
-                              consultationId={selectedId}
-                              isEditable={isEditable}
-                              onIssuedSeriesChange={(series) => {
-                                // SP-ul a actualizat deja consultația; formularul se aliniază ca autosave-ul să nu suprascrie
-                                form.setValue('saEliberatPrescriptie', !!series)
-                                form.setValue('seriePrescriptie', series ?? '')
-                              }}
-                            />
-                          </>
-                        ) : (
-                          <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
-                            Salvează consultația ca draft pentru a putea adăuga medicamente.
-                          </p>
-                        )}
-                      </div>
-                      <div className={styles.formSection}>
-                        <h3 className={styles.sectionTitle}>
-                          <span className={styles.sectionIcon}><NotebookPen size={18} /></span>
-                          Recomandări
-                        </h3>
-                        <FormInput name="recomandari" control={form.control} placeholder="Regim alimentar, stil de viață, indicații suplimentare..." multiline rows={4} disabled={!isEditable} maxLength={4000} />
-                      </div>
-                      <div className={styles.formSection}>
-                        <h3 className={styles.sectionTitle}>
-                          <span className={styles.sectionIcon}><PenLine size={18} /></span>
-                          Observații
-                        </h3>
-                        <FormInput name="observatii" control={form.control} placeholder="Observații suplimentare..." multiline rows={3} disabled={!isEditable} maxLength={4000} />
-                      </div>
-                    </div>
+                    <DiagnosticTab
+                      form={form}
+                      isEditable={isEditable}
+                      consultationId={isCreating ? null : selectedId}
+                      diagnosis={diagnosis}
+                      onDiagnosisChange={updateDiagnosis}
+                    />
                   )}
-
-                  {/* ── Concluzii ── */}
-                  {activeTab === 'concluzii' && (
-                    <div className={styles.concluziiSection}>
-                      <div className={styles.formSection}>
-                        <h3 className={styles.sectionTitle}>
-                          <span className={styles.sectionIcon}><FileCheck size={18} /></span>
-                          Concluzii
-                        </h3>
-                        <FormInput name="concluzii" control={form.control} label="Rezumat consultație" placeholder="Rezumat general al consultației..." multiline rows={5} disabled={!isEditable} maxLength={4000} />
-                      </div>
-
-                      <div className={styles.formSection}>
-                        <h3 className={styles.sectionTitle}>
-                          <span className={styles.sectionIcon}><ClipboardCheck size={18} /></span>
-                          Informații Scrisoare Medicală
-                          <span className={styles.sectionSubtitle}>Anexa 43 - Ordin MS nr. 1411/2016</span>
-                        </h3>
-
-                        <div className={styles.optionCardsGrid}>
-                          <div className={`${styles.optionCard} ${wEsteOnco ? `${styles.optionCardActive} ${styles.optionCardWarning}` : ''}`}>
-                            <label className={styles.optionCardContent}>
-                              <div className={`${styles.optionCardIconWrap} ${styles.optionIconWarning}`}><Ribbon size={20} /></div>
-                              <div className={styles.optionCardDetails}>
-                                <span className={styles.optionCardLabel}>Afecțiune Oncologică</span>
-                                <span className={styles.optionCardDesc}>Pacientul prezintă afecțiune oncologică</span>
-                              </div>
-                              <div className={styles.toggleWrap}>
-                                <input type="checkbox" className={styles.toggleInput} disabled={!isEditable} checked={!!wEsteOnco} onChange={e => form.setValue('esteAfectiuneOncologica', e.target.checked, { shouldDirty: true })} />
-                                <span className={styles.toggleSlider} />
-                              </div>
-                            </label>
-                          </div>
-
-                          <div className={`${styles.optionCard} ${wInternare ? `${styles.optionCardActive} ${styles.optionCardInfo}` : ''}`}>
-                            <label className={styles.optionCardContent}>
-                              <div className={`${styles.optionCardIconWrap} ${styles.optionIconInfo}`}><Hospital size={20} /></div>
-                              <div className={styles.optionCardDetails}>
-                                <span className={styles.optionCardLabel}>Indicație Internare</span>
-                                <span className={styles.optionCardDesc}>Recomandare pentru internare în spital</span>
-                              </div>
-                              <div className={styles.toggleWrap}>
-                                <input type="checkbox" className={styles.toggleInput} disabled={!isEditable} checked={!!wInternare} onChange={e => form.setValue('areIndicatieInternare', e.target.checked, { shouldDirty: true })} />
-                                <span className={styles.toggleSlider} />
-                              </div>
-                            </label>
-                          </div>
-
-                          <div className={`${styles.optionCard} ${wPrescriptie ? `${styles.optionCardActive} ${styles.optionCardPrimary}` : ''}`}>
-                            <label className={styles.optionCardContent}>
-                              <div className={`${styles.optionCardIconWrap} ${styles.optionIconPrimary}`}><ClipboardCheck size={20} /></div>
-                              <div className={styles.optionCardDetails}>
-                                <span className={styles.optionCardLabel}>Prescripție Medicală</span>
-                                <span className={styles.optionCardDesc}>S-a eliberat rețetă medicală</span>
-                              </div>
-                              <div className={styles.toggleWrap}>
-                                <input type="checkbox" className={styles.toggleInput} disabled={!isEditable} checked={!!wPrescriptie} onChange={e => form.setValue('saEliberatPrescriptie', e.target.checked, { shouldDirty: true })} />
-                                <span className={styles.toggleSlider} />
-                              </div>
-                            </label>
-                            {wPrescriptie && (
-                              <div className={styles.optionExpanded}>
-                                <FormInput name="seriePrescriptie" control={form.control} label="Serie / Număr prescripție" placeholder="Serie / Număr prescripție..." disabled={!isEditable} maxLength={50} />
-                              </div>
-                            )}
-                          </div>
-
-                          <div className={`${styles.optionCard} ${wConcediu ? `${styles.optionCardActive} ${styles.optionCardSecondary}` : ''}`}>
-                            <label className={styles.optionCardContent}>
-                              <div className={`${styles.optionCardIconWrap} ${styles.optionIconSecondary}`}><BedDouble size={20} /></div>
-                              <div className={styles.optionCardDetails}>
-                                <span className={styles.optionCardLabel}>Concediu Medical</span>
-                                <span className={styles.optionCardDesc}>S-a eliberat certificat de concediu medical</span>
-                              </div>
-                              <div className={styles.toggleWrap}>
-                                <input type="checkbox" className={styles.toggleInput} disabled={!isEditable} checked={!!wConcediu} onChange={e => form.setValue('saEliberatConcediuMedical', e.target.checked, { shouldDirty: true })} />
-                                <span className={styles.toggleSlider} />
-                              </div>
-                            </label>
-                            {wConcediu && (
-                              <div className={styles.optionExpanded}>
-                                <FormInput name="serieConcediuMedical" control={form.control} label="Serie / Număr concediu medical" placeholder="Serie / Număr concediu medical..." disabled={!isEditable} maxLength={50} />
-                              </div>
-                            )}
-                          </div>
-
-                          <div className={`${styles.optionCard} ${wIngrijiri ? `${styles.optionCardActive} ${styles.optionCardSuccess}` : ''}`}>
-                            <label className={styles.optionCardContent}>
-                              <div className={`${styles.optionCardIconWrap} ${styles.optionIconSuccess}`}><Home size={20} /></div>
-                              <div className={styles.optionCardDetails}>
-                                <span className={styles.optionCardLabel}>Îngrijiri la Domiciliu</span>
-                                <span className={styles.optionCardDesc}>Recomandare pentru îngrijiri medicale la domiciliu</span>
-                              </div>
-                              <div className={styles.toggleWrap}>
-                                <input type="checkbox" className={styles.toggleInput} disabled={!isEditable} checked={!!wIngrijiri} onChange={e => form.setValue('saEliberatIngrijiriDomiciliu', e.target.checked, { shouldDirty: true })} />
-                                <span className={styles.toggleSlider} />
-                              </div>
-                            </label>
-                          </div>
-
-                          <div className={`${styles.optionCard} ${wDispozitive ? `${styles.optionCardActive} ${styles.optionCardInfo}` : ''}`}>
-                            <label className={styles.optionCardContent}>
-                              <div className={`${styles.optionCardIconWrap} ${styles.optionIconInfo}`}><Accessibility size={20} /></div>
-                              <div className={styles.optionCardDetails}>
-                                <span className={styles.optionCardLabel}>Dispozitive Medicale</span>
-                                <span className={styles.optionCardDesc}>Recomandare pentru dispozitive medicale</span>
-                              </div>
-                              <div className={styles.toggleWrap}>
-                                <input type="checkbox" className={styles.toggleInput} disabled={!isEditable} checked={!!wDispozitive} onChange={e => form.setValue('saEliberatDispozitiveMedicale', e.target.checked, { shouldDirty: true })} />
-                                <span className={styles.toggleSlider} />
-                              </div>
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className={styles.formSection}>
-                        <h3 className={styles.sectionTitle}>
-                          <span className={styles.sectionIcon}><CalendarClock size={18} /></span>
-                          Planificare Următoare
-                        </h3>
-                        <div className={styles.nextVisitSection}>
-                          <FormDatePicker name="dataUrmatoareiVizite" control={form.control} label="Data următoarei vizite" disabled={!isEditable} />
-                          <FormInput name="noteUrmatoareaVizita" control={form.control} label="Note pentru vizita următoare" placeholder="Investigații suplimentare, controale..." multiline rows={3} disabled={!isEditable} maxLength={2000} />
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  {activeTab === 'concluzii' && <ConcluziiTab form={form} isEditable={isEditable} />}
 
                   {/* ── Servicii efectuate (baza bonului / facturii) ── */}
                   {activeTab === 'servicii' && (

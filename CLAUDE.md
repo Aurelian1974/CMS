@@ -1201,7 +1201,9 @@ BEGIN
     LEFT  JOIN dbo.Users cu              ON cu.Id = c.CreatedBy
     WHERE c.Id = @Id
       AND c.ClinicId = @ClinicId
-    -- NU filtrăm IsDeleted = 0 în GetById — returnăm și entitățile șterse (pentru vizualizare)
+      AND c.IsDeleted = 0
+    -- Consultațiile șterse NU se returnează: o fișă medicală ștearsă nu se mai deschide.
+    -- Alte entități pot alege altfel; decizia se documentează în SP.
 END;
 GO
 ```
@@ -2271,12 +2273,12 @@ RAISERROR('Nu s-a găsit.', 16, 1)  -- ← nu folosi
 ### R6 — Migration order secvențial
 
 ```
-# Ultima migrare din repo: 0056_CreateFiscalReceipts.sql
-# Următoarea migrare pornește de la 0057 — verifică întotdeauna cu:
+# Ultima migrare din repo: 0059_ConsultationsHardening.sql
+# Următoarea migrare pornește de la 0060 — verifică întotdeauna cu:
 #   ls src/ValyanClinic.Infrastructure/Data/Scripts/Migrations/ | sort | tail -1
 
-0057_NumeDescriptiv.sql    ← corect
-0059_NumeDescriptiv.sql    ← greșit (a sărit 0058)
+0060_NumeDescriptiv.sql    ← corect
+0062_NumeDescriptiv.sql    ← greșit (a sărit 0061)
 ```
 
 DbUp rulează în două faze (`DatabaseMigrator.cs`): `Scripts/Migrations/` o singură dată,
