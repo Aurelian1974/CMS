@@ -68,7 +68,7 @@ export const AppRoutes = () => (
           <Route path="/appointments"           element={<AppointmentsPage />} />
           <Route path="/appointments/scheduler" element={<AppointmentsScheduler />} />
           <Route path="/appointments/:id"       element={<AppointmentDetailPage />} />
-          <Route path="/consultations"   element={<ConsultationsPage />} />
+          <Route path="/consultations/:id?" element={<ConsultationsPage />} />
           <Route path="/prescriptions"   element={<PrescriptionsPage />} />
           <Route path="/billing"         element={<BillingPage />} />
           <Route path="/invoices"        element={<InvoicesPage />} />

@@ -4,12 +4,22 @@
  * - Randare titlu, buton header sidebar
  * - Afișare stat-uri compacte
  * - Afișare stare de eroare
- * - Sidebar: search, status chips, card-uri consultații
+ * - Sidebar: căutare în istoric, card-uri programari/consultații
  * - Detail panel: empty state, tab-uri, action bar
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render as rtlRender, screen } from '@testing-library/react'
+import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { ConsultationsListPage } from '@/features/consultations/pages/ConsultationsListPage'
+
+// Pagina folosește useBlocker → are nevoie de un data router
+const render = (_ui?: unknown, path = '/consultations') => {
+  const router = createMemoryRouter(
+    [{ path: '/consultations/:id?', element: <ConsultationsListPage /> }],
+    { initialEntries: [path] },
+  )
+  return rtlRender(<RouterProvider router={router} />)
+}
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
@@ -76,6 +86,7 @@ vi.mock('@/features/consultations/hooks/useConsultations', () => ({
   useDeleteConsultation: vi.fn(() => defaultDeleteReturn),
   useCreateConsultation: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
   useUpdateConsultation: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
+  useFinalizeConsultation: vi.fn(() => ({ mutateAsync: vi.fn(), isPending: false })),
   useConsultationDetail: vi.fn(() => ({ data: null, isLoading: false, isError: false })),
   consultationKeys: {
     all: ['consultations'],
@@ -180,13 +191,31 @@ vi.mock('@/components/forms/FormDatePicker/FormDatePicker', () => ({
   FormDatePicker: vi.fn(({ label }: { label: string }) => <div data-testid="form-datepicker">{label}</div>),
 }))
 
+vi.mock('@/components/forms/FormRichText/FormRichText', () => ({
+  FormRichText: vi.fn(() => <div data-testid="form-richtext" />),
+}))
+
+vi.mock('@/features/consultations/investigations/InvestigationsStep', () => ({
+  InvestigationsStep: vi.fn(() => <div data-testid="investigations-step" />),
+}))
+
+vi.mock('@/api/endpoints/consultations.api', () => ({
+  consultationsApi: {
+    updateAnamnesis: vi.fn(),
+    updateExam: vi.fn(),
+    getByAppointmentId: vi.fn(),
+  },
+}))
+
 vi.mock('@/utils/format', () => ({
   formatDate: vi.fn((v: string) => v),
   formatDateTime: vi.fn((v: string) => v),
 }))
 
 // ── Import mocks to manipulate ───────────────────────────────────────────────
-import { useConsultations } from '@/features/consultations/hooks/useConsultations'
+import { useConsultations, useConsultationDetail } from '@/features/consultations/hooks/useConsultations'
+import { consultationsApi } from '@/api/endpoints/consultations.api'
+import { fireEvent, waitFor } from '@testing-library/react'
 import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
 import { useAppointments } from '@/features/appointments/hooks/useAppointments'
 
@@ -198,6 +227,59 @@ describe('ConsultationsListPage', () => {
     vi.mocked(useConsultations).mockReturnValue(defaultConsultationsReturn as ReturnType<typeof useConsultations>)
     vi.mocked(useDoctorLookup).mockReturnValue(defaultDoctorLookupReturn as ReturnType<typeof useDoctorLookup>)
     vi.mocked(useAppointments).mockReturnValue(defaultAppointmentsReturn as ReturnType<typeof useAppointments>)
+    vi.mocked(useConsultationDetail).mockReturnValue({ data: null, isLoading: false, isError: false } as unknown as ReturnType<typeof useConsultationDetail>)
+  })
+
+  // ── History search ───────────────────────────────────────────────────────────
+
+  describe('căutare în istoric', () => {
+    it('afișează câmpul de căutare', () => {
+      render(<ConsultationsListPage />)
+      expect(screen.getByRole('searchbox', { name: 'Caută în consultații' })).toBeInTheDocument()
+    })
+  })
+
+  // ── Salvare la schimbarea tabului ───────────────────────────────────────────
+
+  describe('schimbarea tabului', () => {
+    const detail = {
+      id: 'cons-1', clinicId: 'c', patientId: 'p-1', patientName: 'Ion Popescu', patientPhone: null,
+      doctorId: 'd1', doctorName: 'Dr. Maria', specialtyName: null, date: '2025-06-15T10:00:00',
+      diagnostic: null, diagnosticCodes: null, statusId: 's', statusName: 'În lucru', statusCode: 'INLUCRU',
+      isDeleted: false, createdAt: '2025-06-15T10:00:00', createdByName: null,
+      patientCnp: null, patientEmail: null, patientBirthDate: null, patientGender: null, doctorMedicalCode: null,
+      appointmentId: null, investigations: [],
+      esteAfectiuneOncologica: false, areIndicatieInternare: false, saEliberatPrescriptie: false,
+      saEliberatConcediuMedical: false, saEliberatIngrijiriDomiciliu: false, saEliberatDispozitiveMedicale: false,
+    }
+
+    it('rămâne pe tab când salvarea automată eșuează', async () => {
+      vi.mocked(useConsultationDetail).mockReturnValue({ data: { data: detail }, isLoading: false, isError: false } as unknown as ReturnType<typeof useConsultationDetail>)
+      vi.mocked(consultationsApi.updateExam).mockRejectedValue(new Error('Eroare server examen'))
+      render(undefined, '/consultations/cons-1')
+
+      fireEvent.click(await screen.findByRole('tab', { name: /Examen Clinic/ }))
+      await waitFor(() => expect(screen.getByRole('tab', { name: /Examen Clinic/ })).toHaveAttribute('aria-selected', 'true'))
+
+      fireEvent.change(screen.getByPlaceholderText('75'), { target: { value: '72' } })
+      fireEvent.click(screen.getByRole('tab', { name: /Investigații/ }))
+
+      expect(await screen.findByText(/Eroare server examen/)).toBeInTheDocument()
+      expect(consultationsApi.updateExam).toHaveBeenCalledWith('cons-1', expect.objectContaining({ puls: 72 }))
+      expect(screen.getByRole('tab', { name: /Examen Clinic/ })).toHaveAttribute('aria-selected', 'true')
+      expect(screen.getByRole('tab', { name: /Investigații/ })).toHaveAttribute('aria-selected', 'false')
+    })
+
+    it('schimbă tabul fără request când nu există modificări', async () => {
+      vi.mocked(useConsultationDetail).mockReturnValue({ data: { data: detail }, isLoading: false, isError: false } as unknown as ReturnType<typeof useConsultationDetail>)
+      render(undefined, '/consultations/cons-1')
+
+      fireEvent.click(await screen.findByRole('tab', { name: /Investigații/ }))
+
+      await waitFor(() => expect(screen.getByRole('tab', { name: /Investigații/ })).toHaveAttribute('aria-selected', 'true'))
+      expect(consultationsApi.updateExam).not.toHaveBeenCalled()
+      expect(consultationsApi.updateAnamnesis).not.toHaveBeenCalled()
+    })
   })
 
   // ── Sidebar header ────────────────────────────────────────────────────────

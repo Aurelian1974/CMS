@@ -367,6 +367,30 @@
   font-size: 0.82rem;
 }
 
+.historySearch {
+  padding: 2px 4px 6px;
+}
+
+.loadMore {
+  margin: 6px 4px 0;
+  padding: 6px 10px;
+  background: transparent;
+  border: 1.5px dashed $gray-300;
+  border-radius: 8px;
+  color: $primary-dark;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover:not(:disabled) {
+    background: rgba($primary, 0.05);
+    border-color: $primary;
+  }
+
+  &:disabled { cursor: default; opacity: 0.7; }
+}
+
 // ── Detail panel ──────────────────────────────────────────────────────────────
 .detail {
   flex: 1;
@@ -1134,6 +1158,11 @@
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.saveStatus {
+  font-size: 0.75rem;
+  color: $gray-500;
 }
 
 .footerActions {

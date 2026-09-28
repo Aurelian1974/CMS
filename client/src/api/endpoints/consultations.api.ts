@@ -7,30 +7,12 @@ import type {
   CreateConsultationPayload,
   UpdateConsultationPayload,
 } from '@/features/consultations/types/consultation.types'
-
-/**
- * Câmpurile care fac parte din sub-obiectul "anamnesis" pe backend.
- * Trimise prin endpoint-ul dedicat PUT /{id}/anamnesis.
- */
-const ANAMNESIS_FIELDS = [
-  'motiv', 'istoricMedicalPersonal', 'tratamentAnterior',
-  'istoricBoalaActuala', 'istoricFamilial', 'factoriDeRisc', 'alergiiConsultatie',
-] as const
-
-/**
- * Câmpurile care fac parte din sub-obiectul "exam" pe backend.
- * Trimise prin endpoint-ul dedicat PUT /{id}/exam.
- */
-const EXAM_FIELDS = [
-  'stareGenerala', 'tegumente', 'mucoase',
-  'greutate', 'inaltime',
-  'tensiuneSistolica', 'tensiuneDiastolica', 'puls', 'frecventaRespiratorie',
-  'temperatura', 'spO2', 'edeme', 'glicemie', 'ganglioniLimfatici',
-  'examenClinic', 'alteObservatiiClinice',
-] as const
-
-type AnamnesisKey = typeof ANAMNESIS_FIELDS[number]
-type ExamKey      = typeof EXAM_FIELDS[number]
+import {
+  ANAMNESIS_FIELDS,
+  EXAM_FIELDS,
+  type AnamnesisField as AnamnesisKey,
+  type ExamField as ExamKey,
+} from '@/features/consultations/constants/consultationDefaults'
 
 interface HierarchicalDetail {
   anamnesis?: Partial<Record<AnamnesisKey, unknown>> | null
@@ -89,8 +71,9 @@ export const consultationsApi = {
   },
 
   /**
-   * Creare consultație: 1 POST pentru header + tab-uri vechi, urmat de
-   * upsert-uri opționale pentru Anamneza / Examen Clinic dacă userul a completat ceva.
+   * Creare consultație: POST pentru header + tab-uri vechi, urmat de
+   * upsert-uri pentru Anamneza / Examen Clinic dacă userul a completat ceva.
+   * Scrierile pe același agregat sunt secvențiale (fără curse / deadlock-uri).
    */
   create: async (payload: CreateConsultationPayload): Promise<ApiResponse<string>> => {
     const headerPayload = omit(payload, [...ANAMNESIS_FIELDS, ...EXAM_FIELDS])
@@ -99,32 +82,31 @@ export const consultationsApi = {
     if (newId) {
       const anamnesisPayload = pick(payload, ANAMNESIS_FIELDS)
       const examPayload      = pick(payload, EXAM_FIELDS)
-      const calls: Promise<unknown>[] = []
       if (Object.values(anamnesisPayload).some(v => v != null && v !== ''))
-        calls.push(api.put(`/api/v1/Consultations/${newId}/anamnesis`, anamnesisPayload))
+        await api.put(`/api/v1/Consultations/${newId}/anamnesis`, anamnesisPayload)
       if (Object.values(examPayload).some(v => v != null && v !== ''))
-        calls.push(api.put(`/api/v1/Consultations/${newId}/exam`, examPayload))
-      if (calls.length > 0) await Promise.all(calls)
+        await api.put(`/api/v1/Consultations/${newId}/exam`, examPayload)
     }
     return resp
   },
 
   /**
-   * Update consultație: 1 PUT pentru header + tab-uri vechi, plus upsert-uri
-   * paralele pe sub-secțiunile Anamneza / Examen Clinic.
+   * Update consultație: sub-secțiunile se scriu ÎNAINTE de header, secvențial —
+   * serverul refuză orice scriere pe o consultație care nu mai e în lucru (409).
    */
   update: async ({ id, ...data }: UpdateConsultationPayload): Promise<ApiResponse<boolean>> => {
     const headerPayload    = omit(data, [...ANAMNESIS_FIELDS, ...EXAM_FIELDS])
     const anamnesisPayload = pick(data, ANAMNESIS_FIELDS)
     const examPayload      = pick(data, EXAM_FIELDS)
 
-    const [resp] = await Promise.all([
-      api.put(`/api/v1/Consultations/${id}`, headerPayload) as Promise<ApiResponse<boolean>>,
-      api.put(`/api/v1/Consultations/${id}/anamnesis`, anamnesisPayload),
-      api.put(`/api/v1/Consultations/${id}/exam`, examPayload),
-    ])
-    return resp
+    await api.put(`/api/v1/Consultations/${id}/anamnesis`, anamnesisPayload)
+    await api.put(`/api/v1/Consultations/${id}/exam`, examPayload)
+    return api.put(`/api/v1/Consultations/${id}`, headerPayload) as Promise<ApiResponse<boolean>>
   },
+
+  /** Tranziția INLUCRU → FINALIZATA; cere diagnostic principal ICD-10. */
+  finalize: (id: string): Promise<ApiResponse<boolean>> =>
+    api.post(`/api/v1/Consultations/${id}/finalize`),
 
   delete: (id: string): Promise<ApiResponse<boolean>> =>
     api.delete(`/api/v1/Consultations/${id}`),

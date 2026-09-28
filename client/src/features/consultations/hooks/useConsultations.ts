@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { consultationsApi } from '@/api/endpoints/consultations.api'
 import { dashboardKeys } from '@/features/dashboard/hooks/useDashboard'
+import { billingKeys } from '@/features/billing/hooks/useBilling'
 import type {
   GetConsultationsParams,
   CreateConsultationPayload,
@@ -53,9 +54,24 @@ export const useUpdateConsultation = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: UpdateConsultationPayload) => consultationsApi.update(payload),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: consultationKeys.lists() })
+      qc.invalidateQueries({ queryKey: consultationKeys.detail(variables.id) })
       qc.invalidateQueries({ queryKey: dashboardKeys.all })
+    },
+  })
+}
+
+export const useFinalizeConsultation = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) => consultationsApi.finalize(id),
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({ queryKey: consultationKeys.lists() })
+      qc.invalidateQueries({ queryKey: consultationKeys.detail(id) })
+      qc.invalidateQueries({ queryKey: dashboardKeys.all })
+      // Consultația finalizată devine facturabilă
+      qc.invalidateQueries({ queryKey: billingKeys.all })
     },
   })
 }
@@ -64,7 +80,8 @@ export const useDeleteConsultation = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => consultationsApi.delete(id),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
+      qc.removeQueries({ queryKey: consultationKeys.detail(id) })
       qc.invalidateQueries({ queryKey: consultationKeys.lists() })
       qc.invalidateQueries({ queryKey: dashboardKeys.all })
     },

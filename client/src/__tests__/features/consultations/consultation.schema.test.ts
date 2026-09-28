@@ -4,9 +4,11 @@
  * - patientId: obligatoriu
  * - doctorId: obligatoriu
  * - date: obligatoriu
- * - motiv, examenClinic, diagnostic, recomandari, observatii: opționale, max 4000
+ * - motiv, examenClinic, recomandari, observatii: opționale, max 4000
+ * - diagnostic: opțional, max 100000 (JSON ICD-10 cu rich-text)
  * - diagnosticCodes: opțional, max 2000
- * - statusId, appointmentId: opționale
+ * - semne vitale: limite de plauzibilitate + sistolică > diastolică
+ * - appointmentId: opțional
  */
 import { describe, it, expect } from 'vitest'
 import { consultationSchema } from '@/features/consultations/schemas/consultation.schema'
@@ -38,7 +40,6 @@ describe('consultationSchema', () => {
         diagnosticCodes: 'G43.9',
         recomandari: 'Repaus',
         observatii: 'Pacient stabil',
-        statusId: 'status-uuid-1',
       }
       expect(consultationSchema.safeParse(full).success).toBe(true)
     })
@@ -52,7 +53,6 @@ describe('consultationSchema', () => {
         diagnosticCodes: '',
         recomandari: '',
         observatii: '',
-        statusId: '',
         appointmentId: '',
       })
       expect(result.success).toBe(true)
@@ -162,7 +162,7 @@ describe('consultationSchema', () => {
   // ── Alte câmpuri text opționale (examen, diagnostic, recomandari, observatii)
 
   describe('câmpuri text opționale max 4000', () => {
-    const fields = ['examenClinic', 'diagnostic', 'recomandari', 'observatii'] as const
+    const fields = ['examenClinic', 'recomandari', 'observatii'] as const
 
     fields.forEach(field => {
       it(`${field} eșuează când depășește 4000 caractere`, () => {
@@ -175,6 +175,43 @@ describe('consultationSchema', () => {
           expect(result.error.issues[0].message).toContain('4000')
         }
       })
+    })
+  })
+
+  // ── diagnostic (JSON ICD-10) ─────────────────────────────────────────────────
+
+  describe('diagnostic', () => {
+    it('acceptă peste 4000 caractere', () => {
+      expect(consultationSchema.safeParse({ ...validConsultation, diagnostic: 'a'.repeat(20_000) }).success).toBe(true)
+    })
+
+    it('eșuează peste 100000 caractere', () => {
+      expect(consultationSchema.safeParse({ ...validConsultation, diagnostic: 'a'.repeat(100_001) }).success).toBe(false)
+    })
+  })
+
+  // ── Semne vitale ─────────────────────────────────────────────────────────────
+
+  describe('semne vitale', () => {
+    it('acceptă valori uzuale', () => {
+      const result = consultationSchema.safeParse({
+        ...validConsultation,
+        greutate: 72.5, inaltime: 175, tensiuneSistolica: 120, tensiuneDiastolica: 80,
+        puls: 72, frecventaRespiratorie: 16, temperatura: 36.6, spO2: 98, glicemie: 95,
+      })
+      expect(result.success).toBe(true)
+    })
+
+    it('respinge pulsul 0', () => {
+      expect(consultationSchema.safeParse({ ...validConsultation, puls: 0 }).success).toBe(false)
+    })
+
+    it('respinge sistolica ≤ diastolica, pe câmpul tensiuneSistolica', () => {
+      const result = consultationSchema.safeParse({ ...validConsultation, tensiuneSistolica: 80, tensiuneDiastolica: 90 })
+      expect(result.success).toBe(false)
+      if (!result.success) {
+        expect(result.error.issues[0].path).toEqual(['tensiuneSistolica'])
+      }
     })
   })
 })

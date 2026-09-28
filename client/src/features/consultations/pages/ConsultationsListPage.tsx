@@ -1,26 +1,35 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import type { ConsultationListDto, ConsultationStatusFilter, ConsultationDetailDto, CreateConsultationPayload, UpdateConsultationPayload } from '../types/consultation.types'
-import { useConsultations, useConsultationDetail, useDeleteConsultation, useCreateConsultation, useUpdateConsultation, consultationKeys } from '../hooks/useConsultations'
+import type { ConsultationListDto, ConsultationDetailDto } from '../types/consultation.types'
+import { useConsultations, useConsultationDetail, useDeleteConsultation, useCreateConsultation, useUpdateConsultation, useFinalizeConsultation, consultationKeys } from '../hooks/useConsultations'
+import { useConsultationAutosave } from '../hooks/useConsultationAutosave'
+import { useUnsavedChangesGuard } from '../hooks/useUnsavedChangesGuard'
 import { consultationsApi } from '@/api/endpoints/consultations.api'
 import { useAppointments } from '@/features/appointments/hooks/useAppointments'
 import type { AppointmentDto } from '@/features/appointments/types/appointment.types'
 import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
 import { usePatientLookup, usePatientDetail } from '@/features/patients/hooks/usePatients'
 import { useAuthStore } from '@/store/authStore'
+import { useDebounce } from '@/hooks/useDebounce'
 import { AppBadge, type BadgeVariant } from '@/components/ui/AppBadge'
 import { AppButton } from '@/components/ui/AppButton'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { FormInput } from '@/components/forms/FormInput/FormInput'
 import { FormRichText } from '@/components/forms/FormRichText/FormRichText'
 import { FormSelect } from '@/components/forms/FormSelect/FormSelect'
 import { PrimaryDiagnosisSelector } from '@/components/icd10/PrimaryDiagnosisSelector'
 import { SecondaryDiagnosesList } from '@/components/icd10/SecondaryDiagnosesList'
-import type { SecondaryDiagnosis } from '@/components/icd10/SecondaryDiagnosesList'
-import type { ICD10SearchResult } from '@/features/consultations/types/icd10.types'
 import { FormDatePicker } from '@/components/forms/FormDatePicker/FormDatePicker'
 import { formatDate } from '@/utils/format'
 import { consultationSchema, type ConsultationFormData } from '../schemas/consultation.schema'
+import { ANAMNESIS_FIELDS, EXAM_FIELDS, EMPTY_CONSULTATION_FORM, detailToFormValues } from '../constants/consultationDefaults'
+import { STARE_GENERALA_OPTIONS, TEGUMENTE_OPTIONS, MUCOASE_OPTIONS, EDEME_OPTIONS, GANGLIONI_OPTIONS } from '../constants/clinicalVocabularies'
+import {
+  EMPTY_DIAGNOSIS, parseDiagnosisState, buildConsultationPayload, buildAnamnesisPayload, buildExamPayload,
+  type DiagnosisState,
+} from '../utils/consultationPayload'
 import { useQueryClient } from '@tanstack/react-query'
 import { InvestigationsStep } from '../investigations/InvestigationsStep'
 import { AnalizeMedicaleStep } from '../lab/AnalizeMedicaleStep'
@@ -83,11 +92,29 @@ function parseDiagnosticLabel(raw: string | null): string {
   return raw.length > 55 ? raw.substring(0, 55) + '…' : raw
 }
 
-const CONSULTATION_STATUS_IDS: Record<Exclude<ConsultationStatusFilter, 'all'>, string> = {
-  draft:     'c2000000-0000-0000-0000-000000000001',
-  completed: 'c2000000-0000-0000-0000-000000000002',
-  locked:    'c2000000-0000-0000-0000-000000000003',
+const HISTORY_PAGE_SIZE = 20
+// Plafonul serverului pe o pagină (Consultation_GetPaged)
+const HISTORY_MAX_PAGE_SIZE = 200
+const AUTOSAVE_DELAY_MS = 30_000
+const MISSING_PRIMARY_DIAGNOSIS = 'Diagnosticul principal este obligatoriu la finalizare.'
+
+const FIELD_LABELS: Partial<Record<keyof ConsultationFormData, string>> = {
+  patientId: 'Pacient', doctorId: 'Medic', date: 'Data consultației',
+  greutate: 'Greutate', inaltime: 'Înălțime', tensiuneSistolica: 'Tensiune sistolică',
+  tensiuneDiastolica: 'Tensiune diastolică', puls: 'Frecvență cardiacă',
+  frecventaRespiratorie: 'Frecvență respiratorie', temperatura: 'Temperatură', spO2: 'SpO₂', glicemie: 'Glicemie',
 }
+
+const formatSavedAt = (d: Date) => d.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' })
+
+// RHF aplică setValueAs și pe valoarea inițială (null), nu doar pe textul din input
+const parseOrNull = (v: unknown, parse: (s: string) => number): number | null => {
+  if (v === null || v === undefined || v === '') return null
+  const n = typeof v === 'number' ? v : parse(String(v))
+  return Number.isNaN(n) ? null : n
+}
+const toDecimalOrNull = (v: unknown) => parseOrNull(v, parseFloat)
+const toIntOrNull = (v: unknown) => parseOrNull(v, s => parseInt(s, 10))
 
 type Tab = 'anamneza' | 'examen' | 'investigatii' | 'analize' | 'diagnostic' | 'concluzii' | 'servicii'
 
@@ -125,11 +152,6 @@ function getTodayISO(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-function parseDiagnosticTags(raw: string | null): string[] {
-  if (!raw) return []
-  try { return JSON.parse(raw) } catch { return raw ? [raw] : [] }
-}
-
 /** Check if a tab has content based on detail data */
 function tabHasContent(tab: Tab, detail: ConsultationDetailDto | null): boolean {
   if (!detail) return false
@@ -158,12 +180,12 @@ function computeAge(birthDateStr: string | null): number | null {
 // ── Main Component ────────────────────────────────────────────────────────────
 export const ConsultationsListPage = () => {
   const qc = useQueryClient()
+  const navigate = useNavigate()
+  // Consultația selectată trăiește în URL: deep-link, back/forward, refresh fără pierdere de context
+  const { id: routeId } = useParams<{ id?: string }>()
+  const selectedId = routeId ?? null
   const user = useAuthStore(s => s.user)
   const isAdmin = user?.role === 'admin' || user?.role === 'clinic_manager'
-
-  // ── List state ──────────────────────────────────────────────────────────────
-  const [search] = useState('')
-  const [page] = useState(1)
 
   // ── Appointment sidebar state ───────────────────────────────────────────────
   const [appointmentDoctorFilter, setAppointmentDoctorFilter] = useState<string | undefined>(undefined)
@@ -182,38 +204,47 @@ export const ConsultationsListPage = () => {
   const appointmentStats = appointmentsResp?.data?.stats
 
   // ── Detail state ────────────────────────────────────────────────────────────
-  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [activeTab, setActiveTab] = useState<Tab>('anamneza')
-  const [diagnosticTags, setDiagnosticTags] = useState<string[]>([])
-  const [primaryDiagCode, setPrimaryDiagCode] = useState<ICD10SearchResult | null>(null)
-  const [primaryDiagDetails, setPrimaryDiagDetails] = useState('')
-  const [secondaryDiagnoses, setSecondaryDiagnoses] = useState<SecondaryDiagnosis[]>([])
-  const [deleteTarget, setDeleteTarget] = useState<ConsultationListDto | null>(null)
+  const [diagnosis, setDiagnosis] = useState<DiagnosisState>(EMPTY_DIAGNOSIS)
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; patientName: string; date: string } | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [serverError, setServerError] = useState<string | null>(null)
   const [showFinalizeConfirm, setShowFinalizeConfirm] = useState(false)
+  const [isFinalizing, setIsFinalizing] = useState(false)
   const [showScrisoareMedicala, setShowScrisoareMedicala] = useState(false)
   const [selectedAppointment, setSelectedAppointment] = useState<AppointmentDto | null>(null)
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null)
+
+  useEffect(() => {
+    if (!successMsg) return
+    const timer = setTimeout(() => setSuccessMsg(null), 4000)
+    return () => clearTimeout(timer)
+  }, [successMsg])
 
   // ── History sidebar state ───────────────────────────────────────────────────
   const [openDoctorGroups, setOpenDoctorGroups] = useState<Record<string, boolean>>({})
   const toggleDoctorGroup = (name: string) =>
     setOpenDoctorGroups(prev => ({ ...prev, [name]: prev[name] === false ? true : false }))
+  const [historySearch, setHistorySearch] = useState('')
+  const debouncedHistorySearch = useDebounce(historySearch.trim(), 300)
+  const [historyPageSize, setHistoryPageSize] = useState(HISTORY_PAGE_SIZE)
 
   // ── Queries ─────────────────────────────────────────────────────────────────
-  const { data: consultationsResp } = useConsultations({
-    page, pageSize: 50, search: search || undefined,
-    sortBy: 'date', sortDir: 'desc',
-  })
-
   // Sidebar history: admin → filtrat opțional pe medic (grouped), doctor → proprii
   const historyDoctorId = isAdmin ? appointmentDoctorFilter : (user?.doctorId ?? undefined)
-  const { data: historyResp } = useConsultations({
-    page: 1, pageSize: 50,
+
+  useEffect(() => {
+    setHistoryPageSize(HISTORY_PAGE_SIZE)
+  }, [debouncedHistorySearch, historyDoctorId])
+
+  const { data: historyResp, isFetching: isHistoryFetching } = useConsultations({
+    page: 1, pageSize: historyPageSize,
     doctorId: historyDoctorId,
-    sortBy: 'date', sortDir: 'desc',
+    search: debouncedHistorySearch || undefined,
+    sortBy: 'Date', sortDir: 'desc',
   })
+  const canLoadMoreHistory = (historyResp?.data?.pagedResult?.hasNextPage ?? false) && historyPageSize < HISTORY_MAX_PAGE_SIZE
 
   const { data: detailResp, isLoading: isDetailLoading } = useConsultationDetail(selectedId ?? '', !!selectedId && !isCreating)
   const detail: ConsultationDetailDto | null = detailResp?.data ?? null
@@ -230,9 +261,8 @@ export const ConsultationsListPage = () => {
 
   const createConsultation = useCreateConsultation()
   const updateConsultation = useUpdateConsultation()
+  const finalizeConsultation = useFinalizeConsultation()
   const deleteConsultation = useDeleteConsultation()
-
-  const consultations = useMemo(() => consultationsResp?.data?.pagedResult?.items ?? [], [consultationsResp])
 
   const doctorLookup  = useMemo(() => (doctorLookupResp?.data ?? []).map(d => ({ value: d.id, label: d.fullName })), [doctorLookupResp])
   const patientLookup = useMemo(() => (patientLookupResp?.data ?? []).map(p => ({ value: p.id, label: `${p.fullName} (${p.cnp})` })), [patientLookupResp])
@@ -255,19 +285,7 @@ export const ConsultationsListPage = () => {
   // ── Form ────────────────────────────────────────────────────────────────────
   const form = useForm<ConsultationFormData>({
     resolver: zodResolver(consultationSchema),
-    defaultValues: {
-      patientId: '', doctorId: '', date: '', appointmentId: '', statusId: '',
-      motiv: '', istoricMedicalPersonal: '', tratamentAnterior: '', istoricBoalaActuala: '', istoricFamilial: '', factoriDeRisc: '', alergiiConsultatie: '',
-      stareGenerala: '', tegumente: '', mucoase: '', greutate: null, inaltime: null,
-      tensiuneSistolica: null, tensiuneDiastolica: null, puls: null, frecventaRespiratorie: null,
-      temperatura: null, spO2: null, edeme: '', glicemie: null, ganglioniLimfatici: '', examenClinic: '', alteObservatiiClinice: '',
-      investigatii: '', analizeMedicale: '',
-      diagnostic: '', diagnosticCodes: '', recomandari: '', observatii: '',
-      concluzii: '', esteAfectiuneOncologica: false, areIndicatieInternare: false,
-      saEliberatPrescriptie: false, seriePrescriptie: '', saEliberatConcediuMedical: false, serieConcediuMedical: '',
-      saEliberatIngrijiriDomiciliu: false, saEliberatDispozitiveMedicale: false,
-      dataUrmatoareiVizite: '', noteUrmatoareaVizita: '',
-    },
+    defaultValues: EMPTY_CONSULTATION_FORM,
   })
 
   const statusCode  = detail?.statusCode?.toUpperCase()
@@ -282,6 +300,58 @@ export const ConsultationsListPage = () => {
   // utilizatorul între timp: formularul se inițializează din server o singură dată per consultație.
   const syncedDetailIdRef = useRef<string | null>(null)
 
+  // ── Urmărire modificări nesalvate ───────────────────────────────────────────
+  // Versiune per câmp: o salvare curăță doar câmpurile nemodificate de la începutul
+  // ei, deci ce tastează utilizatorul în timpul request-ului rămâne marcat nesalvat.
+  const dirtyVersionsRef = useRef(new Map<string, number>())
+  const dirtyCounterRef = useRef(0)
+  const [isDirty, setIsDirty] = useState(false)
+  const isEditableRef = useRef(isEditable)
+  isEditableRef.current = isEditable
+  const isCreatingRef = useRef(isCreating)
+  isCreatingRef.current = isCreating
+  const selectedIdRef = useRef(selectedId)
+  selectedIdRef.current = selectedId
+  const diagnosisRef = useRef(diagnosis)
+  diagnosisRef.current = diagnosis
+
+  const autosave = useConsultationAutosave(() => { void runAutosave() }, isEditable && !!selectedId && !isCreating, AUTOSAVE_DELAY_MS)
+  const { schedule: scheduleAutosave, cancel: cancelAutosave } = autosave
+
+  const markDirty = useCallback((field: string) => {
+    dirtyVersionsRef.current.set(field, ++dirtyCounterRef.current)
+    setIsDirty(true)
+    scheduleAutosave()
+  }, [scheduleAutosave])
+
+  const clearDirty = useCallback((snapshot?: Map<string, number>) => {
+    const versions = dirtyVersionsRef.current
+    if (!snapshot) versions.clear()
+    else snapshot.forEach((version, field) => { if (versions.get(field) === version) versions.delete(field) })
+    setIsDirty(versions.size > 0)
+    if (versions.size === 0) cancelAutosave()
+  }, [cancelAutosave])
+
+  const hasUnsaved = useCallback(() => isEditableRef.current && dirtyVersionsRef.current.size > 0, [])
+
+  useEffect(() => {
+    // `reset` nu are `name` → nu marchează formularul ca modificat
+    const sub = form.watch((_values, { name }) => { if (name) markDirty(name) })
+    return () => sub.unsubscribe()
+  }, [form, markDirty])
+
+  const updateDiagnosis = useCallback((patch: Partial<DiagnosisState>) => {
+    setDiagnosis(prev => ({ ...prev, ...patch }))
+    markDirty('diagnostic')
+  }, [markDirty])
+
+  const resetEditor = useCallback((values: ConsultationFormData, diag: DiagnosisState) => {
+    form.reset(values)
+    setDiagnosis(diag)
+    clearDirty()
+    setLastSavedAt(null)
+  }, [form, clearDirty])
+
   useEffect(() => {
     if (isCreating) {
       syncedDetailIdRef.current = null
@@ -289,84 +359,141 @@ export const ConsultationsListPage = () => {
     }
     if (detail && syncedDetailIdRef.current !== detail.id) {
       syncedDetailIdRef.current = detail.id
-      form.reset({
-        patientId:      detail.patientId,
-        doctorId:       detail.doctorId,
-        date:           detail.date ? detail.date.split('T')[0] : '',
-        appointmentId:  detail.appointmentId ?? '',
-        statusId:       detail.statusId ?? '',
-        motiv:          detail.motiv ?? '',
-        istoricMedicalPersonal: detail.istoricMedicalPersonal ?? '',
-        tratamentAnterior:      detail.tratamentAnterior ?? '',
-        istoricBoalaActuala:    detail.istoricBoalaActuala ?? '',
-        istoricFamilial:        detail.istoricFamilial ?? '',
-        factoriDeRisc:          detail.factoriDeRisc ?? '',
-        alergiiConsultatie:     detail.alergiiConsultatie ?? '',
-        stareGenerala:          detail.stareGenerala ?? '',
-        tegumente:              detail.tegumente ?? '',
-        mucoase:                detail.mucoase ?? '',
-        greutate:               detail.greutate ?? null,
-        inaltime:               detail.inaltime ?? null,
-        tensiuneSistolica:      detail.tensiuneSistolica ?? null,
-        tensiuneDiastolica:     detail.tensiuneDiastolica ?? null,
-        puls:                   detail.puls ?? null,
-        frecventaRespiratorie:  detail.frecventaRespiratorie ?? null,
-        temperatura:            detail.temperatura ?? null,
-        spO2:                   detail.spO2 ?? null,
-        edeme:                  detail.edeme ?? '',
-        glicemie:               detail.glicemie ?? null,
-        ganglioniLimfatici:     detail.ganglioniLimfatici ?? '',
-        examenClinic:           detail.examenClinic ?? '',
-        alteObservatiiClinice:  detail.alteObservatiiClinice ?? '',
-        investigatii:           detail.investigatii ?? '',
-        analizeMedicale:        detail.analizeMedicale ?? '',
-        diagnostic:             detail.diagnostic ?? '',
-        diagnosticCodes:        detail.diagnosticCodes ?? '',
-        recomandari:            detail.recomandari ?? '',
-        observatii:             detail.observatii ?? '',
-        concluzii:              detail.concluzii ?? '',
-        esteAfectiuneOncologica:    detail.esteAfectiuneOncologica,
-        areIndicatieInternare:      detail.areIndicatieInternare,
-        saEliberatPrescriptie:      detail.saEliberatPrescriptie,
-        seriePrescriptie:           detail.seriePrescriptie ?? '',
-        saEliberatConcediuMedical:  detail.saEliberatConcediuMedical,
-        serieConcediuMedical:       detail.serieConcediuMedical ?? '',
-        saEliberatIngrijiriDomiciliu:  detail.saEliberatIngrijiriDomiciliu,
-        saEliberatDispozitiveMedicale: detail.saEliberatDispozitiveMedicale,
-        dataUrmatoareiVizite:   detail.dataUrmatoareiVizite ? detail.dataUrmatoareiVizite.split('T')[0] : '',
-        noteUrmatoareaVizita:   detail.noteUrmatoareaVizita ?? '',
-      })
-      setDiagnosticTags(parseDiagnosticTags(detail.diagnosticCodes))
-      // Restore ICD10 primary/secondary from diagnostic field (JSON encoded)
-      try {
-        const diagData = detail.diagnostic ? JSON.parse(detail.diagnostic) : null
-        if (diagData?.primaryCode) {
-          setPrimaryDiagCode(diagData.primaryCode)
-          setPrimaryDiagDetails(diagData.primaryDetails ?? '')
-          setSecondaryDiagnoses(diagData.secondaryDiagnoses ?? [])
-        } else {
-          setPrimaryDiagCode(null)
-          setPrimaryDiagDetails('')
-          setSecondaryDiagnoses([])
-        }
-      } catch {
-        setPrimaryDiagCode(null)
-        setPrimaryDiagDetails('')
-        setSecondaryDiagnoses([])
-      }
+      resetEditor(detailToFormValues(detail), parseDiagnosisState(detail))
     }
-  }, [detail, isCreating]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [detail, isCreating, resetEditor])
+
+  // Navigare prin istoric (back/forward) către o consultație existentă
+  useEffect(() => {
+    if (routeId) setIsCreating(false)
+  }, [routeId])
+
+  // ── Salvare ─────────────────────────────────────────────────────────────────
+  // Toate scrierile (tab, ciornă, autosave, finalizare) trec printr-o coadă: două
+  // scrieri pe același agregat nu rulează niciodată în paralel.
+  const saveChainRef = useRef<Promise<unknown>>(Promise.resolve())
+  const serialize = useCallback(<T,>(fn: () => Promise<T>): Promise<T> => {
+    const run = saveChainRef.current.then(fn, fn)
+    saveChainRef.current = run.catch(() => undefined)
+    return run
+  }, [])
+
+  /** Rezumat lizibil al erorilor de validare pentru câmpurile date. */
+  const validationMessage = (fields: readonly (keyof ConsultationFormData)[]) => {
+    const errors = form.formState.errors
+    const parts = fields
+      .filter(f => errors[f]?.message)
+      .map(f => `${FIELD_LABELS[f] ?? f}: ${errors[f]?.message}`)
+    return parts.length > 0
+      ? `Verificați câmpurile: ${parts.join('; ')}`
+      : 'Verificați câmpurile obligatorii.'
+  }
+
+  const onSaved = (message?: string) => {
+    setServerError(null)
+    setLastSavedAt(new Date())
+    if (message) setSuccessMsg(message)
+  }
+
+  const onSaveError = (err: unknown, fallback: string) => {
+    setServerError(err instanceof Error ? err.message : fallback)
+    return false
+  }
+
+  /** Salvare completă: POST în modul creare, altfel anamneză → examen → header. */
+  const persistAll = async (successMessage?: string): Promise<boolean> => {
+    const creating = isCreatingRef.current
+    const requiredFields = creating ? (['patientId', 'doctorId', 'date'] as const) : ([] as const)
+    const checked = [...requiredFields, ...EXAM_FIELDS] as (keyof ConsultationFormData)[]
+    if (!(await form.trigger(checked))) {
+      setServerError(validationMessage(checked))
+      return false
+    }
+
+    const snapshot = new Map(dirtyVersionsRef.current)
+    const payload = buildConsultationPayload(form.getValues(), diagnosisRef.current)
+    try {
+      if (creating) {
+        const resp = await createConsultation.mutateAsync(payload)
+        const newId = resp?.data
+        clearDirty(snapshot)
+        setIsCreating(false)
+        if (newId) {
+          // Formularul conține deja datele salvate: nu-l reinițializa din server
+          syncedDetailIdRef.current = newId
+          navigate(`/consultations/${newId}`, { replace: true })
+        }
+      } else {
+        const id = selectedIdRef.current
+        if (!id) return false
+        await updateConsultation.mutateAsync({ id, ...payload })
+        clearDirty(snapshot)
+      }
+      onSaved(successMessage)
+      return true
+    } catch (err: unknown) {
+      return onSaveError(err, 'Eroare la salvare.')
+    }
+  }
+
+  /**
+   * Salvează doar ce e modificat: dacă toate câmpurile modificate țin de anamneză
+   * sau de examen, folosește endpoint-ul dedicat; altfel salvarea completă.
+   */
+  const persistDirty = async (): Promise<boolean> => {
+    if (!hasUnsaved()) return true
+    const id = selectedIdRef.current
+    if (isCreatingRef.current || !id) return persistAll()
+
+    const dirty = [...dirtyVersionsRef.current.keys()]
+    const onlyIn = (fields: readonly string[]) => dirty.every(f => fields.includes(f))
+    const snapshot = new Map(dirtyVersionsRef.current)
+    try {
+      if (onlyIn(ANAMNESIS_FIELDS)) {
+        await consultationsApi.updateAnamnesis(id, buildAnamnesisPayload(form.getValues()))
+      } else if (onlyIn(EXAM_FIELDS)) {
+        if (!(await form.trigger([...EXAM_FIELDS]))) {
+          setServerError(validationMessage(EXAM_FIELDS))
+          return false
+        }
+        await consultationsApi.updateExam(id, buildExamPayload(form.getValues()))
+      } else {
+        return persistAll()
+      }
+      clearDirty(snapshot)
+      qc.invalidateQueries({ queryKey: consultationKeys.detail(id) })
+      onSaved()
+      return true
+    } catch (err: unknown) {
+      return onSaveError(err, 'Eroare la salvare automată.')
+    }
+  }
+
+  const flushSave = () => serialize(persistDirty)
+
+  const runAutosave = async () => {
+    if (!hasUnsaved() || isCreatingRef.current) return
+    await flushSave()
+  }
+
+  const { confirmLeave, stay, leave } = useUnsavedChangesGuard(hasUnsaved, isDirty && isEditable, flushSave)
+
+  /** Rulează o schimbare de context (altă consultație / programare) doar după salvare reușită. */
+  const afterFlush = async (action: () => void | Promise<void>) => {
+    if (!(await flushSave())) return
+    await action()
+  }
 
   // ── Handlers ────────────────────────────────────────────────────────────────
-  const handleSelectHistoryConsultation = (consultation: ConsultationListDto) => {
-    setSelectedId(consultation.id)
+  const handleSelectHistoryConsultation = (consultation: ConsultationListDto) => afterFlush(() => {
     setIsCreating(false)
     setSelectedAppointment(null)
     setServerError(null)
     setActiveTab('anamneza')
-  }
+    navigate(`/consultations/${consultation.id}`)
+  })
 
-  const handleSelectAppointment = async (appointment: AppointmentDto) => {
+  const handleSelectAppointment = (appointment: AppointmentDto) => afterFlush(async () => {
     setSelectedAppointment(appointment)
     setServerError(null)
     setActiveTab('anamneza')
@@ -376,9 +503,8 @@ export const ConsultationsListPage = () => {
       const resp = await consultationsApi.getByAppointmentId(appointment.id)
       const existing = resp?.data ?? null
       if (existing) {
-        // Load existing consultation (edit mode)
         setIsCreating(false)
-        setSelectedId(existing.id)
+        navigate(`/consultations/${existing.id}`)
         return
       }
     } catch {
@@ -386,309 +512,73 @@ export const ConsultationsListPage = () => {
     }
 
     // No existing consultation — start creating a new one pre-filled with appointment data
-    setSelectedId(null)
+    navigate('/consultations')
     setIsCreating(true)
-    form.reset({
+    resetEditor({
+      ...EMPTY_CONSULTATION_FORM,
       patientId: appointment.patientId,
       doctorId: appointment.doctorId,
       date: todayISO,
       appointmentId: appointment.id,
-      statusId: '',
-      motiv: '', istoricMedicalPersonal: '', tratamentAnterior: '', istoricBoalaActuala: '', istoricFamilial: '', factoriDeRisc: '', alergiiConsultatie: '',
-      stareGenerala: '', tegumente: '', mucoase: '', greutate: null, inaltime: null,
-      tensiuneSistolica: null, tensiuneDiastolica: null, puls: null, frecventaRespiratorie: null,
-      temperatura: null, spO2: null, edeme: '', glicemie: null, ganglioniLimfatici: '', examenClinic: '', alteObservatiiClinice: '',
-      investigatii: '', analizeMedicale: '',
-      diagnostic: '', diagnosticCodes: '', recomandari: '', observatii: '',
-      concluzii: '', esteAfectiuneOncologica: false, areIndicatieInternare: false,
-      saEliberatPrescriptie: false, seriePrescriptie: '', saEliberatConcediuMedical: false, serieConcediuMedical: '',
-      saEliberatIngrijiriDomiciliu: false, saEliberatDispozitiveMedicale: false,
-      dataUrmatoareiVizite: '', noteUrmatoareaVizita: '',
-    })
-    setDiagnosticTags([])
-    setPrimaryDiagCode(null)
-    setPrimaryDiagDetails('')
-    setSecondaryDiagnoses([])
-  }
+    }, EMPTY_DIAGNOSIS)
+  })
 
-  const handleNewConsultation = () => {
-    setSelectedId(null)
+  const handleNewConsultation = () => afterFlush(() => {
+    navigate('/consultations')
     setIsCreating(true)
     setServerError(null)
     setSelectedAppointment(null)
-    form.reset({
-      patientId: '', doctorId: '', date: '', appointmentId: '', statusId: '',
-      motiv: '', istoricMedicalPersonal: '', tratamentAnterior: '', istoricBoalaActuala: '', istoricFamilial: '', factoriDeRisc: '', alergiiConsultatie: '',
-      stareGenerala: '', tegumente: '', mucoase: '', greutate: null, inaltime: null,
-      tensiuneSistolica: null, tensiuneDiastolica: null, puls: null, frecventaRespiratorie: null,
-      temperatura: null, spO2: null, edeme: '', glicemie: null, ganglioniLimfatici: '', examenClinic: '', alteObservatiiClinice: '',
-      investigatii: '', analizeMedicale: '',
-      diagnostic: '', diagnosticCodes: '', recomandari: '', observatii: '',
-      concluzii: '', esteAfectiuneOncologica: false, areIndicatieInternare: false,
-      saEliberatPrescriptie: false, seriePrescriptie: '', saEliberatConcediuMedical: false, serieConcediuMedical: '',
-      saEliberatIngrijiriDomiciliu: false, saEliberatDispozitiveMedicale: false,
-      dataUrmatoareiVizite: '', noteUrmatoareaVizita: '',
-    })
-    setDiagnosticTags([])
-    setPrimaryDiagCode(null)
-    setPrimaryDiagDetails('')
-    setSecondaryDiagnoses([])
+    resetEditor(EMPTY_CONSULTATION_FORM, EMPTY_DIAGNOSIS)
     setActiveTab('anamneza')
-  }
+  })
 
   const handleCancelCreate = () => {
     setIsCreating(false)
     setServerError(null)
+    clearDirty()
   }
 
-  const handleSaveDraft = async () => {
-    // Ciorna se salvează fără validare strictă
-    const values = form.getValues()
-    // Build diagnosticCodes from ICD-10 components (primary + secondary codes)
-    const icd10Codes: string[] = []
-    if (primaryDiagCode) icd10Codes.push(primaryDiagCode.code)
-    secondaryDiagnoses.forEach(sd => sd.icd10Codes.forEach(c => icd10Codes.push(c.code)))
-    const codes = icd10Codes.length > 0 ? JSON.stringify(icd10Codes) : (diagnosticTags.length > 0 ? JSON.stringify(diagnosticTags) : '')
-    // Encode ICD10 structured data into diagnostic field
-    const diagnosticData = primaryDiagCode
-      ? JSON.stringify({ primaryCode: primaryDiagCode, primaryDetails: primaryDiagDetails, secondaryDiagnoses })
-      : values.diagnostic || null
-    const commonFields = {
-      motiv: values.motiv || null,
-      istoricMedicalPersonal: values.istoricMedicalPersonal || null,
-      tratamentAnterior: values.tratamentAnterior || null,
-      istoricBoalaActuala: values.istoricBoalaActuala || null,
-      istoricFamilial: values.istoricFamilial || null,
-      factoriDeRisc: values.factoriDeRisc || null,
-      alergiiConsultatie: values.alergiiConsultatie || null,
-      stareGenerala: values.stareGenerala || null,
-      tegumente: values.tegumente || null,
-      mucoase: values.mucoase || null,
-      greutate: values.greutate ?? null,
-      inaltime: values.inaltime ?? null,
-      tensiuneSistolica: values.tensiuneSistolica ?? null,
-      tensiuneDiastolica: values.tensiuneDiastolica ?? null,
-      puls: values.puls ?? null,
-      frecventaRespiratorie: values.frecventaRespiratorie ?? null,
-      temperatura: values.temperatura ?? null,
-      spO2: values.spO2 ?? null,
-      edeme: values.edeme || null,
-      glicemie: values.glicemie ?? null,
-      ganglioniLimfatici: values.ganglioniLimfatici || null,
-      examenClinic: values.examenClinic || null,
-      alteObservatiiClinice: values.alteObservatiiClinice || null,
-      investigatii: values.investigatii || null,
-      analizeMedicale: values.analizeMedicale || null,
-      diagnostic: diagnosticData,
-      diagnosticCodes: codes || null,
-      recomandari: values.recomandari || null,
-      observatii: values.observatii || null,
-      concluzii: values.concluzii || null,
-      esteAfectiuneOncologica: values.esteAfectiuneOncologica,
-      areIndicatieInternare: values.areIndicatieInternare,
-      saEliberatPrescriptie: values.saEliberatPrescriptie,
-      seriePrescriptie: values.seriePrescriptie || null,
-      saEliberatConcediuMedical: values.saEliberatConcediuMedical,
-      serieConcediuMedical: values.serieConcediuMedical || null,
-      saEliberatIngrijiriDomiciliu: values.saEliberatIngrijiriDomiciliu,
-      saEliberatDispozitiveMedicale: values.saEliberatDispozitiveMedicale,
-      dataUrmatoareiVizite: values.dataUrmatoareiVizite || null,
-      noteUrmatoareaVizita: values.noteUrmatoareaVizita || null,
-    }
+  const handleSaveDraft = () => serialize(() => persistAll(
+    isCreatingRef.current ? 'Consultație creată cu succes.' : 'Consultație salvată cu succes.',
+  ))
 
-    try {
-      if (isCreating) {
-        const payload: CreateConsultationPayload = {
-          patientId: values.patientId,
-          doctorId: values.doctorId,
-          date: values.date,
-          appointmentId: values.appointmentId || null,
-          statusId: CONSULTATION_STATUS_IDS.draft,
-          ...commonFields,
-        }
-        const resp = await createConsultation.mutateAsync(payload)
-        const newId = resp?.data
-        setIsCreating(false)
-        if (newId) setSelectedId(newId)
-        setSuccessMsg('Consultație creată cu succes.')
-      } else if (selectedId) {
-        const payload: UpdateConsultationPayload = {
-          id: selectedId,
-          patientId: values.patientId,
-          doctorId: values.doctorId,
-          date: values.date,
-          appointmentId: values.appointmentId || null,
-          ...commonFields,
-        }
-        await updateConsultation.mutateAsync(payload)
-        qc.invalidateQueries({ queryKey: consultationKeys.detail(selectedId) })
-        setSuccessMsg('Consultație salvată cu succes.')
-      }
-      setServerError(null)
-      setTimeout(() => setSuccessMsg(null), 4000)
-    } catch (err: unknown) {
-      setServerError(err instanceof Error ? err.message : 'Eroare la salvare.')
-    }
-  }
-
-  /**
-   * La trecerea pe alt tab: salvează DOAR datele tabului de pe care plecăm,
-   * apelând endpoint-ul dedicat (anamnesis / exam) sau update-ul de header
-   * (pentru tab-urile 3-6). În modul "creare" delegăm către handleSaveDraft
-   * care face POST complet. Eșuarea NU blochează navigarea.
-   */
+  /** Un eșec de salvare pe fișa medicală blochează schimbarea tabului. */
   const handleTabChange = async (newTab: Tab) => {
     if (newTab === activeTab) return
-    const previousTab = activeTab
-
-    // În modul "creare" sau dacă încă nu există ID → POST complet prin handleSaveDraft
-    if (isCreating) {
-      try { await handleSaveDraft() } catch { /* setat în handleSaveDraft */ }
-      setActiveTab(newTab)
-      return
-    }
-
-    // Pentru consultație existentă, salvăm doar dacă e editabilă și avem ID
-    // Tab-ul „Servicii" își salvează singur fiecare linie — nu are nimic de salvat la plecare
-    if (selectedId && isEditable && previousTab !== 'servicii'
-        && !createConsultation.isPending && !updateConsultation.isPending) {
-      const v = form.getValues()
-      try {
-        if (previousTab === 'anamneza') {
-          await consultationsApi.updateAnamnesis(selectedId, {
-            motiv: v.motiv || null,
-            istoricMedicalPersonal: v.istoricMedicalPersonal || null,
-            tratamentAnterior: v.tratamentAnterior || null,
-            istoricBoalaActuala: v.istoricBoalaActuala || null,
-            istoricFamilial: v.istoricFamilial || null,
-            factoriDeRisc: v.factoriDeRisc || null,
-            alergiiConsultatie: v.alergiiConsultatie || null,
-          })
-          setServerError(null)
-          qc.invalidateQueries({ queryKey: consultationKeys.detail(selectedId) })
-        } else if (previousTab === 'examen') {
-          await consultationsApi.updateExam(selectedId, {
-            stareGenerala: v.stareGenerala || null,
-            tegumente: v.tegumente || null,
-            mucoase: v.mucoase || null,
-            greutate: v.greutate ?? null,
-            inaltime: v.inaltime ?? null,
-            tensiuneSistolica: v.tensiuneSistolica ?? null,
-            tensiuneDiastolica: v.tensiuneDiastolica ?? null,
-            puls: v.puls ?? null,
-            frecventaRespiratorie: v.frecventaRespiratorie ?? null,
-            temperatura: v.temperatura ?? null,
-            spO2: v.spO2 ?? null,
-            edeme: v.edeme || null,
-            glicemie: v.glicemie ?? null,
-            ganglioniLimfatici: v.ganglioniLimfatici || null,
-            examenClinic: v.examenClinic || null,
-            alteObservatiiClinice: v.alteObservatiiClinice || null,
-          })
-          setServerError(null)
-          qc.invalidateQueries({ queryKey: consultationKeys.detail(selectedId) })
-        } else {
-          // Tab-urile 3-6 ţin de Consultations (header) → folosim handleSaveDraft
-          await handleSaveDraft()
-        }
-      } catch (err: unknown) {
-        setServerError(err instanceof Error ? err.message : 'Eroare la salvare automată.')
-      }
-    }
-
+    if (isEditable && !(await flushSave())) return
     setActiveTab(newTab)
   }
 
-  const handleFinalize = async () => {
+  const requestFinalize = async () => {
     if (!selectedId) return
-
-    // Validare completă la finalizare — cu feedback vizual pe câmpuri
-    const valid = await form.trigger()
-    if (!valid) {
-      const errors = form.formState.errors
-      const fieldLabels: Record<string, string> = {
-        patientId: 'Pacient', doctorId: 'Medic', date: 'Data consultației',
-        motiv: 'Motiv prezentare', diagnostic: 'Diagnostic', recomandari: 'Recomandări',
-      }
-      const msgs: string[] = []
-      Object.entries(errors).forEach(([key, err]) => {
-        if (err?.message) {
-          msgs.push(fieldLabels[key] ?? err.message)
-        }
-      })
-      setServerError(
-        msgs.length > 0
-          ? `Nu se poate finaliza. Câmpuri cu probleme: ${msgs.join(', ')}`
-          : 'Verificați câmpurile obligatorii înainte de finalizare.'
-      )
-      setShowFinalizeConfirm(false)
+    if (!diagnosis.primaryCode) {
+      setServerError(MISSING_PRIMARY_DIAGNOSIS)
+      if (activeTab !== 'diagnostic') await handleTabChange('diagnostic')
       return
     }
+    if (!(await form.trigger())) {
+      setServerError(validationMessage(Object.keys(form.formState.errors) as (keyof ConsultationFormData)[]))
+      return
+    }
+    setShowFinalizeConfirm(true)
+  }
 
-    const values = form.getValues()
-    // Build diagnosticCodes from ICD-10 components (primary + secondary codes)
-    const icd10Codes: string[] = []
-    if (primaryDiagCode) icd10Codes.push(primaryDiagCode.code)
-    secondaryDiagnoses.forEach(sd => sd.icd10Codes.forEach(c => icd10Codes.push(c.code)))
-    const codes = icd10Codes.length > 0 ? JSON.stringify(icd10Codes) : (diagnosticTags.length > 0 ? JSON.stringify(diagnosticTags) : '')
-    const finalizeDiagnosticData = primaryDiagCode
-      ? JSON.stringify({ primaryCode: primaryDiagCode, primaryDetails: primaryDiagDetails, secondaryDiagnoses })
-      : values.diagnostic || null
+  const handleFinalize = async () => {
+    const id = selectedId
+    if (!id) return
+    setIsFinalizing(true)
     try {
-      await updateConsultation.mutateAsync({
-        id: selectedId,
-        patientId: values.patientId,
-        doctorId: values.doctorId,
-        date: values.date,
-        appointmentId: values.appointmentId || null,
-        statusId: CONSULTATION_STATUS_IDS.completed,
-        motiv: values.motiv || null,
-        istoricMedicalPersonal: values.istoricMedicalPersonal || null,
-        tratamentAnterior: values.tratamentAnterior || null,
-        istoricBoalaActuala: values.istoricBoalaActuala || null,
-        istoricFamilial: values.istoricFamilial || null,
-        factoriDeRisc: values.factoriDeRisc || null,
-        alergiiConsultatie: values.alergiiConsultatie || null,
-        stareGenerala: values.stareGenerala || null,
-        tegumente: values.tegumente || null,
-        mucoase: values.mucoase || null,
-        greutate: values.greutate ?? null,
-        inaltime: values.inaltime ?? null,
-        tensiuneSistolica: values.tensiuneSistolica ?? null,
-        tensiuneDiastolica: values.tensiuneDiastolica ?? null,
-        puls: values.puls ?? null,
-        frecventaRespiratorie: values.frecventaRespiratorie ?? null,
-        temperatura: values.temperatura ?? null,
-        spO2: values.spO2 ?? null,
-        edeme: values.edeme || null,
-        glicemie: values.glicemie ?? null,
-        ganglioniLimfatici: values.ganglioniLimfatici || null,
-        examenClinic: values.examenClinic || null,
-        alteObservatiiClinice: values.alteObservatiiClinice || null,
-        investigatii: values.investigatii || null,
-        analizeMedicale: values.analizeMedicale || null,
-        diagnostic: finalizeDiagnosticData,
-        diagnosticCodes: codes || null,
-        recomandari: values.recomandari || null,
-        observatii: values.observatii || null,
-        concluzii: values.concluzii || null,
-        esteAfectiuneOncologica: values.esteAfectiuneOncologica,
-        areIndicatieInternare: values.areIndicatieInternare,
-        saEliberatPrescriptie: values.saEliberatPrescriptie,
-        seriePrescriptie: values.seriePrescriptie || null,
-        saEliberatConcediuMedical: values.saEliberatConcediuMedical,
-        serieConcediuMedical: values.serieConcediuMedical || null,
-        saEliberatIngrijiriDomiciliu: values.saEliberatIngrijiriDomiciliu,
-        saEliberatDispozitiveMedicale: values.saEliberatDispozitiveMedicale,
-        dataUrmatoareiVizite: values.dataUrmatoareiVizite || null,
-        noteUrmatoareaVizita: values.noteUrmatoareaVizita || null,
+      const done = await serialize(async () => {
+        if (!(await persistAll())) return false
+        await finalizeConsultation.mutateAsync(id)
+        return true
       })
-      qc.invalidateQueries({ queryKey: consultationKeys.detail(selectedId) })
-      setShowFinalizeConfirm(false)
-      setSuccessMsg('Consultație finalizată cu succes.')
-      setTimeout(() => setSuccessMsg(null), 4000)
+      if (done) setSuccessMsg('Consultație finalizată cu succes.')
     } catch (err: unknown) {
-      setServerError(err instanceof Error ? err.message : 'Eroare la finalizare.')
+      onSaveError(err, 'Eroare la finalizare.')
+    } finally {
+      setIsFinalizing(false)
+      setShowFinalizeConfirm(false)
     }
   }
 
@@ -696,11 +586,17 @@ export const ConsultationsListPage = () => {
     if (!deleteTarget) return
     try {
       await deleteConsultation.mutateAsync(deleteTarget.id)
-      if (selectedId === deleteTarget.id) { setSelectedId(null); setIsCreating(false) }
-      setDeleteTarget(null)
+      if (selectedId === deleteTarget.id) {
+        clearDirty()
+        setIsCreating(false)
+        navigate('/consultations', { replace: true })
+      }
       setSuccessMsg('Consultație ștearsă cu succes.')
-      setTimeout(() => setSuccessMsg(null), 4000)
-    } catch { /* handled by mutation */ }
+    } catch (err: unknown) {
+      onSaveError(err, 'Eroare la ștergere.')
+    } finally {
+      setDeleteTarget(null)
+    }
   }
 
   // Reactive watches for computed fields & toggle cards
@@ -791,9 +687,21 @@ export const ConsultationsListPage = () => {
           <div className={styles.dateGroupLabel}>
             {shouldGroup ? 'Consultații anterioare' : 'Consultații recente'}
           </div>
+          <div className={styles.historySearch}>
+            <input
+              type="search"
+              className="form-control form-control-sm"
+              placeholder="Caută pacient, medic sau cod ICD-10..."
+              aria-label="Caută în consultații"
+              value={historySearch}
+              onChange={e => setHistorySearch(e.target.value)}
+            />
+          </div>
 
           {historyItems.length === 0 && (
-            <div className={styles.listEmpty}>Nicio consultație anterioară.</div>
+            <div className={styles.listEmpty}>
+              {debouncedHistorySearch ? 'Nicio consultație găsită.' : 'Nicio consultație anterioară.'}
+            </div>
           )}
 
           {/* Admin fără filtru → grupat pe medic */}
@@ -858,6 +766,17 @@ export const ConsultationsListPage = () => {
               </div>
             </button>
           ))}
+
+          {canLoadMoreHistory && (
+            <button
+              type="button"
+              className={styles.loadMore}
+              disabled={isHistoryFetching}
+              onClick={() => setHistoryPageSize(s => Math.min(s + HISTORY_PAGE_SIZE, HISTORY_MAX_PAGE_SIZE))}
+            >
+              {isHistoryFetching ? 'Se încarcă...' : 'Încarcă mai multe'}
+            </button>
+          )}
         </div>
       </aside>
 
@@ -874,8 +793,10 @@ export const ConsultationsListPage = () => {
         {showDetail && (
           <>
             {/* Success / Error alerts */}
-            {successMsg && <div className={styles.successAlert}>✓ {successMsg}</div>}
-            {serverError && <div className={styles.errorAlert}>✕ {serverError}</div>}
+            <div aria-live="polite">
+              {successMsg && <div className={styles.successAlert} role="status">✓ {successMsg}</div>}
+              {serverError && <div className={styles.errorAlert} role="alert">✕ {serverError}</div>}
+            </div>
 
             {/* Locked banner */}
             {isLocked && (
@@ -1027,10 +948,15 @@ export const ConsultationsListPage = () => {
             {/* Tab bar */}
             {(isCreating || detail) && (
               <>
-                <div className={styles.tabBar}>
+                <div className={styles.tabBar} role="tablist" aria-label="Secțiuni consultație">
                   {TABS.map(tab => (
                     <button
                       key={tab.key}
+                      type="button"
+                      role="tab"
+                      id={`consultation-tab-${tab.key}`}
+                      aria-selected={activeTab === tab.key}
+                      aria-controls="consultation-tabpanel"
                       className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''} ${tabHasContent(tab.key, detail) && !isCreating ? styles.tabCompleted : ''}`}
                       onClick={() => handleTabChange(tab.key)}
                     >
@@ -1045,7 +971,12 @@ export const ConsultationsListPage = () => {
                 </div>
 
                 {/* Tab content */}
-                <div className={styles.tabContent}>
+                <div
+                  className={styles.tabContent}
+                  role="tabpanel"
+                  id="consultation-tabpanel"
+                  aria-labelledby={`consultation-tab-${activeTab}`}
+                >
 
                   {/* ── Anamneză ── */}
                   {activeTab === 'anamneza' && (
@@ -1101,7 +1032,7 @@ export const ConsultationsListPage = () => {
                           </div>
                           <select disabled={!isEditable} className={styles.examSelectInput} {...form.register('stareGenerala')}>
                             <option value="">Selectează...</option>
-                            {['Bună','Relativ bună','Satisfăcătoare','Medie','Alterată','Rea','Gravă'].map(o => <option key={o} value={o}>{o}</option>)}
+                            {STARE_GENERALA_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                           </select>
                         </div>
                         {/* Tegumente */}
@@ -1112,7 +1043,7 @@ export const ConsultationsListPage = () => {
                           </div>
                           <select disabled={!isEditable} className={styles.examSelectInput} {...form.register('tegumente')}>
                             <option value="">Selectează...</option>
-                            {['Normale','Normal colorate','Palide','Subicterice','Cianotice','Icterice','Eritematoase'].map(o => <option key={o} value={o}>{o}</option>)}
+                            {TEGUMENTE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                           </select>
                         </div>
                         {/* Mucoase */}
@@ -1123,7 +1054,7 @@ export const ConsultationsListPage = () => {
                           </div>
                           <select disabled={!isEditable} className={styles.examSelectInput} {...form.register('mucoase')}>
                             <option value="">Selectează...</option>
-                            {['Roz','Normal colorate','Palide','Icterice','Uscate'].map(o => <option key={o} value={o}>{o}</option>)}
+                            {MUCOASE_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                           </select>
                         </div>
                         {/* Greutate */}
@@ -1133,7 +1064,7 @@ export const ConsultationsListPage = () => {
                             <span className={styles.examCardLabel}>Greutate</span>
                           </div>
                           <div className={styles.examCardInput}>
-                            <input type="number" step="0.1" disabled={!isEditable} className={styles.examNumInput} placeholder="70.5" {...form.register('greutate', { setValueAs: v => v === '' ? null : parseFloat(v) })} />
+                            <input type="number" step="0.1" disabled={!isEditable} className={styles.examNumInput} placeholder="70.5" {...form.register('greutate', { setValueAs: toDecimalOrNull })} />
                             <span className={styles.examUnit}>kg</span>
                           </div>
                         </div>
@@ -1144,7 +1075,7 @@ export const ConsultationsListPage = () => {
                             <span className={styles.examCardLabel}>Înălțime</span>
                           </div>
                           <div className={styles.examCardInput}>
-                            <input type="number" step="1" disabled={!isEditable} className={styles.examNumInput} placeholder="175" {...form.register('inaltime', { setValueAs: v => v === '' ? null : parseInt(v) })} />
+                            <input type="number" step="1" disabled={!isEditable} className={styles.examNumInput} placeholder="175" {...form.register('inaltime', { setValueAs: toIntOrNull })} />
                             <span className={styles.examUnit}>cm</span>
                           </div>
                         </div>
@@ -1170,9 +1101,9 @@ export const ConsultationsListPage = () => {
                             <span className={styles.examCardLabel}>Tensiune Arterială</span>
                           </div>
                           <div className={styles.examCardInput}>
-                            <input type="number" step="1" disabled={!isEditable} className={styles.examNumInput} placeholder="120" {...form.register('tensiuneSistolica', { setValueAs: v => v === '' ? null : parseInt(v) })} />
+                            <input type="number" step="1" disabled={!isEditable} className={styles.examNumInput} placeholder="120" {...form.register('tensiuneSistolica', { setValueAs: toIntOrNull })} />
                             <span className={styles.examUnit}>/</span>
-                            <input type="number" step="1" disabled={!isEditable} className={styles.examNumInput} placeholder="80" {...form.register('tensiuneDiastolica', { setValueAs: v => v === '' ? null : parseInt(v) })} />
+                            <input type="number" step="1" disabled={!isEditable} className={styles.examNumInput} placeholder="80" {...form.register('tensiuneDiastolica', { setValueAs: toIntOrNull })} />
                             <span className={styles.examUnit}>mmHg</span>
                           </div>
                         </div>
@@ -1183,7 +1114,7 @@ export const ConsultationsListPage = () => {
                             <span className={styles.examCardLabel}>Frecvență Cardiacă</span>
                           </div>
                           <div className={styles.examCardInput}>
-                            <input type="number" step="1" disabled={!isEditable} className={styles.examNumInput} placeholder="75" {...form.register('puls', { setValueAs: v => v === '' ? null : parseInt(v) })} />
+                            <input type="number" step="1" disabled={!isEditable} className={styles.examNumInput} placeholder="75" {...form.register('puls', { setValueAs: toIntOrNull })} />
                             <span className={styles.examUnit}>bpm</span>
                           </div>
                         </div>
@@ -1194,7 +1125,7 @@ export const ConsultationsListPage = () => {
                             <span className={styles.examCardLabel}>Frecvență Respiratorie</span>
                           </div>
                           <div className={styles.examCardInput}>
-                            <input type="number" step="1" disabled={!isEditable} className={styles.examNumInput} placeholder="16" {...form.register('frecventaRespiratorie', { setValueAs: v => v === '' ? null : parseInt(v) })} />
+                            <input type="number" step="1" disabled={!isEditable} className={styles.examNumInput} placeholder="16" {...form.register('frecventaRespiratorie', { setValueAs: toIntOrNull })} />
                             <span className={styles.examUnit}>resp/min</span>
                           </div>
                         </div>
@@ -1205,7 +1136,7 @@ export const ConsultationsListPage = () => {
                             <span className={styles.examCardLabel}>Temperatură</span>
                           </div>
                           <div className={styles.examCardInput}>
-                            <input type="number" step="0.1" disabled={!isEditable} className={styles.examNumInput} placeholder="36.5" {...form.register('temperatura', { setValueAs: v => v === '' ? null : parseFloat(v) })} />
+                            <input type="number" step="0.1" disabled={!isEditable} className={styles.examNumInput} placeholder="36.5" {...form.register('temperatura', { setValueAs: toDecimalOrNull })} />
                             <span className={styles.examUnit}>°C</span>
                           </div>
                         </div>
@@ -1216,7 +1147,7 @@ export const ConsultationsListPage = () => {
                             <span className={styles.examCardLabel}>SpO₂</span>
                           </div>
                           <div className={styles.examCardInput}>
-                            <input type="number" step="1" disabled={!isEditable} className={styles.examNumInput} placeholder="98" {...form.register('spO2', { setValueAs: v => v === '' ? null : parseInt(v) })} />
+                            <input type="number" step="1" disabled={!isEditable} className={styles.examNumInput} placeholder="98" {...form.register('spO2', { setValueAs: toIntOrNull })} />
                             <span className={styles.examUnit}>%</span>
                           </div>
                         </div>
@@ -1228,7 +1159,7 @@ export const ConsultationsListPage = () => {
                           </div>
                           <select disabled={!isEditable} className={styles.examSelectInput} {...form.register('edeme')}>
                             <option value="">Selectează...</option>
-                            {['Absente','Ușoare','Moderate','Severe','Prezente membre inferioare','Generalizate','Periferice'].map(o => <option key={o} value={o}>{o}</option>)}
+                            {EDEME_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                           </select>
                         </div>
                         {/* Glicemie */}
@@ -1238,7 +1169,7 @@ export const ConsultationsListPage = () => {
                             <span className={styles.examCardLabel}>Glicemie</span>
                           </div>
                           <div className={styles.examCardInput}>
-                            <input type="number" step="0.1" disabled={!isEditable} className={styles.examNumInput} placeholder="95" {...form.register('glicemie', { setValueAs: v => v === '' ? null : parseFloat(v) })} />
+                            <input type="number" step="0.1" disabled={!isEditable} className={styles.examNumInput} placeholder="95" {...form.register('glicemie', { setValueAs: toDecimalOrNull })} />
                             <span className={styles.examUnit}>mg/dL</span>
                           </div>
                         </div>
@@ -1250,7 +1181,7 @@ export const ConsultationsListPage = () => {
                           </div>
                           <select disabled={!isEditable} className={styles.examSelectInput} {...form.register('ganglioniLimfatici')}>
                             <option value="">Selectează...</option>
-                            {['Nepalpabili','Palpabili, nedureroși','Palpabili, dureroși','Adenopatii','Normali','Măriți regional','Măriți generalizat'].map(o => <option key={o} value={o}>{o}</option>)}
+                            {GANGLIONI_OPTIONS.map(o => <option key={o} value={o}>{o}</option>)}
                           </select>
                         </div>
                       </div>
@@ -1325,10 +1256,10 @@ export const ConsultationsListPage = () => {
                         {/* Left: Primary Diagnosis */}
                         <div className={styles.diagnosticColumnPrimary}>
                           <PrimaryDiagnosisSelector
-                            selectedCode={primaryDiagCode}
-                            onCodeChange={setPrimaryDiagCode}
-                            details={primaryDiagDetails}
-                            onDetailsChange={setPrimaryDiagDetails}
+                            selectedCode={diagnosis.primaryCode}
+                            onCodeChange={code => updateDiagnosis({ primaryCode: code })}
+                            details={diagnosis.primaryDetails}
+                            onDetailsChange={value => updateDiagnosis({ primaryDetails: value })}
                             showValidation={false}
                             disabled={!isEditable}
                           />
@@ -1336,8 +1267,8 @@ export const ConsultationsListPage = () => {
                         {/* Right: Secondary Diagnoses */}
                         <div className={styles.diagnosticColumnSecondary}>
                           <SecondaryDiagnosesList
-                            diagnoses={secondaryDiagnoses}
-                            onChange={setSecondaryDiagnoses}
+                            diagnoses={diagnosis.secondary}
+                            onChange={secondary => updateDiagnosis({ secondary })}
                             showValidation={false}
                             disabled={!isEditable}
                           />
@@ -1564,11 +1495,14 @@ export const ConsultationsListPage = () => {
                         <AppButton
                           variant="ghost"
                           size="sm"
-                          onClick={() => { const c = consultations.find(x => x.id === selectedId); if (c) setDeleteTarget(c) }}
+                          onClick={() => detail && setDeleteTarget({ id: detail.id, patientName: detail.patientName, date: detail.date })}
                           leftIcon={<IconTrash />}
                         >
                           Șterge
                         </AppButton>
+                        <span className={styles.saveStatus} aria-live="polite">
+                          {isDirty ? 'Modificări nesalvate' : lastSavedAt ? `Salvat la ${formatSavedAt(lastSavedAt)}` : ''}
+                        </span>
                       </div>
                       <div className={styles.footerActions}>
                         <AppButton
@@ -1592,7 +1526,7 @@ export const ConsultationsListPage = () => {
                         <AppButton
                           variant="primary"
                           size="sm"
-                          onClick={() => setShowFinalizeConfirm(true)}
+                          onClick={requestFinalize}
                           leftIcon={<IconCheck />}
                         >
                           Finalizează Consultație
@@ -1627,25 +1561,16 @@ export const ConsultationsListPage = () => {
       </main>
 
       {/* Finalize confirmation modal */}
-      {showFinalizeConfirm && (
-        <div className="modal d-block" tabIndex={-1} role="dialog" style={{ background: 'rgba(0,0,0,0.3)' }}>
-          <div className="modal-dialog modal-dialog-centered" role="document">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Confirmare finalizare</h5>
-                <button type="button" className="btn-close" onClick={() => setShowFinalizeConfirm(false)} />
-              </div>
-              <div className="modal-body">
-                <p>Sigur doriți să finalizați această consultație? După finalizare, consultația nu va mai putea fi modificată.</p>
-              </div>
-              <div className="modal-footer">
-                <AppButton variant="outline-secondary" size="sm" onClick={() => setShowFinalizeConfirm(false)}>Anulează</AppButton>
-                <AppButton variant="primary" size="sm" onClick={handleFinalize} isLoading={updateConsultation.isPending} loadingText="Se finalizează...">Finalizează</AppButton>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={showFinalizeConfirm}
+        title="Confirmare finalizare"
+        message="Sigur doriți să finalizați această consultație? După finalizare, consultația nu va mai putea fi modificată."
+        confirmLabel="Finalizează"
+        onConfirm={handleFinalize}
+        onCancel={() => setShowFinalizeConfirm(false)}
+        isLoading={isFinalizing}
+        loadingText="Se finalizează..."
+      />
 
       {/* Scrisoare Medicală modal */}
       {showScrisoareMedicala && detail && (
@@ -1655,26 +1580,30 @@ export const ConsultationsListPage = () => {
         />
       )}
 
-      {/* Delete confirmation modal */}
-      {deleteTarget && (
-        <div className="modal d-block" tabIndex={-1} role="dialog" style={{ background: 'rgba(0,0,0,0.3)' }}>
-          <div className="modal-dialog modal-dialog-centered" role="document">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Confirmare ștergere</h5>
-                <button type="button" className="btn-close" onClick={() => setDeleteTarget(null)} />
-              </div>
-              <div className="modal-body">
-                <p>Sigur doriți să ștergeți consultația pacientului <strong>{deleteTarget.patientName}</strong> din {formatDate(deleteTarget.date)}?</p>
-              </div>
-              <div className="modal-footer">
-                <AppButton variant="outline-secondary" size="sm" onClick={() => setDeleteTarget(null)}>Anulează</AppButton>
-                <AppButton variant="danger" size="sm" onClick={handleDelete} isLoading={deleteConsultation.isPending} loadingText="Se șterge...">Șterge</AppButton>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        title="Confirmare ștergere"
+        message={deleteTarget && (
+          <>Sigur doriți să ștergeți consultația pacientului <strong>{deleteTarget.patientName}</strong> din {formatDate(deleteTarget.date)}?</>
+        )}
+        confirmLabel="Șterge"
+        confirmVariant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+        isLoading={deleteConsultation.isPending}
+        loadingText="Se șterge..."
+      />
+
+      <ConfirmDialog
+        isOpen={confirmLeave}
+        title="Modificări nesalvate"
+        message={<>Modificările nu au putut fi salvate{serverError ? `: ${serverError}` : '.'} Părăsiți pagina fără a le salva?</>}
+        confirmLabel="Părăsește fără salvare"
+        cancelLabel="Rămân pe pagină"
+        confirmVariant="danger"
+        onConfirm={leave}
+        onCancel={stay}
+      />
     </div>
   )
 }

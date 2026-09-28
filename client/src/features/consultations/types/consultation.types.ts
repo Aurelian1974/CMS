@@ -118,6 +118,8 @@ export interface GetConsultationsParams {
   search?: string
   doctorId?: string
   statusId?: string
+  /** Cod status (INLUCRU / FINALIZATA / FACTURATA / BLOCATA) — preferat față de statusId */
+  statusCode?: string
   dateFrom?: string
   dateTo?: string
   sortBy?: string
@@ -175,7 +177,6 @@ export interface CreateConsultationPayload {
   saEliberatDispozitiveMedicale?: boolean
   dataUrmatoareiVizite?: string | null
   noteUrmatoareaVizita?: string | null
-  statusId?: string | null
 }
 
 export interface UpdateConsultationPayload extends CreateConsultationPayload {
