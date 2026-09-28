@@ -33,8 +33,7 @@ public sealed class CreateConsultationCommandValidatorTests
         SaEliberatIngrijiriDomiciliu: false,
         SaEliberatDispozitiveMedicale: false,
         DataUrmatoareiVizite: null,
-        NoteUrmatoareaVizita: null,
-        StatusId: null);
+        NoteUrmatoareaVizita: null);
 
     [Fact]
     public void PatientId_WhenEmpty_ShouldHaveError()
@@ -84,12 +83,19 @@ public sealed class CreateConsultationCommandValidatorTests
     }
 
     [Fact]
-    public void Diagnostic_WhenExceeds4000_ShouldHaveError()
+    public void Diagnostic_WhenExceeds100000_ShouldHaveError()
     {
-        var cmd = MinimalValid() with { Diagnostic = new string('a', 4001) };
+        var cmd = MinimalValid() with { Diagnostic = new string('a', 100_001) };
         _validator.TestValidate(cmd)
                   .ShouldHaveValidationErrorFor(x => x.Diagnostic)
-                  .WithErrorMessage("Diagnosticul nu poate depăși 4000 de caractere.");
+                  .WithErrorMessage("Diagnosticul nu poate depăși 100000 de caractere.");
+    }
+
+    [Fact]
+    public void Diagnostic_IcdJsonOver4000_ShouldNotHaveError()
+    {
+        var cmd = MinimalValid() with { Diagnostic = new string('a', 20_000) };
+        _validator.TestValidate(cmd).ShouldNotHaveValidationErrorFor(x => x.Diagnostic);
     }
 
     [Fact]

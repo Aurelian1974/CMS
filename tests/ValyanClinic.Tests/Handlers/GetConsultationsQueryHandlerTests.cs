@@ -56,7 +56,7 @@ public sealed class GetConsultationsQueryHandlerTests
 
         _repo.GetPagedAsync(
                 ClinicId,
-                Arg.Any<string?>(), Arg.Any<Guid?>(), Arg.Any<Guid?>(),
+                Arg.Any<string?>(), Arg.Any<Guid?>(), Arg.Any<Guid?>(), Arg.Any<string?>(),
                 Arg.Any<DateTime?>(), Arg.Any<DateTime?>(),
                 Arg.Any<int>(), Arg.Any<int>(),
                 Arg.Any<string>(), Arg.Any<string>(),
@@ -85,7 +85,7 @@ public sealed class GetConsultationsQueryHandlerTests
 
         _repo.GetPagedAsync(
                 ClinicId,
-                Arg.Any<string?>(), Arg.Any<Guid?>(), Arg.Any<Guid?>(),
+                Arg.Any<string?>(), Arg.Any<Guid?>(), Arg.Any<Guid?>(), Arg.Any<string?>(),
                 Arg.Any<DateTime?>(), Arg.Any<DateTime?>(),
                 Arg.Any<int>(), Arg.Any<int>(),
                 Arg.Any<string>(), Arg.Any<string>(),
@@ -113,7 +113,7 @@ public sealed class GetConsultationsQueryHandlerTests
 
         _repo.GetPagedAsync(
                 Arg.Any<Guid>(),
-                Arg.Any<string?>(), Arg.Any<Guid?>(), Arg.Any<Guid?>(),
+                Arg.Any<string?>(), Arg.Any<Guid?>(), Arg.Any<Guid?>(), Arg.Any<string?>(),
                 Arg.Any<DateTime?>(), Arg.Any<DateTime?>(),
                 Arg.Any<int>(), Arg.Any<int>(),
                 Arg.Any<string>(), Arg.Any<string>(),
@@ -124,7 +124,7 @@ public sealed class GetConsultationsQueryHandlerTests
 
         await _repo.Received(1).GetPagedAsync(
             ClinicId,
-            Arg.Any<string?>(), Arg.Any<Guid?>(), Arg.Any<Guid?>(),
+            Arg.Any<string?>(), Arg.Any<Guid?>(), Arg.Any<Guid?>(), Arg.Any<string?>(),
             Arg.Any<DateTime?>(), Arg.Any<DateTime?>(),
             Arg.Any<int>(), Arg.Any<int>(),
             Arg.Any<string>(), Arg.Any<string>(),

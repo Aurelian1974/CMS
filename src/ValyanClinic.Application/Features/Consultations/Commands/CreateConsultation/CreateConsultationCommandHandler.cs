@@ -38,12 +38,27 @@ public sealed class CreateConsultationCommandHandler(
                 SaEliberatIngrijiriDomiciliu: request.SaEliberatIngrijiriDomiciliu,
                 SaEliberatDispozitiveMedicale: request.SaEliberatDispozitiveMedicale,
                 DataUrmatoareiVizite: request.DataUrmatoareiVizite,
-                NoteUrmatoareaVizita: request.NoteUrmatoareaVizita,
-                StatusId: request.StatusId);
+                NoteUrmatoareaVizita: request.NoteUrmatoareaVizita);
 
             var id = await repository.CreateAsync(data, currentUser.Id, cancellationToken);
 
             return Result<Guid>.Created(id);
+        }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.PatientNotFound)
+        {
+            return Result<Guid>.NotFound(ErrorMessages.Patient.NotFound);
+        }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.DoctorNotFound)
+        {
+            return Result<Guid>.NotFound(ErrorMessages.Doctor.NotFound);
+        }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.AppointmentNotFound)
+        {
+            return Result<Guid>.NotFound(ErrorMessages.Appointment.NotFound);
+        }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.ConsultationAppointmentDuplicate)
+        {
+            return Result<Guid>.Conflict(ErrorMessages.Consultation.AppointmentDuplicate);
         }
         catch (SqlException ex) when (ex.Number >= 50000 && ex.Number < 60000)
         {

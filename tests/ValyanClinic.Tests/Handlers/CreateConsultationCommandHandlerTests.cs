@@ -1,5 +1,6 @@
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
+using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Interfaces;
 using ValyanClinic.Application.Features.Consultations.Commands.CreateConsultation;
 using ValyanClinic.Tests.TestHelpers;
@@ -48,8 +49,7 @@ public sealed class CreateConsultationCommandHandlerTests
         SaEliberatIngrijiriDomiciliu: false,
         SaEliberatDispozitiveMedicale: false,
         DataUrmatoareiVizite: null,
-        NoteUrmatoareaVizita: null,
-        StatusId: null);
+        NoteUrmatoareaVizita: null);
 
     [Fact]
     public async Task Handle_ValidCommand_ReturnsCreated()
@@ -76,6 +76,32 @@ public sealed class CreateConsultationCommandHandlerTests
             Arg.Is<ConsultationCreateData>(d => d.ClinicId == ClinicId),
             UserId,
             Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(SqlErrorCodes.PatientNotFound)]
+    [InlineData(SqlErrorCodes.DoctorNotFound)]
+    [InlineData(SqlErrorCodes.AppointmentNotFound)]
+    public async Task Handle_ReferenceFromAnotherClinic_ReturnsNotFound(int sqlError)
+    {
+        _repo.CreateAsync(Arg.Any<ConsultationCreateData>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+             .Throws(SqlExceptionHelper.Make(sqlError));
+
+        var result = await CreateHandler().Handle(ValidCommand(), default);
+
+        Assert.Equal(404, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task Handle_AppointmentAlreadyHasConsultation_ReturnsConflict()
+    {
+        _repo.CreateAsync(Arg.Any<ConsultationCreateData>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+             .Throws(SqlExceptionHelper.Make(SqlErrorCodes.ConsultationAppointmentDuplicate));
+
+        var result = await CreateHandler().Handle(ValidCommand(), default);
+
+        Assert.Equal(409, result.StatusCode);
+        Assert.Equal(ErrorMessages.Consultation.AppointmentDuplicate, result.Error);
     }
 
     [Fact]

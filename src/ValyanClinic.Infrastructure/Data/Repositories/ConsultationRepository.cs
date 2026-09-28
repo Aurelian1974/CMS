@@ -10,7 +10,7 @@ namespace ValyanClinic.Infrastructure.Data.Repositories;
 public sealed class ConsultationRepository(DapperContext context) : IConsultationRepository
 {
     public async Task<ConsultationPagedResult> GetPagedAsync(
-        Guid clinicId, string? search, Guid? doctorId, Guid? statusId,
+        Guid clinicId, string? search, Guid? doctorId, Guid? statusId, string? statusCode,
         DateTime? dateFrom, DateTime? dateTo,
         int page, int pageSize, string sortBy, string sortDir,
         CancellationToken ct)
@@ -25,6 +25,7 @@ public sealed class ConsultationRepository(DapperContext context) : IConsultatio
                     Search = search,
                     DoctorId = doctorId,
                     StatusId = statusId,
+                    StatusCode = statusCode,
                     DateFrom = dateFrom,
                     DateTo = dateTo,
                     Page = page,
@@ -124,18 +125,6 @@ public sealed class ConsultationRepository(DapperContext context) : IConsultatio
         };
     }
 
-    public async Task<IEnumerable<ConsultationListDto>> GetByPatientAsync(
-        Guid patientId, Guid clinicId, CancellationToken ct)
-    {
-        using var connection = context.CreateConnection();
-        return await connection.QueryAsync<ConsultationListDto>(
-            new CommandDefinition(
-                ConsultationProcedures.GetByPatient,
-                new { PatientId = patientId, ClinicId = clinicId },
-                commandType: CommandType.StoredProcedure,
-                cancellationToken: ct));
-    }
-
     public async Task<Guid> CreateAsync(ConsultationCreateData data, Guid createdBy, CancellationToken ct)
     {
         using var connection = context.CreateConnection();
@@ -166,7 +155,6 @@ public sealed class ConsultationRepository(DapperContext context) : IConsultatio
                     data.SaEliberatDispozitiveMedicale,
                     data.DataUrmatoareiVizite,
                     data.NoteUrmatoareaVizita,
-                    data.StatusId,
                     CreatedBy = createdBy
                 },
                 commandType: CommandType.StoredProcedure,
@@ -204,8 +192,23 @@ public sealed class ConsultationRepository(DapperContext context) : IConsultatio
                     data.SaEliberatDispozitiveMedicale,
                     data.DataUrmatoareiVizite,
                     data.NoteUrmatoareaVizita,
-                    data.StatusId,
                     UpdatedBy = updatedBy
+                },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+    }
+
+    public async Task FinalizeAsync(Guid id, Guid clinicId, Guid finalizedBy, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                ConsultationProcedures.Finalize,
+                new
+                {
+                    Id = id,
+                    ClinicId = clinicId,
+                    FinalizedBy = finalizedBy
                 },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct));

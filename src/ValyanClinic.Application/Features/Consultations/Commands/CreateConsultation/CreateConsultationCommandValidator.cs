@@ -17,7 +17,7 @@ public sealed class CreateConsultationCommandValidator : AbstractValidator<Creat
             .GreaterThan(DateTime.MinValue).WithMessage("Data consultației nu este validă.");
 
         RuleFor(x => x.Diagnostic)
-            .MaximumLength(4000).WithMessage("Diagnosticul nu poate depăși 4000 de caractere.")
+            .MaximumLength(100_000).WithMessage("Diagnosticul nu poate depăși 100000 de caractere.")
             .When(x => !string.IsNullOrEmpty(x.Diagnostic));
 
         RuleFor(x => x.DiagnosticCodes)

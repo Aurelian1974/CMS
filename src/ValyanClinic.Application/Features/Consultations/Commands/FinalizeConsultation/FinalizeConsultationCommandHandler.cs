@@ -4,19 +4,19 @@ using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Interfaces;
 using ValyanClinic.Application.Common.Models;
 
-namespace ValyanClinic.Application.Features.Consultations.Commands.DeleteConsultation;
+namespace ValyanClinic.Application.Features.Consultations.Commands.FinalizeConsultation;
 
-public sealed class DeleteConsultationCommandHandler(
+public sealed class FinalizeConsultationCommandHandler(
     IConsultationRepository repository,
     ICurrentUser currentUser)
-    : IRequestHandler<DeleteConsultationCommand, Result<bool>>
+    : IRequestHandler<FinalizeConsultationCommand, Result<bool>>
 {
     public async Task<Result<bool>> Handle(
-        DeleteConsultationCommand request, CancellationToken cancellationToken)
+        FinalizeConsultationCommand request, CancellationToken cancellationToken)
     {
         try
         {
-            await repository.DeleteAsync(
+            await repository.FinalizeAsync(
                 request.Id,
                 currentUser.ClinicId,
                 currentUser.Id,
@@ -28,13 +28,13 @@ public sealed class DeleteConsultationCommandHandler(
         {
             return Result<bool>.NotFound(ErrorMessages.Consultation.NotFound);
         }
-        catch (SqlException ex) when (ex.Number == SqlErrorCodes.ConsultationDeleteBlocked)
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.ConsultationLocked)
         {
-            return Result<bool>.Conflict(ErrorMessages.Consultation.DeleteBlocked);
+            return Result<bool>.Conflict(ErrorMessages.Consultation.Locked);
         }
-        catch (SqlException ex) when (ex.Number == SqlErrorCodes.ConsultationHasPayments)
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.ConsultationMissingPrimaryDiagnosis)
         {
-            return Result<bool>.Conflict(ErrorMessages.Consultation.HasPayments);
+            return Result<bool>.Failure(ErrorMessages.Consultation.MissingPrimaryDiagnosis);
         }
         catch (SqlException ex) when (ex.Number >= 50000 && ex.Number < 60000)
         {

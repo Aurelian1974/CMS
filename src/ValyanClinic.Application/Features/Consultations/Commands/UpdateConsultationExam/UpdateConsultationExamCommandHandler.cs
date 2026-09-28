@@ -50,6 +50,10 @@ public sealed class UpdateConsultationExamCommandHandler(
         {
             return Result<bool>.NotFound(ErrorMessages.Consultation.NotFound);
         }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.ConsultationLocked)
+        {
+            return Result<bool>.Conflict(ErrorMessages.Consultation.Locked);
+        }
         catch (SqlException ex) when (ex.Number >= 50000 && ex.Number < 60000)
         {
             return Result<bool>.Failure(ex.Message);

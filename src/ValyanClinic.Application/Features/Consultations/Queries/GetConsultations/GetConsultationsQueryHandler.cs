@@ -17,6 +17,7 @@ public sealed class GetConsultationsQueryHandler(
             request.Search,
             request.DoctorId,
             request.StatusId,
+            request.StatusCode,
             request.DateFrom,
             request.DateTo,
             request.Page,

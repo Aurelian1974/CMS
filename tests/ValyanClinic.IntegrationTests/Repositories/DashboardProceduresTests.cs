@@ -51,14 +51,20 @@ public sealed class DashboardProceduresTests(IntegrationTestFixture fixture) : I
         Fixture.GetRepository<IAppointmentRepository>().CreateAsync(
             new AppointmentWriteData(ClinicId, patientId, doctorId, At(hour), At(hour, 30), null, notes, false, UserId), Ct);
 
-    private Task<Guid> NewConsultationAsync(Guid patientId, Guid doctorId, Guid statusId, Guid? appointmentId = null) =>
-        Fixture.GetRepository<IConsultationRepository>().CreateAsync(
+    private async Task<Guid> NewConsultationAsync(Guid patientId, Guid doctorId, Guid statusId, Guid? appointmentId = null)
+    {
+        var finalize = statusId == ConsultationStatusIds.Completed;
+        var consultations = Fixture.GetRepository<IConsultationRepository>();
+        var id = await consultations.CreateAsync(
             new ConsultationCreateData(
                 ClinicId, patientId, doctorId, appointmentId, At(9),
-                null, null, "Text diagnostic", null, null, null, null,
-                false, false, false, null, false, null, false, false, null, null,
-                statusId),
+                null, null, finalize ? DiagnosisJson : "Text diagnostic", null, null, null, null,
+                false, false, false, null, false, null, false, false, null, null),
             UserId, Ct);
+        if (finalize)
+            await consultations.FinalizeAsync(id, ClinicId, UserId, Ct);
+        return id;
+    }
 
     private async Task<SqlMapper.GridReader> ExecAsync(SqlConnection conn, string sp, object param) =>
         await conn.QueryMultipleAsync(new CommandDefinition(sp, param, commandType: CommandType.StoredProcedure));

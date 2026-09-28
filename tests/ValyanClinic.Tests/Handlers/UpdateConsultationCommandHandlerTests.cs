@@ -50,8 +50,7 @@ public sealed class UpdateConsultationCommandHandlerTests
         SaEliberatIngrijiriDomiciliu: false,
         SaEliberatDispozitiveMedicale: false,
         DataUrmatoareiVizite: null,
-        NoteUrmatoareaVizita: null,
-        StatusId: null);
+        NoteUrmatoareaVizita: null);
 
     [Fact]
     public async Task Handle_ValidCommand_ReturnsSuccess()
@@ -83,6 +82,33 @@ public sealed class UpdateConsultationCommandHandlerTests
 
         Assert.False(result.IsSuccess);
         Assert.Equal(404, result.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(SqlErrorCodes.PatientNotFound)]
+    [InlineData(SqlErrorCodes.DoctorNotFound)]
+    [InlineData(SqlErrorCodes.AppointmentNotFound)]
+    public async Task Handle_ReferenceFromAnotherClinic_ReturnsNotFound(int sqlError)
+    {
+        _repo.UpdateAsync(Arg.Any<ConsultationUpdateData>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+             .Throws(SqlExceptionHelper.Make(sqlError));
+
+        var result = await CreateHandler().Handle(ValidCommand(), default);
+
+        Assert.Equal(404, result.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(SqlErrorCodes.ConsultationLocked)]
+    [InlineData(SqlErrorCodes.ConsultationAppointmentDuplicate)]
+    public async Task Handle_StateConflict_ReturnsConflict(int sqlError)
+    {
+        _repo.UpdateAsync(Arg.Any<ConsultationUpdateData>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+             .Throws(SqlExceptionHelper.Make(sqlError));
+
+        var result = await CreateHandler().Handle(ValidCommand(), default);
+
+        Assert.Equal(409, result.StatusCode);
     }
 
     [Fact]

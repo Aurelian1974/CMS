@@ -36,21 +36,48 @@ CREATE OR ALTER PROCEDURE dbo.Consultation_Create
     @SaEliberatDispozitiveMedicale BIT           = 0,
     @DataUrmatoareiVizite       DATE             = NULL,
     @NoteUrmatoareaVizita       NVARCHAR(MAX)    = NULL,
-    @StatusId                   UNIQUEIDENTIFIER = NULL,
     @CreatedBy                  UNIQUEIDENTIFIER
 AS
 BEGIN
     SET NOCOUNT ON;
+    SET XACT_ABORT ON;
 
-    -- Default status: În lucru
-    IF @StatusId IS NULL
-        SET @StatusId = 'C2000000-0000-0000-0000-000000000001';
+    BEGIN TRY
+    BEGIN TRANSACTION;
 
-    -- FACTURATA și BLOCATA se setează doar prin fluxurile dedicate (facturare / blocare)
-    IF NOT EXISTS (SELECT 1 FROM dbo.ConsultationStatuses WHERE Id = @StatusId AND Code IN ('INLUCRU', 'FINALIZATA'))
+    -- Cheile străine garantează doar existența rândului, nu apartenența la clinică
+    IF NOT EXISTS (SELECT 1 FROM dbo.Patients
+                   WHERE Id = @PatientId AND ClinicId = @ClinicId AND IsDeleted = 0)
     BEGIN
-        ;THROW 50021, N'Statusul consultației nu poate fi setat manual.', 1;
+        ;THROW 50002, N'Pacientul nu a fost găsit.', 1;
     END;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Doctors
+                   WHERE Id = @DoctorId AND ClinicId = @ClinicId AND IsDeleted = 0)
+    BEGIN
+        ;THROW 50300, N'Doctorul nu a fost găsit.', 1;
+    END;
+
+    IF @AppointmentId IS NOT NULL
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM dbo.Appointments
+                       WHERE Id = @AppointmentId AND ClinicId = @ClinicId AND IsDeleted = 0
+                         AND PatientId = @PatientId)
+        BEGIN
+            ;THROW 50011, N'Programarea nu a fost găsită.', 1;
+        END;
+
+        -- UPDLOCK/HOLDLOCK: două taburi pe aceeași programare nu pot trece amândouă de verificare
+        IF EXISTS (SELECT 1 FROM dbo.Consultations WITH (UPDLOCK, HOLDLOCK)
+                   WHERE AppointmentId = @AppointmentId AND IsDeleted = 0)
+        BEGIN
+            ;THROW 50033, N'Există deja o consultație pentru această programare.', 1;
+        END;
+    END;
+
+    -- Statusul inițial e mereu „În lucru"; finalizarea trece prin Consultation_Finalize
+    DECLARE @StatusId UNIQUEIDENTIFIER =
+        (SELECT Id FROM dbo.ConsultationStatuses WHERE Code = 'INLUCRU');
 
     DECLARE @NewId UNIQUEIDENTIFIER = NEWID();
 
@@ -75,16 +102,27 @@ BEGIN
          @DataUrmatoareiVizite, @NoteUrmatoareaVizita,
          @StatusId, @CreatedBy);
 
+    EXEC dbo.ConsultationDiagnosis_SyncFromJson
+        @ConsultationId = @NewId, @ClinicId = @ClinicId,
+        @Diagnostic = @Diagnostic, @UserId = @CreatedBy;
+
     -- Audit
     DECLARE @NewValues NVARCHAR(MAX);
     SELECT @NewValues = (
-        SELECT PatientId, DoctorId, AppointmentId, Date, StatusId
+        SELECT PatientId, DoctorId, AppointmentId, Date, StatusId, DiagnosticCodes
         FROM dbo.Consultations WHERE Id = @NewId
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
     );
 
     INSERT INTO dbo.AuditLogs (ClinicId, EntityType, EntityId, Action, OldValues, NewValues, ChangedBy)
     VALUES (@ClinicId, N'Consultation', @NewId, N'Create', NULL, @NewValues, @CreatedBy);
+
+    COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
 
     SELECT @NewId;
 END;

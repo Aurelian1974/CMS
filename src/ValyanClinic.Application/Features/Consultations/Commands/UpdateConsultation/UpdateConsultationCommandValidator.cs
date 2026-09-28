@@ -19,8 +19,9 @@ public sealed class UpdateConsultationCommandValidator : AbstractValidator<Updat
             .NotEmpty().WithMessage("Data consultației este obligatorie.")
             .GreaterThan(DateTime.MinValue).WithMessage("Data consultației nu este validă.");
 
+        // JSON-ul ICD-10 (cu rich-text) stă în NVARCHAR(MAX); limita e doar anti-abuz
         RuleFor(x => x.Diagnostic)
-            .MaximumLength(4000).WithMessage("Diagnosticul nu poate depăși 4000 de caractere.")
+            .MaximumLength(100_000).WithMessage("Diagnosticul nu poate depăși 100000 de caractere.")
             .When(x => !string.IsNullOrEmpty(x.Diagnostic));
 
         RuleFor(x => x.DiagnosticCodes)

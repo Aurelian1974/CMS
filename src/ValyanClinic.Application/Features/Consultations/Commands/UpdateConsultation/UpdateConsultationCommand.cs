@@ -33,6 +33,5 @@ public sealed record UpdateConsultationCommand(
     bool SaEliberatIngrijiriDomiciliu,
     bool SaEliberatDispozitiveMedicale,
     DateTime? DataUrmatoareiVizite,
-    string? NoteUrmatoareaVizita,
-    Guid? StatusId
+    string? NoteUrmatoareaVizita
 ) : IRequest<Result<bool>>;

@@ -25,6 +25,10 @@ public static class SqlErrorCodes
     // ====== Consultații ======
     public const int ConsultationNotFound = 50020;
     public const int ConsultationLocked   = 50021;
+    public const int ConsultationHasPayments             = 50029;
+    public const int ConsultationDeleteBlocked           = 50032;
+    public const int ConsultationAppointmentDuplicate    = 50033;
+    public const int ConsultationMissingPrimaryDiagnosis = 50034;
 
     // ====== Investigații paraclinice ======
     public const int InvestigationTypeInvalid = 50022;

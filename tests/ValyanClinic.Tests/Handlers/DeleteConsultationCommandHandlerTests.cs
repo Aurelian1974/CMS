@@ -74,6 +74,24 @@ public sealed class DeleteConsultationCommandHandlerTests
         Assert.Equal(404, result.StatusCode);
     }
 
+    // ── Conflict de stare → 409 ──────────────────────────────────────────────────
+
+    [Theory]
+    [InlineData(SqlErrorCodes.ConsultationHasPayments, ErrorMessages.Consultation.HasPayments)]
+    [InlineData(SqlErrorCodes.ConsultationDeleteBlocked, ErrorMessages.Consultation.DeleteBlocked)]
+    public async Task Handle_BlockedByState_ReturnsConflict(int sqlError, string message)
+    {
+        _repo.DeleteAsync(
+                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(),
+                Arg.Any<CancellationToken>())
+             .Throws(SqlExceptionHelper.Make(sqlError));
+
+        var result = await CreateHandler().Handle(ValidCommand(), default);
+
+        Assert.Equal(409, result.StatusCode);
+        Assert.Equal(message, result.Error);
+    }
+
     // ── Generic SQL error ─────────────────────────────────────────────────────
 
     [Fact]

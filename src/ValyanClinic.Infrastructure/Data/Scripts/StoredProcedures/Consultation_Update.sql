@@ -37,40 +37,67 @@ CREATE OR ALTER PROCEDURE dbo.Consultation_Update
     @SaEliberatDispozitiveMedicale BIT           = 0,
     @DataUrmatoareiVizite       DATE             = NULL,
     @NoteUrmatoareaVizita       NVARCHAR(MAX)    = NULL,
-    @StatusId                   UNIQUEIDENTIFIER = NULL,
     @UpdatedBy                  UNIQUEIDENTIFIER
 AS
 BEGIN
     SET NOCOUNT ON;
+    SET XACT_ABORT ON;
 
-    IF NOT EXISTS (SELECT 1 FROM dbo.Consultations WHERE Id = @Id AND ClinicId = @ClinicId AND IsDeleted = 0)
+    BEGIN TRY
+    BEGIN TRANSACTION;
+
+    DECLARE @StatusCode NVARCHAR(50);
+
+    -- UPDLOCK: o finalizare concurentă nu poate schimba statusul între verificare și scriere
+    SELECT @StatusCode = s.Code
+    FROM dbo.Consultations c WITH (UPDLOCK, HOLDLOCK)
+    INNER JOIN dbo.ConsultationStatuses s ON s.Id = c.StatusId
+    WHERE c.Id = @Id AND c.ClinicId = @ClinicId AND c.IsDeleted = 0;
+
+    IF @StatusCode IS NULL
     BEGIN
         ;THROW 50020, N'Consultația nu a fost găsită.', 1;
     END;
 
-    -- Doar consultațiile în lucru se modifică (inclusiv tranziția la FINALIZATA);
-    -- FINALIZATA / FACTURATA / BLOCATA sunt read-only pe server, nu doar în UI
-    IF EXISTS (
-        SELECT 1 FROM dbo.Consultations c
-        INNER JOIN dbo.ConsultationStatuses s ON s.Id = c.StatusId
-        WHERE c.Id = @Id AND c.ClinicId = @ClinicId AND s.Code <> 'INLUCRU'
-    )
+    -- FINALIZATA / FACTURATA / BLOCATA sunt read-only pe server, nu doar în UI;
+    -- statusul se schimbă exclusiv prin fluxurile dedicate (finalizare, facturare, blocare)
+    IF @StatusCode <> 'INLUCRU'
     BEGIN
-        ;THROW 50021, N'Consultația este finalizată și nu mai poate fi modificată.', 1;
+        ;THROW 50021, N'Consultația nu mai este în lucru și nu poate fi modificată.', 1;
     END;
 
-    -- FACTURATA și BLOCATA se setează doar prin fluxurile dedicate (facturare / blocare)
-    IF @StatusId IS NOT NULL AND NOT EXISTS (
-        SELECT 1 FROM dbo.ConsultationStatuses WHERE Id = @StatusId AND Code IN ('INLUCRU', 'FINALIZATA')
-    )
+    IF NOT EXISTS (SELECT 1 FROM dbo.Patients
+                   WHERE Id = @PatientId AND ClinicId = @ClinicId AND IsDeleted = 0)
     BEGIN
-        ;THROW 50021, N'Statusul consultației nu poate fi setat manual.', 1;
+        ;THROW 50002, N'Pacientul nu a fost găsit.', 1;
+    END;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.Doctors
+                   WHERE Id = @DoctorId AND ClinicId = @ClinicId AND IsDeleted = 0)
+    BEGIN
+        ;THROW 50300, N'Doctorul nu a fost găsit.', 1;
+    END;
+
+    IF @AppointmentId IS NOT NULL
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM dbo.Appointments
+                       WHERE Id = @AppointmentId AND ClinicId = @ClinicId AND IsDeleted = 0
+                         AND PatientId = @PatientId)
+        BEGIN
+            ;THROW 50011, N'Programarea nu a fost găsită.', 1;
+        END;
+
+        IF EXISTS (SELECT 1 FROM dbo.Consultations WITH (UPDLOCK, HOLDLOCK)
+                   WHERE AppointmentId = @AppointmentId AND IsDeleted = 0 AND Id <> @Id)
+        BEGIN
+            ;THROW 50033, N'Există deja o consultație pentru această programare.', 1;
+        END;
     END;
 
     DECLARE @OldValues NVARCHAR(MAX);
     SELECT @OldValues = (
-        SELECT PatientId, DoctorId, AppointmentId, Date, StatusId
-        FROM dbo.Consultations WHERE Id = @Id AND ClinicId = @ClinicId AND IsDeleted = 0
+        SELECT PatientId, DoctorId, AppointmentId, Date, StatusId, DiagnosticCodes
+        FROM dbo.Consultations WHERE Id = @Id AND ClinicId = @ClinicId
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
     );
 
@@ -96,19 +123,29 @@ BEGIN
         SaEliberatDispozitiveMedicale  = @SaEliberatDispozitiveMedicale,
         DataUrmatoareiVizite        = @DataUrmatoareiVizite,
         NoteUrmatoareaVizita        = @NoteUrmatoareaVizita,
-        StatusId                    = ISNULL(@StatusId, StatusId),
         UpdatedAt                   = SYSDATETIME(),
         UpdatedBy                   = @UpdatedBy
     WHERE Id = @Id AND ClinicId = @ClinicId;
 
+    EXEC dbo.ConsultationDiagnosis_SyncFromJson
+        @ConsultationId = @Id, @ClinicId = @ClinicId,
+        @Diagnostic = @Diagnostic, @UserId = @UpdatedBy;
+
     DECLARE @NewValues NVARCHAR(MAX);
     SELECT @NewValues = (
-        SELECT PatientId, DoctorId, AppointmentId, Date, StatusId
+        SELECT PatientId, DoctorId, AppointmentId, Date, StatusId, DiagnosticCodes
         FROM dbo.Consultations WHERE Id = @Id AND ClinicId = @ClinicId
         FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
     );
 
     INSERT INTO dbo.AuditLogs (ClinicId, EntityType, EntityId, Action, OldValues, NewValues, ChangedBy)
     VALUES (@ClinicId, N'Consultation', @Id, N'Update', @OldValues, @NewValues, @UpdatedBy);
+
+    COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH;
 END;
 GO

@@ -25,4 +25,13 @@ public abstract class IntegrationTestBase(IntegrationTestFixture fixture)
 
     /// <summary>Prefix recomandat pentru date de test ușor de identificat.</summary>
     protected const string TestPrefix = "IT_";
+
+    /// <summary>JSON-ul ICD-10 salvat de client: un diagnostic principal + un secundar cu două coduri.</summary>
+    protected const string DiagnosisJson = """
+        {"primaryCode":{"code":"J44.0","shortDescriptionRo":"BPOC cu infecție acută"},
+         "primaryDetails":"<p>BPOC exacerbat</p>",
+         "secondaryDiagnoses":[{"id":"s1","description":"<p>Secundar</p>",
+           "icd10Codes":[{"code":"I10","shortDescriptionRo":"HTA esențială"},
+                         {"code":"J41.0","shortDescriptionRo":"Bronșită cronică simplă"}]}]}
+        """;
 }

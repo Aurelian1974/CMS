@@ -144,7 +144,7 @@ BEGIN
     SELECT
         i.Id,
         i.InvestigationType,
-        td.DisplayName   AS InvestigationTypeDisplayName,
+        ISNULL(td.DisplayName, i.InvestigationType) AS InvestigationTypeDisplayName,
         td.ParentTab,
         td.Category,
         i.InvestigationDate,
@@ -154,7 +154,8 @@ BEGIN
         i.ExternalSource,
         i.Status
     FROM dbo.ConsultationInvestigations i
-    INNER JOIN dbo.InvestigationTypeDefinitions td ON td.TypeCode = i.InvestigationType
+    -- LEFT JOIN: un tip redenumit/dezactivat nu trebuie să ascundă investigația din fișă
+    LEFT  JOIN dbo.InvestigationTypeDefinitions td ON td.TypeCode = i.InvestigationType
     WHERE i.ConsultationId = @Id AND i.IsDeleted = 0
     ORDER BY i.InvestigationDate DESC, i.CreatedAt DESC;
 END;

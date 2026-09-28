@@ -10,6 +10,7 @@ public interface IConsultationRepository
         string? search,
         Guid? doctorId,
         Guid? statusId,
+        string? statusCode,
         DateTime? dateFrom,
         DateTime? dateTo,
         int page,
@@ -22,12 +23,12 @@ public interface IConsultationRepository
 
     Task<ConsultationDetailDto?> GetByAppointmentIdAsync(Guid appointmentId, Guid clinicId, CancellationToken ct);
 
-    Task<IEnumerable<ConsultationListDto>> GetByPatientAsync(
-        Guid patientId, Guid clinicId, CancellationToken ct);
-
     Task<Guid> CreateAsync(ConsultationCreateData data, Guid createdBy, CancellationToken ct);
 
     Task UpdateAsync(ConsultationUpdateData data, Guid updatedBy, CancellationToken ct);
+
+    /// <summary>Tranziția INLUCRU → FINALIZATA; singura cale care schimbă statusul în finalizat.</summary>
+    Task FinalizeAsync(Guid id, Guid clinicId, Guid finalizedBy, CancellationToken ct);
 
     Task DeleteAsync(Guid id, Guid clinicId, Guid deletedBy, CancellationToken ct);
 
@@ -63,8 +64,7 @@ public sealed record ConsultationCreateData(
     bool SaEliberatIngrijiriDomiciliu,
     bool SaEliberatDispozitiveMedicale,
     DateTime? DataUrmatoareiVizite,
-    string? NoteUrmatoareaVizita,
-    Guid? StatusId);
+    string? NoteUrmatoareaVizita);
 
 /// <summary>Date pentru actualizarea header-ului unei consultații (tab-urile încă pe coloane vechi).</summary>
 public sealed record ConsultationUpdateData(
@@ -90,5 +90,4 @@ public sealed record ConsultationUpdateData(
     bool SaEliberatIngrijiriDomiciliu,
     bool SaEliberatDispozitiveMedicale,
     DateTime? DataUrmatoareiVizite,
-    string? NoteUrmatoareaVizita,
-    Guid? StatusId);
+    string? NoteUrmatoareaVizita);

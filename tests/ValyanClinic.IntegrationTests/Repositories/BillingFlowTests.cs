@@ -66,13 +66,14 @@ public sealed class BillingFlowTests(IntegrationTestFixture fixture) : Integrati
 
         var doctor = (await Fixture.GetRepository<IDoctorRepository>().GetByClinicAsync(ClinicId, Ct)).First();
 
-        var consultationId = await Fixture.GetRepository<IConsultationRepository>().CreateAsync(
+        var consultations = Fixture.GetRepository<IConsultationRepository>();
+        var consultationId = await consultations.CreateAsync(
             new ConsultationCreateData(
                 ClinicId, patientId, doctor.Id, null, DateTime.Today,
-                null, null, null, null, null, null, null,
-                false, false, false, null, false, null, false, false, null, null,
-                ConsultationStatusIds.Completed),
+                null, null, DiagnosisJson, null, null, null, null,
+                false, false, false, null, false, null, false, false, null, null),
             UserId, Ct);
+        await consultations.FinalizeAsync(consultationId, ClinicId, UserId, Ct);
 
         await Lines.AddAsync(ClinicId, consultationId, consultationService, 1m, UserId, Ct);
         await Lines.AddAsync(ClinicId, consultationId, spirometryService, 1m, UserId, Ct);

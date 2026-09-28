@@ -4,6 +4,7 @@ using ValyanClinic.Application.Common.Enums;
 using ValyanClinic.Application.Common.Models;
 using ValyanClinic.Application.Features.Consultations.Commands.CreateConsultation;
 using ValyanClinic.Application.Features.Consultations.Commands.DeleteConsultation;
+using ValyanClinic.Application.Features.Consultations.Commands.FinalizeConsultation;
 using ValyanClinic.Application.Features.Consultations.Commands.UpdateConsultation;
 using ValyanClinic.Application.Features.Consultations.Commands.UpdateConsultationAnamnesis;
 using ValyanClinic.Application.Features.Consultations.Commands.UpdateConsultationExam;
@@ -30,11 +31,12 @@ public class ConsultationsController : BaseApiController
         [FromQuery] int pageSize = 20,
         [FromQuery] string sortBy = "Date",
         [FromQuery] string sortDir = "desc",
+        [FromQuery] string? statusCode = null,
         CancellationToken ct = default)
     {
         var query = new GetConsultationsQuery(
             search, doctorId, statusId, dateFrom, dateTo,
-            page, pageSize, sortBy, sortDir);
+            page, pageSize, sortBy, sortDir, statusCode);
         var result = await Mediator.Send(query, ct);
         return HandleResult(result);
     }
@@ -95,9 +97,17 @@ public class ConsultationsController : BaseApiController
             request.SaEliberatIngrijiriDomiciliu,
             request.SaEliberatDispozitiveMedicale,
             request.DataUrmatoareiVizite,
-            request.NoteUrmatoareaVizita,
-            request.StatusId);
+            request.NoteUrmatoareaVizita);
         var result = await Mediator.Send(command, ct);
+        return HandleResult(result);
+    }
+
+    [HttpPost("{id:guid}/finalize")]
+    [HasAccess(ModuleCodes.Consultations, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> Finalize(Guid id, CancellationToken ct)
+    {
+        var result = await Mediator.Send(new FinalizeConsultationCommand(id), ct);
         return HandleResult(result);
     }
 
@@ -183,8 +193,7 @@ public sealed record UpdateConsultationRequest(
     bool SaEliberatIngrijiriDomiciliu,
     bool SaEliberatDispozitiveMedicale,
     DateTime? DataUrmatoareiVizite,
-    string? NoteUrmatoareaVizita,
-    Guid? StatusId);
+    string? NoteUrmatoareaVizita);
 
 public sealed record UpdateConsultationAnamnesisRequest(
     string? Motiv,

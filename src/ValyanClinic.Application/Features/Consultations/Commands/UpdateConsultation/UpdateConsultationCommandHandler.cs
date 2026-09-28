@@ -39,8 +39,7 @@ public sealed class UpdateConsultationCommandHandler(
                 SaEliberatIngrijiriDomiciliu: request.SaEliberatIngrijiriDomiciliu,
                 SaEliberatDispozitiveMedicale: request.SaEliberatDispozitiveMedicale,
                 DataUrmatoareiVizite: request.DataUrmatoareiVizite,
-                NoteUrmatoareaVizita: request.NoteUrmatoareaVizita,
-                StatusId: request.StatusId);
+                NoteUrmatoareaVizita: request.NoteUrmatoareaVizita);
 
             await repository.UpdateAsync(data, currentUser.Id, cancellationToken);
 
@@ -49,6 +48,26 @@ public sealed class UpdateConsultationCommandHandler(
         catch (SqlException ex) when (ex.Number == SqlErrorCodes.ConsultationNotFound)
         {
             return Result<bool>.NotFound(ErrorMessages.Consultation.NotFound);
+        }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.ConsultationLocked)
+        {
+            return Result<bool>.Conflict(ErrorMessages.Consultation.Locked);
+        }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.PatientNotFound)
+        {
+            return Result<bool>.NotFound(ErrorMessages.Patient.NotFound);
+        }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.DoctorNotFound)
+        {
+            return Result<bool>.NotFound(ErrorMessages.Doctor.NotFound);
+        }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.AppointmentNotFound)
+        {
+            return Result<bool>.NotFound(ErrorMessages.Appointment.NotFound);
+        }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.ConsultationAppointmentDuplicate)
+        {
+            return Result<bool>.Conflict(ErrorMessages.Consultation.AppointmentDuplicate);
         }
         catch (SqlException ex) when (ex.Number >= 50000 && ex.Number < 60000)
         {

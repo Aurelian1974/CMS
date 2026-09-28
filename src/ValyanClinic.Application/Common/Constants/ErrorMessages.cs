@@ -27,8 +27,12 @@ public static class ErrorMessages
 
     public static class Consultation
     {
-        public const string NotFound = "Consultația nu a fost găsită.";
-        public const string Locked   = "Consultația este blocată și nu poate fi modificată.";
+        public const string NotFound             = "Consultația nu a fost găsită.";
+        public const string Locked               = "Consultația nu mai este în lucru și nu poate fi modificată.";
+        public const string DeleteBlocked        = "Consultația este blocată sau facturată și nu poate fi ștearsă.";
+        public const string HasPayments          = "Consultația are încasări înregistrate și nu poate fi ștearsă.";
+        public const string AppointmentDuplicate = "Există deja o consultație pentru această programare.";
+        public const string MissingPrimaryDiagnosis = "Diagnosticul principal este obligatoriu la finalizare.";
     }
 
     public static class Investigation

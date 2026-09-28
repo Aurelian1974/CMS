@@ -14,7 +14,8 @@ public sealed record GetConsultationsQuery(
     int Page = 1,
     int PageSize = 20,
     string SortBy = "Date",
-    string SortDir = "desc"
+    string SortDir = "desc",
+    string? StatusCode = null
 ) : IRequest<Result<ConsultationsPagedResponse>>;
 
 public sealed class ConsultationsPagedResponse

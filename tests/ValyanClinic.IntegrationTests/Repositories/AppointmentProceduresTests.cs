@@ -265,8 +265,7 @@ public sealed class AppointmentProceduresTests(IntegrationTestFixture fixture) :
             new ConsultationCreateData(
                 ClinicId, patientId, doctorId, id, TestDay,
                 null, null, null, null, null, null, null,
-                false, false, false, null, false, null, false, false, null, null,
-                ConsultationStatusIds.InProgress),
+                false, false, false, null, false, null, false, false, null, null),
             UserId, Ct);
 
         var number = await SqlErrorOf(() => Appointments.DeleteAsync(id, ClinicId, UserId, Ct));
