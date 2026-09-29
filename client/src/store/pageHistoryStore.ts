@@ -42,6 +42,8 @@ export const getLabelForPath = (path: string): string => {
 
   // Rute dinamice (ex: /patients/123/edit)
   if (path.startsWith('/patients/') && path.endsWith('/edit')) return 'Editare pacient'
+  // Eticheta finală (cu numele pacientului) o setează pagina după încărcarea detaliului
+  if (path.startsWith('/consultations/')) return 'Consultație'
 
   // Fallback: ultima componentă din path
   const last = path.split('/').filter(Boolean).pop() ?? path
@@ -52,6 +54,8 @@ interface PageHistoryState {
   history: PageEntry[]
   /** Înregistrează o vizită — adaugă dacă nu există, actualizează timestamp dacă există */
   push: (path: string) => void
+  /** Setează eticheta unei pagini cu date cunoscute doar după încărcare (upsert) */
+  setLabel: (path: string, label: string) => void
   /** Elimină o pagină din istoric */
   remove: (path: string) => void
   /** Curăță tot istoricul */
@@ -85,6 +89,17 @@ export const usePageHistoryStore = create<PageHistoryState>()(
             return { history: next.slice(0, MAX_HISTORY) }
           })
         }
+      },
+
+      setLabel: (path: string, label: string) => {
+        const existing = get().history.find((e) => e.path === path)
+        if (existing?.label === label) return
+        set((s) => ({
+          history: existing
+            ? s.history.map((e) => (e.path === path ? { ...e, label } : e))
+            // Efectul paginii poate rula înaintea push-ului din MainLayout (copil înaintea părintelui)
+            : [{ path, label, visitedAt: Date.now() }, ...s.history].slice(0, MAX_HISTORY),
+        }))
       },
 
       remove: (path: string) =>

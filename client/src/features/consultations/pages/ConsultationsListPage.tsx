@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Lock, User, Microscope, FlaskConical, Receipt } from 'lucide-react'
 import type { ConsultationListDto, ConsultationDetailDto } from '../types/consultation.types'
@@ -9,6 +9,7 @@ import type { AppointmentDto } from '@/features/appointments/types/appointment.t
 import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
 import { usePatientLookup, usePatientDetail } from '@/features/patients/hooks/usePatients'
 import { useAuthStore } from '@/store/authStore'
+import { usePageHistoryStore } from '@/store/pageHistoryStore'
 import { MODULE, useHasAccess } from '@/hooks/useHasAccess'
 import { AppBadge } from '@/components/ui/AppBadge'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -69,6 +70,13 @@ export const ConsultationsListPage = () => {
 
   const { data: detailResp, isLoading: isDetailLoading } = useConsultationDetail(selectedId ?? '', !!selectedId && !isCreating)
   const detail: ConsultationDetailDto | null = detailResp?.data ?? null
+
+  const setPageLabel = usePageHistoryStore((s) => s.setLabel)
+  useEffect(() => {
+    if (routeId && detail?.id.toLowerCase() === routeId.toLowerCase()) {
+      setPageLabel(`/consultations/${routeId}`, `Consultație - ${detail.patientName}`)
+    }
+  }, [routeId, detail?.id, detail?.patientName, setPageLabel])
 
   const { data: selectedPatientResp } = usePatientDetail(
     selectedAppointment?.patientId ?? '',
