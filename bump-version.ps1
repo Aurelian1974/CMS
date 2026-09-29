@@ -101,7 +101,14 @@ function Get-CommitsSinceLastTag {
             Write-Host "  → Commit-uri de azi ($today)" -ForegroundColor DarkGray
         }
 
-        $log = git log $range --pretty=format:"%H|%s|%ci" --no-merges 2>$null
+        # Fără UTF-8 explicit, diacriticele din mesaje ajung corupte în SQL
+        $prevEncoding = [Console]::OutputEncoding
+        [Console]::OutputEncoding = [Text.Encoding]::UTF8
+        try {
+            $log = git -c i18n.logOutputEncoding=UTF-8 log $range --pretty=format:"%H|%s|%ci" --no-merges 2>$null
+        } finally {
+            [Console]::OutputEncoding = $prevEncoding
+        }
         if (-not $log) { return @() }
 
         return $log -split "`n" | Where-Object { $_ -ne "" } | ForEach-Object {
@@ -120,21 +127,46 @@ function Get-CommitsSinceLastTag {
 # ══════════════════════════════════════════════════════════════
 # 5. Salvare în SQL (doar cu -Eod)
 # ══════════════════════════════════════════════════════════════
+# Aceeași prioritate ca la runtime în Development: user-secrets > appsettings.Development.json > appsettings.json
+function Get-ConnectionString {
+    $apiDir = Join-Path $Root "src\ValyanClinic.API"
+
+    $csproj = [xml](Get-Content (Join-Path $apiDir "ValyanClinic.API.csproj") -Raw)
+    $secretsId = @($csproj.Project.PropertyGroup.UserSecretsId | Where-Object { $_ })[0]
+    if ($secretsId) {
+        $secretsPath = Join-Path $env:APPDATA "Microsoft\UserSecrets\$secretsId\secrets.json"
+        if (Test-Path $secretsPath) {
+            $secrets = Get-Content $secretsPath -Raw | ConvertFrom-Json
+            # secrets.json poate fi plat ("ConnectionStrings:DefaultConnection") sau ierarhic
+            $value = $secrets.'ConnectionStrings:DefaultConnection'
+            if (-not $value) { $value = $secrets.ConnectionStrings.DefaultConnection }
+            if ($value) { return @{ Value = $value; Source = "user-secrets" } }
+        }
+    }
+
+    foreach ($file in "appsettings.Development.json", "appsettings.json") {
+        $path = Join-Path $apiDir $file
+        if (-not (Test-Path $path)) { continue }
+        $value = (Get-Content $path -Raw | ConvertFrom-Json).ConnectionStrings.DefaultConnection
+        if ($value) { return @{ Value = $value; Source = $file } }
+    }
+
+    return $null
+}
+
 function Save-ToSql {
     param(
         [string]$Version,
         [object[]]$Commits
     )
 
-    # Citire connection string din appsettings.json
-    $appsettings = Join-Path $Root "src\ValyanClinic.API\appsettings.json"
-    $cfg = Get-Content $appsettings -Raw | ConvertFrom-Json
-    $connectionString = $cfg.ConnectionStrings.DefaultConnection
-
-    if (-not $connectionString) {
-        Write-Warning "Nu am găsit DefaultConnection în appsettings.json — SQL logging omis."
+    $cs = Get-ConnectionString
+    if (-not $cs) {
+        Write-Warning "Nu am găsit DefaultConnection (user-secrets / appsettings) — SQL logging omis."
         return
     }
+    $connectionString = $cs.Value
+    Write-Host "  → Connection string din $($cs.Source)" -ForegroundColor DarkGray
 
     try {
         Add-Type -AssemblyName "System.Data" -ErrorAction SilentlyContinue
