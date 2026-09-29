@@ -19,6 +19,7 @@ const ROUTE_LABELS: Record<string, string> = {
   '/patients':           'Pacienți',
   '/patients/new':       'Pacient nou',
   '/appointments':       'Programări',
+  '/appointments/scheduler': 'Scheduler',
   '/consultations':      'Consultații',
   '/prescriptions':      'Prescripții',
   '/billing':            'Încasări',
@@ -45,6 +46,7 @@ export const getLabelForPath = (path: string): string => {
   if (path.startsWith('/patients/') && path.endsWith('/edit')) return 'Editare pacient'
   // Eticheta finală (cu numele pacientului) o setează pagina după încărcarea detaliului
   if (path.startsWith('/consultations/')) return 'Consultație'
+  if (path.startsWith('/appointments/')) return 'Programare'
 
   // Fallback: ultima componentă din path
   const last = path.split('/').filter(Boolean).pop() ?? path

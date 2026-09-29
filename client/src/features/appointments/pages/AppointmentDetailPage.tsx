@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAppointmentDetail } from '../hooks/useAppointments'
+import { usePageHistoryStore } from '@/store/pageHistoryStore'
 import { formatDate, formatDateTime } from '@/utils/format'
 import type { AppointmentDetailDto } from '../types/appointment.types'
 import { AppBadge, type BadgeVariant } from '@/components/ui/AppBadge'
@@ -54,6 +56,12 @@ export const AppointmentDetailPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { data: resp, isLoading, isError } = useAppointmentDetail(id ?? '')
+
+  const setPageLabel = usePageHistoryStore((s) => s.setLabel)
+  const patientName = resp?.data?.patientName
+  useEffect(() => {
+    if (id && patientName) setPageLabel(`/appointments/${id}`, `Programare - ${patientName}`)
+  }, [id, patientName, setPageLabel])
 
   if (isLoading) {
     return (
