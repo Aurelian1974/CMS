@@ -88,6 +88,9 @@ public static class SqlErrorCodes
     public const int FiscalReceiptNumberRequired    = 50643;
     public const int FiscalReceiptUnresolved        = 50644;
     public const int FiscalDisabled                 = 50645;
+    // Import investigații în tarife
+    public const int InvestigationTypeNotBillable      = 50650;
+    public const int InvestigationServiceAlreadyExists = 50651;
 
     // ====== Rețete ======
     public const int PrescriptionExpired           = 50040;

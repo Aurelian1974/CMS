@@ -27,4 +27,9 @@ public interface ITariffRepository
     Task<Guid> CreateVatRateAsync(Guid clinicId, string code, VatRateData data, Guid createdBy, CancellationToken ct);
 
     Task UpdateVatRateAsync(Guid id, Guid clinicId, VatRateData data, bool isActive, Guid updatedBy, CancellationToken ct);
+
+    Task<IReadOnlyList<ImportableInvestigationTypeDto>> GetImportableInvestigationTypesAsync(Guid clinicId, CancellationToken ct);
+
+    /// <summary>Creează serviciile într-o singură tranzacție; întoarce numărul de servicii create.</summary>
+    Task<int> ImportInvestigationServicesAsync(InvestigationServicesImportData data, Guid createdBy, CancellationToken ct);
 }

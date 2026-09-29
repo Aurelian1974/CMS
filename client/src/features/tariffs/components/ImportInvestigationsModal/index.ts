@@ -1,0 +1,1 @@
+export { ImportInvestigationsModal } from './ImportInvestigationsModal'

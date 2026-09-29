@@ -18266,6 +18266,199 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/Tariffs/investigation-types/importable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ImportableInvestigationTypeDtoIReadOnlyListApiResponse"];
+                        "application/json": components["schemas"]["ImportableInvestigationTypeDtoIReadOnlyListApiResponse"];
+                        "text/json": components["schemas"]["ImportableInvestigationTypeDtoIReadOnlyListApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/Tariffs/import-investigations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    /** @description UUID opțional pentru idempotency. Răspunsul este cașat 5 minute — request-urile duplicate cu același key returnează același rezultat fără re-procesare. Recomandat la crearea de resurse pentru a preveni duplicatele în caz de retry. */
+                    "X-Idempotency-Key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ImportInvestigationServicesCommand"];
+                    "text/json": components["schemas"]["ImportInvestigationServicesCommand"];
+                    "application/*+json": components["schemas"]["ImportInvestigationServicesCommand"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["Int32ApiResponse"];
+                        "application/json": components["schemas"]["Int32ApiResponse"];
+                        "text/json": components["schemas"]["Int32ApiResponse"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Unauthorized */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProblemDetails"];
+                        "application/json": components["schemas"]["ProblemDetails"];
+                        "text/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Forbidden */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StringApiResponse"];
+                        "application/json": components["schemas"]["StringApiResponse"];
+                        "text/json": components["schemas"]["StringApiResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/Tariffs/vat-rates": {
         parameters: {
             query?: never;
@@ -22041,6 +22234,29 @@ export interface components {
                 [key: string]: string[];
             } | null;
         };
+        ImportInvestigationServicesCommand: {
+            items?: components["schemas"]["InvestigationServiceImportItem"][] | null;
+            /** Format: uuid */
+            vatRateId?: string | null;
+            /** Format: date */
+            validFrom?: string | null;
+        };
+        ImportableInvestigationTypeDto: {
+            typeCode?: string | null;
+            displayName?: string | null;
+            category?: string | null;
+            parentTab?: string | null;
+            /** Format: int32 */
+            sortOrder?: number;
+        };
+        ImportableInvestigationTypeDtoIReadOnlyListApiResponse: {
+            success?: boolean;
+            data?: components["schemas"]["ImportableInvestigationTypeDto"][] | null;
+            message?: string | null;
+            errors?: {
+                [key: string]: string[];
+            } | null;
+        };
         Int32ApiResponse: {
             success?: boolean;
             /** Format: int32 */
@@ -22103,6 +22319,12 @@ export interface components {
             errors?: {
                 [key: string]: string[];
             } | null;
+        };
+        InvestigationServiceImportItem: {
+            investigationTypeCode?: string | null;
+            name?: string | null;
+            /** Format: double */
+            price?: number | null;
         };
         InvestigationTrendingPointDto: {
             /** Format: date-time */

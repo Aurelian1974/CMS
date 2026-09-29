@@ -2,6 +2,8 @@ using FluentValidation.TestHelper;
 using ValyanClinic.Application.Features.ConsultationServices.Commands.AddConsultationService;
 using ValyanClinic.Application.Features.Tariffs.Commands.CreateMedicalService;
 using ValyanClinic.Application.Features.Tariffs.Commands.CreateVatRate;
+using ValyanClinic.Application.Features.Tariffs.Commands.ImportInvestigationServices;
+using ValyanClinic.Application.Features.Tariffs.DTOs;
 using Xunit;
 
 namespace ValyanClinic.Tests.Validators;
@@ -63,4 +65,50 @@ public sealed class TariffValidatorTests
     public void Line_NonPositiveQuantity_HasError(decimal quantity)
         => _lineValidator.TestValidate(new AddConsultationServiceCommand(Guid.NewGuid(), Guid.NewGuid(), quantity))
             .ShouldHaveValidationErrorFor(x => x.Quantity);
+
+    private readonly ImportInvestigationServicesCommandValidator _importValidator = new();
+
+    private static ImportInvestigationServicesCommand ValidImport(params InvestigationServiceImportItem[] items) => new(
+        Items: items.Length > 0 ? items : [new InvestigationServiceImportItem("ECG", "Electrocardiogramă", 80m)],
+        VatRateId: Guid.NewGuid(),
+        ValidFrom: null);
+
+    [Fact]
+    public void Import_Valid_PassesValidation()
+        => _importValidator.TestValidate(ValidImport()).ShouldNotHaveAnyValidationErrors();
+
+    [Fact]
+    public void Import_WithoutPricesAndVatRate_PassesValidation()
+        => _importValidator.TestValidate(ValidImport(new InvestigationServiceImportItem("ECG", "EKG", null)) with { VatRateId = null })
+            .ShouldNotHaveAnyValidationErrors();
+
+    [Fact]
+    public void Import_EmptyList_HasError()
+        => _importValidator.TestValidate(ValidImport() with { Items = [] })
+            .ShouldHaveValidationErrorFor(x => x.Items)
+            .WithErrorMessage("Selectați cel puțin o investigație.");
+
+    [Fact]
+    public void Import_DuplicateType_HasError()
+        => _importValidator.TestValidate(ValidImport(
+                new InvestigationServiceImportItem("ECG", "EKG", null),
+                new InvestigationServiceImportItem("ECG", "EKG repetat", null)))
+            .ShouldHaveValidationErrorFor(x => x.Items)
+            .WithErrorMessage("O investigație apare de mai multe ori în listă.");
+
+    [Fact]
+    public void Import_NegativePrice_HasError()
+        => _importValidator.TestValidate(ValidImport(new InvestigationServiceImportItem("ECG", "EKG", -5m)))
+            .ShouldHaveValidationErrorFor("Items[0].Price")
+            .WithErrorMessage("Prețul nu poate fi negativ.");
+
+    [Fact]
+    public void Import_MissingName_HasError()
+        => _importValidator.TestValidate(ValidImport(new InvestigationServiceImportItem("ECG", " ", null)))
+            .ShouldHaveValidationErrorFor("Items[0].Name");
+
+    [Fact]
+    public void Import_PriceWithoutVatRate_HasError()
+        => _importValidator.TestValidate(ValidImport() with { VatRateId = null })
+            .ShouldHaveValidationErrorFor(x => x.VatRateId);
 }

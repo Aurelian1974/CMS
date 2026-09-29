@@ -1,4 +1,5 @@
 using System.Data;
+using System.Text.Json;
 using Dapper;
 using ValyanClinic.Application.Common.Interfaces;
 using ValyanClinic.Application.Common.Models;
@@ -204,6 +205,46 @@ public sealed class TariffRepository(DapperContext context) : ITariffRepository
                     data.ExemptionReasonText,
                     IsActive = isActive,
                     UpdatedBy = updatedBy
+                },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+    }
+
+    public async Task<IReadOnlyList<ImportableInvestigationTypeDto>> GetImportableInvestigationTypesAsync(
+        Guid clinicId, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        var rows = await connection.QueryAsync<ImportableInvestigationTypeDto>(
+            new CommandDefinition(
+                TariffProcedures.GetImportableInvestigationTypes,
+                new { ClinicId = clinicId },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+        return rows.ToList();
+    }
+
+    public async Task<int> ImportInvestigationServicesAsync(
+        InvestigationServicesImportData data, Guid createdBy, CancellationToken ct)
+    {
+        // Numele proprietăților JSON sunt citite explicit de SP (OPENJSON / JSON_VALUE)
+        var items = JsonSerializer.Serialize(data.Items.Select(i => new
+        {
+            i.InvestigationTypeCode,
+            i.Name,
+            i.Price
+        }));
+
+        using var connection = context.CreateConnection();
+        return await connection.ExecuteScalarAsync<int>(
+            new CommandDefinition(
+                TariffProcedures.ImportInvestigations,
+                new
+                {
+                    data.ClinicId,
+                    Items = items,
+                    data.VatRateId,
+                    ValidFrom = data.ValidFrom?.ToDateTime(TimeOnly.MinValue),
+                    CreatedBy = createdBy
                 },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct));

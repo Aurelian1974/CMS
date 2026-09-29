@@ -25,6 +25,7 @@ import type { ActiveFilter, MedicalServiceDetailDto, MedicalServiceListDto } fro
 import { MedicalServiceFormModal } from '../components/MedicalServiceFormModal'
 import { PriceHistoryModal } from '../components/PriceHistoryModal'
 import { VatRatesModal } from '../components/VatRatesModal'
+import { ImportInvestigationsModal } from '../components/ImportInvestigationsModal'
 import styles from './TariffsListPage.module.scss'
 
 const IconTag   = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
@@ -67,6 +68,7 @@ export const TariffsListPage = () => {
   const [editing, setEditing] = useState<MedicalServiceDetailDto | null>(null)
   const [historyId, setHistoryId] = useState<string | null>(null)
   const [vatOpen, setVatOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
 
   const { successMsg, errorMsg, showSuccess, showError, setSuccessMsg, setErrorMsg } = useFeedback()
 
@@ -270,6 +272,11 @@ export const TariffsListPage = () => {
               </button>
             )}
             {canModify && (
+              <button className={styles.btnSecondary} onClick={() => setImportOpen(true)}>
+                Importă investigații
+              </button>
+            )}
+            {canModify && (
               <button className={styles.btnPrimary} onClick={() => { setEditing(null); setFormOpen(true) }}>
                 <IconPlus /> Serviciu nou
               </button>
@@ -381,6 +388,19 @@ export const TariffsListPage = () => {
           isOpen={vatOpen}
           onClose={() => setVatOpen(false)}
           onSaved={showSuccess}
+          onError={showError}
+        />
+      )}
+
+      {canModify && (
+        <ImportInvestigationsModal
+          isOpen={importOpen}
+          onClose={() => setImportOpen(false)}
+          lookups={lookups}
+          onImported={(count) => {
+            setImportOpen(false)
+            showSuccess(count === 1 ? 'A fost importată o investigație.' : `Au fost importate ${count} investigații.`)
+          }}
           onError={showError}
         />
       )}

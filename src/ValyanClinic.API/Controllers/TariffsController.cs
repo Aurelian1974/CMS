@@ -5,11 +5,13 @@ using ValyanClinic.Application.Common.Models;
 using ValyanClinic.Application.Features.Tariffs.Commands.AddMedicalServicePrice;
 using ValyanClinic.Application.Features.Tariffs.Commands.CreateMedicalService;
 using ValyanClinic.Application.Features.Tariffs.Commands.CreateVatRate;
+using ValyanClinic.Application.Features.Tariffs.Commands.ImportInvestigationServices;
 using ValyanClinic.Application.Features.Tariffs.Commands.SetMedicalServiceActive;
 using ValyanClinic.Application.Features.Tariffs.Commands.UpdateMedicalService;
 using ValyanClinic.Application.Features.Tariffs.Commands.UpdateVatRate;
 using ValyanClinic.Application.Features.Tariffs.DTOs;
 using ValyanClinic.Application.Features.Tariffs.Queries.GetBillingLookups;
+using ValyanClinic.Application.Features.Tariffs.Queries.GetImportableInvestigationTypes;
 using ValyanClinic.Application.Features.Tariffs.Queries.GetMedicalServiceById;
 using ValyanClinic.Application.Features.Tariffs.Queries.GetMedicalServices;
 using ValyanClinic.Application.Features.Tariffs.Queries.GetVatRates;
@@ -80,6 +82,19 @@ public class TariffsController : BaseApiController
         var command = new AddMedicalServicePriceCommand(id, request.Price, request.VatRateId, request.ValidFrom);
         return HandleResult(await Mediator.Send(command, ct));
     }
+
+    [HttpGet("investigation-types/importable")]
+    [HasAccess(ModuleCodes.Tariffs, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<IReadOnlyList<ImportableInvestigationTypeDto>>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetImportableInvestigationTypes(CancellationToken ct)
+        => HandleResult(await Mediator.Send(new GetImportableInvestigationTypesQuery(), ct));
+
+    [HttpPost("import-investigations")]
+    [HasAccess(ModuleCodes.Tariffs, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<int>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ImportInvestigations(
+        [FromBody] ImportInvestigationServicesCommand command, CancellationToken ct)
+        => HandleResult(await Mediator.Send(command, ct));
 
     [HttpGet("vat-rates")]
     [HasAccess(ModuleCodes.Tariffs, AccessLevel.Read)]

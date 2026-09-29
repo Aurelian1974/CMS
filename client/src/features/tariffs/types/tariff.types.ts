@@ -54,5 +54,9 @@ export type AddMedicalServicePricePayload = { id: string } & Required<Schemas['A
 export type CreateVatRatePayload = Required<Schemas['CreateVatRateCommand']>
 export type UpdateVatRatePayload = { id: string } & Required<Schemas['UpdateVatRateRequest']>
 
+export type ImportableInvestigationTypeDto = WithRequired<Required<Schemas['ImportableInvestigationTypeDto']>,
+  'typeCode' | 'displayName' | 'parentTab'>
+export type ImportInvestigationServicesPayload = Required<Schemas['ImportInvestigationServicesCommand']>
+
 /** Filtrul rapid activ / inactiv din bara de căutare. */
 export type ActiveFilter = 'all' | 'active' | 'inactive'

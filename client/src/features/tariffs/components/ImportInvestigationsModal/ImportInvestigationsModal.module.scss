@@ -1,0 +1,80 @@
+@import '@/styles/variables';
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.grow { flex: 1; min-width: 180px; }
+.date { width: 190px; }
+
+.hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: $gray-500;
+}
+
+.tableWrapper {
+  max-height: 45vh;
+  overflow-y: auto;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+
+  th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    text-align: left;
+    font-weight: 600;
+    color: $gray-600;
+    padding: 0.5rem 0.6rem;
+    border-bottom: 1px solid $gray-200;
+    background: $gray-100;
+  }
+
+  td {
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid $gray-100;
+    color: $gray-700;
+    vertical-align: middle;
+  }
+}
+
+.groupRow td {
+  background: $gray-50;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: $primary-dark;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.selectedRow td { background: rgba($primary-lighter, 0.18); }
+
+.checkCol { width: 36px; text-align: center; }
+.priceCol { width: 170px; }
+
+.muted   { color: $gray-400; font-size: 0.75rem; }
+.error   { margin-top: 0.2rem; color: $danger; font-size: 0.75rem; }
+.counter { margin-right: auto; color: $gray-500; font-size: 0.8125rem; }
+
+.empty {
+  padding: 1.5rem;
+  text-align: center;
+  color: $gray-500;
+  background: $gray-50;
+  border-radius: $border-radius;
+}

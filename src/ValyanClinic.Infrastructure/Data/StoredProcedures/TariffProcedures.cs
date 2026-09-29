@@ -12,4 +12,6 @@ public static class TariffProcedures
     public const string GetVatRates    = "dbo.VatRate_GetAll";
     public const string CreateVatRate  = "dbo.VatRate_Create";
     public const string UpdateVatRate  = "dbo.VatRate_Update";
+    public const string GetImportableInvestigationTypes = "dbo.InvestigationType_GetImportable";
+    public const string ImportInvestigations            = "dbo.MedicalService_ImportInvestigations";
 }

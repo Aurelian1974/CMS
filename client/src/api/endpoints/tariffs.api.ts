@@ -6,6 +6,8 @@ import type {
   CreateMedicalServicePayload,
   CreateVatRatePayload,
   GetMedicalServicesParams,
+  ImportableInvestigationTypeDto,
+  ImportInvestigationServicesPayload,
   MedicalServiceDetailDto,
   MedicalServicesPagedResponse,
   UpdateMedicalServicePayload,
@@ -45,4 +47,10 @@ export const tariffsApi = {
 
   updateVatRate: ({ id, ...body }: UpdateVatRatePayload): Promise<ApiResponse<boolean>> =>
     api.put(`${BASE}/vat-rates/${id}`, body),
+
+  getImportableInvestigationTypes: (): Promise<ApiResponse<ImportableInvestigationTypeDto[]>> =>
+    api.get(`${BASE}/investigation-types/importable`),
+
+  importInvestigations: (payload: ImportInvestigationServicesPayload): Promise<ApiResponse<number>> =>
+    api.post(`${BASE}/import-investigations`, payload),
 }

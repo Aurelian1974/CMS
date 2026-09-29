@@ -4,7 +4,9 @@ using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Interfaces;
 using ValyanClinic.Application.Features.Tariffs.Commands.AddMedicalServicePrice;
 using ValyanClinic.Application.Features.Tariffs.Commands.CreateMedicalService;
+using ValyanClinic.Application.Features.Tariffs.Commands.ImportInvestigationServices;
 using ValyanClinic.Application.Features.Tariffs.Commands.UpdateMedicalService;
+using ValyanClinic.Application.Features.Tariffs.DTOs;
 using ValyanClinic.Tests.TestHelpers;
 using Xunit;
 
@@ -119,6 +121,60 @@ public sealed class TariffCommandHandlerTests
 
         var result = await new AddMedicalServicePriceCommandHandler(_repo, _currentUser)
             .Handle(new AddMedicalServicePriceCommand(ServiceId, 120m, VatRateId, new DateOnly(2020, 1, 1)), default);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(400, result.StatusCode);
+    }
+
+    private static ImportInvestigationServicesCommand ValidImport() => new(
+        Items:
+        [
+            new InvestigationServiceImportItem(InvestigationTypeCode: " ECG ", Name: " Electrocardiogramă ", Price: 80m),
+            new InvestigationServiceImportItem(InvestigationTypeCode: "Spirometry", Name: "Spirometrie", Price: null),
+        ],
+        VatRateId: VatRateId,
+        ValidFrom: null);
+
+    [Fact]
+    public async Task Import_ValidCommand_ReturnsCountAndPassesTenantAndTrimmedItems()
+    {
+        _repo.ImportInvestigationServicesAsync(Arg.Any<InvestigationServicesImportData>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+             .Returns(2);
+
+        var result = await new ImportInvestigationServicesCommandHandler(_repo, _currentUser).Handle(ValidImport(), default);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        Assert.Equal(2, result.Value);
+        await _repo.Received(1).ImportInvestigationServicesAsync(
+            Arg.Is<InvestigationServicesImportData>(d =>
+                d.ClinicId == ClinicId
+                && d.Items.Count == 2
+                && d.Items[0].InvestigationTypeCode == "ECG"
+                && d.Items[0].Name == "Electrocardiogramă"
+                && d.Items[1].Price == null),
+            UserId,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Import_AlreadyLinked_ReturnsConflict()
+    {
+        _repo.ImportInvestigationServicesAsync(Arg.Any<InvestigationServicesImportData>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+             .Throws(SqlExceptionHelper.Make(SqlErrorCodes.InvestigationServiceAlreadyExists));
+
+        var result = await new ImportInvestigationServicesCommandHandler(_repo, _currentUser).Handle(ValidImport(), default);
+
+        Assert.Equal(409, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task Import_NotBillableType_ReturnsFailure()
+    {
+        _repo.ImportInvestigationServicesAsync(Arg.Any<InvestigationServicesImportData>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+             .Throws(SqlExceptionHelper.Make(SqlErrorCodes.InvestigationTypeNotBillable));
+
+        var result = await new ImportInvestigationServicesCommandHandler(_repo, _currentUser).Handle(ValidImport(), default);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(400, result.StatusCode);

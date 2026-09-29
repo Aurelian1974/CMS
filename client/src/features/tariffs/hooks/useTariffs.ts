@@ -5,6 +5,7 @@ import type {
   CreateMedicalServicePayload,
   CreateVatRatePayload,
   GetMedicalServicesParams,
+  ImportInvestigationServicesPayload,
   UpdateMedicalServicePayload,
   UpdateVatRatePayload,
 } from '../types/tariff.types'
@@ -17,6 +18,7 @@ export const tariffKeys = {
   detail:   (id: string) => [...tariffKeys.details(), id] as const,
   lookups:  () => [...tariffKeys.all, 'lookups'] as const,
   vatRates: () => [...tariffKeys.all, 'vat-rates'] as const,
+  importableInvestigations: () => [...tariffKeys.all, 'importable-investigations'] as const,
 }
 
 // ── Queries ──────────────────────────────────────────────────────────────────
@@ -49,6 +51,13 @@ export const useVatRates = () =>
     queryFn: () => tariffsApi.getVatRates(),
   })
 
+export const useImportableInvestigationTypes = (enabled: boolean) =>
+  useQuery({
+    queryKey: tariffKeys.importableInvestigations(),
+    queryFn: () => tariffsApi.getImportableInvestigationTypes(),
+    enabled,
+  })
+
 // ── Mutations ────────────────────────────────────────────────────────────────
 // Orice modificare de tarif poate schimba lista, detaliul și nomenclatoarele
 const useTariffMutation = <TVars, TResult>(mutationFn: (vars: TVars) => Promise<TResult>) => {
@@ -76,3 +85,6 @@ export const useCreateVatRate = () =>
 
 export const useUpdateVatRate = () =>
   useTariffMutation((payload: UpdateVatRatePayload) => tariffsApi.updateVatRate(payload))
+
+export const useImportInvestigationServices = () =>
+  useTariffMutation((payload: ImportInvestigationServicesPayload) => tariffsApi.importInvestigations(payload))

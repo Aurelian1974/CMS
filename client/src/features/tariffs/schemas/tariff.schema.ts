@@ -48,3 +48,44 @@ export const vatRateSchema = z.object({
 })
 
 export type VatRateFormData = z.infer<typeof vatRateSchema>
+
+// Prețul e opțional la import și se validează doar pe rândurile bifate
+// (aceeași regulă ca ImportInvestigationServicesCommandValidator)
+export const importInvestigationsSchema = z.object({
+  vatRateId: z.string(),
+  validFrom: isoDate,
+  rows: z.array(z.object({
+    typeCode: z.string(),
+    selected: z.boolean(),
+    name: z.string(),
+    price: z.string(),
+  })),
+}).superRefine((v, ctx) => {
+  const selected = v.rows.filter((r) => r.selected)
+  if (selected.length === 0) {
+    ctx.addIssue({ code: 'custom', path: ['rows'], message: 'Selectați cel puțin o investigație' })
+  }
+
+  let hasPrice = false
+  v.rows.forEach((r, i) => {
+    if (!r.selected) return
+    const name = r.name.trim()
+    if (!name) {
+      ctx.addIssue({ code: 'custom', path: ['rows', i, 'name'], message: 'Denumirea este obligatorie' })
+    } else if (name.length > 200) {
+      ctx.addIssue({ code: 'custom', path: ['rows', i, 'name'], message: 'Denumirea nu poate depăși 200 de caractere' })
+    }
+    if (r.price.trim() === '') return
+    hasPrice = true
+    const parsed = price.safeParse(r.price)
+    if (!parsed.success) {
+      ctx.addIssue({ code: 'custom', path: ['rows', i, 'price'], message: parsed.error.issues[0]?.message ?? 'Preț invalid' })
+    }
+  })
+
+  if (hasPrice && !v.vatRateId) {
+    ctx.addIssue({ code: 'custom', path: ['vatRateId'], message: 'Regimul TVA este obligatoriu când se completează prețuri' })
+  }
+})
+
+export type ImportInvestigationsFormData = z.infer<typeof importInvestigationsSchema>
