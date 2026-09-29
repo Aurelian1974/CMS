@@ -112,6 +112,49 @@ public sealed class ConsultationProceduresTests(IntegrationTestFixture fixture) 
         Assert.Equal(SqlErrorCodes.AppointmentNotFound, number);
     }
 
+    // ── Serviciu de consultație automat ──────────────────────────────────────
+
+    [Fact]
+    public async Task Create_AddsConsServiceLineWithCurrentPrice()
+    {
+        using var scope = NewScope();
+        await using (var conn = new SqlConnection(Fixture.ConnectionString))
+        {
+            await conn.ExecuteAsync(
+                "UPDATE dbo.MedicalServices SET IsDeleted = 1 WHERE ClinicId = @ClinicId AND Code = N'CONS' AND IsDeleted = 0",
+                new { ClinicId });
+        }
+        var serviceId = await Fixture.GetRepository<ITariffRepository>().CreateAsync(
+            new MedicalServiceCreateData(ClinicId, "CONS", TestPrefix + "Consultație",
+                Guid.Parse("F2000000-0000-0000-0000-000000000001"), 30, null, 123m,
+                Guid.Parse("F1000000-0000-0000-0000-000000000001"), null), UserId, Ct);
+
+        var id = await Consultations.CreateAsync(Data(await NewPatientAsync(), await FirstDoctorAsync()), UserId, Ct);
+
+        var line = Assert.Single(await Fixture.GetRepository<IConsultationServiceRepository>()
+            .GetByConsultationAsync(id, ClinicId, Ct));
+        Assert.Equal(serviceId, line.MedicalServiceId);
+        Assert.Equal(123m, line.UnitPrice);
+        Assert.Equal(1m, line.Quantity);
+    }
+
+    [Fact]
+    public async Task Create_NoActiveConsService_CreatesConsultationWithoutLines()
+    {
+        using var scope = NewScope();
+        await using (var conn = new SqlConnection(Fixture.ConnectionString))
+        {
+            await conn.ExecuteAsync(
+                "UPDATE dbo.MedicalServices SET IsDeleted = 1 WHERE ClinicId = @ClinicId AND Code = N'CONS' AND IsDeleted = 0",
+                new { ClinicId });
+        }
+
+        var id = await Consultations.CreateAsync(Data(await NewPatientAsync(), await FirstDoctorAsync()), UserId, Ct);
+
+        Assert.Empty(await Fixture.GetRepository<IConsultationServiceRepository>()
+            .GetByConsultationAsync(id, ClinicId, Ct));
+    }
+
     [Fact]
     public async Task Update_PatientNotInClinic_Throws50002()
     {

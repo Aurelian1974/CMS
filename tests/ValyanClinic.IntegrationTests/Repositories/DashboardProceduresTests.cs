@@ -61,6 +61,10 @@ public sealed class DashboardProceduresTests(IntegrationTestFixture fixture) : I
                 null, null, finalize ? DiagnosisJson : "Text diagnostic", null, null, null, null,
                 false, false, false, null, false, null, false, false, null, null),
             UserId, Ct);
+        // Linia CONS adăugată automat depinde de tarifele clinicii de test — soldurile verificate nu o includ
+        var lines = Fixture.GetRepository<IConsultationServiceRepository>();
+        foreach (var auto in await lines.GetByConsultationAsync(id, ClinicId, Ct))
+            await lines.DeleteAsync(auto.Id, ClinicId, UserId, Ct);
         if (finalize)
             await consultations.FinalizeAsync(id, ClinicId, UserId, Ct);
         return id;

@@ -73,6 +73,9 @@ public sealed class BillingFlowTests(IntegrationTestFixture fixture) : Integrati
                 null, null, DiagnosisJson, null, null, null, null,
                 false, false, false, null, false, null, false, false, null, null),
             UserId, Ct);
+        // Linia CONS adăugată automat depinde de tarifele clinicii de test — totalurile de mai jos nu o includ
+        foreach (var auto in await Lines.GetByConsultationAsync(consultationId, ClinicId, Ct))
+            await Lines.DeleteAsync(auto.Id, ClinicId, UserId, Ct);
         await consultations.FinalizeAsync(consultationId, ClinicId, UserId, Ct);
 
         await Lines.AddAsync(ClinicId, consultationId, consultationService, 1m, UserId, Ct);

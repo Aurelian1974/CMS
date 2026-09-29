@@ -106,6 +106,43 @@ BEGIN
         @ConsultationId = @NewId, @ClinicId = @ClinicId,
         @Diagnostic = @Diagnostic, @UserId = @CreatedBy;
 
+    -- Serviciul de consultație (cod CONS) se adaugă automat, cu prețul în vigoare azi (snapshot).
+    -- Dacă clinica nu are serviciul activ sau fără preț valid, consultația se creează fără linie.
+    DECLARE @ConsultationServiceCode NVARCHAR(30) = N'CONS';
+    DECLARE @Today DATE = CAST(GETDATE() AS DATE);
+    DECLARE @AddedService TABLE (Id UNIQUEIDENTIFIER, MedicalServiceId UNIQUEIDENTIFIER,
+                                 ServiceCode NVARCHAR(30), UnitPrice DECIMAL(18,2), VatRateId UNIQUEIDENTIFIER);
+
+    INSERT INTO dbo.ConsultationServices
+        (Id, ClinicId, ConsultationId, MedicalServiceId, ServiceCode, ServiceName, UnitPrice, Quantity,
+         VatRateId, VatPercent, VatCategoryCode, SortOrder, CreatedAt, CreatedBy)
+    OUTPUT inserted.Id, inserted.MedicalServiceId, inserted.ServiceCode, inserted.UnitPrice, inserted.VatRateId
+        INTO @AddedService
+    SELECT TOP (1)
+        NEWID(), @ClinicId, @NewId, ms.Id, ms.Code, ms.Name, p.Price, 1,
+        p.VatRateId, v.[Percent], v.UblCategoryCode, 1, GETDATE(), @CreatedBy
+    FROM dbo.MedicalServices ms
+    CROSS APPLY (
+        SELECT TOP (1) mp.Price, mp.VatRateId
+        FROM dbo.MedicalServicePrices mp
+        WHERE mp.MedicalServiceId = ms.Id AND mp.ValidFrom <= @Today
+          AND (mp.ValidTo IS NULL OR mp.ValidTo > @Today)
+        ORDER BY mp.ValidFrom DESC
+    ) p
+    INNER JOIN dbo.VatRates v ON v.Id = p.VatRateId
+    WHERE ms.ClinicId = @ClinicId
+      AND ms.Code = @ConsultationServiceCode
+      AND ms.IsDeleted = 0
+      AND ms.IsActive = 1;
+
+    INSERT INTO dbo.AuditLogs (ClinicId, EntityType, EntityId, Action, OldValues, NewValues, ChangedBy)
+    SELECT @ClinicId, N'ConsultationService', a.Id, N'Create', NULL,
+           (SELECT @NewId AS ConsultationId, a.MedicalServiceId AS MedicalServiceId, a.ServiceCode AS ServiceCode,
+                   a.UnitPrice AS UnitPrice, 1 AS Quantity, a.VatRateId AS VatRateId
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER),
+           @CreatedBy
+    FROM @AddedService a;
+
     -- Audit
     DECLARE @NewValues NVARCHAR(MAX);
     SELECT @NewValues = (
