@@ -38588,6 +38588,10 @@
             "type": "string",
             "nullable": true
           },
+          "doctorName": {
+            "type": "string",
+            "nullable": true
+          },
           "total": {
             "type": "number",
             "format": "double"

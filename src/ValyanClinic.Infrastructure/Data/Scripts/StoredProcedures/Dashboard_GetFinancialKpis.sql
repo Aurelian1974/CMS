@@ -30,12 +30,15 @@ BEGIN
         c.Date,
         c.PatientId,
         PatientName = CONCAT(p.LastName, N' ', p.FirstName),
+        DoctorName  = CONCAT(d.LastName, N' ', d.FirstName),
+        LastChange  = ISNULL(c.UpdatedAt, c.CreatedAt),
         Total = ISNULL(t.Total, 0),
         Paid  = ISNULL(pd.Paid, 0)
     INTO #Billable
     FROM dbo.Consultations c
     INNER JOIN dbo.ConsultationStatuses s ON s.Id = c.StatusId
     INNER JOIN dbo.Patients p             ON p.Id = c.PatientId
+    INNER JOIN dbo.Doctors d              ON d.Id = c.DoctorId
     OUTER APPLY (SELECT SUM(cs.LineTotal) AS Total FROM dbo.ConsultationServices cs
                  WHERE cs.ConsultationId = c.Id AND cs.IsDeleted = 0) t
     OUTER APPLY (SELECT SUM(pay.Amount) AS Paid FROM dbo.Payments pay
@@ -87,14 +90,14 @@ BEGIN
               AND rs.Code IN (N'PENDING', N'PRINTING', N'FAILED', N'UNKNOWN')
         );
 
-    -- ── 2. De încasat — cele mai vechi restanțe primele ─────────────────────
+    -- ── 2. De încasat — consultațiile tocmai finalizate primele (pacientul e la recepție) ──
     SELECT TOP (@Top)
-        ConsultationId, Date, PatientId, PatientName, Total, Paid,
+        ConsultationId, Date, PatientId, PatientName, DoctorName, Total, Paid,
         Balance       = Total - Paid,
         PaymentStatus = CASE WHEN Paid <= 0 THEN N'NEPLATIT' ELSE N'PARTIAL' END
     FROM #Billable
     WHERE Total > 0 AND Total > Paid
-    ORDER BY Date;
+    ORDER BY Date DESC, LastChange DESC;
 
     -- ── 3. Bonuri fiscale de rezolvat ───────────────────────────────────────
     SELECT TOP (@Top)

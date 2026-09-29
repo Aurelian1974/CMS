@@ -6,6 +6,7 @@ public sealed record DashboardUnpaidItemDto
     public DateTime Date { get; init; }
     public Guid PatientId { get; init; }
     public string PatientName { get; init; } = string.Empty;
+    public string DoctorName { get; init; } = string.Empty;
     public decimal Total { get; init; }
     public decimal Paid { get; init; }
     public decimal Balance { get; init; }

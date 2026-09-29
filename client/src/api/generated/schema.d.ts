@@ -22011,6 +22011,7 @@ export interface components {
             /** Format: uuid */
             patientId?: string;
             patientName?: string | null;
+            doctorName?: string | null;
             /** Format: double */
             total?: number;
             /** Format: double */

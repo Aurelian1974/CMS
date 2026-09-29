@@ -16,5 +16,7 @@ export const useDashboard = (params: GetDashboardParams = {}) =>
     queryKey: dashboardKeys.view(params),
     queryFn: () => dashboardApi.get(params),
     staleTime: 60_000,
+    // Consultațiile finalizate de medic trebuie să apară la recepție fără reîncărcare manuală
+    refetchInterval: 60_000,
     placeholderData: keepPreviousData,
   })
