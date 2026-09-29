@@ -63,6 +63,13 @@
 }
 
 .selectedRow td { background: rgba($primary-lighter, 0.18); }
+.linkedRow td   { color: $gray-500; }
+
+.existingCode {
+  margin-right: 0.5rem;
+  font-weight: 600;
+  color: $gray-600;
+}
 
 .checkCol { width: 36px; text-align: center; }
 .priceCol { width: 170px; }

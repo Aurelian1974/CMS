@@ -39594,6 +39594,14 @@
           "sortOrder": {
             "type": "integer",
             "format": "int32"
+          },
+          "existingServiceCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "existingServiceIsActive": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false

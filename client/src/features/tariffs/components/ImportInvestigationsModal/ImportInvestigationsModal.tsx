@@ -3,6 +3,7 @@ import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AppModal } from '@/components/ui/AppModal'
 import { AppButton } from '@/components/ui/AppButton'
+import { AppBadge } from '@/components/ui/AppBadge'
 import { FormSelect } from '@/components/forms/FormSelect'
 import { FormDatePicker } from '@/components/forms/FormDatePicker'
 import { toLocalDateISO } from '@/utils/format'
@@ -76,8 +77,12 @@ export const ImportInvestigationsModal = ({
   }, [isOpen, resp, types, lookups, reset])
 
   const rows = useWatch({ control, name: 'rows' })
+  const importableIndexes = useMemo(
+    () => types.flatMap((t, i) => (t.existingServiceCode ? [] : [i])),
+    [types],
+  )
   const selectedCount = rows.filter((r) => r.selected).length
-  const allSelected = rows.length > 0 && selectedCount === rows.length
+  const allSelected = importableIndexes.length > 0 && selectedCount === importableIndexes.length
 
   const groups = useMemo(() => groupByTab(types), [types])
   const vatOptions = useMemo(
@@ -86,7 +91,7 @@ export const ImportInvestigationsModal = ({
   )
 
   const toggleAll = () => {
-    rows.forEach((_, i) => setValue(`rows.${i}.selected`, !allSelected))
+    importableIndexes.forEach((i) => setValue(`rows.${i}.selected`, !allSelected))
   }
 
   // Editarea denumirii sau a prețului bifează automat rândul
@@ -130,7 +135,7 @@ export const ImportInvestigationsModal = ({
           <span className={styles.counter}>{selectedCount} selectate</span>
           <AppButton variant="secondary" onClick={onClose} disabled={importMut.isPending}>Anulează</AppButton>
           <AppButton type="submit" variant="primary" isLoading={importMut.isPending} loadingText="Se importă…"
-            disabled={types.length === 0}>
+            disabled={importableIndexes.length === 0}>
             Importă
           </AppButton>
         </>
@@ -139,14 +144,18 @@ export const ImportInvestigationsModal = ({
       {isLoading ? (
         <div className={styles.muted}>Se încarcă…</div>
       ) : types.length === 0 ? (
-        <div className={styles.empty}>Toate investigațiile facturabile au deja un serviciu în tarife.</div>
+        <div className={styles.empty}>Nu există investigații facturabile active în nomenclator.</div>
       ) : (
         <>
           <p className={styles.hint}>
-            Fiecare investigație bifată devine un serviciu în categoria „Investigații paraclinice”, cu cod generat
-            automat (INV-001, INV-002, …). Serviciile fără preț apar ca „fără preț în vigoare” și nu pot fi adăugate
-            pe consultații până nu primesc un preț din istoricul de prețuri.
+            Lista vine din nomenclatorul de investigații paraclinice. Fiecare investigație bifată devine un serviciu
+            în categoria „Investigații paraclinice”, cu cod generat automat (INV-001, INV-002, …). Serviciile fără
+            preț apar ca „fără preț în vigoare” și nu pot fi adăugate pe consultații până nu primesc un preț.
+            Investigațiile care au deja serviciu (inclusiv inactiv) nu se reimportă — serviciul se reactivează din listă.
           </p>
+          {importableIndexes.length === 0 && (
+            <div className={styles.empty}>Toate investigațiile facturabile au deja un serviciu în tarife.</div>
+          )}
 
           <div className={styles.row}>
             <FormSelect<ImportInvestigationsFormData> name="vatRateId" control={control} label="Regim TVA"
@@ -175,6 +184,22 @@ export const ImportInvestigationsModal = ({
                     <td colSpan={4}>{TAB_LABELS[g.tab] ?? g.tab}</td>
                   </tr>
                   {g.items.map(({ type, index }) => {
+                    if (type.existingServiceCode) {
+                      return (
+                        <tr key={type.typeCode} className={styles.linkedRow}>
+                          <td className={styles.checkCol}>
+                            <input type="checkbox" checked disabled aria-label={`${type.displayName} — are deja serviciu`} />
+                          </td>
+                          <td>{type.displayName}</td>
+                          <td colSpan={2}>
+                            <span className={styles.existingCode}>{type.existingServiceCode}</span>
+                            <AppBadge variant={type.existingServiceIsActive ? 'success' : 'neutral'} withDot>
+                              {type.existingServiceIsActive ? 'Serviciu activ' : 'Serviciu inactiv'}
+                            </AppBadge>
+                          </td>
+                        </tr>
+                      )
+                    }
                     const selected = rows[index]?.selected ?? false
                     const rowErrors = errors.rows?.[index]
                     return (

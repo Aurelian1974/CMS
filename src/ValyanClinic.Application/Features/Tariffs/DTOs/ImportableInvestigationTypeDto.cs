@@ -1,6 +1,6 @@
 namespace ValyanClinic.Application.Features.Tariffs.DTOs;
 
-/// <summary>Tip de investigație facturabil care nu are încă un serviciu în tarifele clinicii.</summary>
+/// <summary>Tip de investigație facturabil; ExistingServiceCode e completat dacă are deja serviciu în tarife.</summary>
 public sealed class ImportableInvestigationTypeDto
 {
     public string TypeCode { get; init; } = string.Empty;
@@ -8,4 +8,6 @@ public sealed class ImportableInvestigationTypeDto
     public string? Category { get; init; }
     public string ParentTab { get; init; } = string.Empty;
     public int SortOrder { get; init; }
+    public string? ExistingServiceCode { get; init; }
+    public bool? ExistingServiceIsActive { get; init; }
 }

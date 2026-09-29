@@ -22248,6 +22248,8 @@ export interface components {
             parentTab?: string | null;
             /** Format: int32 */
             sortOrder?: number;
+            existingServiceCode?: string | null;
+            existingServiceIsActive?: boolean | null;
         };
         ImportableInvestigationTypeDtoIReadOnlyListApiResponse: {
             success?: boolean;
