@@ -75,6 +75,27 @@ const passwordField = (policy: PasswordPolicyDto | undefined) => {
     })
 }
 
+/// Valorile publice ale contului (email, username, nume) — comparate ca în PasswordPolicyChecker din backend
+export type IdentityValues = ReadonlyArray<string | null | undefined>
+
+const checkIdentity = (
+  policy: PasswordPolicyDto | undefined,
+  password: string,
+  identity: IdentityValues,
+  path: string[],
+  ctx: z.RefinementCtx,
+) => {
+  if (!policy?.forbidIdentityValues || !password) return
+  const lowered = password.toLowerCase()
+  if (identity.some(v => v && v.trim().toLowerCase() === lowered)) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'Parola nu poate fi identică cu emailul, username-ul sau numele contului',
+      path,
+    })
+  }
+}
+
 /// Schema Zod — creare utilizator; parola urmează politica activă
 export const buildCreateUserSchema = (policy: PasswordPolicyDto | undefined) =>
   z.object({
@@ -87,55 +108,50 @@ export const buildCreateUserSchema = (policy: PasswordPolicyDto | undefined) =>
       if (data.password !== data.confirmPassword) {
         ctx.addIssue({ code: 'custom', message: 'Parolele nu coincid', path: ['confirmPassword'] })
       }
-      if (!policy?.forbidIdentityValues || !data.password) return
-      const password = data.password.toLowerCase()
-      const identity = [data.email, data.username, data.firstName, data.lastName]
-      if (identity.some(v => v && v.trim().toLowerCase() === password)) {
-        ctx.addIssue({
-          code: 'custom',
-          message: 'Parola nu poate fi identică cu emailul, username-ul sau numele contului',
-          path: ['password'],
-        })
-      }
+      checkIdentity(policy, data.password, [data.email, data.username, data.firstName, data.lastName], ['password'], ctx)
     })
 
 /// Schema Zod — editare utilizator (fără parolă)
 export const updateUserSchema = z.object(baseUserFields).superRefine(checkAssociation)
 
 /// Cerințele politicii, afișate sub câmpul de parolă
-export const describePasswordPolicy = (p: PasswordPolicyDto, withIdentity = false): string => {
+export const describePasswordPolicy = (p: PasswordPolicyDto): string => {
   const parts = [`minimum ${p.minLength} caractere`]
   if (p.minDigits > 0)    parts.push(`${p.minDigits} ${p.minDigits === 1 ? 'cifră' : 'cifre'}`)
   if (p.minUppercase > 0) parts.push(`${p.minUppercase} ${p.minUppercase === 1 ? 'literă mare' : 'litere mari'}`)
   if (p.minLowercase > 0) parts.push(`${p.minLowercase} ${p.minLowercase === 1 ? 'literă mică' : 'litere mici'}`)
   if (p.minSpecial > 0)   parts.push(`${p.minSpecial} ${p.minSpecial === 1 ? 'caracter special' : 'caractere speciale'}`)
-  if (withIdentity && p.forbidIdentityValues) parts.push('diferită de email, username și nume')
+  if (p.forbidIdentityValues) parts.push('diferită de email, username și nume')
   return `Cerințe: ${parts.join(' · ')}`
 }
 
 /// Reset administrativ — fără parola curentă, adminul nu o cunoaște
-export const buildResetPasswordSchema = (policy: PasswordPolicyDto | undefined) =>
+export const buildResetPasswordSchema = (policy: PasswordPolicyDto | undefined, identity: IdentityValues = []) =>
   z.object({
     newPassword:     passwordField(policy),
     confirmPassword: z.string().min(1, 'Confirmarea parolei este obligatorie'),
-  }).refine(
-    (data) => data.newPassword === data.confirmPassword,
-    { message: 'Parolele nu coincid', path: ['confirmPassword'] }
-  )
+  }).superRefine((data, ctx) => {
+    if (data.newPassword !== data.confirmPassword) {
+      ctx.addIssue({ code: 'custom', message: 'Parolele nu coincid', path: ['confirmPassword'] })
+    }
+    checkIdentity(policy, data.newPassword, identity, ['newPassword'], ctx)
+  })
 
 /// Schimbare proprie — parola curentă e obligatorie
-export const buildChangeOwnPasswordSchema = (policy: PasswordPolicyDto | undefined) =>
+export const buildChangeOwnPasswordSchema = (policy: PasswordPolicyDto | undefined, identity: IdentityValues = []) =>
   z.object({
     currentPassword: z.string().min(1, 'Parola curentă este obligatorie'),
     newPassword:     passwordField(policy),
     confirmPassword: z.string().min(1, 'Confirmarea parolei este obligatorie'),
-  }).refine(
-    (data) => data.newPassword === data.confirmPassword,
-    { message: 'Parolele nu coincid', path: ['confirmPassword'] }
-  ).refine(
-    (data) => data.currentPassword !== data.newPassword,
-    { message: 'Parola nouă trebuie să fie diferită de cea curentă', path: ['newPassword'] }
-  )
+  }).superRefine((data, ctx) => {
+    if (data.newPassword !== data.confirmPassword) {
+      ctx.addIssue({ code: 'custom', message: 'Parolele nu coincid', path: ['confirmPassword'] })
+    }
+    if (data.currentPassword && data.currentPassword === data.newPassword) {
+      ctx.addIssue({ code: 'custom', message: 'Parola nouă trebuie să fie diferită de cea curentă', path: ['newPassword'] })
+    }
+    checkIdentity(policy, data.newPassword, identity, ['newPassword'], ctx)
+  })
 
 export type CreateUserFormData = z.infer<ReturnType<typeof buildCreateUserSchema>>
 export type UpdateUserFormData = z.infer<typeof updateUserSchema>

@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { buildChangeOwnPasswordSchema, describePasswordPolicy, type ChangeOwnPasswordFormData } from '../../schemas/user.schema'
 import { usePasswordPolicy } from '../../hooks/useUsers'
+import { useAuthStore } from '@/store/authStore'
 import { AppModal } from '@/components/ui/AppModal'
 import { FormInput } from '@/components/forms/FormInput'
 import { AppButton } from '@/components/ui/AppButton'
@@ -37,7 +38,13 @@ export const ChangeOwnPasswordModal = ({
 }: ChangeOwnPasswordModalProps) => {
   const { data: policyResp } = usePasswordPolicy({ enabled: isOpen })
   const policy = policyResp?.data ?? undefined
-  const schema = useMemo(() => buildChangeOwnPasswordSchema(policy), [policy])
+  const user = useAuthStore((s) => s.user)
+  // Username-ul nu e în sesiune; serverul îl verifică oricum
+  const identity = useMemo(
+    () => (user ? [user.email, ...user.fullName.split(/\s+/)] : []),
+    [user],
+  )
+  const schema = useMemo(() => buildChangeOwnPasswordSchema(policy, identity), [policy, identity])
 
   const { control, handleSubmit, reset } = useForm<ChangeOwnPasswordFormData>({
     resolver: zodResolver(schema),

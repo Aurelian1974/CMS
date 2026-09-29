@@ -86,9 +86,21 @@ describe('buildResetPasswordSchema', () => {
       .safeParse({ newPassword: 'Ploaie-Verde-Munte', confirmPassword: 'Ploaie-Verde-Munte' })
     expect(result.success).toBe(true)
   })
+
+  it('should reject a password equal to the target account username', () => {
+    const result = buildResetPasswordSchema(policy, ['ana@clinica.ro', 'ana.ionescu.2026', 'Ana', 'Ionescu'])
+      .safeParse({ newPassword: 'Ana.Ionescu.2026', confirmPassword: 'Ana.Ionescu.2026' })
+    expect(issuesFor(result, 'newPassword').length).toBeGreaterThan(0)
+  })
 })
 
 describe('buildChangeOwnPasswordSchema', () => {
+  it('should reject a new password equal to the own email', () => {
+    const result = buildChangeOwnPasswordSchema(policy, ['ana.ionescu@clinica.ro']).safeParse({
+      currentPassword: 'parola-veche-123', newPassword: 'ana.ionescu@clinica.ro', confirmPassword: 'ana.ionescu@clinica.ro',
+    })
+    expect(issuesFor(result, 'newPassword').length).toBeGreaterThan(0)
+  })
   it('should enforce composition rules from the policy', () => {
     const result = buildChangeOwnPasswordSchema({ ...policy, minSpecial: 1 }).safeParse({
       currentPassword: 'parola-veche-123', newPassword: 'PloaieVerdeMunte', confirmPassword: 'PloaieVerdeMunte',

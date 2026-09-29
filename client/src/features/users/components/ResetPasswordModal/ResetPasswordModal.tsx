@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { buildResetPasswordSchema, describePasswordPolicy, type ResetPasswordFormData } from '../../schemas/user.schema'
+import { buildResetPasswordSchema, describePasswordPolicy, type IdentityValues, type ResetPasswordFormData } from '../../schemas/user.schema'
 import { usePasswordPolicy } from '../../hooks/useUsers'
 import { AppModal } from '@/components/ui/AppModal'
 import { FormInput } from '@/components/forms/FormInput'
@@ -15,6 +15,8 @@ interface ResetPasswordModalProps {
   isLoading: boolean
   /** Numele utilizatorului — afișat în titlu */
   userName: string
+  /** Email, username, prenume, nume ale contului — parola nu poate fi egală cu ele */
+  identity: IdentityValues
   /** Eroare server */
   serverError?: string | null
 }
@@ -25,11 +27,12 @@ export const ResetPasswordModal = ({
   onSubmit,
   isLoading,
   userName,
+  identity,
   serverError,
 }: ResetPasswordModalProps) => {
   const { data: policyResp } = usePasswordPolicy({ enabled: isOpen })
   const policy = policyResp?.data ?? undefined
-  const schema = useMemo(() => buildResetPasswordSchema(policy), [policy])
+  const schema = useMemo(() => buildResetPasswordSchema(policy, identity), [policy, identity])
 
   const {
     control,

@@ -256,7 +256,7 @@ export const UserFormModal = ({
                 </div>
                 {passwordPolicy && (
                   <div className="col-12">
-                    <p className={styles.passwordHint}>{describePasswordPolicy(passwordPolicy, true)}</p>
+                    <p className={styles.passwordHint}>{describePasswordPolicy(passwordPolicy)}</p>
                   </div>
                 )}
               </div>

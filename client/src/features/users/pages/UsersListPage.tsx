@@ -543,6 +543,7 @@ export const UsersListPage = () => {
         onSubmit={handlePasswordSubmit}
         isLoading={resetPassword.isPending}
         userName={passwordTarget ? `${passwordTarget.lastName} ${passwordTarget.firstName}` : ''}
+        identity={passwordTarget ? [passwordTarget.email, passwordTarget.username, passwordTarget.firstName, passwordTarget.lastName] : []}
         serverError={passwordModalOpen ? errorMsg : null}
       />
 

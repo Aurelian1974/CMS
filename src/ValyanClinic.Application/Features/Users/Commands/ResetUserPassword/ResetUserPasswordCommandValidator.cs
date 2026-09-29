@@ -1,11 +1,13 @@
 using FluentValidation;
+using ValyanClinic.Application.Common.Interfaces;
 using ValyanClinic.Application.Common.Validation;
 
 namespace ValyanClinic.Application.Features.Users.Commands.ResetUserPassword;
 
 public sealed class ResetUserPasswordCommandValidator : AbstractValidator<ResetUserPasswordCommand>
 {
-    public ResetUserPasswordCommandValidator(IPasswordPolicyChecker policy)
+    public ResetUserPasswordCommandValidator(
+        IPasswordPolicyChecker policy, IUserRepository users, ICurrentUser currentUser)
     {
         RuleFor(x => x.UserId)
             .NotEmpty().WithMessage("Id-ul utilizatorului este obligatoriu.");
@@ -15,7 +17,13 @@ public sealed class ResetUserPasswordCommandValidator : AbstractValidator<ResetU
         RuleFor(x => x.NewPassword)
             .CustomAsync(async (password, ctx, ct) =>
             {
-                foreach (var error in await policy.ValidateAsync(password, ct: ct))
+                // Cont inexistent: handler-ul raspunde cu NotFound, aici doar fara verificarea identitatii
+                var target = await users.GetByIdAsync(ctx.InstanceToValidate.UserId, currentUser.ClinicId, ct);
+                string?[]? identity = target is null
+                    ? null
+                    : [target.Email, target.Username, target.FirstName, target.LastName];
+
+                foreach (var error in await policy.ValidateAsync(password, identity, ct))
                     ctx.AddFailure(nameof(ResetUserPasswordCommand.NewPassword), error);
             });
     }
