@@ -16,11 +16,14 @@ public sealed class GetConsultationServicesQueryHandler(
     {
         var lines = await repository.GetByConsultationAsync(
             request.ConsultationId, currentUser.ClinicId, cancellationToken);
+        var unbilled = await repository.GetUnbilledInvestigationsAsync(
+            request.ConsultationId, currentUser.ClinicId, cancellationToken);
 
         return Result<ConsultationServicesResponse>.Success(new ConsultationServicesResponse
         {
             Lines = lines,
             Total = BillingCalculator.Total(lines.Select(l => l.LineTotal)),
+            UnbilledInvestigations = unbilled,
         });
     }
 }

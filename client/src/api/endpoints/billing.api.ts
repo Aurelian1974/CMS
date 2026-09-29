@@ -32,6 +32,9 @@ export const billingApi = {
   deleteService: (id: string): Promise<ApiResponse<boolean>> =>
     api.delete(`${BILLING}/services/${id}`),
 
+  syncInvestigationServices: (consultationId: string): Promise<ApiResponse<number>> =>
+    api.post(`${BILLING}/consultations/${consultationId}/services/sync-investigations`),
+
   createPayment: ({ consultationId, ...body }: CreatePaymentPayload): Promise<ApiResponse<CreatePaymentResult>> =>
     api.post(`${BILLING}/consultations/${consultationId}/payments`, body),
 
@@ -64,4 +67,7 @@ export const consultationServicesApi = {
 
   delete: (id: string): Promise<ApiResponse<boolean>> =>
     api.delete(`${CONSULTATION_SERVICES}/${id}`),
+
+  syncInvestigations: (consultationId: string): Promise<ApiResponse<number>> =>
+    api.post(`${CONSULTATION_SERVICES}/by-consultation/${consultationId}/sync-investigations`),
 }

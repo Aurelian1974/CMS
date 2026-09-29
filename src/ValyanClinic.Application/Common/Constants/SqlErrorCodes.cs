@@ -53,6 +53,7 @@ public static class SqlErrorCodes
     public const int BillingNoServices               = 50602;
     public const int ConsultationServiceInvalidQty   = 50603;
     public const int ConsultationServiceNotFound     = 50604;
+    public const int ConsultationServiceFromInvestigation = 50605;
     // Tarife
     public const int MedicalServiceCodeDuplicate = 50610;
     public const int MedicalServiceNotFound      = 50611;

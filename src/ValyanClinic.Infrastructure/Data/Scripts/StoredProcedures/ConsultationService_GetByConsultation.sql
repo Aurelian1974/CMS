@@ -16,7 +16,8 @@ BEGIN
     SELECT
         cs.Id, cs.ConsultationId, cs.MedicalServiceId, cs.ServiceCode, cs.ServiceName,
         sc.Name AS CategoryName, cs.UnitPrice, cs.Quantity, cs.LineTotal,
-        cs.VatRateId, cs.VatPercent, cs.VatCategoryCode, cs.SortOrder, cs.CreatedAt
+        cs.VatRateId, cs.VatPercent, cs.VatCategoryCode, cs.SortOrder, cs.CreatedAt,
+        cs.ConsultationInvestigationId
     FROM dbo.ConsultationServices cs
     INNER JOIN dbo.Consultations c   ON c.Id = cs.ConsultationId AND c.IsDeleted = 0
     INNER JOIN dbo.MedicalServices ms ON ms.Id = cs.MedicalServiceId

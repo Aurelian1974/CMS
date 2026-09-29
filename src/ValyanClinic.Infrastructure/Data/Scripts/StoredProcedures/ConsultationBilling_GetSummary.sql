@@ -8,7 +8,7 @@ GO
 -- Result sets:
 --   1) antet + totaluri + status plată (NEPLATIT / PARTIAL / PLATIT)
 --   2) linii servicii  3) plăți  4) defalcare plăți pe metode
---   5) bonuri fiscale  6) facturi
+--   5) bonuri fiscale  6) facturi  7) investigații efectuate fără linie de serviciu
 -- ============================================================================
 CREATE OR ALTER PROCEDURE dbo.ConsultationBilling_GetSummary
     @ConsultationId UNIQUEIDENTIFIER,
@@ -45,7 +45,8 @@ BEGIN
     SELECT
         cs.Id, cs.ConsultationId, cs.MedicalServiceId, cs.ServiceCode, cs.ServiceName,
         sc.Name AS CategoryName, cs.UnitPrice, cs.Quantity, cs.LineTotal,
-        cs.VatRateId, cs.VatPercent, cs.VatCategoryCode, cs.SortOrder, cs.CreatedAt
+        cs.VatRateId, cs.VatPercent, cs.VatCategoryCode, cs.SortOrder, cs.CreatedAt,
+        cs.ConsultationInvestigationId
     FROM dbo.ConsultationServices cs
     INNER JOIN dbo.MedicalServices ms ON ms.Id = cs.MedicalServiceId
     INNER JOIN dbo.ServiceCategories sc ON sc.Id = ms.CategoryId
@@ -84,5 +85,8 @@ BEGIN
     INNER JOIN dbo.InvoiceStatuses st ON st.Id = i.StatusId
     WHERE i.ConsultationId = @ConsultationId AND i.ClinicId = @ClinicId
     ORDER BY i.IssuedAt;
+
+    EXEC dbo.ConsultationService_GetUnbilledInvestigations
+        @ConsultationId = @ConsultationId, @ClinicId = @ClinicId;
 END;
 GO

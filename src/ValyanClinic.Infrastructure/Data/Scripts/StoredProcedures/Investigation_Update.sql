@@ -5,6 +5,7 @@ GO
 -- SP: Investigation_Update
 -- Actualizeaza StructuredData, Narrative, Status si meta-date asociate.
 -- Permis doar pe consultatii in lucru si pe investigatii nesterse.
+-- Linia de serviciu legata se aliniaza (ex. investigatie devenita externa / anulata).
 -- ============================================================================
 CREATE OR ALTER PROCEDURE dbo.Investigation_Update
     @Id                 UNIQUEIDENTIFIER,
@@ -21,6 +22,10 @@ CREATE OR ALTER PROCEDURE dbo.Investigation_Update
 AS
 BEGIN
     SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+    BEGIN TRANSACTION;
 
     DECLARE @ConsultationId UNIQUEIDENTIFIER;
     SELECT @ConsultationId = ConsultationId
@@ -56,5 +61,15 @@ BEGIN
 
     INSERT INTO dbo.AuditLogs (ClinicId, EntityType, EntityId, Action, OldValues, NewValues, ChangedBy)
     VALUES (@ClinicId, N'ConsultationInvestigation', @Id, N'Update', NULL, NULL, @UpdatedBy);
+
+    EXEC dbo.ConsultationService_SyncFromInvestigations
+        @ClinicId = @ClinicId, @ConsultationId = @ConsultationId, @UserId = @UpdatedBy;
+
+    COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        ;THROW;
+    END CATCH;
 END;
 GO

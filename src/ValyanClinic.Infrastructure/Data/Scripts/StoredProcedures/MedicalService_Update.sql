@@ -45,6 +45,13 @@ BEGIN
             ;THROW 50610, N'Există deja un serviciu cu acest cod.', 1;
         END;
 
+        IF @InvestigationTypeCode IS NOT NULL AND EXISTS (
+            SELECT 1 FROM dbo.MedicalServices
+            WHERE ClinicId = @ClinicId AND InvestigationTypeCode = @InvestigationTypeCode AND Id <> @Id AND IsDeleted = 0)
+        BEGIN
+            ;THROW 50651, N'Investigația asociată are deja un serviciu în tarife.', 1;
+        END;
+
         IF NOT EXISTS (SELECT 1 FROM dbo.ServiceCategories WHERE Id = @CategoryId AND IsActive = 1)
         BEGIN
             ;THROW 50615, N'Categoria selectată nu este validă.', 1;

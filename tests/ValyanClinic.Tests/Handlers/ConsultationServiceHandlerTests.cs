@@ -4,6 +4,7 @@ using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Interfaces;
 using ValyanClinic.Application.Features.ConsultationServices.Commands.AddConsultationService;
 using ValyanClinic.Application.Features.ConsultationServices.Commands.DeleteConsultationService;
+using ValyanClinic.Application.Features.ConsultationServices.Commands.SyncInvestigationServices;
 using ValyanClinic.Application.Features.ConsultationServices.Commands.UpdateConsultationServiceQuantity;
 using ValyanClinic.Application.Features.ConsultationServices.DTOs;
 using ValyanClinic.Application.Features.ConsultationServices.Queries.GetConsultationServices;
@@ -119,5 +120,56 @@ public sealed class ConsultationServiceHandlerTests
             .Handle(new DeleteConsultationServiceCommand(LineId), default);
 
         Assert.Equal(404, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task Delete_LineFromInvestigation_ReturnsConflict()
+    {
+        _repo.DeleteAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+             .Throws(SqlExceptionHelper.Make(SqlErrorCodes.ConsultationServiceFromInvestigation));
+
+        var result = await new DeleteConsultationServiceCommandHandler(_repo, _currentUser)
+            .Handle(new DeleteConsultationServiceCommand(LineId), default);
+
+        Assert.Equal(409, result.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetServices_ReturnsUnbilledInvestigations()
+    {
+        _repo.GetByConsultationAsync(ConsultationId, ClinicId, Arg.Any<CancellationToken>())
+             .Returns(new List<ConsultationServiceDto>());
+        _repo.GetUnbilledInvestigationsAsync(ConsultationId, ClinicId, Arg.Any<CancellationToken>())
+             .Returns(new List<UnbilledInvestigationDto> { new() { InvestigationTypeCode = "ECG", ReasonCode = "NO_PRICE" } });
+
+        var result = await new GetConsultationServicesQueryHandler(_repo, _currentUser)
+            .Handle(new GetConsultationServicesQuery(ConsultationId), default);
+
+        Assert.Equal("NO_PRICE", Assert.Single(result.Value!.UnbilledInvestigations).ReasonCode);
+    }
+
+    [Fact]
+    public async Task SyncInvestigations_ReturnsAddedCountForCurrentTenantAndUser()
+    {
+        _repo.SyncFromInvestigationsAsync(ConsultationId, ClinicId, UserId, Arg.Any<CancellationToken>())
+             .Returns(2);
+
+        var result = await new SyncInvestigationServicesCommandHandler(_repo, _currentUser)
+            .Handle(new SyncInvestigationServicesCommand(ConsultationId), default);
+
+        Assert.Equal(200, result.StatusCode);
+        Assert.Equal(2, result.Value);
+    }
+
+    [Fact]
+    public async Task SyncInvestigations_InvoicedConsultation_ReturnsConflict()
+    {
+        _repo.SyncFromInvestigationsAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+             .Throws(SqlExceptionHelper.Make(SqlErrorCodes.BillingConsultationLocked));
+
+        var result = await new SyncInvestigationServicesCommandHandler(_repo, _currentUser)
+            .Handle(new SyncInvestigationServicesCommand(ConsultationId), default);
+
+        Assert.Equal(409, result.StatusCode);
     }
 }

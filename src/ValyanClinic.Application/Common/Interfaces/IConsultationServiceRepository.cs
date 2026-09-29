@@ -14,4 +14,10 @@ public interface IConsultationServiceRepository
     Task UpdateQuantityAsync(Guid id, Guid clinicId, decimal quantity, Guid updatedBy, CancellationToken ct);
 
     Task DeleteAsync(Guid id, Guid clinicId, Guid deletedBy, CancellationToken ct);
+
+    Task<IReadOnlyList<UnbilledInvestigationDto>> GetUnbilledInvestigationsAsync(
+        Guid consultationId, Guid clinicId, CancellationToken ct);
+
+    /// <summary>Generează liniile lipsă din investigații și le elimină pe cele rămase fără investigație; întoarce câte s-au adăugat.</summary>
+    Task<int> SyncFromInvestigationsAsync(Guid consultationId, Guid clinicId, Guid userId, CancellationToken ct);
 }

@@ -35,4 +35,5 @@ public sealed record ConsultationBillingDto
     public IReadOnlyList<PaymentDto> Payments { get; init; } = [];
     public IReadOnlyList<FiscalReceiptListDto> FiscalReceipts { get; init; } = [];
     public IReadOnlyList<InvoiceSummaryDto> Invoices { get; init; } = [];
+    public IReadOnlyList<UnbilledInvestigationDto> UnbilledInvestigations { get; init; } = [];
 }

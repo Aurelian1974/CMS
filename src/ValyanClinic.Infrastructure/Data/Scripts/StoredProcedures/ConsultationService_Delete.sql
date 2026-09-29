@@ -17,15 +17,20 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        DECLARE @ConsultationId UNIQUEIDENTIFIER, @StatusCode NVARCHAR(50);
+        DECLARE @ConsultationId UNIQUEIDENTIFIER, @StatusCode NVARCHAR(50), @InvestigationId UNIQUEIDENTIFIER;
 
-        SELECT @ConsultationId = ConsultationId
+        SELECT @ConsultationId = ConsultationId, @InvestigationId = ConsultationInvestigationId
         FROM dbo.ConsultationServices
         WHERE Id = @Id AND ClinicId = @ClinicId AND IsDeleted = 0;
 
         IF @ConsultationId IS NULL
         BEGIN
             ;THROW 50604, N'Linia de serviciu nu a fost găsită.', 1;
+        END;
+
+        IF @InvestigationId IS NOT NULL
+        BEGIN
+            ;THROW 50605, N'Linia provine dintr-o investigație paraclinică și se elimină odată cu investigația (tab-ul Investigații).', 1;
         END;
 
         SELECT @StatusCode = s.Code

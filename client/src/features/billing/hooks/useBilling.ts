@@ -76,6 +76,7 @@ export const useBillingServiceMutations = () => ({
   add:    useBillingMutation((v: AddServiceVars) => billingApi.addService(v.consultationId, v.medicalServiceId, v.quantity)),
   update: useBillingMutation((v: QuantityVars) => billingApi.updateServiceQuantity(v.id, v.quantity)),
   remove: useBillingMutation((id: string) => billingApi.deleteService(id)),
+  sync:   useBillingMutation((consultationId: string) => billingApi.syncInvestigationServices(consultationId)),
 })
 
 /** Linii de servicii — din fișa consultației (modulul consultations). */
@@ -83,6 +84,7 @@ export const useConsultationServiceMutations = () => ({
   add:    useBillingMutation((v: AddServiceVars) => consultationServicesApi.add(v.consultationId, v.medicalServiceId, v.quantity)),
   update: useBillingMutation((v: QuantityVars) => consultationServicesApi.updateQuantity(v.id, v.quantity)),
   remove: useBillingMutation((id: string) => consultationServicesApi.delete(id)),
+  sync:   useBillingMutation((consultationId: string) => consultationServicesApi.syncInvestigations(consultationId)),
 })
 
 export const useCreatePayment = () =>

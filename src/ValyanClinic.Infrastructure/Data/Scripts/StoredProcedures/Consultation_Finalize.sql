@@ -61,6 +61,10 @@ BEGIN
         INSERT INTO dbo.AuditLogs (ClinicId, EntityType, EntityId, Action, OldValues, NewValues, ChangedBy)
         VALUES (@ClinicId, N'Consultation', @Id, N'Finalize', @OldValues, @NewValues, @FinalizedBy);
 
+        -- Investigațiile care au primit tarif după ce au fost introduse intră acum la plată
+        EXEC dbo.ConsultationService_SyncFromInvestigations
+            @ClinicId = @ClinicId, @ConsultationId = @Id, @UserId = @FinalizedBy;
+
         COMMIT TRANSACTION;
     END TRY
     BEGIN CATCH

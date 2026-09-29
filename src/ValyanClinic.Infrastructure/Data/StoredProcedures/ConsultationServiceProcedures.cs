@@ -6,4 +6,6 @@ public static class ConsultationServiceProcedures
     public const string Add               = "dbo.ConsultationService_Add";
     public const string UpdateQuantity    = "dbo.ConsultationService_UpdateQuantity";
     public const string Delete            = "dbo.ConsultationService_Delete";
+    public const string GetUnbilledInvestigations = "dbo.ConsultationService_GetUnbilledInvestigations";
+    public const string SyncFromInvestigations    = "dbo.ConsultationService_SyncFromInvestigations";
 }

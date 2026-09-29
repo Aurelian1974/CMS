@@ -17,4 +17,6 @@ public sealed class ConsultationServiceDto
     public string VatCategoryCode { get; init; } = string.Empty;
     public int SortOrder { get; init; }
     public DateTime CreatedAt { get; init; }
+    /// <summary>Completat când linia a fost generată automat dintr-o investigație paraclinică.</summary>
+    public Guid? ConsultationInvestigationId { get; init; }
 }

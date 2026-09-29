@@ -7,6 +7,7 @@ using ValyanClinic.Application.Features.Billing.Queries.GetBillingConsultations;
 using ValyanClinic.Application.Features.Billing.Queries.GetConsultationBilling;
 using ValyanClinic.Application.Features.ConsultationServices.Commands.AddConsultationService;
 using ValyanClinic.Application.Features.ConsultationServices.Commands.DeleteConsultationService;
+using ValyanClinic.Application.Features.ConsultationServices.Commands.SyncInvestigationServices;
 using ValyanClinic.Application.Features.ConsultationServices.Commands.UpdateConsultationServiceQuantity;
 using ValyanClinic.Application.Features.FiscalReceipts.Commands.ReconcileFiscalReceipt;
 using ValyanClinic.Application.Features.FiscalReceipts.Commands.ReportFiscalReceiptResult;
@@ -55,6 +56,12 @@ public class BillingController : BaseApiController
         Guid consultationId, [FromBody] AddBillingServiceRequest request, CancellationToken ct)
         => HandleResult(await Mediator.Send(
             new AddConsultationServiceCommand(consultationId, request.MedicalServiceId, request.Quantity), ct));
+
+    [HttpPost("consultations/{consultationId:guid}/services/sync-investigations")]
+    [HasAccess(ModuleCodes.Payments, AccessLevel.Write)]
+    [ProducesResponseType<ApiResponse<int>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> SyncInvestigationServices(Guid consultationId, CancellationToken ct)
+        => HandleResult(await Mediator.Send(new SyncInvestigationServicesCommand(consultationId), ct));
 
     [HttpPut("services/{id:guid}")]
     [HasAccess(ModuleCodes.Payments, AccessLevel.Write)]

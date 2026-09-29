@@ -61,4 +61,33 @@ public sealed class ConsultationServiceRepository(DapperContext context) : ICons
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct));
     }
+
+    public async Task<IReadOnlyList<UnbilledInvestigationDto>> GetUnbilledInvestigationsAsync(
+        Guid consultationId, Guid clinicId, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        var rows = await connection.QueryAsync<UnbilledInvestigationDto>(
+            new CommandDefinition(
+                ConsultationServiceProcedures.GetUnbilledInvestigations,
+                new { ConsultationId = consultationId, ClinicId = clinicId },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+        return rows.ToList();
+    }
+
+    public async Task<int> SyncFromInvestigationsAsync(
+        Guid consultationId, Guid clinicId, Guid userId, CancellationToken ct)
+    {
+        var parameters = new DynamicParameters(new { ClinicId = clinicId, ConsultationId = consultationId, UserId = userId });
+        parameters.Add("AddedCount", dbType: DbType.Int32, direction: ParameterDirection.Output);
+
+        using var connection = context.CreateConnection();
+        await connection.ExecuteAsync(
+            new CommandDefinition(
+                ConsultationServiceProcedures.SyncFromInvestigations,
+                parameters,
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+        return parameters.Get<int?>("AddedCount") ?? 0;
+    }
 }

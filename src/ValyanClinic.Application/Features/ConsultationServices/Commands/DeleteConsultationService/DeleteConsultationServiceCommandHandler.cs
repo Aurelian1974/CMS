@@ -22,7 +22,8 @@ public sealed class DeleteConsultationServiceCommandHandler(
         {
             return Result<bool>.NotFound(ErrorMessages.Billing.ConsultationServiceNotFound);
         }
-        catch (SqlException ex) when (ex.Number == SqlErrorCodes.BillingConsultationLocked)
+        catch (SqlException ex) when (ex.Number is SqlErrorCodes.BillingConsultationLocked
+                                          or SqlErrorCodes.ConsultationServiceFromInvestigation)
         {
             return Result<bool>.Conflict(ex.Message);
         }

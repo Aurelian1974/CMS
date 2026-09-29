@@ -3,7 +3,7 @@ SET ANSI_NULLS ON;
 GO
 -- ============================================================================
 -- SP: Investigation_Delete (soft delete)
--- Permis doar pe consultatii in lucru.
+-- Permis doar pe consultatii in lucru. Linia de serviciu legata se elimina.
 -- ============================================================================
 CREATE OR ALTER PROCEDURE dbo.Investigation_Delete
     @Id        UNIQUEIDENTIFIER,
@@ -12,6 +12,10 @@ CREATE OR ALTER PROCEDURE dbo.Investigation_Delete
 AS
 BEGIN
     SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+    BEGIN TRANSACTION;
 
     DECLARE @ConsultationId UNIQUEIDENTIFIER;
     SELECT @ConsultationId = ConsultationId
@@ -40,5 +44,15 @@ BEGIN
 
     INSERT INTO dbo.AuditLogs (ClinicId, EntityType, EntityId, Action, OldValues, NewValues, ChangedBy)
     VALUES (@ClinicId, N'ConsultationInvestigation', @Id, N'Delete', NULL, NULL, @DeletedBy);
+
+    EXEC dbo.ConsultationService_SyncFromInvestigations
+        @ClinicId = @ClinicId, @ConsultationId = @ConsultationId, @UserId = @DeletedBy;
+
+    COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        ;THROW;
+    END CATCH;
 END;
 GO

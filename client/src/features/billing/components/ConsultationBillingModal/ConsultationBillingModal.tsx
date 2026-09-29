@@ -47,7 +47,7 @@ export const ConsultationBillingModal = ({ consultationId, onClose }: Consultati
   const { data: lookupsResp } = useBillingLookups()
   const lookups = lookupsResp?.data
 
-  const { add, update, remove } = useBillingServiceMutations()
+  const { add, update, remove, sync } = useBillingServiceMutations()
   const cancelPayment = useCancelPayment()
 
   const [collectOpen, setCollectOpen] = useState(false)
@@ -55,7 +55,7 @@ export const ConsultationBillingModal = ({ consultationId, onClose }: Consultati
   const [cancelTarget, setCancelTarget] = useState<PaymentDto | null>(null)
   const [reconcileId, setReconcileId] = useState<string | null>(null)
 
-  const busy = add.isPending || update.isPending || remove.isPending
+  const busy = add.isPending || update.isPending || remove.isPending || sync.isPending
   const receiptById = new Map((billing?.fiscalReceipts ?? []).map((r) => [r.id, r]))
 
   // Mesajele unei consultații nu se păstrează la deschiderea alteia
@@ -155,6 +155,11 @@ export const ConsultationBillingModal = ({ consultationId, onClose }: Consultati
                   { consultationId: billing.consultationId, medicalServiceId, quantity }, { onError: showError })}
                 onUpdateQuantity={(id, quantity) => update.mutate({ id, quantity }, { onError: showError })}
                 onDelete={(id) => remove.mutate(id, { onError: showError })}
+                unbilledInvestigations={billing.unbilledInvestigations}
+                onSyncInvestigations={() => sync.mutate(billing.consultationId, {
+                  onSuccess: (r) => showSuccess(`Au fost adăugate ${r.data ?? 0} linii din investigații.`),
+                  onError: showError,
+                })}
               />
             </section>
 

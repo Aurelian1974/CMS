@@ -57,6 +57,7 @@ public sealed class BillingRepository(DapperContext context) : IBillingRepositor
         var tenders  = (await multi.ReadAsync<PaymentTenderDto>()).ToLookup(t => t.PaymentId);
         var receipts = (await multi.ReadAsync<FiscalReceiptListDto>()).ToList();
         var invoices = (await multi.ReadAsync<InvoiceSummaryDto>()).ToList();
+        var unbilled = (await multi.ReadAsync<UnbilledInvestigationDto>()).ToList();
 
         if (header is null) return null;
 
@@ -66,6 +67,7 @@ public sealed class BillingRepository(DapperContext context) : IBillingRepositor
             Payments       = payments.Select(p => p with { Tenders = tenders[p.Id].ToList() }).ToList(),
             FiscalReceipts = receipts,
             Invoices       = invoices,
+            UnbilledInvestigations = unbilled,
         };
     }
 }

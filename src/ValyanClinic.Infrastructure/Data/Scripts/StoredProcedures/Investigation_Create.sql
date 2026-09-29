@@ -5,6 +5,8 @@ GO
 -- SP: Investigation_Create
 -- Creaza o investigatie paraclinica noua si returneaza Id-ul.
 -- Verifica existenta consultatiei si ca este inca in lucru.
+-- Linia de serviciu facturabila se genereaza in aceeasi tranzactie
+-- (ConsultationService_SyncFromInvestigations).
 -- ============================================================================
 CREATE OR ALTER PROCEDURE dbo.Investigation_Create
     @ClinicId           UNIQUEIDENTIFIER,
@@ -24,6 +26,10 @@ CREATE OR ALTER PROCEDURE dbo.Investigation_Create
 AS
 BEGIN
     SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+    BEGIN TRANSACTION;
 
     IF NOT EXISTS (SELECT 1 FROM dbo.Consultations
                    WHERE Id = @ConsultationId AND ClinicId = @ClinicId AND IsDeleted = 0)
@@ -61,6 +67,15 @@ BEGIN
             (SELECT @InvestigationType AS InvestigationType, @InvestigationDate AS InvestigationDate, @Status AS Status FOR JSON PATH, WITHOUT_ARRAY_WRAPPER),
             @CreatedBy);
 
+    EXEC dbo.ConsultationService_SyncFromInvestigations
+        @ClinicId = @ClinicId, @ConsultationId = @ConsultationId, @UserId = @CreatedBy;
+
+    COMMIT TRANSACTION;
     SELECT @NewId;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        ;THROW;
+    END CATCH;
 END;
 GO

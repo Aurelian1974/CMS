@@ -4,11 +4,15 @@ import type { ApiDto, PagedResponse } from '@/types/common.types'
 type Schemas = components['schemas']
 
 // ── Linii de servicii pe consultație ────────────────────────────────────────
-export type ConsultationServiceDto = ApiDto<Schemas['ConsultationServiceDto']>
+export type ConsultationServiceDto = ApiDto<Schemas['ConsultationServiceDto'], 'consultationInvestigationId'>
+
+/** Investigație efectuată fără linie de serviciu — motivul vine din ConsultationService_GetUnbilledInvestigations. */
+export type UnbilledInvestigationDto = ApiDto<Schemas['UnbilledInvestigationDto'], 'serviceCode'>
 
 export interface ConsultationServicesResponse {
   lines: ConsultationServiceDto[]
   total: number
+  unbilledInvestigations: UnbilledInvestigationDto[]
 }
 
 // ── Plăți ───────────────────────────────────────────────────────────────────
@@ -36,12 +40,13 @@ export type InvoiceSummaryDto = ApiDto<Schemas['InvoiceSummaryDto'], 'originalIn
 
 // ── Situația financiară a unei consultații ──────────────────────────────────
 export type ConsultationBillingDto = ApiDto<
-  Omit<Schemas['ConsultationBillingDto'], 'lines' | 'payments' | 'fiscalReceipts' | 'invoices'>,
+  Omit<Schemas['ConsultationBillingDto'], 'lines' | 'payments' | 'fiscalReceipts' | 'invoices' | 'unbilledInvestigations'>,
   'patientAddress' | 'patientCity' | 'patientCounty'> & {
   lines: ConsultationServiceDto[]
   payments: PaymentDto[]
   fiscalReceipts: FiscalReceiptListDto[]
   invoices: InvoiceSummaryDto[]
+  unbilledInvestigations: UnbilledInvestigationDto[]
 }
 
 export type BillingConsultationListDto = ApiDto<Schemas['BillingConsultationListDto'],

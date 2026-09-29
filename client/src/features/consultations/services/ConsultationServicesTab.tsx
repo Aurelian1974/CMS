@@ -14,10 +14,10 @@ const SERVICES_EDITABLE_STATUSES = ['INLUCRU', 'FINALIZATA']
 /** Tab-ul „Servicii" din fișa consultației: medicul consemnează serviciile efectuate. */
 export const ConsultationServicesTab = ({ consultationId, statusCode, canWrite, onError }: ConsultationServicesTabProps) => {
   const { data: resp, isLoading } = useConsultationServices(consultationId)
-  const { add, update, remove } = useConsultationServiceMutations()
+  const { add, update, remove, sync } = useConsultationServiceMutations()
 
   const isOpen = SERVICES_EDITABLE_STATUSES.includes(statusCode?.toUpperCase() ?? '')
-  const busy = add.isPending || update.isPending || remove.isPending
+  const busy = add.isPending || update.isPending || remove.isPending || sync.isPending
   const fail = (err: unknown) => onError(err instanceof Error ? err.message : 'Operația nu a putut fi efectuată.')
 
   if (isLoading) return <p className="text-muted small mb-0">Se încarcă…</p>
@@ -34,6 +34,8 @@ export const ConsultationServicesTab = ({ consultationId, statusCode, canWrite, 
       onAdd={(medicalServiceId, quantity) => add.mutate({ consultationId, medicalServiceId, quantity }, { onError: fail })}
       onUpdateQuantity={(id, quantity) => update.mutate({ id, quantity }, { onError: fail })}
       onDelete={(id) => remove.mutate(id, { onError: fail })}
+      unbilledInvestigations={resp?.data?.unbilledInvestigations ?? []}
+      onSyncInvestigations={() => sync.mutate(consultationId, { onError: fail })}
     />
   )
 }

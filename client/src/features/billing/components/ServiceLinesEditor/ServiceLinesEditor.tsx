@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react'
 import { AppButton } from '@/components/ui/AppButton'
-import { formatCurrency, formatNumber } from '@/utils/format'
+import { AppBadge } from '@/components/ui/AppBadge'
+import { formatCurrency, formatDate, formatNumber } from '@/utils/format'
 import { useMedicalServices } from '@/features/tariffs/hooks/useTariffs'
-import type { ConsultationServiceDto } from '../../types/billing.types'
+import type { ConsultationServiceDto, UnbilledInvestigationDto } from '../../types/billing.types'
 import styles from './ServiceLinesEditor.module.scss'
 
 const IconTrash = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
@@ -20,6 +21,14 @@ const isValidQuantity = (q: number) => {
   return Math.abs(Math.round(scaled) - scaled) < 1e-6
 }
 
+// Codurile vin din ConsultationService_GetUnbilledInvestigations
+const UNBILLED_REASONS: Record<string, string> = {
+  NO_SERVICE:       'nu are serviciu în Tarife — se importă din Tarife → Importă investigații',
+  SERVICE_INACTIVE: 'serviciul din Tarife este inactiv',
+  NO_PRICE:         'serviciul din Tarife nu are preț în vigoare',
+  NOT_SYNCED:       'are tarif — linia se poate adăuga acum',
+}
+
 export interface ServiceLinesEditorProps {
   lines: ConsultationServiceDto[]
   total: number
@@ -30,25 +39,34 @@ export interface ServiceLinesEditorProps {
   onAdd: (medicalServiceId: string, quantity: number) => void
   onUpdateQuantity: (id: string, quantity: number) => void
   onDelete: (id: string) => void
+  /** Investigații efectuate care nu au intrat (încă) la plată. */
+  unbilledInvestigations?: UnbilledInvestigationDto[]
+  onSyncInvestigations?: () => void
 }
 
 /**
  * Liniile de servicii ale unei consultații. Prețul unitar e un snapshot din momentul
  * adăugării (serverul îl copiază din tariful în vigoare) — nu se editează aici.
+ * Investigațiile paraclinice intră automat ca linii (legate de investigație); ele nu se
+ * adaugă și nu se șterg manual, ci din tab-ul Investigații.
  */
 export const ServiceLinesEditor = ({
   lines, total, canEdit, busy = false, readOnlyHint, onAdd, onUpdateQuantity, onDelete,
+  unbilledInvestigations = [], onSyncInvestigations,
 }: ServiceLinesEditorProps) => {
   const { data: servicesResp } = useMedicalServices(PICKER_PARAMS, canEdit)
   const [serviceId, setServiceId] = useState('')
   const [quantity, setQuantity] = useState('1')
   const [drafts, setDrafts] = useState<Record<string, string>>({})
 
-  // Doar serviciile cu preț în vigoare pot fi adăugate (altfel serverul refuză cu 50612)
+  // Doar serviciile cu preț în vigoare (altfel serverul refuză cu 50612) și nelegate de investigații
   const options = useMemo(
-    () => (servicesResp?.data?.pagedResult?.items ?? []).filter((s) => s.currentPrice != null),
+    () => (servicesResp?.data?.pagedResult?.items ?? [])
+      .filter((s) => s.currentPrice != null && !s.investigationTypeCode),
     [servicesResp],
   )
+  const canSync = canEdit && !!onSyncInvestigations
+    && unbilledInvestigations.some((u) => u.reasonCode === 'NOT_SYNCED')
   const selected = options.find((s) => s.id === serviceId)
   const newQty = Number(quantity.replace(',', '.'))
   const canAdd = !!selected && isValidQuantity(newQty) && !busy
@@ -96,7 +114,12 @@ export const ServiceLinesEditor = ({
               <td className={styles.code}>{line.serviceCode}</td>
               <td>
                 <div>{line.serviceName}</div>
-                <div className={styles.muted}>{line.categoryName}</div>
+                <div className={styles.muted}>
+                  {line.categoryName}
+                  {line.consultationInvestigationId && (
+                    <AppBadge variant="info" className="ms-2">din investigație</AppBadge>
+                  )}
+                </div>
               </td>
               <td className={styles.right}>{formatCurrency(line.unitPrice)}</td>
               <td className={styles.qtyCol}>
@@ -122,10 +145,12 @@ export const ServiceLinesEditor = ({
               <td className={`${styles.right} ${styles.strong}`}>{formatCurrency(line.lineTotal)}</td>
               {canEdit && (
                 <td className={styles.actionCol}>
-                  <button type="button" className={styles.deleteBtn} title="Elimină linia"
-                    aria-label={`Elimină ${line.serviceName}`} disabled={busy} onClick={() => onDelete(line.id)}>
-                    <IconTrash />
-                  </button>
+                  {!line.consultationInvestigationId && (
+                    <button type="button" className={styles.deleteBtn} title="Elimină linia"
+                      aria-label={`Elimină ${line.serviceName}`} disabled={busy} onClick={() => onDelete(line.id)}>
+                      <IconTrash />
+                    </button>
+                  )}
                 </td>
               )}
             </tr>
@@ -139,6 +164,26 @@ export const ServiceLinesEditor = ({
           </tr>
         </tfoot>
       </table>
+
+      {unbilledInvestigations.length > 0 && (
+        <div className={styles.unbilled}>
+          <div className={styles.unbilledTitle}>Investigații efectuate care nu sunt la plată</div>
+          <ul className={styles.unbilledList}>
+            {unbilledInvestigations.map((u) => (
+              <li key={u.consultationInvestigationId}>
+                <strong>{u.investigationName}</strong> ({formatDate(u.investigationDate)})
+                {u.serviceCode && <span className={styles.code}> · {u.serviceCode}</span>}
+                {' — '}{UNBILLED_REASONS[u.reasonCode] ?? u.reasonCode}
+              </li>
+            ))}
+          </ul>
+          {canSync && (
+            <AppButton type="button" variant="outline-primary" size="sm" disabled={busy} onClick={onSyncInvestigations}>
+              Adaugă liniile din investigații
+            </AppButton>
+          )}
+        </div>
+      )}
 
       {canEdit ? (
         <div className={styles.addRow}>

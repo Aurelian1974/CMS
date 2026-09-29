@@ -1,5 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { investigationsApi } from '@/api/endpoints/investigations.api'
+import { billingKeys } from '@/features/billing/hooks/useBilling'
 import type {
   CreateInvestigationPayload,
   UpdateInvestigationPayload,
@@ -43,13 +44,17 @@ export const useInvestigationTrending = (
     enabled: !!patientId && !!type && !!jsonPath && enabled,
   })
 
+// Serverul generează / elimină linia de serviciu legată de investigație în aceeași tranzacție
+const invalidateAfterChange = (qc: QueryClient, consultationId: string) => Promise.all([
+  qc.invalidateQueries({ queryKey: investigationKeys.byConsultation(consultationId) }),
+  qc.invalidateQueries({ queryKey: billingKeys.all }),
+])
+
 export const useCreateInvestigation = (consultationId: string) => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: CreateInvestigationPayload) => investigationsApi.create(payload),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: investigationKeys.byConsultation(consultationId) })
-    },
+    onSuccess: () => invalidateAfterChange(qc, consultationId),
   })
 }
 
@@ -57,9 +62,7 @@ export const useUpdateInvestigation = (consultationId: string) => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (payload: UpdateInvestigationPayload) => investigationsApi.update(payload),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: investigationKeys.byConsultation(consultationId) })
-    },
+    onSuccess: () => invalidateAfterChange(qc, consultationId),
   })
 }
 
@@ -67,8 +70,6 @@ export const useDeleteInvestigation = (consultationId: string) => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: (id: string) => investigationsApi.delete(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: investigationKeys.byConsultation(consultationId) })
-    },
+    onSuccess: () => invalidateAfterChange(qc, consultationId),
   })
 }
