@@ -1,6 +1,7 @@
 # Dashboard pe roluri — analiză completă (Pasul 0)
 
-> Stare: **analiză, fără cod**. Implementarea începe după confirmarea deciziilor din §16.
+> Stare: **analiză + decizii luate, fără cod de implementare**. Cele 13 decizii din §16 sunt
+> tranșate, cu motivul fiecăreia; implementarea poate porni de la pasul 1 din §17.
 > Scop: înlocuirea dashboard-ului unic, 100% mock, cu un dashboard care arată fiecărui
 > utilizator exact ce îl privește — fără a inventa un al doilea model de autorizare
 > paralel cu RBAC-ul existent.
@@ -35,12 +36,12 @@ primul care cade dacă un widget cere un endpoint pe care rolul curent nu-l poat
 | Soft delete | `IsDeleted` pe toate tabelele principale | Orice agregat filtrează `IsDeleted = 0`; o consultație ștearsă nu are ce căuta într-un contor |
 | Erori business | `THROW 5xxxx` în SP → `SqlException` → `Result<T>` | **Nu se aplică**: un dashboard read-only nu are erori de business. Fără coduri noi în `SqlErrorCodes.cs` |
 | Autorizare | `[HasAccess(ModuleCodes.X, AccessLevel.Read)]` pe endpoint; FE `useHasAccess()` + `MODULE` | §3–§4: un singur atribut pe endpoint **nu e suficient** pentru un payload compozit |
-| Migrări | DbUp, 2 faze: `Scripts/Migrations/NNNN_*.sql` (o dată, journal `SchemaVersions`) + `Scripts/StoredProcedures/*.sql` (re-rulate la fiecare execuție, `NullJournal`). Ultima migrare: **`0056_CreateFiscalReceipts.sql`** | Migrarea nouă pornește de la **`0057`**; SP-urile sunt `CREATE OR ALTER`, deci re-deployabile |
+| Migrări | DbUp, 2 faze: `Scripts/Migrations/NNNN_*.sql` (o dată, journal `SchemaVersions`) + `Scripts/StoredProcedures/*.sql` (re-rulate la fiecare execuție, `NullJournal`). Ultima migrare: **`0057_RetirePhantomModules.sql`** | Migrarea nouă pornește de la **`0058`**; SP-urile sunt `CREATE OR ALTER`, deci re-deployabile |
 | Rezultate paginate | `PagedResult<T>` + wrapper `{Entity}PagedResponse` cu `PagedResult` + `Stats` | Dashboard-ul **nu paginează**: listele sunt „top N", cu link „vezi tot" spre pagina de listă |
 | Rezultate multiple | `QueryMultipleAsync` + `ReadAsync`/`ReadSingleAsync` (precedent: `ConsultationBilling_GetPaged`, 3 result sets) | Același pattern; §8.1 explică de ce result set-urile trebuie să fie **fixe**, nu condiționate de parametri |
 | Response API | `ApiResponse<T>` = `{ success, data, message, errors }`; interceptorul axios returnează `response.data`, deci fișierele `*.api.ts` întorc `Promise<ApiResponse<T>>` | §10: hook-ul accesează `.data`, **nu** `.data.data` |
 | Server state | TanStack Query; `{feature}Keys` cu `all/lists/list(params)/details/detail(id)`; `staleTime` explicit (15s la billing, 1 min la consultații) | §10.3: `staleTime` diferit per widget — agenda de azi nu se învechește ca încasările lunii |
-| Grafice | **Nicio bibliotecă de chart instalată** (verificat `client/package.json`: fără `@syncfusion/ej2-react-charts`, fără recharts/chart.js/d3) | §12 — decizie necesară |
+| Grafice | **Nicio bibliotecă de chart instalată** (verificat `client/package.json`: fără `@syncfusion/ej2-react-charts`, fără recharts/chart.js/d3) | SVG propriu, fără dependență nouă (§12, D6) |
 | Teste | xUnit + NSubstitute (handler/validator), Vitest + Testing Library (FE), Playwright (e2e) | §13 |
 | Contract | `npm run check:api` = `gen:api` + `tsc --noEmit`; job `contract` în CI | §14: `openapi-v1.json` se regenerează cu `generate-openapi.ps1` **înainte** de a scrie tipurile FE |
 
@@ -156,7 +157,7 @@ Avantajele care contează concret aici:
 | **Constantă C#** (`DashboardPresets.cs`) ✅ pentru v1 | Tipizat, testabil unitar, versionat în git, review-abil | Schimbarea unui preset cere deploy |
 | Tabel `DashboardRoleWidgets` | Configurabil din UI de admin | Un al doilea ecran de administrare, validare că `WidgetId` e cunoscut, sincronizare cod↔BD — exact riscul semnalat în CLAUDE.md pentru `MODULE` vs `ModuleCodes` |
 
-Recomandare: **constantă C# pentru v1**, tabel doar dacă apare cererea reală de a reconfigura
+**Decis (D2): constantă C#.** Tabelul intră doar dacă apare cererea reală de a reconfigura
 preset-uri fără deploy. Preferințele *per utilizator* (§11) sunt o problemă separată și acolo BD-ul
 e răspunsul corect, cu precedentul `UserMenuPreferences` (0049).
 
@@ -195,9 +196,9 @@ Tot ce urmează e verificat împotriva migrărilor existente. Coloanele citate e
 | „Trend-urile" de pe `StatCard` (`+12% față de ieri`) | Se pot calcula — dar cer un al doilea agregat pe perioada anterioară în fiecare SP. **Nu sunt gratuite**; vezi §16/D4 |
 | Tip/denumire programare („Consultație generală", ca în mock) | `Appointments` **nu are** tip. Are doar `Notes NVARCHAR(2000)` liber. Mock-ul afișează un câmp care nu există |
 | „Timp mediu de așteptare" | Nu există marcaj de check-in / început real al consultației |
-| Venit pe medic | `Payments` se leagă de `ConsultationId` → `Consultations.DoctorId`. Se poate, prin JOIN. Dar expune financiar pe medic — decizie de business, nu tehnică |
-| Documente emise (trimiteri, concedii) | `DocumentsController` există, dar e protejat pe `consultations`, nu pe `documents` — modulul `documents` e seed-uit și **nu e folosit de nicio rută sau controller**. Gap preexistent, semnalat în §15 |
-| Rapoarte | Modulul `reports` e seed-uit (`clinic_manager = Full`), dar **nu există nicio rută `/reports`** în `ROUTE_MODULES` și niciun controller. Widget-urile analitice ale managerului trebuie legate de module existente (`payments`, `invoices`, `appointments`), nu de `reports` |
+| Venit pe medic | `Payments` se leagă de `ConsultationId` → `Consultations.DoctorId`, deci tehnic se poate prin JOIN. **Nu intră în v1**: expune performanța financiară individuală a medicilor, ceea ce schimbă natura ecranului dintr-un instrument de lucru într-unul de evaluare. `panel.doctor.workload` dă volumul și minutele programate, care răspund la „cine e încărcat" fără efectul secundar. Se adaugă doar la cerere explicită a conducerii clinicii |
+| Documente emise (trimiteri, concedii) | Feature-ul nu există. `DocumentsController` servește atașamentele investigațiilor (`dbo.Documents` din 0036), nu trimiteri/scrisori — de aceea e protejat corect pe `consultations`. Modulul `documents` a fost **retras în migrarea 0057** |
+| Rapoarte | Modulul `reports` a fost **retras în migrarea 0057** — era seed-uit cu `clinic_manager = Full` fără nicio rută, controller sau pagină. Widget-urile analitice ale managerului se leagă de module existente (`payments`, `invoices`, `appointments`) |
 
 ---
 
@@ -471,7 +472,7 @@ Acoperire existentă (nu se atinge nimic):
 | Total/încasat per consultație | `IX_ConsultationServices_Consultation`, `IX_Payments_Consultation (ConsultationId, IsCancelled) INCLUDE (Amount, PaidAt)` ✅ |
 | Activitate recentă | `IX_AuditLogs_ClinicId_ChangedAt (ClinicId, ChangedAt DESC) INCLUDE (EntityType, EntityId, Action, ChangedBy)` ✅ |
 
-Lipsuri reale, de acoperit în migrarea `0057`:
+Lipsuri reale, de acoperit în migrarea `0058`:
 
 | # | Index nou | De ce |
 |---|---|---|
@@ -486,13 +487,13 @@ Lipsuri reale, de acoperit în migrarea `0057`:
 Toate sunt filtrate (`WHERE`), deci ieftine la scriere: nu ating rândurile care nu satisfac predicatul.
 Toate respectă convenția existentă `IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = …)`.
 
-### 8.5 Migrarea `0057_DashboardIndexes.sql`
+### 8.5 Migrarea `0058_DashboardIndexes.sql`
 
 Migrarea **nu creează nicio tabelă**. Dashboard-ul citește exclusiv din ce există. Conține:
 
 ```sql
 -- =============================================================================
--- Migrare 0057: Indecși pentru agregatele de dashboard
+-- Migrare 0058: Indecși pentru agregatele de dashboard
 --
 -- Dashboard-ul nu introduce entități noi — citește din tabelele existente. Ce
 -- lipsea erau indecșii pentru coloanele după care agregă: CreatedAt la pacienți,
@@ -501,7 +502,7 @@ Migrarea **nu creează nicio tabelă**. Dashboard-ul citește exclusiv din ce ex
 --
 -- Toți sunt filtrați, deci nu cresc costul de scriere pe rândurile care nu intră
 -- în predicat.
--- Rollback: Scripts/Rollback/0057_Rollback_DashboardIndexes.sql
+-- Rollback: Scripts/Rollback/0058_Rollback_DashboardIndexes.sql
 -- =============================================================================
 
 SET NOCOUNT ON;
@@ -562,12 +563,12 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes
         WHERE IsDeleted = 0 AND LockoutEnd IS NOT NULL;
 GO
 
-PRINT N'Migrarea 0057_DashboardIndexes finalizata cu succes.';
+PRINT N'Migrarea 0058_DashboardIndexes finalizata cu succes.';
 GO
 ```
 
 > Notă `DataUrmatoareiVizite`: coloana e adăugată în `0012_Consultations_Extended.sql` prin
-> `ALTER TABLE … ADD`. Migrarea 0057 rulează după, deci coloana există. Dacă se decide să nu se
+> `ALTER TABLE … ADD`. Migrarea 0058 rulează după, deci coloana există. Dacă se decide să nu se
 > folosească widget-ul de reveniri, indexul #5 se omite — nu are alt consumator.
 
 ### 8.6 `Dashboard_GetClinicalKpis`
@@ -1309,7 +1310,7 @@ src/ValyanClinic.Infrastructure/Data/StoredProcedures/DashboardProcedures.cs
 src/ValyanClinic.Infrastructure/DependencyInjection.cs          ← AddScoped
 src/ValyanClinic.API/Controllers/DashboardController.cs
 
-src/ValyanClinic.Infrastructure/Data/Scripts/Migrations/0057_DashboardIndexes.sql
+src/ValyanClinic.Infrastructure/Data/Scripts/Migrations/0058_DashboardIndexes.sql
 src/ValyanClinic.Infrastructure/Data/Scripts/StoredProcedures/
 ├── Dashboard_GetClinicalKpis.sql
 ├── Dashboard_GetAgenda.sql
@@ -1415,7 +1416,7 @@ Consecința e elegantă: `[HasAccess(dashboard, Read)]` rulează **înaintea** h
 obligatoriu prin acel cache. Deci în momentul în care handler-ul pornește, dicționarul e **garantat
 cald** — citirea lui costă zero apeluri la BD.
 
-Recomandare: un serviciu subțire `IEffectivePermissions` în `Application/Common/Interfaces`, cu
+**Decis (D13):** un serviciu subțire `IEffectivePermissions` în `Application/Common/Interfaces`, cu
 implementarea în `Infrastructure` care citește exact aceeași cheie de cache (fallback la
 `IPermissionRepository.GetEffectiveByUserAsync` pe cache miss). Astfel:
 
@@ -1591,8 +1592,10 @@ public class DashboardController : BaseApiController
 
 Un singur endpoint. Alternativa „un endpoint per bundle" (`/Dashboard/clinical`, `/Dashboard/financial`)
 ar permite `[HasAccess]` mai precis și încărcare progresivă în UI, dar mută compoziția în client — adică
-mută decizia „ce widget-uri vede acest rol" într-un loc unde nu poate fi impusă. Rămâne de reevaluat
-doar dacă latența devine o problemă reală (§16/D7).
+mută decizia „ce widget-uri vede acest rol" într-un loc unde nu poate fi impusă. **Decis (D7): un
+endpoint.** Se reevaluează doar pe o măsurătoare, nu pe o presimțire: dacă p95-ul pe `GET /Dashboard`
+trece de ~500 ms pentru preset-ul de admin (cel mai greu, 5 bundle-uri), spargerea pe bundle-uri e o
+schimbare locală în controller + hook.
 
 ### 9.6 Validator
 
@@ -1671,7 +1674,7 @@ const DASHBOARD = '/api/v1/Dashboard'
 
 export const dashboardApi = {
   // Interceptorul axios returnează deja response.data, deci tipul e ApiResponse<T>
-  // și consumatorul accesează .data (vezi §17).
+  // și consumatorul accesează .data — NU .data.data.
   get: (params: GetDashboardParams): Promise<ApiResponse<DashboardDto>> =>
     api.get(DASHBOARD, { params }),
 }
@@ -1765,7 +1768,7 @@ export const DashboardPage = () => {
 
 | Element | Verdict |
 |---|---|
-| `StatCard` (`components/ui/StatCard`) | **Se păstrează integral.** Props-urile (`label`, `value`, `icon`, `color`, `trend`, `trendLabel`) acoperă exact nevoia. `trend` e opțional — se omite până la D4 |
+| `StatCard` (`components/ui/StatCard`) | **Se păstrează integral.** Props-urile (`label`, `value`, `icon`, `color`, `trend`, `trendLabel`) acoperă exact nevoia. `trend` e opțional și se omite în v1 (D4) — componenta nu se modifică |
 | Icoanele SVG inline din `DashboardPage.tsx` | **Se mută** în `components/ui/Icons` sau se înlocuiesc cu `lucide-react` (deja dependență, deja folosit masiv în `Sidebar.tsx`). Un fișier de pagină cu 7 componente SVG inline nu e loc de icoane |
 | Stilurile de card / listă / badge din `DashboardPage.module.scss` | **Se păstrează**, mutate în `WidgetCard.module.scss` — sunt shell-ul comun al tuturor widget-urilor |
 | `ACTIVITY_COLOR`, `STATUS_LABEL` | Se păstrează ca hărți de prezentare, dar cheile devin codurile reale din BD (`PROGRAMAT`/`CONFIRMAT`/`FINALIZAT`/`ANULAT`/`NEPREZENTARE`), nu `'confirmed' \| 'pending' \| …` din mock |
@@ -1774,7 +1777,7 @@ export const DashboardPage = () => {
 
 ---
 
-## 11. Preferințe per utilizator (opțional, faza 2)
+## 11. Preferințe per utilizator (faza 2 — D9)
 
 Odată ce preset-urile funcționează, pasul natural e „vreau și widget-ul X" / „nu vreau Y" / altă ordine.
 Precedentul e `UserMenuPreferences` (0049) și e direct aplicabil:
@@ -1798,13 +1801,13 @@ permisiuni → răspuns. Ordinea celor doi pași nu e negociabilă.
 
 ---
 
-## 12. Grafice — decizie necesară
+## 12. Grafice — SVG propriu (D6)
 
 `client/package.json` nu conține nicio bibliotecă de vizualizare. CLAUDE.md e explicit:
 *„NU avem MultiSelectComponent, AutoCompleteComponent, DateRangePickerComponent, DateTimePickerComponent,
 ScheduleComponent, ChartComponent — nu sunt instalate. Dacă ai nevoie → discuție înainte de instalare."*
 
-Widget-urile afectate: `chart.revenue.trend`, `chart.appointments.week`. Trei opțiuni:
+Widget-urile afectate: `chart.revenue.trend`, `chart.appointments.week`. Cele trei opțiuni cântărite:
 
 | Opțiune | Cost | Pro | Contra |
 |---|---|---|---|
@@ -1812,10 +1815,10 @@ Widget-urile afectate: `chart.revenue.trend`, `chart.appointments.week`. Trei op
 | **B. `@syncfusion/ej2-react-charts`** | +~300 KB gzip; licența Syncfusion e deja înregistrată în `main.tsx` | Consecvent cu restul UI-ului; interactivitate completă | Bundle-ul crește sensibil pe o pagină care e prima după login; încă un pachet Syncfusion de ținut la aceeași versiune (32.x) |
 | **C. Amânare** — `chart.*` iese din v1, rămân doar KPI + liste + tabele mici | 0 | v1 livrabil mai repede; managerul primește `panel.*` (tabele) care acoperă 80% din informație | Dashboard-ul de manager e mai sărac decât ar putea fi |
 
-Recomandare: **A pentru v1** (o serie temporală simplă, `<svg>` cu `<polyline>` + axă de dată, sub 100
-de linii, cu `role="img"` + `aria-label` descriptiv pentru accesibilitate), cu **B** ca escaladare
-naturală dacă apar cereri de grafice interactive. Varianta A nu blochează B: `TrendChart.tsx` e un
-singur punct de înlocuire.
+**Decis (D6): varianta A** — o serie temporală simplă, `<svg>` cu `<polyline>` + axă de dată, sub 100
+de linii, cu `role="img"` + `aria-label` descriptiv pentru accesibilitate. **B** rămâne escaladarea
+naturală dacă apar cereri de grafice interactive, iar A nu o blochează: `TrendChart.tsx` e un singur
+punct de înlocuire.
 
 ---
 
@@ -1944,88 +1947,99 @@ neutilizat într-un widget oprește build-ul) + Vitest + build; `contract` valid
 | # | Constatare | Impact pe dashboard | Propunere |
 |---|---|---|---|
 | 1 | **`ICurrentUser` nu expune `DoctorId`; JWT nu are claim-ul** | Blochează orice widget „ale mele" | §8.3, soluția B (rezolvare în SP din `@UserId`) |
-| 2 | **Modulul `reports` e seed-uit (`clinic_manager = Full`) dar nu există nicio rută, controller sau pagină** | Widget-urile analitice nu se pot lega de `reports` | Se leagă de `payments`/`invoices`/`appointments`. `reports` rămâne rezervat pentru un modul viitor real |
-| 3 | **Modulul `documents` e seed-uit, dar `DocumentsController` e protejat pe `consultations`** | Un widget „documente emise" ar avea autorizare ambiguă | În afara scopului. Merită un ticket separat: sau se aliniază controller-ul la `documents`, sau se retrage modulul din seed |
+| 2 | **Modulul `reports` era seed-uit (`clinic_manager = Full`) fără nicio rută, controller sau pagină** | Drept acordabil în /permissions/roles care nu deschidea nimic | **Rezolvat**: retras în migrarea 0057 (`IsActive = 0`), constante eliminate. Widget-urile analitice se leagă de `payments`/`invoices`/`appointments` |
+| 3 | **Modulul `documents` era seed-uit, iar `DocumentsController` e protejat pe `consultations`** | Părea o nepotrivire de aliniat | **Rezolvat**: nu era o nepotrivire. `dbo.Documents` (0036) e depozitul de atașamente ale investigațiilor, deci `consultations` e garda corectă; alinierea la `documents` ar fi dat recepției (`consultations = None`, `documents = Write`) acces la conținut clinic. Modulul, destinat trimiterilor/scrisorilor, e retras în 0057; motivul e documentat în controller |
 | 4 | **`Appointments` nu are tip/serviciu** | Mock-ul afișează „Consultație generală", „Ecografie abdominală" — câmp inexistent. Agenda reală nu poate arăta asta | Agenda arată pacient / oră / medic / status. Dacă se dorește tipul, e o schimbare de schemă la `Appointments`, nu la dashboard |
 | 5 | **`SecurityEvents.ClinicId` e NULL-abil, indecșii nu au `ClinicId` în cheie** | Widget-ul de securitate face scan; rândurile fără clinică trebuie tratate explicit | Indexul #6 din §8.4 + filtrul `(ClinicId = @ClinicId OR ClinicId IS NULL)` |
 | 6 | **Trei convenții de timp în schemă** (`SYSDATETIME` / `GETDATE` / `SYSUTCDATETIME`) | „Azi" e ambiguu; `SecurityEvents` e decalat | `@Today` de la handler + `@SinceUtc` separat (§8.2). Merită un ticket de uniformizare a schemei |
 | 7 | **`#Billable` fără limită de perioadă** | Scan crescător liniar cu istoricul clinicii, pe pagina cea mai des deschisă | `@BillableSince` (§16/D5) |
 | 8 | **Niciun `RowVersion` pe `Appointments`** | Fără impact pe citire; relevant doar dacă dashboard-ul devine scriitor | Nimic acum |
-| 9 | **CLAUDE.md conținea 19 inexactități** (vezi §17), printre care exemplul central `CreateConsultationCommand` cu 47 de parametri, obsolet după 0035 | Un dezvoltator care urma documentul scria cod care nu compilează | **Corectat** în același PR — §17 |
+| 9 | **CLAUDE.md conținea 19 inexactități**, printre care exemplul central `CreateConsultationCommand` cu 47 de parametri, obsolet după migrarea 0035, și semnătura de repository pozițională înlocuită de record-uri de date | Un dezvoltator care urma documentul scria cod care nu compilează | **Corectat** — vezi commit-ul `docs: corectează CLAUDE.md după verificarea exemplelor împotriva codului` |
 | 10 | **Nicio bibliotecă de chart** | `chart.*` nu se poate implementa fără decizie | §12 |
 | 11 | **Cache-ul de permisiuni e accesibil doar din `ModuleAccessAuthorizationHandler`** (`IMemoryCache` + `PermissionCacheKeys`, TTL 5 min, pre-populat la login/refresh) | Un handler de feature care are nevoie de permisiuni ar face un apel la BD paralel cu un cache deja cald | `IEffectivePermissions` (§9.3, D13) |
 
 ---
 
-## 16. Decizii de confirmat înainte de implementare
+## 16. Decizii luate
 
-| # | Decizie | Recomandare |
+Toate cele 13 sunt tranșate. Coloana „De ce" e argumentul, nu preferința — unde alegerea
+depinde de cifre pe care nu le avem încă (latență, volume reale), decizia e cea care
+păstrează opțiunea deschisă la cel mai mic cost de schimbare.
+
+### Arhitectură — decizii care se plătesc scump dacă se schimbă târziu
+
+| # | Decizie | De ce |
 |---|---|---|
-| **D1** | Compoziție: preset per rol + filtrare pe permisiuni efective (varianta C, §4)? | **Da.** Orice alternativă bazată pe rol contrazice `UserModuleOverrides` |
-| **D2** | Preset-urile stau în cod (`DashboardPresets.cs`) sau în BD? | **Cod** pentru v1. BD doar dacă apare cererea de reconfigurare fără deploy |
-| **D3** | Conținutul celor 5 preset-uri din §7 e cel dorit? | De validat cu utilizatorii reali — e singura decizie pur de produs din listă |
-| **D4** | Se implementează trend-urile de pe `StatCard` (`+12% față de ieri`)? | **Nu în v1.** Dublează fiecare agregat pentru o comparație care, pe volume mici de clinică, oscilează fără sens. `StatCard.trend` e opțional |
-| **D5** | `@BillableSince` implicit 6 luni pentru „de încasat"? | **Da.** Restanțele mai vechi sunt subiect de raport, nu de dashboard. Contorul poate rămâne total dacă e nevoie — dar atunci explicit, cu un al doilea agregat ieftin |
-| **D6** | Grafice: SVG propriu, Syncfusion Charts, sau amânare? | **SVG propriu** (§12, opțiunea A) |
-| **D7** | Un endpoint `/Dashboard` sau unul per bundle? | **Unul**, până când latența măsurată o cere altfel |
-| **D8** | „Activitate recentă" (azi mock, vizibil tuturor) devine widget exclusiv de admin? | **Da** — sursa e `AuditLogs`, iar `audit` e doar admin (0045). Pentru celelalte roluri, o listă echivalentă ar trebui derivată din entitățile proprii, adică un widget diferit, nu același |
-| **D9** | Preferințe per utilizator (§11) intră în v1 sau faza 2? | **Faza 2.** Preset-urile trebuie validate în uz înainte de a fi configurabile |
-| **D10** | Fereastra „buletine noi" (7 zile) și „reveniri" (14 zile) sunt corecte clinic? | De confirmat cu medicii; sunt parametri de SP, ușor de schimbat |
-| **D11** | `@ExpiryDays = 60` pentru avize CMR / asigurări? | Rezonabil; de confirmat |
-| **D12** | Se creează ticket separat pentru gap-urile #2, #3, #6 din §15? | **Da** — nu sunt probleme de dashboard și nu trebuie rezolvate în acest PR |
-| **D13** | Se introduce `IEffectivePermissions` (§9.3) ca sursă unică pentru permisiunile efective, folosită și de `ModuleAccessAuthorizationHandler`? | **Da.** Refactorizare mică, elimină un round-trip per încărcare de dashboard și previne două implementări de cache |
+| **D1** | **Preset per rol + filtrare pe permisiuni efective** (varianta C, §4) | Singura compatibilă cu `UserModuleOverrides`. Orice ramificare pe `currentUser.Role` reintroduce un al doilea model de autorizare care se desincronizează de primul la primul override acordat — exact bug-ul pe care `RequireModuleAccess` l-a reparat la nivel de rute |
+| **D7** | **Un singur endpoint `GET /Dashboard`** | Compoziția („ce widget-uri vede acest rol") trebuie impusă pe server. Un endpoint per bundle ar muta decizia în client, unde nu poate fi impusă. Latența nu e o problemă cunoscută: 5 SP-uri secvențiale sub ~20 ms fiecare. Dacă măsurătoarea arată altfel, spargerea pe bundle-uri e o schimbare locală în controller + hook, nu o rescriere |
+| **D13** | **`IEffectivePermissions` ca sursă unică** pentru permisiunile efective, folosită și de `ModuleAccessAuthorizationHandler` | `[HasAccess]` rulează înaintea handler-ului și încălzește deja cache-ul din `PermissionCacheKeys`. Fără acest serviciu, handler-ul de dashboard ar face un apel la BD paralel cu un cache cald și ar duplica logica de invalidare — a doua implementare de cache e cum se nasc divergențele de autorizare |
+| **D2** | **Preset-urile în cod** (`DashboardPresets.cs`), nu în BD | Tipizat, testabil unitar, versionat în git, review-abil. Un tabel `DashboardRoleWidgets` ar cere un al doilea ecran de administrare și validarea că `WidgetId` e cunoscut — exact riscul de sincronizare cod↔BD semnalat pentru `MODULE` vs `ModuleCodes`. Se mută în BD doar dacă apare cererea reală de reconfigurare fără deploy |
+| **D8** | **„Activitate recentă" devine widget exclusiv de admin** | Sursa e `AuditLogs`, iar modulul `audit` e acordat doar rolului admin (migrarea 0045). Azi widget-ul e mock și îl văd toți — adică arată date pe care rolul nu are dreptul să le vadă. Pentru celelalte roluri, o listă echivalentă ar trebui derivată din entitățile pe care utilizatorul le poate deja citi: alt widget, altă sursă, nu același cu alt filtru |
+
+### Scop v1 — ce intră și ce nu
+
+| # | Decizie | De ce |
+|---|---|---|
+| **D4** | **Fără trend-uri pe `StatCard` în v1** (`+12% față de ieri`) | Fiecare trend dublează agregatul din SP pentru o comparație care, pe volumele unei clinici, oscilează fără semnificație: 8 programări azi vs. 7 ieri = „+14%", care nu spune nimic. `StatCard.trend` e deja opțional, deci nu cere nicio modificare de componentă. Se adaugă dacă utilizatorii cer explicit comparația, și atunci pe perioade care au sens (lună vs. lună) |
+| **D6** | **Grafice: SVG scris de hand** (§12, opțiunea A) | `chart.revenue.trend` și `chart.appointments.week` sunt serii temporale simple: `<polyline>` + axă de dată, sub 100 de linii, cu `role="img"` și `aria-label` descriptiv. `@syncfusion/ej2-react-charts` ar adăuga ~300 KB gzip pe prima pagină de după login, pentru interactivitate pe care nimeni n-a cerut-o. `TrendChart.tsx` e un singur punct de înlocuire dacă se schimbă |
+| **D9** | **Preferințele per utilizator (§11) în faza 2** | Preset-urile trebuie validate în uz înainte de a fi configurabile. Invers, riscăm să facem configurabil un set prost și să pierdem semnalul care ne-ar fi spus că e prost |
+| **D5** | **`@BillableSince` implicit 6 luni** pentru lista „de încasat" | `#Billable` ar scana altfel toate consultațiile finalizate/facturate din totdeauna, pe pagina cea mai des deschisă din aplicație. O restanță mai veche de 6 luni nu e lucru de azi, e subiect de raport. Contorul rămâne pe fereastra de 6 luni, la fel ca lista, ca cifra din KPI și rândurile din listă să spună același lucru — un contor „total" peste o listă „ultimele 6 luni" e cel mai sigur mod de a pierde încrederea în ecran |
+
+### Parametri — decizii cu valori concrete, nu întrebări deschise
+
+Cele trei de mai jos depind de practica clinicii, nu de arhitectură. Sunt tranșate cu o
+valoare implicită justificată, **toate ca parametri de SP cu `DEFAULT`** — nu constante
+în cod — deci ajustarea e o linie în SP, fără migrare, fără redeploy de backend.
+
+| # | Decizie | De ce |
+|---|---|---|
+| **D3** | **Preset-urile sunt cele din §7**, așa cum sunt scrise | Nu sunt inventate: fiecare derivă din matricea de permisiuni din seed (un preset nu poate conține un widget pe care rolul n-are dreptul să-l vadă) plus ordinea „ce acționezi primul". Validarea cu utilizatorii reali rămâne utilă, dar nu blochează: corecția e un rând în `DashboardPresets.cs`, iar D9 e oricum supapa pentru preferințe individuale. A aștepta un consens pe conținut înainte de a scrie mecanismul ar bloca tot feature-ul pe partea lui cel mai ieftin de schimbat |
+| **D10** | **7 zile** pentru „buletine noi", **14 zile** pentru „reveniri programabile" | 7 zile acoperă turnaround-ul uzual de laborator plus ciclul de interpretare, și ține lista scurtă cât să fie acționabilă — o fereastră de 30 de zile ar transforma widget-ul într-un arhiv. 14 zile la reveniri dau două săptămâni de spațiu de programare, care e orizontul în care recepția lucrează efectiv. Ambele: `@LabSince`, `@FollowUpEnd`, derivate din parametri |
+| **D11** | **`@ExpiryDays = 60`** pentru avize CMR și asigurări | Reînnoirea avizului CMR e un proces administrativ cu termene de săptămâni; 60 de zile lasă timp să acționezi, nu doar să constați. Widget-ul include și expirările deja depășite (`DaysLeft` negativ), care sunt problema mai mare și apar primele la sortare |
+
+### Datorii preexistente — ce s-a rezolvat și ce rămâne
+
+| # | Decizie | Stare |
+|---|---|---|
+| **D12** | Gap-urile #2, #3, #6 din §15 | #2 (`reports`) și #3 (`documents`) sunt **rezolvate** în migrarea 0057: module fantomă retrase, constante eliminate, motivul gărzii de pe `DocumentsController` documentat în controller, invarianta „constantă ↔ modul activ" blocată de teste în ambele direcții. #6 (cele trei convenții de timp din schemă) rămâne ticket separat — dashboard-ul îl ocolește prin `@Today` de la handler și `@SinceUtc` separat pentru `SecurityEvents` (§8.2), deci nu blochează |
+
+### Ce rămâne deschis prin construcție
+
+Un singur lucru, și e deliberat: **gap-ul #1 din §15** — `ICurrentUser` nu expune `DoctorId`,
+iar JWT-ul nu are claim-ul. Soluția e aleasă (rezolvare în SP din `@UserId`, §8.3, soluția B),
+deci nu e o decizie de luat; e muncă de făcut la pasul 2. Alternativa — claim în token — a fost
+respinsă: un token devine stale la relegarea user↔doctor, iar `ICurrentUser.DoctorId` ar fi
+`Guid?` care e null pentru personalul medical, adică o sursă permanentă de `NullReferenceException`.
 
 ---
 
-## 17. Anexă — inexactități găsite în CLAUDE.md (CORECTATE)
+## 17. Plan de implementare
 
-Verificate împotriva codului în timpul acestei analize și **remediate în același PR**.
-Lista rămâne aici ca urmă a ce s-a schimbat și de ce.
-
-| Ce scria CLAUDE.md | Realitatea în cod | Stare |
-|---|---|---|
-| `CreateConsultationCommand` cu **47 de parametri** (`Motiv`, `IstoricMedicalPersonal`, `StareGenerala`, `Greutate`, `TensiuneSistolica`, `SpO2`, …) | **23 de parametri.** Migrarea 0035 a mutat anamneza și examenul clinic în tabele proprii, cu comenzi separate (`UpdateConsultationAnamnesis` / `UpdateConsultationExam`) | ✅ corectat |
-| `IConsultationRepository.CreateAsync(Guid clinicId, Guid patientId, …)` — semnătură pozițională lungă | `CreateAsync(ConsultationCreateData data, Guid createdBy, CancellationToken ct)` — **record de date**, 3 parametri | ✅ corectat, cu regula de formă explicitată |
-| „REGULĂ CRITICĂ: numărul de `Arg.Any<>()` TREBUIE SĂ COINCIDĂ EXACT… (47 params + ct = **48 total**)", cu un bloc de 48 de `Arg.Any<>()` | `Arg.Any<ConsultationCreateData>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>()` — **3**. Verificarea unui câmp se face cu `Arg.Is<T>(predicat)` | ✅ rescris |
-| `currentUser.IsAdmin // bool` | Membrul **nu există**. Interfața are `Id`, `ClinicId`, `RoleId`, `Email`, `FullName`, `Role`, `IsInRole(string)` | ✅ corectat + rând în anti-pattern-uri |
-| *(nemenționat)* | `ICurrentUser` **nu are `DoctorId`**, iar JWT nu emite claim-ul | ✅ documentat explicit |
-| `api.get(...).then(r => r.data.data)`, iar absența `.then` listată ca **greșeală** | Interceptorul face `(response) => response.data`, deci `api.get()` întoarce `ApiResponse<T>`; `r.data.data` e `undefined`. Fișierele reale nu despachetează | ✅ inversat, în ambele locuri |
-| `<Controller render={({ field }) => <FormDatePicker field={field} error={…} />} />` | Wrapper-ele apelează `useController` **intern**: primesc `name` + `control`, cu parametru generic (`<FormInput<FormData>>`) | ✅ rescris |
-| „Wrappers: …`FormTextArea`, `FormRichText` (**Syncfusion RTE**), `FormCheckbox`, `FormSwitch`" | `FormTextArea`/`FormCheckbox`/`FormSwitch` **nu există**; `FormRichText` e **TipTap**, nu Syncfusion. Syncfusion RTE apare doar în `components/icd10/` | ✅ corectat + tabel cu wrapper-ele reale |
-| `<Inject services={[Toolbar, Link, **Image**, HtmlEditor, Count, QuickToolbar]} />` | `[Toolbar, Link, HtmlEditor, Count, QuickToolbar, **Resize**]` — `Image` nu e injectat nicăieri | ✅ corectat |
-| Lista CSS Syncfusion din `main.tsx`, parțială | 11 import-uri + `L10n`/`loadCldr`/`setCulture`/`setCurrencyCode` | ✅ completat |
-| `z.number({ invalid_type_error: '…' })`, `z.boolean().default(false)` | Zod 4 a redenumit parametrul în `error`; schemele reale folosesc `.nullable().optional()` și nu pun `.default()` | ✅ corectat, cu motivul |
-| `SqlExceptionHelper.Make(int number, string message = "…")`, prin `FormatterServices.GetUninitializedObject` | `internal static Make(int number)` — **un** parametru; reflection peste `SqlErrorCollection`/`SqlError` | ✅ corectat |
-| `Result<T>` fără `Forbidden` | Există și `Result<T>.Forbidden(...)` → 403 | ✅ adăugat |
-| Exemplu R6 cu `0031`; „ultima migrare" implicit veche | Ultima migrare: **`0056_CreateFiscalReceipts.sql`** | ✅ corectat + comanda de verificare |
-| `SqlErrorCodes` „coduri complete", oprit la 50508 | Codurile merg până la **50645**; harta range-urilor lipsea | ✅ marcat ca extras + hartă de range-uri |
-| `ModuleCodes` fără `Tariffs` | `Tariffs` există (0053). Modulele nu vin toate din 0011: `anm`/0030, `audit`/0045, `settings`/0047, `tariffs`/0053 | ✅ completat |
-| `authStore` fără `idleTimeoutMinutes` | Câmpul există, e persistat și vine de la server la login/refresh | ✅ adăugat, cu `AuthUser` complet |
-| R1: „`WHERE ClinicId = @ClinicId` — OBLIGATORIU, fără excepție" | Nomenclatoarele naționale nu au coloana; `SecurityEvents.ClinicId` e NULL-abil, deci filtrul simplu ascunde rândurile relevante | ✅ nuanțat, cu forma corectă |
-| Axios „**1.13.5 (pinned)**" | `package.json` are `^1.13.5` (interval caret). Ce blochează versiunea e `package-lock.json`, respectat de `npm ci` | ✅ corectat, cu cum se blochează efectiv |
-| Căi de hook-uri: `hooks/{feature}.hooks.ts` (în checklist) vs `use{Entity}s.ts` (în tabelul de naming) — contradicție internă | Realitatea: `useConsultations.ts`, `usePatients.ts`, `useBilling.ts` | ✅ unificat |
-
-Adăugat pe lângă corecții: o notă în capul documentului cu data ultimei verificări, regula
-„dacă un exemplu nu compilează, exemplul e greșit, nu codul", obligația de a actualiza
-secțiunea în același PR cu refactorizarea, și lista reperelor care se învechesc cel mai
-repede, cu comenzile de verificat.
-
----
-
-## 18. Plan de implementare
+Deciziile din §16 sunt luate, deci implementarea pornește direct de la pasul 1.
+Ordinea nu e negociabilă în trei locuri: **2 înainte de 3** (SP-urile definesc forma
+DTO-urilor, nu invers), **4 înainte de 5** (contractul se regenerează din assembly-ul
+construit) și **5 înainte de 6** (`schema.d.ts` e sursa tipurilor FE, scrisă de generator).
 
 | Pas | Conținut | Livrabil verificabil |
 |---|---|---|
-| **0** | Confirmarea deciziilor D1–D12 | Acest document, adnotat |
-| **1** | `0057_DashboardIndexes.sql` + `.\migrate.ps1` | Indecșii există în `sys.indexes`; niciun plan de execuție existent nu regresează |
-| **2** | Cele 5 SP-uri + teste de integrare | SP-uri apelabile din SSMS; izolarea multi-tenant și garda `@IncludeClinical` dovedite prin test |
-| **3** | DTO-uri, `IDashboardRepository`, `DashboardRepository`, `DashboardProcedures`, DI | `dotnet build` verde |
-| **4** | Catalog + preset-uri + handler + validator + controller | Testele de handler și de catalog verzi; `GET /api/v1/Dashboard` întoarce date reale în Swagger |
+| **1** | `0058_DashboardIndexes.sql` + rollback + `.\migrate.ps1` | Cei 7 indecși există în `sys.indexes`; niciun plan de execuție existent nu regresează |
+| **2** | Cele 5 SP-uri + teste de integrare | SP-uri apelabile din SSMS; izolarea multi-tenant, garda `@IncludeClinical` și cele 30 de rânduri de zero din `Dashboard_GetTrends` dovedite prin test |
+| **3** | `IEffectivePermissions` (D13) + DTO-uri + `IDashboardRepository` + `DashboardRepository` + `DashboardProcedures` + DI | `dotnet build` verde; `ModuleAccessAuthorizationHandler` trece prin noul serviciu, cu testele lui existente neatinse |
+| **4** | Catalog + preset-uri + handler + validator + controller | Testele de handler (inclusiv cele de autorizare din §13.1) și cele de consistență a catalogului verzi; `GET /api/v1/Dashboard` întoarce date reale în Swagger |
 | **5** | `generate-openapi.ps1` → `npm run gen:api` | `npm run check:api` verde |
-| **6** | `WidgetCard`, `WidgetGrid`, registry, hook, KPI-uri + liste | Dashboard real pentru toate rolurile; `MOCK_*` șterse |
-| **7** | `panel.*` (tabele mici) + `TrendChart` SVG | Dashboard-ul de manager complet |
-| **8** | Teste FE + e2e per rol | CI verde pe toate cele 3 job-uri |
-| **9** | Invalidare încrucișată `dashboardKeys` în mutațiile de billing / appointments / consultations | O plată încasată actualizează dashboard-ul la revenire |
-| **10** | *(faza 2)* Preferințe per utilizator + reordonare `@dnd-kit` | `UserMenuPreferences.DashboardWidgets` |
+| **6** | `WidgetCard`, `WidgetGrid`, registry, hook, KPI-uri + liste | Dashboard real pentru toate cele 5 roluri; `MOCK_APPOINTMENTS` / `MOCK_ACTIVITY` șterse |
+| **7** | `panel.*` (tabele mici) + `TrendChart` SVG (D6) | Dashboard-ul de manager complet |
+| **8** | Teste FE + e2e per rol | CI verde pe toate cele 3 job-uri; e2e dovedește că recepția nu vede nicio coloană clinică |
+| **9** | Invalidare încrucișată `dashboardKeys` în mutațiile de billing / appointments / consultations | O plată încasată actualizează dashboard-ul la revenire, fără să aștepte `staleTime` |
+| **10** | *(faza 2, D9)* Preferințe per utilizator + reordonare `@dnd-kit` | `UserMenuPreferences.DashboardWidgets` |
 
-Pașii 1–6 sunt un v1 livrabil. 7–9 completează. 10 e separabil.
+Pașii 1–6 sunt un v1 livrabil: fiecare rol vede date reale, filtrate pe permisiuni.
+7–9 completează. 10 e separabil și pornește doar după ce preset-urile au fost validate în uz.
+
+**Pragul de „gata" pentru v1**, în ordinea în care se verifică:
+1. un `receptionist` nu primește niciun câmp clinic în JSON-ul răspunsului, verificat în
+   DevTools, nu doar absent din UI;
+2. un `doctor` cu override `payments = read` vede widget-ul financiar fără nicio linie de cod
+   nouă — proba că D1 e implementat corect, nu doar intenționat;
+3. un cont fără niciun modul primește un ecran explicit, nu o pagină goală și nici o buclă
+   de redirect prin `LandingRedirect`.
