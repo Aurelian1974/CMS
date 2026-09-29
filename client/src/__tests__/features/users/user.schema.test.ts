@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildCreateUserSchema, updateUserSchema } from '@/features/users/schemas/user.schema'
+import { buildChangeOwnPasswordSchema, buildCreateUserSchema, buildResetPasswordSchema, updateUserSchema } from '@/features/users/schemas/user.schema'
 import type { PasswordPolicyDto } from '@/features/users/types/user.types'
 
 const policy: PasswordPolicyDto = {
@@ -71,5 +71,35 @@ describe('updateUserSchema', () => {
   it('should not require a password', () => {
     const withoutPassword = { ...validUser, password: undefined, confirmPassword: undefined }
     expect(updateUserSchema.safeParse(withoutPassword).success).toBe(true)
+  })
+})
+
+describe('buildResetPasswordSchema', () => {
+  it('should use the minimum length from the security settings', () => {
+    const result = buildResetPasswordSchema({ ...policy, minLength: 16 })
+      .safeParse({ newPassword: 'Ploaie-Verde', confirmPassword: 'Ploaie-Verde' })
+    expect(issuesFor(result, 'newPassword')).toContain('Parola trebuie să aibă minimum 16 caractere')
+  })
+
+  it('should accept a password that satisfies the policy', () => {
+    const result = buildResetPasswordSchema(policy)
+      .safeParse({ newPassword: 'Ploaie-Verde-Munte', confirmPassword: 'Ploaie-Verde-Munte' })
+    expect(result.success).toBe(true)
+  })
+})
+
+describe('buildChangeOwnPasswordSchema', () => {
+  it('should enforce composition rules from the policy', () => {
+    const result = buildChangeOwnPasswordSchema({ ...policy, minSpecial: 1 }).safeParse({
+      currentPassword: 'parola-veche-123', newPassword: 'PloaieVerdeMunte', confirmPassword: 'PloaieVerdeMunte',
+    })
+    expect(issuesFor(result, 'newPassword')).toContain('Parola trebuie să conțină cel puțin 1 caracter special')
+  })
+
+  it('should reject a new password equal to the current one', () => {
+    const result = buildChangeOwnPasswordSchema(policy).safeParse({
+      currentPassword: 'Ploaie-Verde-Munte', newPassword: 'Ploaie-Verde-Munte', confirmPassword: 'Ploaie-Verde-Munte',
+    })
+    expect(issuesFor(result, 'newPassword')).toContain('Parola nouă trebuie să fie diferită de cea curentă')
   })
 })

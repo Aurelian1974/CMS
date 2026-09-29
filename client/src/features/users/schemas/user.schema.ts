@@ -102,39 +102,42 @@ export const buildCreateUserSchema = (policy: PasswordPolicyDto | undefined) =>
 /// Schema Zod — editare utilizator (fără parolă)
 export const updateUserSchema = z.object(baseUserFields).superRefine(checkAssociation)
 
-/// Schema Zod — schimbare parolă
-/// Politica trebuie să rămână aliniată cu PasswordRules din backend.
-/// Validarea din client e doar pentru feedback imediat — backendul o reaplică.
-const MIN_PASSWORD_LENGTH = 12
-
-const newPasswordField = z
-  .string()
-  .min(MIN_PASSWORD_LENGTH, `Parola trebuie să aibă minimum ${MIN_PASSWORD_LENGTH} caractere`)
-  .max(100, 'Maxim 100 caractere')
+/// Cerințele politicii, afișate sub câmpul de parolă
+export const describePasswordPolicy = (p: PasswordPolicyDto, withIdentity = false): string => {
+  const parts = [`minimum ${p.minLength} caractere`]
+  if (p.minDigits > 0)    parts.push(`${p.minDigits} ${p.minDigits === 1 ? 'cifră' : 'cifre'}`)
+  if (p.minUppercase > 0) parts.push(`${p.minUppercase} ${p.minUppercase === 1 ? 'literă mare' : 'litere mari'}`)
+  if (p.minLowercase > 0) parts.push(`${p.minLowercase} ${p.minLowercase === 1 ? 'literă mică' : 'litere mici'}`)
+  if (p.minSpecial > 0)   parts.push(`${p.minSpecial} ${p.minSpecial === 1 ? 'caracter special' : 'caractere speciale'}`)
+  if (withIdentity && p.forbidIdentityValues) parts.push('diferită de email, username și nume')
+  return `Cerințe: ${parts.join(' · ')}`
+}
 
 /// Reset administrativ — fără parola curentă, adminul nu o cunoaște
-export const resetPasswordSchema = z.object({
-  newPassword:     newPasswordField,
-  confirmPassword: z.string().min(1, 'Confirmarea parolei este obligatorie'),
-}).refine(
-  (data) => data.newPassword === data.confirmPassword,
-  { message: 'Parolele nu coincid', path: ['confirmPassword'] }
-)
+export const buildResetPasswordSchema = (policy: PasswordPolicyDto | undefined) =>
+  z.object({
+    newPassword:     passwordField(policy),
+    confirmPassword: z.string().min(1, 'Confirmarea parolei este obligatorie'),
+  }).refine(
+    (data) => data.newPassword === data.confirmPassword,
+    { message: 'Parolele nu coincid', path: ['confirmPassword'] }
+  )
 
 /// Schimbare proprie — parola curentă e obligatorie
-export const changeOwnPasswordSchema = z.object({
-  currentPassword: z.string().min(1, 'Parola curentă este obligatorie'),
-  newPassword:     newPasswordField,
-  confirmPassword: z.string().min(1, 'Confirmarea parolei este obligatorie'),
-}).refine(
-  (data) => data.newPassword === data.confirmPassword,
-  { message: 'Parolele nu coincid', path: ['confirmPassword'] }
-).refine(
-  (data) => data.currentPassword !== data.newPassword,
-  { message: 'Parola nouă trebuie să fie diferită de cea curentă', path: ['newPassword'] }
-)
+export const buildChangeOwnPasswordSchema = (policy: PasswordPolicyDto | undefined) =>
+  z.object({
+    currentPassword: z.string().min(1, 'Parola curentă este obligatorie'),
+    newPassword:     passwordField(policy),
+    confirmPassword: z.string().min(1, 'Confirmarea parolei este obligatorie'),
+  }).refine(
+    (data) => data.newPassword === data.confirmPassword,
+    { message: 'Parolele nu coincid', path: ['confirmPassword'] }
+  ).refine(
+    (data) => data.currentPassword !== data.newPassword,
+    { message: 'Parola nouă trebuie să fie diferită de cea curentă', path: ['newPassword'] }
+  )
 
 export type CreateUserFormData = z.infer<ReturnType<typeof buildCreateUserSchema>>
 export type UpdateUserFormData = z.infer<typeof updateUserSchema>
-export type ResetPasswordFormData    = z.infer<typeof resetPasswordSchema>
-export type ChangeOwnPasswordFormData = z.infer<typeof changeOwnPasswordSchema>
+export type ResetPasswordFormData    = z.infer<ReturnType<typeof buildResetPasswordSchema>>
+export type ChangeOwnPasswordFormData = z.infer<ReturnType<typeof buildChangeOwnPasswordSchema>>

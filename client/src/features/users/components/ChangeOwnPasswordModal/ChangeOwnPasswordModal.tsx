@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { changeOwnPasswordSchema, type ChangeOwnPasswordFormData } from '../../schemas/user.schema'
+import { buildChangeOwnPasswordSchema, describePasswordPolicy, type ChangeOwnPasswordFormData } from '../../schemas/user.schema'
+import { usePasswordPolicy } from '../../hooks/useUsers'
 import { AppModal } from '@/components/ui/AppModal'
 import { FormInput } from '@/components/forms/FormInput'
 import { AppButton } from '@/components/ui/AppButton'
@@ -34,8 +35,12 @@ export const ChangeOwnPasswordModal = ({
   serverError,
   forced = false,
 }: ChangeOwnPasswordModalProps) => {
+  const { data: policyResp } = usePasswordPolicy({ enabled: isOpen })
+  const policy = policyResp?.data ?? undefined
+  const schema = useMemo(() => buildChangeOwnPasswordSchema(policy), [policy])
+
   const { control, handleSubmit, reset } = useForm<ChangeOwnPasswordFormData>({
-    resolver: zodResolver(changeOwnPasswordSchema),
+    resolver: zodResolver(schema),
     defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
   })
 
@@ -103,9 +108,10 @@ export const ChangeOwnPasswordModal = ({
         control={control}
         label="Parolă nouă"
         type="password"
-        placeholder="Minim 12 caractere"
+        placeholder={policy ? `Minim ${policy.minLength} caractere` : 'Parolă nouă'}
         required
       />
+      {policy && <p className={styles.passwordHint}>{describePasswordPolicy(policy)}</p>}
 
       <FormInput<ChangeOwnPasswordFormData>
         name="confirmPassword"

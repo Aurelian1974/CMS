@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { buildCreateUserSchema, updateUserSchema, ASSOCIATION_FIELD, type CreateUserFormData } from '../../schemas/user.schema'
+import { buildCreateUserSchema, updateUserSchema, describePasswordPolicy, ASSOCIATION_FIELD, type CreateUserFormData } from '../../schemas/user.schema'
 import type { UserDto, RoleDto, UserAssociationType, PasswordPolicyDto } from '../../types/user.types'
 import type { DoctorLookupDto } from '@/features/doctors/types/doctor.types'
 import type { MedicalStaffLookupDto } from '@/features/medicalStaff/types/medicalStaff.types'
@@ -31,17 +31,6 @@ interface UserFormModalProps {
   passwordPolicy?: PasswordPolicyDto
   /** Eroare server (ex: email duplicat) — afișată în modal */
   serverError?: string | null
-}
-
-/// Lista cerințelor de parolă, afișată sub câmp
-const describePolicy = (p: PasswordPolicyDto): string => {
-  const parts = [`minimum ${p.minLength} caractere`]
-  if (p.minDigits > 0)    parts.push(`${p.minDigits} ${p.minDigits === 1 ? 'cifră' : 'cifre'}`)
-  if (p.minUppercase > 0) parts.push(`${p.minUppercase} ${p.minUppercase === 1 ? 'literă mare' : 'litere mari'}`)
-  if (p.minLowercase > 0) parts.push(`${p.minLowercase} ${p.minLowercase === 1 ? 'literă mică' : 'litere mici'}`)
-  if (p.minSpecial > 0)   parts.push(`${p.minSpecial} ${p.minSpecial === 1 ? 'caracter special' : 'caractere speciale'}`)
-  if (p.forbidIdentityValues) parts.push('diferită de email, username și nume')
-  return `Cerințe: ${parts.join(' · ')}`
 }
 
 const EMPTY_FORM: CreateUserFormData = {
@@ -267,7 +256,7 @@ export const UserFormModal = ({
                 </div>
                 {passwordPolicy && (
                   <div className="col-12">
-                    <p className={styles.passwordHint}>{describePolicy(passwordPolicy)}</p>
+                    <p className={styles.passwordHint}>{describePasswordPolicy(passwordPolicy, true)}</p>
                   </div>
                 )}
               </div>
