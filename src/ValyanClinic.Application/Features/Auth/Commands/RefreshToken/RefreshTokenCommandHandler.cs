@@ -2,12 +2,10 @@ using MediatR;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using ValyanClinic.Application.Common.Configuration;
-using Microsoft.Extensions.Options;
 using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Interfaces;
 using ValyanClinic.Application.Common.Models;
 using ValyanClinic.Application.Features.Auth.Commands.Login;
-using ValyanClinic.Application.Common.Configuration;
 
 namespace ValyanClinic.Application.Features.Auth.Commands.RefreshToken;
 
