@@ -63,28 +63,24 @@ describe('vatRateSchema', () => {
 })
 
 describe('importInvestigationsSchema', () => {
-  const row = (overrides: Partial<{ typeCode: string; selected: boolean; name: string; price: string }> = {}) => ({
-    typeCode: 'ECG', selected: true, name: 'Electrocardiogramă', price: '', ...overrides,
+  const row = (overrides: Partial<{ typeCode: string; isNew: boolean; price: string }> = {}) => ({
+    typeCode: 'ECG', isNew: true, price: '', ...overrides,
   })
   const form = (rows: ReturnType<typeof row>[], vatRateId = 'F1000000-0000-0000-0000-000000000001') => ({
     vatRateId, validFrom: '2026-09-29', rows,
   })
 
-  it('should accept selected rows without price and without VAT regime', () => {
+  it('should accept new rows without price and without VAT regime', () => {
     expect(importInvestigationsSchema.safeParse(form([row()], '')).success).toBe(true)
   })
 
-  it('should reject when nothing is selected', () => {
-    expect(importInvestigationsSchema.safeParse(form([row({ selected: false })])).success).toBe(false)
-  })
-
-  it('should ignore invalid values on rows that are not selected', () => {
+  it('should ignore values on rows that already have a service', () => {
     const result = importInvestigationsSchema.safeParse(
-      form([row(), row({ typeCode: 'MRI', selected: false, name: '', price: '-3' })]))
+      form([row(), row({ typeCode: 'MRI', isNew: false, price: '-3' })]))
     expect(result.success).toBe(true)
   })
 
-  it('should reject a negative price on a selected row', () => {
+  it('should reject a negative price on a new row', () => {
     expect(importInvestigationsSchema.safeParse(form([row({ price: '-1' })])).success).toBe(false)
   })
 
@@ -92,9 +88,5 @@ describe('importInvestigationsSchema', () => {
     const result = importInvestigationsSchema.safeParse(form([row({ price: '80' })], ''))
     expect(result.success).toBe(false)
     expect(result.error?.issues[0]?.path).toEqual(['vatRateId'])
-  })
-
-  it('should require the service name on a selected row', () => {
-    expect(importInvestigationsSchema.safeParse(form([row({ name: '  ' })])).success).toBe(false)
   })
 })

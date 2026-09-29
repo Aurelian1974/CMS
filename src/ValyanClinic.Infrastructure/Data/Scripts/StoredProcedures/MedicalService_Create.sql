@@ -33,11 +33,10 @@ BEGIN
             ;THROW 50610, N'Există deja un serviciu cu acest cod.', 1;
         END;
 
-        IF @InvestigationTypeCode IS NOT NULL AND EXISTS (
-            SELECT 1 FROM dbo.MedicalServices WITH (UPDLOCK, HOLDLOCK)
-            WHERE ClinicId = @ClinicId AND InvestigationTypeCode = @InvestigationTypeCode AND IsDeleted = 0)
+        IF @InvestigationTypeCode IS NOT NULL
+           OR @CategoryId = (SELECT Id FROM dbo.ServiceCategories WHERE Code = N'INVESTIGATIE')
         BEGIN
-            ;THROW 50651, N'Investigația asociată are deja un serviciu în tarife.', 1;
+            ;THROW 50653, N'Serviciile pentru investigații paraclinice se creează doar din Tarife → Importă investigații.', 1;
         END;
 
         IF NOT EXISTS (SELECT 1 FROM dbo.ServiceCategories WHERE Id = @CategoryId AND IsActive = 1)

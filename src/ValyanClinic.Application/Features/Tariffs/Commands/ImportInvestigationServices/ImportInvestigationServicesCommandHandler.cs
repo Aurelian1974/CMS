@@ -16,8 +16,8 @@ public sealed class ImportInvestigationServicesCommandHandler(
     {
         try
         {
-            var items = request.Items
-                .Select(i => new InvestigationServiceImportItem(i.InvestigationTypeCode.Trim(), i.Name.Trim(), i.Price))
+            var items = (request.Items ?? [])
+                .Select(i => new InvestigationServiceImportItem(i.InvestigationTypeCode.Trim(), i.Price))
                 .ToList();
 
             var count = await repository.ImportInvestigationServicesAsync(

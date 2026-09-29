@@ -69,7 +69,7 @@ public sealed class TariffValidatorTests
     private readonly ImportInvestigationServicesCommandValidator _importValidator = new();
 
     private static ImportInvestigationServicesCommand ValidImport(params InvestigationServiceImportItem[] items) => new(
-        Items: items.Length > 0 ? items : [new InvestigationServiceImportItem("ECG", "Electrocardiogramă", 80m)],
+        Items: items.Length > 0 ? items : [new InvestigationServiceImportItem("ECG", 80m)],
         VatRateId: Guid.NewGuid(),
         ValidFrom: null);
 
@@ -79,33 +79,22 @@ public sealed class TariffValidatorTests
 
     [Fact]
     public void Import_WithoutPricesAndVatRate_PassesValidation()
-        => _importValidator.TestValidate(ValidImport(new InvestigationServiceImportItem("ECG", "EKG", null)) with { VatRateId = null })
+        => _importValidator.TestValidate(ValidImport() with { Items = [], VatRateId = null })
             .ShouldNotHaveAnyValidationErrors();
-
-    [Fact]
-    public void Import_EmptyList_HasError()
-        => _importValidator.TestValidate(ValidImport() with { Items = [] })
-            .ShouldHaveValidationErrorFor(x => x.Items)
-            .WithErrorMessage("Selectați cel puțin o investigație.");
 
     [Fact]
     public void Import_DuplicateType_HasError()
         => _importValidator.TestValidate(ValidImport(
-                new InvestigationServiceImportItem("ECG", "EKG", null),
-                new InvestigationServiceImportItem("ECG", "EKG repetat", null)))
+                new InvestigationServiceImportItem("ECG", 10m),
+                new InvestigationServiceImportItem("ECG", 20m)))
             .ShouldHaveValidationErrorFor(x => x.Items)
             .WithErrorMessage("O investigație apare de mai multe ori în listă.");
 
     [Fact]
     public void Import_NegativePrice_HasError()
-        => _importValidator.TestValidate(ValidImport(new InvestigationServiceImportItem("ECG", "EKG", -5m)))
+        => _importValidator.TestValidate(ValidImport(new InvestigationServiceImportItem("ECG", -5m)))
             .ShouldHaveValidationErrorFor("Items[0].Price")
             .WithErrorMessage("Prețul nu poate fi negativ.");
-
-    [Fact]
-    public void Import_MissingName_HasError()
-        => _importValidator.TestValidate(ValidImport(new InvestigationServiceImportItem("ECG", " ", null)))
-            .ShouldHaveValidationErrorFor("Items[0].Name");
 
     [Fact]
     public void Import_PriceWithoutVatRate_HasError()

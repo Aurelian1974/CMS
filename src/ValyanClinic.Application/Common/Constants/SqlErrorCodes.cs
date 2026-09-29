@@ -92,6 +92,7 @@ public static class SqlErrorCodes
     // Import investigații în tarife
     public const int InvestigationTypeNotBillable      = 50650;
     public const int InvestigationServiceAlreadyExists = 50651;
+    public const int InvestigationServiceLinkLocked    = 50653;
 
     // ====== Rețete ======
     public const int PrescriptionExpired           = 50040;

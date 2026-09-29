@@ -22522,9 +22522,8 @@ export interface components {
         };
         InvestigationServiceImportItem: {
             investigationTypeCode?: string | null;
-            name?: string | null;
             /** Format: double */
-            price?: number | null;
+            price?: number;
         };
         InvestigationTrendingPointDto: {
             /** Format: date-time */

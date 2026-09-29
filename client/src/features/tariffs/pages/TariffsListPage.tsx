@@ -120,7 +120,8 @@ export const TariffsListPage = () => {
 
   const handleSubmit = (data: MedicalServiceFormData) => {
     const durationMinutes = data.durationMinutes === '' ? null : data.durationMinutes
-    const investigationTypeCode = data.investigationTypeCode || null
+    // Legătura cu investigația se stabilește doar la import și nu se modifică (MedicalService_Update → 50653)
+    const investigationTypeCode = editing?.investigationTypeCode ?? null
     const done = (msg: string) => ({
       onSuccess: () => { setFormOpen(false); setEditing(null); showSuccess(msg) },
       onError: showError,

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { useForm, useWatch } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { AppModal } from '@/components/ui/AppModal'
 import { AppButton } from '@/components/ui/AppButton'
@@ -54,7 +54,7 @@ export const ImportInvestigationsModal = ({
   const types = useMemo(() => resp?.data ?? [], [resp])
   const importMut = useImportInvestigationServices()
 
-  const { control, register, handleSubmit, reset, setValue, formState: { errors } } =
+  const { control, register, handleSubmit, reset, formState: { errors } } =
     useForm<ImportInvestigationsFormData>({
       resolver: zodResolver(importInvestigationsSchema),
       defaultValues: { vatRateId: '', validFrom: toLocalDateISO(new Date()), rows: [] },
@@ -72,17 +72,11 @@ export const ImportInvestigationsModal = ({
     reset({
       vatRateId: lookups?.vatRates[0]?.id ?? '',
       validFrom: toLocalDateISO(new Date()),
-      rows: types.map((t) => ({ typeCode: t.typeCode, selected: false, name: t.displayName, price: '' })),
+      rows: types.map((t) => ({ typeCode: t.typeCode, isNew: !t.existingServiceCode, price: '' })),
     })
   }, [isOpen, resp, types, lookups, reset])
 
-  const rows = useWatch({ control, name: 'rows' })
-  const importableIndexes = useMemo(
-    () => types.flatMap((t, i) => (t.existingServiceCode ? [] : [i])),
-    [types],
-  )
-  const selectedCount = rows.filter((r) => r.selected).length
-  const allSelected = importableIndexes.length > 0 && selectedCount === importableIndexes.length
+  const missingCount = useMemo(() => types.filter((t) => !t.existingServiceCode).length, [types])
 
   const groups = useMemo(() => groupByTab(types), [types])
   const vatOptions = useMemo(
@@ -90,36 +84,20 @@ export const ImportInvestigationsModal = ({
     [lookups],
   )
 
-  const toggleAll = () => {
-    importableIndexes.forEach((i) => setValue(`rows.${i}.selected`, !allSelected))
-  }
-
-  // Editarea denumirii sau a prețului bifează automat rândul
-  const selectRow = (index: number) => {
-    if (!rows[index]?.selected) setValue(`rows.${index}.selected`, true)
-  }
-
   const onSubmit = (data: ImportInvestigationsFormData) => {
     const items = data.rows
-      .filter((r) => r.selected)
-      .map((r) => ({
-        investigationTypeCode: r.typeCode,
-        name: r.name.trim(),
-        price: r.price.trim() === '' ? null : Number(r.price),
-      }))
-    const anyPrice = items.some((i) => i.price != null)
+      .filter((r) => r.isNew && r.price.trim() !== '')
+      .map((r) => ({ investigationTypeCode: r.typeCode, price: Number(r.price) }))
 
     importMut.mutate(
       {
         items,
-        vatRateId: anyPrice ? data.vatRateId : null,
-        validFrom: anyPrice ? data.validFrom : null,
+        vatRateId: items.length > 0 ? data.vatRateId : null,
+        validFrom: items.length > 0 ? data.validFrom : null,
       },
-      { onSuccess: (r) => onImported(r.data ?? items.length), onError },
+      { onSuccess: (r) => onImported(r.data ?? missingCount), onError },
     )
   }
-
-  const listError = errors.rows?.message ?? errors.rows?.root?.message
 
   return (
     <AppModal
@@ -132,11 +110,11 @@ export const ImportInvestigationsModal = ({
       bodyClassName={styles.body}
       footer={
         <>
-          <span className={styles.counter}>{selectedCount} selectate</span>
+          <span className={styles.counter}>{missingCount} investigații fără serviciu</span>
           <AppButton variant="secondary" onClick={onClose} disabled={importMut.isPending}>Anulează</AppButton>
           <AppButton type="submit" variant="primary" isLoading={importMut.isPending} loadingText="Se importă…"
-            disabled={importableIndexes.length === 0}>
-            Importă
+            disabled={missingCount === 0}>
+            Importă {missingCount > 0 ? missingCount : ''}
           </AppButton>
         </>
       }
@@ -148,48 +126,45 @@ export const ImportInvestigationsModal = ({
       ) : (
         <>
           <p className={styles.hint}>
-            Lista vine din nomenclatorul de investigații paraclinice. Fiecare investigație bifată devine un serviciu
-            în categoria „Investigații paraclinice”, cu cod generat automat (INV-001, INV-002, …). Serviciile fără
-            preț apar ca „fără preț în vigoare” și nu pot fi adăugate pe consultații până nu primesc un preț.
-            Investigațiile care au deja serviciu (inclusiv inactiv) nu se reimportă — serviciul se reactivează din listă.
+            Tarifele sunt 1:1 cu investigațiile din consultație (Imagistică, Funcțional, Proceduri): fiecare investigație
+            are exact un serviciu, cu aceeași denumire, în categoria „Investigații paraclinice”. Importul creează
+            serviciile lipsă (cod INV-001, INV-002, …). Prețul e opțional — fără preț, investigația nu intră la plată
+            până nu i se adaugă unul din istoricul de prețuri.
           </p>
-          {importableIndexes.length === 0 && (
+          {missingCount === 0 && (
             <div className={styles.empty}>Toate investigațiile facturabile au deja un serviciu în tarife.</div>
           )}
 
-          <div className={styles.row}>
-            <FormSelect<ImportInvestigationsFormData> name="vatRateId" control={control} label="Regim TVA"
-              options={vatOptions} className={styles.grow} />
-            <FormDatePicker<ImportInvestigationsFormData> name="validFrom" control={control} label="Preț valabil de la"
-              required min={new Date(new Date().setHours(0, 0, 0, 0))} className={styles.date} />
-          </div>
-          <p className={styles.hint}>Regimul TVA și data se aplică doar serviciilor cu preț completat.</p>
+          {missingCount > 0 && (
+            <>
+              <div className={styles.row}>
+                <FormSelect<ImportInvestigationsFormData> name="vatRateId" control={control} label="Regim TVA"
+                  options={vatOptions} className={styles.grow} />
+                <FormDatePicker<ImportInvestigationsFormData> name="validFrom" control={control} label="Preț valabil de la"
+                  required min={new Date(new Date().setHours(0, 0, 0, 0))} className={styles.date} />
+              </div>
+              <p className={styles.hint}>Regimul TVA și data se aplică doar serviciilor cu preț completat.</p>
+            </>
+          )}
 
           <div className={styles.tableWrapper}>
             <table className={styles.table}>
               <thead>
                 <tr>
-                  <th className={styles.checkCol}>
-                    <input type="checkbox" checked={allSelected} onChange={toggleAll}
-                      aria-label="Selectează toate investigațiile" />
-                  </th>
-                  <th>Investigație</th>
-                  <th>Denumire serviciu</th>
-                  <th className={styles.priceCol}>Preț (RON, TVA inclus)</th>
+                  <th>Investigație = serviciu</th>
+                  <th>Serviciu în tarife</th>
+                  <th className={styles.priceCol}>Preț inițial (RON, TVA inclus)</th>
                 </tr>
               </thead>
               {groups.map((g) => (
                 <tbody key={g.tab}>
                   <tr className={styles.groupRow}>
-                    <td colSpan={4}>{TAB_LABELS[g.tab] ?? g.tab}</td>
+                    <td colSpan={3}>{TAB_LABELS[g.tab] ?? g.tab}</td>
                   </tr>
                   {g.items.map(({ type, index }) => {
                     if (type.existingServiceCode) {
                       return (
                         <tr key={type.typeCode} className={styles.linkedRow}>
-                          <td className={styles.checkCol}>
-                            <input type="checkbox" checked disabled aria-label={`${type.displayName} — are deja serviciu`} />
-                          </td>
                           <td>{type.displayName}</td>
                           <td colSpan={2}>
                             <span className={styles.existingCode}>{type.existingServiceCode}</span>
@@ -200,24 +175,16 @@ export const ImportInvestigationsModal = ({
                         </tr>
                       )
                     }
-                    const selected = rows[index]?.selected ?? false
-                    const rowErrors = errors.rows?.[index]
+                    const priceError = errors.rows?.[index]?.price?.message
                     return (
-                      <tr key={type.typeCode} className={selected ? styles.selectedRow : undefined}>
-                        <td className={styles.checkCol}>
-                          <input type="checkbox" {...register(`rows.${index}.selected`)}
-                            aria-label={`Selectează ${type.displayName}`} />
-                        </td>
+                      <tr key={type.typeCode} className={styles.selectedRow}>
                         <td>{type.displayName}</td>
-                        <td>
-                          <input type="text" className="form-control form-control-sm" maxLength={200}
-                            {...register(`rows.${index}.name`, { onChange: () => selectRow(index) })} />
-                          {rowErrors?.name?.message && <div className={styles.error}>{rowErrors.name.message}</div>}
-                        </td>
+                        <td><AppBadge variant="warning">se creează</AppBadge></td>
                         <td className={styles.priceCol}>
                           <input type="number" step="0.01" min={0} className="form-control form-control-sm"
-                            placeholder="fără preț" {...register(`rows.${index}.price`, { onChange: () => selectRow(index) })} />
-                          {rowErrors?.price?.message && <div className={styles.error}>{rowErrors.price.message}</div>}
+                            placeholder="fără preț" aria-label={`Preț ${type.displayName}`}
+                            {...register(`rows.${index}.price`)} />
+                          {priceError && <div className={styles.error}>{priceError}</div>}
                         </td>
                       </tr>
                     )
@@ -226,8 +193,6 @@ export const ImportInvestigationsModal = ({
               ))}
             </table>
           </div>
-
-          {listError && <div className={styles.error}>{listError}</div>}
         </>
       )}
     </AppModal>

@@ -230,7 +230,6 @@ public sealed class TariffRepository(DapperContext context) : ITariffRepository
         var items = JsonSerializer.Serialize(data.Items.Select(i => new
         {
             i.InvestigationTypeCode,
-            i.Name,
             i.Price
         }));
 

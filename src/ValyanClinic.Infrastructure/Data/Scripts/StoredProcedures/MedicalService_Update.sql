@@ -5,6 +5,8 @@ GO
 -- ============================================================================
 -- SP: MedicalService_Update — date descriptive (prețul se schimbă prin
 -- MedicalServicePrice_Add). Concurență optimistă prin RowVersion.
+-- Serviciile legate de investigații sunt 1:1 cu nomenclatorul: legătura nu se
+-- modifică, denumirea și categoria vin din InvestigationTypeDefinitions.
 -- ============================================================================
 CREATE OR ALTER PROCEDURE dbo.MedicalService_Update
     @Id                    UNIQUEIDENTIFIER,
@@ -24,8 +26,8 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        DECLARE @CurrentVersion BINARY(8);
-        SELECT @CurrentVersion = RowVersion
+        DECLARE @CurrentVersion BINARY(8), @CurrentTypeCode NVARCHAR(50);
+        SELECT @CurrentVersion = RowVersion, @CurrentTypeCode = InvestigationTypeCode
         FROM dbo.MedicalServices WITH (UPDLOCK)
         WHERE Id = @Id AND ClinicId = @ClinicId AND IsDeleted = 0;
 
@@ -39,17 +41,28 @@ BEGIN
             ;THROW 50613, N'Serviciul a fost modificat între timp de alt utilizator. Reîncărcați datele.', 1;
         END;
 
+        IF ISNULL(@InvestigationTypeCode, N'') <> ISNULL(@CurrentTypeCode, N'')
+        BEGIN
+            ;THROW 50653, N'Legătura dintre serviciu și investigația paraclinică nu se poate modifica.', 1;
+        END;
+
+        DECLARE @InvestigationCategoryId UNIQUEIDENTIFIER =
+            (SELECT Id FROM dbo.ServiceCategories WHERE Code = N'INVESTIGATIE');
+
+        IF @CurrentTypeCode IS NOT NULL
+        BEGIN
+            SELECT @Name = LEFT(DisplayName, 200) FROM dbo.InvestigationTypeDefinitions WHERE TypeCode = @CurrentTypeCode;
+            SET @CategoryId = @InvestigationCategoryId;
+        END
+        ELSE IF @CategoryId = @InvestigationCategoryId
+        BEGIN
+            ;THROW 50653, N'Categoria „Investigații paraclinice” conține doar serviciile importate din investigații.', 1;
+        END;
+
         IF EXISTS (SELECT 1 FROM dbo.MedicalServices
                    WHERE ClinicId = @ClinicId AND Code = @Code AND Id <> @Id AND IsDeleted = 0)
         BEGIN
             ;THROW 50610, N'Există deja un serviciu cu acest cod.', 1;
-        END;
-
-        IF @InvestigationTypeCode IS NOT NULL AND EXISTS (
-            SELECT 1 FROM dbo.MedicalServices
-            WHERE ClinicId = @ClinicId AND InvestigationTypeCode = @InvestigationTypeCode AND Id <> @Id AND IsDeleted = 0)
-        BEGIN
-            ;THROW 50651, N'Investigația asociată are deja un serviciu în tarife.', 1;
         END;
 
         IF NOT EXISTS (SELECT 1 FROM dbo.ServiceCategories WHERE Id = @CategoryId AND IsActive = 1)

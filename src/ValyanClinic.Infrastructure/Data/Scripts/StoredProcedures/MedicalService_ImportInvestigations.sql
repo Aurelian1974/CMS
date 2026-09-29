@@ -4,15 +4,15 @@ GO
 
 -- ============================================================================
 -- SP: MedicalService_ImportInvestigations
--- Creează câte un serviciu (categoria INVESTIGATIE) pentru fiecare tip de investigație
--- primit, legat prin InvestigationTypeCode. Codul se generează INV-001, INV-002, ...
--- Prețul e opțional: serviciile fără preț nu se pot adăuga pe consultații
--- (ConsultationService_Add cere o versiune în vigoare) până nu primesc unul.
--- @Items: JSON [{ "InvestigationTypeCode": "...", "Name": "...", "Price": 120.00 | null }]
+-- Aduce tarifele la 1:1 cu nomenclatorul de investigații: creează câte un serviciu
+-- (categoria INVESTIGATIE, denumirea din nomenclator) pentru FIECARE tip facturabil
+-- activ care nu are încă serviciu în clinică. Codul se generează INV-001, INV-002, ...
+-- Prețul e opțional: serviciile fără preț nu se pot factura până nu primesc unul.
+-- @Items: prețurile inițiale, JSON [{ "InvestigationTypeCode": "...", "Price": 120.00 }]
 -- ============================================================================
 CREATE OR ALTER PROCEDURE dbo.MedicalService_ImportInvestigations
     @ClinicId  UNIQUEIDENTIFIER,
-    @Items     NVARCHAR(MAX),
+    @Items     NVARCHAR(MAX)    = NULL,
     @VatRateId UNIQUEIDENTIFIER = NULL,
     @ValidFrom DATE             = NULL,
     @CreatedBy UNIQUEIDENTIFIER
@@ -24,6 +24,8 @@ BEGIN
     DECLARE @CodePrefix NVARCHAR(10) = N'INV-';
     DECLARE @Today DATE = CAST(GETDATE() AS DATE);
     SET @ValidFrom = ISNULL(@ValidFrom, @Today);
+
+    DECLARE @Prices TABLE (TypeCode NVARCHAR(50) NOT NULL, Price DECIMAL(18,2) NULL);
 
     DECLARE @Rows TABLE (
         RowNo    INT              NOT NULL,
@@ -37,13 +39,10 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        INSERT INTO @Rows (RowNo, TypeCode, Name, Price)
-        SELECT
-            ROW_NUMBER() OVER (ORDER BY CAST(j.[key] AS INT)),
-            LTRIM(RTRIM(JSON_VALUE(j.value, '$.InvestigationTypeCode'))),
-            LTRIM(RTRIM(JSON_VALUE(j.value, '$.Name'))),
-            TRY_CAST(JSON_VALUE(j.value, '$.Price') AS DECIMAL(18,2))
-        FROM OPENJSON(@Items) j;
+        INSERT INTO @Prices (TypeCode, Price)
+        SELECT LTRIM(RTRIM(JSON_VALUE(j.value, '$.InvestigationTypeCode'))),
+               TRY_CAST(JSON_VALUE(j.value, '$.Price') AS DECIMAL(18,2))
+        FROM OPENJSON(ISNULL(@Items, N'[]')) j;
 
         DECLARE @CategoryId UNIQUEIDENTIFIER =
             (SELECT Id FROM dbo.ServiceCategories WHERE Code = N'INVESTIGATIE' AND IsActive = 1);
@@ -54,9 +53,9 @@ BEGIN
         END;
 
         IF EXISTS (
-            SELECT 1 FROM @Rows r
+            SELECT 1 FROM @Prices p
             LEFT JOIN dbo.InvestigationTypeDefinitions d
-                   ON d.TypeCode = r.TypeCode AND d.IsActive = 1 AND d.IsBillable = 1
+                   ON d.TypeCode = p.TypeCode AND d.IsActive = 1 AND d.IsBillable = 1
             WHERE d.TypeCode IS NULL)
         BEGIN
             ;THROW 50650, N'Una dintre investigațiile selectate nu există, nu este activă sau nu se facturează.', 1;
@@ -65,8 +64,8 @@ BEGIN
         DECLARE @Msg NVARCHAR(2048);
 
         SELECT TOP (1) @Msg = CONCAT(N'Investigația „', d.DisplayName, N'” apare de mai multe ori în listă.')
-        FROM @Rows r
-        INNER JOIN dbo.InvestigationTypeDefinitions d ON d.TypeCode = r.TypeCode
+        FROM @Prices p
+        INNER JOIN dbo.InvestigationTypeDefinitions d ON d.TypeCode = p.TypeCode
         GROUP BY d.DisplayName
         HAVING COUNT(*) > 1;
 
@@ -77,10 +76,11 @@ BEGIN
 
         -- UPDLOCK + HOLDLOCK pe serviciile clinicii: serializează importurile concurente
         -- (aceeași legătură sau același cod INV-NNN nu se pot crea de două ori)
-        SELECT TOP (1) @Msg = CONCAT(N'Investigația „', d.DisplayName, N'” are deja serviciul ', ms.Code, N' în tarife.')
+        SELECT TOP (1) @Msg = CONCAT(N'Investigația „', d.DisplayName, N'” are deja serviciul ', ms.Code,
+                                     N' în tarife; prețul se schimbă din istoricul de prețuri.')
         FROM dbo.MedicalServices ms WITH (UPDLOCK, HOLDLOCK)
-        INNER JOIN @Rows r ON r.TypeCode = ms.InvestigationTypeCode
-        INNER JOIN dbo.InvestigationTypeDefinitions d ON d.TypeCode = r.TypeCode
+        INNER JOIN @Prices p ON p.TypeCode = ms.InvestigationTypeCode
+        INNER JOIN dbo.InvestigationTypeDefinitions d ON d.TypeCode = p.TypeCode
         WHERE ms.ClinicId = @ClinicId AND ms.IsDeleted = 0;
 
         IF @Msg IS NOT NULL
@@ -88,7 +88,19 @@ BEGIN
             ;THROW 50651, @Msg, 1;
         END;
 
-        IF EXISTS (SELECT 1 FROM @Rows WHERE Price IS NOT NULL)
+        INSERT INTO @Rows (RowNo, TypeCode, Name, Price)
+        SELECT
+            ROW_NUMBER() OVER (ORDER BY d.ParentTab, d.SortOrder, d.DisplayName),
+            d.TypeCode, LEFT(d.DisplayName, 200), p.Price
+        FROM dbo.InvestigationTypeDefinitions d
+        LEFT JOIN @Prices p ON p.TypeCode = d.TypeCode
+        WHERE d.IsActive = 1
+          AND d.IsBillable = 1
+          AND NOT EXISTS (
+              SELECT 1 FROM dbo.MedicalServices ms WITH (UPDLOCK, HOLDLOCK)
+              WHERE ms.ClinicId = @ClinicId AND ms.IsDeleted = 0 AND ms.InvestigationTypeCode = d.TypeCode);
+
+        IF EXISTS (SELECT 1 FROM @Prices WHERE Price IS NOT NULL)
         BEGIN
             IF NOT EXISTS (SELECT 1 FROM dbo.VatRates WHERE Id = @VatRateId AND IsActive = 1)
             BEGIN
@@ -100,7 +112,7 @@ BEGIN
                 ;THROW 50614, N'Data de la care se aplică prețul nu poate fi în trecut.', 1;
             END;
 
-            IF EXISTS (SELECT 1 FROM @Rows WHERE Price < 0)
+            IF EXISTS (SELECT 1 FROM @Prices WHERE Price < 0)
             BEGIN
                 ;THROW 50614, N'Prețul nu poate fi negativ.', 1;
             END;

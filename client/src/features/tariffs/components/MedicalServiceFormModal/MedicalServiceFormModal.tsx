@@ -6,7 +6,6 @@ import { AppButton } from '@/components/ui/AppButton'
 import { FormInput } from '@/components/forms/FormInput'
 import { FormSelect } from '@/components/forms/FormSelect'
 import { FormDatePicker } from '@/components/forms/FormDatePicker'
-import { useInvestigationTypes } from '@/features/consultations/investigations/hooks/useInvestigations'
 import { toLocalDateISO } from '@/utils/format'
 import { medicalServiceSchema, type MedicalServiceFormData } from '../../schemas/tariff.schema'
 import type { BillingLookupsDto, MedicalServiceDetailDto } from '../../types/tariff.types'
@@ -21,6 +20,9 @@ interface MedicalServiceFormModalProps {
   /** Serviciul existent pentru editare, null pentru creare */
   editData: MedicalServiceDetailDto | null
 }
+
+// Categoria rezervată serviciilor 1:1 cu investigațiile — se populează doar prin import
+const INVESTIGATION_CATEGORY_CODE = 'INVESTIGATIE'
 
 const emptyForm = (lookups: BillingLookupsDto | undefined): MedicalServiceFormData => ({
   code: '',
@@ -42,7 +44,7 @@ export const MedicalServiceFormModal = ({
   editData,
 }: MedicalServiceFormModalProps) => {
   const isEdit = !!editData
-  const { data: investigationTypes } = useInvestigationTypes()
+  const isInvestigation = !!editData?.investigationTypeCode
 
   const { control, handleSubmit, reset } = useForm<MedicalServiceFormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -70,16 +72,14 @@ export const MedicalServiceFormModal = ({
   }, [isOpen, editData, lookups, reset])
 
   const categoryOptions = useMemo(
-    () => (lookups?.serviceCategories ?? []).map((c) => ({ value: c.id, label: c.name })),
-    [lookups],
+    () => (lookups?.serviceCategories ?? [])
+      .filter((c) => isInvestigation || c.code !== INVESTIGATION_CATEGORY_CODE)
+      .map((c) => ({ value: c.id, label: c.name })),
+    [lookups, isInvestigation],
   )
   const vatOptions = useMemo(
     () => (lookups?.vatRates ?? []).map((v) => ({ value: v.id, label: v.name })),
     [lookups],
-  )
-  const investigationOptions = useMemo(
-    () => (investigationTypes ?? []).map((t) => ({ value: t.typeCode, label: t.displayName })),
-    [investigationTypes],
   )
 
   return (
@@ -100,23 +100,34 @@ export const MedicalServiceFormModal = ({
         </>
       }
     >
+      {isInvestigation && (
+        <p className={styles.hint}>
+          Serviciu legat 1:1 de investigația paraclinică „{editData?.investigationTypeName ?? editData?.investigationTypeCode}”.
+          Denumirea și categoria vin din nomenclatorul de investigații; se pot modifica doar codul, durata și prețul.
+        </p>
+      )}
+
       <div className={styles.row}>
         <FormInput<MedicalServiceFormData> name="code" control={control} label="Cod intern"
           placeholder="ex: CONS-PNEUMO" required maxLength={30} className={styles.code} />
         <FormInput<MedicalServiceFormData> name="name" control={control} label="Denumire"
-          placeholder="ex: Consultație pneumologie" required maxLength={200} className={styles.grow} />
+          placeholder="ex: Consultație pneumologie" required maxLength={200} className={styles.grow}
+          disabled={isInvestigation} />
       </div>
 
       <div className={styles.row}>
         <FormSelect<MedicalServiceFormData> name="categoryId" control={control} label="Categorie"
-          options={categoryOptions} placeholder="Selectează categoria" required className={styles.grow} />
+          options={categoryOptions} placeholder="Selectează categoria" required className={styles.grow}
+          disabled={isInvestigation} />
         <FormInput<MedicalServiceFormData> name="durationMinutes" control={control} label="Durată (minute)"
           type="number" placeholder="opțional" className={styles.duration} />
       </div>
 
-      <FormSelect<MedicalServiceFormData> name="investigationTypeCode" control={control}
-        label="Investigație asociată" options={investigationOptions} allowFiltering showClearButton
-        placeholder="Opțional — sugerează serviciul când investigația e efectuată" />
+      {!isEdit && (
+        <p className={styles.hint}>
+          Serviciile pentru investigații paraclinice nu se creează aici, ci din „Importă investigații”.
+        </p>
+      )}
 
       {!isEdit && (
         <>

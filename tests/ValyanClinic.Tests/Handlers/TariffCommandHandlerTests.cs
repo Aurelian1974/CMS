@@ -129,8 +129,8 @@ public sealed class TariffCommandHandlerTests
     private static ImportInvestigationServicesCommand ValidImport() => new(
         Items:
         [
-            new InvestigationServiceImportItem(InvestigationTypeCode: " ECG ", Name: " Electrocardiogramă ", Price: 80m),
-            new InvestigationServiceImportItem(InvestigationTypeCode: "Spirometry", Name: "Spirometrie", Price: null),
+            new InvestigationServiceImportItem(InvestigationTypeCode: " ECG ", Price: 80m),
+            new InvestigationServiceImportItem(InvestigationTypeCode: "Spirometry", Price: 50m),
         ],
         VatRateId: VatRateId,
         ValidFrom: null);
@@ -151,8 +151,7 @@ public sealed class TariffCommandHandlerTests
                 d.ClinicId == ClinicId
                 && d.Items.Count == 2
                 && d.Items[0].InvestigationTypeCode == "ECG"
-                && d.Items[0].Name == "Electrocardiogramă"
-                && d.Items[1].Price == null),
+                && d.Items[1].Price == 50m),
             UserId,
             Arg.Any<CancellationToken>());
     }

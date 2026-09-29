@@ -40146,14 +40146,9 @@
             "type": "string",
             "nullable": true
           },
-          "name": {
-            "type": "string",
-            "nullable": true
-          },
           "price": {
             "type": "number",
-            "format": "double",
-            "nullable": true
+            "format": "double"
           }
         },
         "additionalProperties": false

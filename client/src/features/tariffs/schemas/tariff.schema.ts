@@ -49,33 +49,20 @@ export const vatRateSchema = z.object({
 
 export type VatRateFormData = z.infer<typeof vatRateSchema>
 
-// Prețul e opțional la import și se validează doar pe rândurile bifate
+// Import 1:1: se creează toate serviciile lipsă; prețul e opțional și se validează doar pe rândurile noi
 // (aceeași regulă ca ImportInvestigationServicesCommandValidator)
 export const importInvestigationsSchema = z.object({
   vatRateId: z.string(),
   validFrom: isoDate,
   rows: z.array(z.object({
     typeCode: z.string(),
-    selected: z.boolean(),
-    name: z.string(),
+    isNew: z.boolean(),
     price: z.string(),
   })),
 }).superRefine((v, ctx) => {
-  const selected = v.rows.filter((r) => r.selected)
-  if (selected.length === 0) {
-    ctx.addIssue({ code: 'custom', path: ['rows'], message: 'Selectați cel puțin o investigație' })
-  }
-
   let hasPrice = false
   v.rows.forEach((r, i) => {
-    if (!r.selected) return
-    const name = r.name.trim()
-    if (!name) {
-      ctx.addIssue({ code: 'custom', path: ['rows', i, 'name'], message: 'Denumirea este obligatorie' })
-    } else if (name.length > 200) {
-      ctx.addIssue({ code: 'custom', path: ['rows', i, 'name'], message: 'Denumirea nu poate depăși 200 de caractere' })
-    }
-    if (r.price.trim() === '') return
+    if (!r.isNew || r.price.trim() === '') return
     hasPrice = true
     const parsed = price.safeParse(r.price)
     if (!parsed.success) {
