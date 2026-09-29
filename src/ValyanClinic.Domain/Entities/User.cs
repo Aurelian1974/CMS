@@ -2,7 +2,7 @@ namespace ValyanClinic.Domain.Entities;
 
 /// <summary>
 /// Entitate Domain pentru utilizator al clinicii.
-/// Un utilizator este ÎNTOTDEAUNA asociat fie unui Doctor, fie unui MedicalStaff.
+/// Un utilizator este ÎNTOTDEAUNA asociat exact unei persoane: Doctor, MedicalStaff sau AdministrativeStaff.
 /// Parolele se stochează hash-uite (BCrypt).
 /// </summary>
 public sealed class User
@@ -12,6 +12,7 @@ public sealed class User
     public Guid RoleId { get; set; }
     public Guid? DoctorId { get; set; }
     public Guid? MedicalStaffId { get; set; }
+    public Guid? AdministrativeStaffId { get; set; }
     public string Username { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;

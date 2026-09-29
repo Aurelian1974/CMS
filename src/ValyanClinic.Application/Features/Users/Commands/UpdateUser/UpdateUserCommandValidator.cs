@@ -1,4 +1,5 @@
 using FluentValidation;
+using ValyanClinic.Application.Common.Constants;
 
 namespace ValyanClinic.Application.Features.Users.Commands.UpdateUser;
 
@@ -30,10 +31,8 @@ public sealed class UpdateUserCommandValidator : AbstractValidator<UpdateUserCom
             .NotEmpty().WithMessage("Numele este obligatoriu.")
             .MaximumLength(100).WithMessage("Numele nu poate depăși 100 de caractere.");
 
-        // Exact unul din DoctorId/MedicalStaffId trebuie completat
         RuleFor(x => x)
-            .Must(x => (x.DoctorId.HasValue && !x.MedicalStaffId.HasValue)
-                    || (!x.DoctorId.HasValue && x.MedicalStaffId.HasValue))
-            .WithMessage("Selectați fie un doctor, fie un membru al personalului medical.");
+            .Must(x => new[] { x.DoctorId, x.MedicalStaffId, x.AdministrativeStaffId }.Count(id => id.HasValue) == 1)
+            .WithMessage(ErrorMessages.User.InvalidAssociation);
     }
 }

@@ -9,6 +9,7 @@ CREATE OR ALTER PROCEDURE dbo.User_Create
     @RoleId         UNIQUEIDENTIFIER,
     @DoctorId       UNIQUEIDENTIFIER = NULL,
     @MedicalStaffId UNIQUEIDENTIFIER = NULL,
+    @AdministrativeStaffId UNIQUEIDENTIFIER = NULL,
     @Username       NVARCHAR(100),
     @Email          NVARCHAR(200),
     @PasswordHash   NVARCHAR(500),
@@ -36,11 +37,12 @@ BEGIN
             ;THROW 50508, N'Un utilizator cu acest username există deja.', 1;
         END;
 
-        -- Verificare asociere validă (exact unul din DoctorId/MedicalStaffId trebuie să fie non-NULL)
-        IF (@DoctorId IS NULL AND @MedicalStaffId IS NULL)
-           OR (@DoctorId IS NOT NULL AND @MedicalStaffId IS NOT NULL)
+        -- Verificare asociere validă (exact unul din DoctorId/MedicalStaffId/AdministrativeStaffId)
+        IF (CASE WHEN @DoctorId              IS NULL THEN 0 ELSE 1 END)
+         + (CASE WHEN @MedicalStaffId        IS NULL THEN 0 ELSE 1 END)
+         + (CASE WHEN @AdministrativeStaffId IS NULL THEN 0 ELSE 1 END) <> 1
         BEGIN
-            ;THROW 50501, N'Utilizatorul trebuie asociat fie unui doctor, fie unui membru al personalului medical.', 1;
+            ;THROW 50501, N'Utilizatorul trebuie asociat unui doctor, unui membru al personalului medical sau al personalului administrativ.', 1;
         END;
 
         -- Verificare doctor există (dacă e specificat)
@@ -55,6 +57,12 @@ BEGIN
            AND NOT EXISTS (SELECT 1 FROM MedicalStaff WHERE Id = @MedicalStaffId AND ClinicId = @ClinicId AND IsDeleted = 0)
         BEGIN
             ;THROW 50503, N'Personalul medical selectat nu există sau nu aparține acestei clinici.', 1;
+        END;
+
+        IF @AdministrativeStaffId IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM AdministrativeStaff WHERE Id = @AdministrativeStaffId AND ClinicId = @ClinicId AND IsDeleted = 0)
+        BEGIN
+            ;THROW 50509, N'Personalul administrativ selectat nu există sau nu aparține acestei clinici.', 1;
         END;
 
         -- Verificare rolul există
@@ -76,19 +84,25 @@ BEGIN
             ;THROW 50506, N'Acest membru al personalului medical are deja un cont de utilizator asociat.', 1;
         END;
 
+        IF @AdministrativeStaffId IS NOT NULL
+           AND EXISTS (SELECT 1 FROM Users WHERE AdministrativeStaffId = @AdministrativeStaffId AND ClinicId = @ClinicId AND IsDeleted = 0)
+        BEGIN
+            ;THROW 50510, N'Acest membru al personalului administrativ are deja un cont de utilizator asociat.', 1;
+        END;
+
         DECLARE @OutputIds TABLE (Id UNIQUEIDENTIFIER);
 
-        INSERT INTO Users (ClinicId, RoleId, DoctorId, MedicalStaffId, Username, Email, PasswordHash,
+        INSERT INTO Users (ClinicId, RoleId, DoctorId, MedicalStaffId, AdministrativeStaffId, Username, Email, PasswordHash,
                            FirstName, LastName, IsActive, CreatedBy, CreatedAt, IsDeleted)
         OUTPUT INSERTED.Id INTO @OutputIds(Id)
-        VALUES (@ClinicId, @RoleId, @DoctorId, @MedicalStaffId, @Username, @Email, @PasswordHash,
+        VALUES (@ClinicId, @RoleId, @DoctorId, @MedicalStaffId, @AdministrativeStaffId, @Username, @Email, @PasswordHash,
                 @FirstName, @LastName, @IsActive, @CreatedBy, GETDATE(), 0);
 
         -- Audit: captează valorile create (fără PasswordHash — informație sensibilă)
         DECLARE @NewUserId UNIQUEIDENTIFIER = (SELECT Id FROM @OutputIds);
         DECLARE @NewValues NVARCHAR(MAX);
         SELECT @NewValues = (
-            SELECT Username, Email, FirstName, LastName, RoleId, DoctorId, MedicalStaffId, IsActive
+            SELECT Username, Email, FirstName, LastName, RoleId, DoctorId, MedicalStaffId, AdministrativeStaffId, IsActive
             FROM Users WHERE Id = @NewUserId
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         );

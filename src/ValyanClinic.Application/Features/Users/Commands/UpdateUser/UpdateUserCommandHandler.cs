@@ -23,6 +23,7 @@ public sealed class UpdateUserCommandHandler(
                 request.RoleId,
                 request.DoctorId,
                 request.MedicalStaffId,
+                request.AdministrativeStaffId,
                 request.Username,
                 request.Email,
                 request.FirstName,
@@ -74,6 +75,14 @@ public sealed class UpdateUserCommandHandler(
         catch (SqlException ex) when (ex.Number == 50506)
         {
             return Result<bool>.Conflict(ErrorMessages.User.MedicalStaffAlreadyLinked);
+        }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.UserInvalidAdministrativeStaff)
+        {
+            return Result<bool>.Failure(ErrorMessages.User.InvalidAdministrativeStaff);
+        }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.UserAdministrativeStaffAlreadyLinked)
+        {
+            return Result<bool>.Conflict(ErrorMessages.User.AdministrativeStaffAlreadyLinked);
         }
         catch (SqlException ex) when (ex.Number >= 50000 && ex.Number < 60000)
         {

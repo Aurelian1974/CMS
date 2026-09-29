@@ -25,6 +25,7 @@ const ROUTE_TITLES: Record<string, string> = {
   '/settings/financial': 'Setări financiare',
   '/doctors':       'Doctori',
   '/medical-staff': 'Personal Medical',
+  '/administrative-staff': 'Personal Administrativ',
   '/schedule':      'Program',
   '/users':         'Utilizatori',
 };

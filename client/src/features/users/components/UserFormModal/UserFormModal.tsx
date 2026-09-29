@@ -1,10 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { createUserSchema, updateUserSchema, type CreateUserFormData } from '../../schemas/user.schema'
-import type { UserDto, RoleDto, UserAssociationType } from '../../types/user.types'
+import { buildCreateUserSchema, updateUserSchema, ASSOCIATION_FIELD, type CreateUserFormData } from '../../schemas/user.schema'
+import type { UserDto, RoleDto, UserAssociationType, PasswordPolicyDto } from '../../types/user.types'
 import type { DoctorLookupDto } from '@/features/doctors/types/doctor.types'
 import type { MedicalStaffLookupDto } from '@/features/medicalStaff/types/medicalStaff.types'
+import type { AdministrativeStaffLookupDto } from '@/features/administrativeStaff/types/administrativeStaff.types'
 import { AppModal } from '@/components/ui/AppModal'
 import { FormInput } from '@/components/forms/FormInput'
 import { FormSelect } from '@/components/forms/FormSelect'
@@ -24,9 +25,42 @@ interface UserFormModalProps {
   doctorLookup: DoctorLookupDto[]
   /** Lista personal medical pentru dropdown */
   staffLookup: MedicalStaffLookupDto[]
+  /** Lista personal administrativ pentru dropdown */
+  adminStaffLookup: AdministrativeStaffLookupDto[]
+  /** Politica de parole din Setări securitate (undefined cât se încarcă) */
+  passwordPolicy?: PasswordPolicyDto
   /** Eroare server (ex: email duplicat) — afișată în modal */
   serverError?: string | null
 }
+
+/// Lista cerințelor de parolă, afișată sub câmp
+const describePolicy = (p: PasswordPolicyDto): string => {
+  const parts = [`minimum ${p.minLength} caractere`]
+  if (p.minDigits > 0)    parts.push(`${p.minDigits} ${p.minDigits === 1 ? 'cifră' : 'cifre'}`)
+  if (p.minUppercase > 0) parts.push(`${p.minUppercase} ${p.minUppercase === 1 ? 'literă mare' : 'litere mari'}`)
+  if (p.minLowercase > 0) parts.push(`${p.minLowercase} ${p.minLowercase === 1 ? 'literă mică' : 'litere mici'}`)
+  if (p.minSpecial > 0)   parts.push(`${p.minSpecial} ${p.minSpecial === 1 ? 'caracter special' : 'caractere speciale'}`)
+  if (p.forbidIdentityValues) parts.push('diferită de email, username și nume')
+  return `Cerințe: ${parts.join(' · ')}`
+}
+
+const EMPTY_FORM: CreateUserFormData = {
+  roleId: '',
+  associationType: 'doctor',
+  doctorId: '',
+  medicalStaffId: '',
+  administrativeStaffId: '',
+  username: '',
+  email: '',
+  password: '',
+  confirmPassword: '',
+  firstName: '',
+  lastName: '',
+  isActive: true,
+}
+
+const associationOf = (user: UserDto): UserAssociationType =>
+  user.doctorId ? 'doctor' : user.medicalStaffId ? 'medicalStaff' : 'administrativeStaff'
 
 export const UserFormModal = ({
   isOpen,
@@ -37,9 +71,13 @@ export const UserFormModal = ({
   roles,
   doctorLookup,
   staffLookup,
+  adminStaffLookup,
+  passwordPolicy,
   serverError,
 }: UserFormModalProps) => {
   const isEdit = !!editData
+
+  const createSchema = useMemo(() => buildCreateUserSchema(passwordPolicy), [passwordPolicy])
 
   // Folosim schema corespunzătoare modului
   const {
@@ -49,37 +87,26 @@ export const UserFormModal = ({
     reset,
     setValue,
   } = useForm<CreateUserFormData>({
-    resolver: zodResolver(isEdit ? (updateUserSchema as typeof createUserSchema) : createUserSchema),
-    defaultValues: {
-      roleId: '',
-      associationType: 'doctor' as UserAssociationType,
-      doctorId: '',
-      medicalStaffId: '',
-      username: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      firstName: '',
-      lastName: '',
-      isActive: true,
-    },
+    resolver: zodResolver(isEdit ? (updateUserSchema as unknown as typeof createSchema) : createSchema),
+    defaultValues: EMPTY_FORM,
   })
 
   const associationType = useWatch({ control, name: 'associationType', defaultValue: 'doctor' })
   const watchDoctorId = useWatch({ control, name: 'doctorId', defaultValue: '' })
   const watchStaffId = useWatch({ control, name: 'medicalStaffId', defaultValue: '' })
+  const watchAdminStaffId = useWatch({ control, name: 'administrativeStaffId', defaultValue: '' })
 
   // Populare formular la editare / reset la creare
   useEffect(() => {
     if (!isOpen) return
 
     if (editData) {
-      const assocType: UserAssociationType = editData.doctorId ? 'doctor' : 'medicalStaff'
       reset({
         roleId: editData.roleId,
-        associationType: assocType,
+        associationType: associationOf(editData),
         doctorId: editData.doctorId ?? '',
         medicalStaffId: editData.medicalStaffId ?? '',
+        administrativeStaffId: editData.administrativeStaffId ?? '',
         username: editData.username ?? '',
         email: editData.email,
         password: '', // Nu se populează parola la editare
@@ -89,28 +116,14 @@ export const UserFormModal = ({
         isActive: editData.isActive,
       })
     } else {
-      reset({
-        roleId: '',
-        associationType: 'doctor',
-        doctorId: '',
-        medicalStaffId: '',
-        username: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        firstName: '',
-        lastName: '',
-        isActive: true,
-      })
+      reset(EMPTY_FORM)
     }
   }, [isOpen, editData, reset])
 
-  // Când se schimbă tipul asocierii, resetăm câmpul celălalt
+  // Când se schimbă tipul asocierii, golește celelalte câmpuri de asociere
   useEffect(() => {
-    if (associationType === 'doctor') {
-      setValue('medicalStaffId', '')
-    } else {
-      setValue('doctorId', '')
+    for (const type of Object.keys(ASSOCIATION_FIELD) as UserAssociationType[]) {
+      if (type !== associationType) setValue(ASSOCIATION_FIELD[type], '')
     }
   }, [associationType, setValue])
 
@@ -135,6 +148,17 @@ export const UserFormModal = ({
       setValue('email', staff.email ?? '')
     }
   }, [watchStaffId, staffLookup, setValue, isEdit])
+
+  // Auto-completare nume, prenume, email la selectare personal administrativ
+  useEffect(() => {
+    if (!watchAdminStaffId || isEdit) return
+    const staff = adminStaffLookup.find(s => s.id === watchAdminStaffId)
+    if (staff) {
+      setValue('firstName', staff.firstName ?? '')
+      setValue('lastName', staff.lastName ?? '')
+      setValue('email', staff.email ?? '')
+    }
+  }, [watchAdminStaffId, adminStaffLookup, setValue, isEdit])
 
   return (
     <AppModal
@@ -227,7 +251,7 @@ export const UserFormModal = ({
                     control={control}
                     label="Parolă"
                     type="password"
-                    placeholder="Minim 6 caractere"
+                    placeholder={passwordPolicy ? `Minim ${passwordPolicy.minLength} caractere` : 'Parolă'}
                     required
                   />
                 </div>
@@ -241,6 +265,11 @@ export const UserFormModal = ({
                     required
                   />
                 </div>
+                {passwordPolicy && (
+                  <div className="col-12">
+                    <p className={styles.passwordHint}>{describePolicy(passwordPolicy)}</p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -257,7 +286,7 @@ export const UserFormModal = ({
               </div>
             </div>
 
-            {/* Tip asociere — Doctor sau Personal medical */}
+            {/* Tip asociere — Doctor, Personal medical sau Personal administrativ */}
             <div className={styles.sectionDivider}>
               <span className={styles.sectionLabel}>Asociere cont</span>
             </div>
@@ -283,12 +312,22 @@ export const UserFormModal = ({
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
                 <span>Personal medical</span>
               </label>
+              <label className={`${styles.assocOption} ${associationType === 'administrativeStaff' ? styles['assocOption--selected'] : ''}`}>
+                <input
+                  type="radio"
+                  value="administrativeStaff"
+                  {...register('associationType')}
+                  className={styles.radioHidden}
+                />
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+                <span>Personal administrativ</span>
+              </label>
             </div>
 
-            {/* Dropdown doctor SAU personal medical — condiționat de associationType */}
+            {/* Dropdown persoană asociată — condiționat de associationType */}
             <div className="row g-3">
               <div className="col-12">
-                {associationType === 'doctor' ? (
+                {associationType === 'doctor' && (
                   <FormSelect<CreateUserFormData>
                     name="doctorId"
                     control={control}
@@ -298,12 +337,24 @@ export const UserFormModal = ({
                     allowFiltering
                     showClearButton
                   />
-                ) : (
+                )}
+                {associationType === 'medicalStaff' && (
                   <FormSelect<CreateUserFormData>
                     name="medicalStaffId"
                     control={control}
                     label="Personal medical asociat"
                     options={staffLookup.map(s => ({ value: s.id, label: `${s.fullName}${s.medicalTitleName ? ` — ${s.medicalTitleName}` : ''}` }))}
+                    required
+                    allowFiltering
+                    showClearButton
+                  />
+                )}
+                {associationType === 'administrativeStaff' && (
+                  <FormSelect<CreateUserFormData>
+                    name="administrativeStaffId"
+                    control={control}
+                    label="Personal administrativ asociat"
+                    options={adminStaffLookup.map(s => ({ value: s.id, label: `${s.fullName}${s.positionName ? ` — ${s.positionName}` : ''}` }))}
                     required
                     allowFiltering
                     showClearButton

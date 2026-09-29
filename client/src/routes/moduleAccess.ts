@@ -39,6 +39,7 @@ export const ROUTE_MODULES = {
   // Administrare
   '/doctors':           ['users'],
   '/medical-staff':     ['users'],
+  '/administrative-staff': ['users'],
   '/departments':       ['clinic'],
   '/users':             ['users'],
   '/specialties':       ['nomenclature'],

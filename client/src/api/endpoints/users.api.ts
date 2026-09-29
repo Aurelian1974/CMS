@@ -9,11 +9,15 @@ import type {
   ResetPasswordPayload,
   ChangeOwnPasswordPayload,
   RoleDto,
+  PasswordPolicyDto,
 } from '@/features/users/types/user.types'
 
 export const usersApi = {
   getRoles: (): Promise<ApiResponse<RoleDto[]>> =>
     api.get('/api/v1/Users/roles'),
+
+  getPasswordPolicy: (): Promise<ApiResponse<PasswordPolicyDto>> =>
+    api.get('/api/v1/Users/password-policy'),
 
   getAll: (params: GetUsersParams): Promise<ApiResponse<UsersPagedResult>> =>
     api.get('/api/v1/Users', { params }),

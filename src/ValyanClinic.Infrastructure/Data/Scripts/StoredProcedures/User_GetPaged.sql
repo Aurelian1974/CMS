@@ -33,6 +33,11 @@ BEGIN
                 THEN ms.LastName + ' ' + ms.FirstName
                 ELSE NULL
            END        AS MedicalStaffName,
+           u.AdministrativeStaffId,
+           CASE WHEN ads.Id IS NOT NULL
+                THEN ads.LastName + ' ' + ads.FirstName
+                ELSE NULL
+           END        AS AdministrativeStaffName,
            u.Username,
            u.Email,
            u.FirstName,
@@ -44,6 +49,7 @@ BEGIN
     INNER JOIN Roles r ON r.Id = u.RoleId
     LEFT JOIN Doctors d ON d.Id = u.DoctorId AND d.IsDeleted = 0
     LEFT JOIN MedicalStaff ms ON ms.Id = u.MedicalStaffId AND ms.IsDeleted = 0
+    LEFT JOIN AdministrativeStaff ads ON ads.Id = u.AdministrativeStaffId AND ads.IsDeleted = 0
     WHERE u.ClinicId = @ClinicId
       AND u.IsDeleted = 0
       AND (@Search IS NULL OR @Search = ''

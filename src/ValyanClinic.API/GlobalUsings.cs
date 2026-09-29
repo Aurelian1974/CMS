@@ -7,6 +7,7 @@
 global using ValyanClinic.Application.Common.Models;
 
 // Feature DTOs cu folder propriu
+global using ValyanClinic.Application.Features.AdministrativeStaff.DTOs;
 global using ValyanClinic.Application.Features.Appointments.DTOs;
 global using ValyanClinic.Application.Features.AuditLogs.DTOs;
 global using ValyanClinic.Application.Features.Clinics.DTOs;

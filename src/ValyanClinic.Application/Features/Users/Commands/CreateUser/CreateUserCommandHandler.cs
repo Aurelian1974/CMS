@@ -25,6 +25,7 @@ public sealed class CreateUserCommandHandler(
                 request.RoleId,
                 request.DoctorId,
                 request.MedicalStaffId,
+                request.AdministrativeStaffId,
                 request.Username,
                 request.Email,
                 passwordHash,
@@ -67,6 +68,14 @@ public sealed class CreateUserCommandHandler(
         catch (SqlException ex) when (ex.Number == 50506)
         {
             return Result<Guid>.Conflict(ErrorMessages.User.MedicalStaffAlreadyLinked);
+        }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.UserInvalidAdministrativeStaff)
+        {
+            return Result<Guid>.Failure(ErrorMessages.User.InvalidAdministrativeStaff);
+        }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.UserAdministrativeStaffAlreadyLinked)
+        {
+            return Result<Guid>.Conflict(ErrorMessages.User.AdministrativeStaffAlreadyLinked);
         }
         catch (SqlException ex) when (ex.Number >= 50000 && ex.Number < 60000)
         {

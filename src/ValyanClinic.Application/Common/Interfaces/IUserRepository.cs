@@ -13,12 +13,12 @@ public interface IUserRepository
     Task<UserDetailDto?> GetByIdAsync(Guid id, Guid clinicId, CancellationToken ct);
 
     Task<Guid> CreateAsync(
-        Guid clinicId, Guid roleId, Guid? doctorId, Guid? medicalStaffId,
+        Guid clinicId, Guid roleId, Guid? doctorId, Guid? medicalStaffId, Guid? administrativeStaffId,
         string username, string email, string passwordHash, string firstName, string lastName,
         bool isActive, Guid createdBy, CancellationToken ct);
 
     Task UpdateAsync(
-        Guid id, Guid clinicId, Guid roleId, Guid? doctorId, Guid? medicalStaffId,
+        Guid id, Guid clinicId, Guid roleId, Guid? doctorId, Guid? medicalStaffId, Guid? administrativeStaffId,
         string username, string email, string firstName, string lastName,
         bool isActive, Guid updatedBy, CancellationToken ct);
 

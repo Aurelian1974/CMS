@@ -23,7 +23,7 @@ BEGIN
         -- Audit: captează valorile vechi ÎNAINTE de ștergere
         DECLARE @OldValues NVARCHAR(MAX);
         SELECT @OldValues = (
-            SELECT Username, Email, FirstName, LastName, RoleId, DoctorId, MedicalStaffId, IsActive
+            SELECT Username, Email, FirstName, LastName, RoleId, DoctorId, MedicalStaffId, AdministrativeStaffId, IsActive
             FROM Users WHERE Id = @Id AND ClinicId = @ClinicId AND IsDeleted = 0
             FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
         );

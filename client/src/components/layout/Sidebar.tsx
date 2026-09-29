@@ -9,6 +9,7 @@ import {
   Receipt,
   UserCheck,
   HeartPulse,
+  Briefcase,
   Building2,
   UserCog,
   BookOpen,
@@ -125,6 +126,7 @@ const NAV_SECTIONS: NavSection[] = [
         items: [
           { to: '/doctors',        label: 'Doctori',          icon: <UserCheck     size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
           { to: '/medical-staff',  label: 'Personal Medical', icon: <HeartPulse    size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
+          { to: '/administrative-staff', label: 'Personal Administrativ', icon: <Briefcase size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
           { to: '/specialties',    label: 'Specializări',     icon: <BookOpen      size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
           { to: '/medical-titles', label: 'Titulaturi',       icon: <GraduationCap size={ICON_SIZE} strokeWidth={ICON_STROKE} /> },
         ],

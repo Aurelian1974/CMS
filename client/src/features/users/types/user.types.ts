@@ -1,4 +1,4 @@
-/// DTO listare utilizatori — include rol, doctor/staff asociat
+/// DTO listare utilizatori — include rol și persoana asociată
 export interface UserDto {
   id: string
   clinicId: string
@@ -9,6 +9,8 @@ export interface UserDto {
   doctorName: string | null
   medicalStaffId: string | null
   medicalStaffName: string | null
+  administrativeStaffId: string | null
+  administrativeStaffName: string | null
   username: string
   email: string
   firstName: string
@@ -49,6 +51,7 @@ export interface CreateUserPayload {
   roleId: string
   doctorId: string | null
   medicalStaffId: string | null
+  administrativeStaffId: string | null
   username: string
   email: string
   password: string
@@ -63,6 +66,7 @@ export interface UpdateUserPayload {
   roleId: string
   doctorId: string | null
   medicalStaffId: string | null
+  administrativeStaffId: string | null
   username: string
   email: string
   firstName: string
@@ -81,8 +85,19 @@ export interface ChangeOwnPasswordPayload {
   newPassword: string
 }
 
-/// Tipul asocierii: doctor sau personal medical
-export type UserAssociationType = 'doctor' | 'medicalStaff'
+/// Tipul asocierii: persoana căreia îi aparține contul
+export type UserAssociationType = 'doctor' | 'medicalStaff' | 'administrativeStaff'
+
+/// Politica de parole din Setări securitate
+export interface PasswordPolicyDto {
+  minLength: number
+  maxLength: number
+  minDigits: number
+  minSpecial: number
+  minUppercase: number
+  minLowercase: number
+  forbidIdentityValues: boolean
+}
 
 /// DTO rol (nomenclator)
 export interface RoleDto {

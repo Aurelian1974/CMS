@@ -45,7 +45,7 @@ public sealed class UserRepository(DapperContext context) : IUserRepository
     }
 
     public async Task<Guid> CreateAsync(
-        Guid clinicId, Guid roleId, Guid? doctorId, Guid? medicalStaffId,
+        Guid clinicId, Guid roleId, Guid? doctorId, Guid? medicalStaffId, Guid? administrativeStaffId,
         string username, string email, string passwordHash, string firstName, string lastName,
         bool isActive, Guid createdBy, CancellationToken ct)
     {
@@ -57,6 +57,7 @@ public sealed class UserRepository(DapperContext context) : IUserRepository
                 {
                     ClinicId = clinicId, RoleId = roleId,
                     DoctorId = doctorId, MedicalStaffId = medicalStaffId,
+                    AdministrativeStaffId = administrativeStaffId,
                     Username = username, Email = email, PasswordHash = passwordHash,
                     FirstName = firstName, LastName = lastName,
                     IsActive = isActive, CreatedBy = createdBy
@@ -66,7 +67,7 @@ public sealed class UserRepository(DapperContext context) : IUserRepository
     }
 
     public async Task UpdateAsync(
-        Guid id, Guid clinicId, Guid roleId, Guid? doctorId, Guid? medicalStaffId,
+        Guid id, Guid clinicId, Guid roleId, Guid? doctorId, Guid? medicalStaffId, Guid? administrativeStaffId,
         string username, string email, string firstName, string lastName,
         bool isActive, Guid updatedBy, CancellationToken ct)
     {
@@ -78,6 +79,7 @@ public sealed class UserRepository(DapperContext context) : IUserRepository
                 {
                     Id = id, ClinicId = clinicId, RoleId = roleId,
                     DoctorId = doctorId, MedicalStaffId = medicalStaffId,
+                    AdministrativeStaffId = administrativeStaffId,
                     Username = username, Email = email, FirstName = firstName, LastName = lastName,
                     IsActive = isActive, UpdatedBy = updatedBy
                 },

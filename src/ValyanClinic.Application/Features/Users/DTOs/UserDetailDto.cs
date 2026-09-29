@@ -12,6 +12,8 @@ public sealed class UserDetailDto
     public string? DoctorName { get; init; }
     public Guid? MedicalStaffId { get; init; }
     public string? MedicalStaffName { get; init; }
+    public Guid? AdministrativeStaffId { get; init; }
+    public string? AdministrativeStaffName { get; init; }
     public string Username { get; init; } = string.Empty;
     public string Email { get; init; } = string.Empty;
     public string FirstName { get; init; } = string.Empty;

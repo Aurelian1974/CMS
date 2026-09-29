@@ -5,9 +5,10 @@ import { AppDataGrid } from '@/components/data-display/AppDataGrid'
 import type { UserDto } from '../types/user.types'
 import type { CreateUserFormData } from '../schemas/user.schema'
 import type { ResetPasswordFormData } from '../schemas/user.schema'
-import { useUsersList, useCreateUser, useUpdateUser, useDeleteUser, useResetPassword, useRoles } from '../hooks/useUsers'
+import { useUsersList, useCreateUser, useUpdateUser, useDeleteUser, useResetPassword, useRoles, usePasswordPolicy } from '../hooks/useUsers'
 import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
 import { useMedicalStaffLookup } from '@/features/medicalStaff/hooks/useMedicalStaff'
+import { useAdministrativeStaffLookup } from '@/features/administrativeStaff/hooks/useAdministrativeStaff'
 import { useHasAccess, MODULE, ACCESS_LEVEL } from '@/hooks/useHasAccess'
 import { UserFormModal } from '../components/UserFormModal/UserFormModal'
 import { ResetPasswordModal } from '../components/ResetPasswordModal/ResetPasswordModal'
@@ -86,6 +87,8 @@ export const UsersListPage = () => {
   const { data: rolesResp } = useRoles({ enabled: canManageUsers })
   const { data: doctorsResp } = useDoctorLookup({ enabled: canManageUsers })
   const { data: staffResp } = useMedicalStaffLookup({ enabled: canManageUsers })
+  const { data: adminStaffResp } = useAdministrativeStaffLookup({ enabled: canManageUsers })
+  const { data: passwordPolicyResp } = usePasswordPolicy({ enabled: canManageUsers && modalOpen && !editingUser })
 
   // Mutații
   const createUser = useCreateUser()
@@ -111,7 +114,7 @@ export const UsersListPage = () => {
       username:       u.username,
       email:          u.email,
       roleName:       u.roleName,
-      association:    u.doctorName ?? u.medicalStaffName ?? '—',
+      association:    u.doctorName ?? u.medicalStaffName ?? u.administrativeStaffName ?? '—',
       isActive:       u.isActive ? 'Activ' : 'Inactiv',
       lastLoginAt:    u.lastLoginAt ? formatDate(u.lastLoginAt) : '—',
       createdAt:      u.createdAt ? formatDate(u.createdAt) : '—',
@@ -158,6 +161,14 @@ export const UsersListPage = () => {
         <div>
           <span className={styles.assocLabel}>Personal</span>
           <span className={styles.assocValue}>{row.medicalStaffName}</span>
+        </div>
+      )
+    }
+    if (row.administrativeStaffName) {
+      return (
+        <div>
+          <span className={styles.assocLabel}>Administrativ</span>
+          <span className={styles.assocValue}>{row.administrativeStaffName}</span>
         </div>
       )
     }
@@ -273,6 +284,8 @@ export const UsersListPage = () => {
   const roles = rolesResp?.data ?? []
   const doctorLookup = doctorsResp?.data ?? []
   const staffLookup = staffResp?.data ?? []
+  const adminStaffLookup = adminStaffResp?.data ?? []
+  const passwordPolicy = passwordPolicyResp?.data ?? undefined
 
   // Statistici
   const totalActive   = userList.filter(u => u.isActive).length
@@ -293,14 +306,18 @@ export const UsersListPage = () => {
 
   const handleFormSubmit = (formData: CreateUserFormData) => {
     const toNull = (v: string | undefined) => v || null
+    const association = {
+      doctorId: formData.associationType === 'doctor' ? toNull(formData.doctorId) : null,
+      medicalStaffId: formData.associationType === 'medicalStaff' ? toNull(formData.medicalStaffId) : null,
+      administrativeStaffId: formData.associationType === 'administrativeStaff' ? toNull(formData.administrativeStaffId) : null,
+    }
 
     if (editingUser) {
       updateUser.mutate(
         {
           id: editingUser.id,
           roleId: formData.roleId,
-          doctorId: formData.associationType === 'doctor' ? toNull(formData.doctorId) : null,
-          medicalStaffId: formData.associationType === 'medicalStaff' ? toNull(formData.medicalStaffId) : null,
+          ...association,
           username: formData.username,
           email: formData.email,
           firstName: formData.firstName,
@@ -316,8 +333,7 @@ export const UsersListPage = () => {
       createUser.mutate(
         {
           roleId: formData.roleId,
-          doctorId: formData.associationType === 'doctor' ? toNull(formData.doctorId) : null,
-          medicalStaffId: formData.associationType === 'medicalStaff' ? toNull(formData.medicalStaffId) : null,
+          ...association,
           username: formData.username,
           email: formData.email,
           password: formData.password,
@@ -377,7 +393,7 @@ export const UsersListPage = () => {
       {/* Header */}
       <PageHeader
         title="Utilizatori"
-        subtitle="Gestionare conturi de acces — fiecare utilizator este asociat unui doctor sau personal medical"
+        subtitle="Gestionare conturi de acces — fiecare utilizator este asociat unui doctor, membru al personalului medical sau administrativ"
         actions={
           <>
             <button className={styles.btnSecondary} onClick={handleExcelExport}>
@@ -515,6 +531,8 @@ export const UsersListPage = () => {
         roles={roles}
         doctorLookup={doctorLookup}
         staffLookup={staffLookup}
+        adminStaffLookup={adminStaffLookup}
+        passwordPolicy={passwordPolicy}
         serverError={modalOpen ? errorMsg : null}
       />
 

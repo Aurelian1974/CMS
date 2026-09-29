@@ -1,10 +1,12 @@
 using FluentValidation;
+using ValyanClinic.Application.Common.Constants;
+using ValyanClinic.Application.Common.Validation;
 
 namespace ValyanClinic.Application.Features.Users.Commands.CreateUser;
 
 public sealed class CreateUserCommandValidator : AbstractValidator<CreateUserCommand>
 {
-    public CreateUserCommandValidator()
+    public CreateUserCommandValidator(IPasswordPolicyChecker policy)
     {
         RuleFor(x => x.RoleId)
             .NotEmpty().WithMessage("Rolul este obligatoriu.");
@@ -19,10 +21,16 @@ public sealed class CreateUserCommandValidator : AbstractValidator<CreateUserCom
             .MaximumLength(200).WithMessage("Adresa de email nu poate depăși 200 de caractere.")
             .EmailAddress().WithMessage("Adresa de email nu este validă.");
 
+        // Politica vine din Setări securitate, citită la fiecare validare
         RuleFor(x => x.Password)
-            .NotEmpty().WithMessage("Parola este obligatorie.")
-            .MinimumLength(8).WithMessage("Parola trebuie să aibă minimum 8 caractere.")
-            .MaximumLength(100).WithMessage("Parola nu poate depăși 100 de caractere.");
+            .CustomAsync(async (password, ctx, ct) =>
+            {
+                var cmd = ctx.InstanceToValidate;
+                var identity = new[] { cmd.Email, cmd.Username, cmd.FirstName, cmd.LastName };
+
+                foreach (var error in await policy.ValidateAsync(password, identity, ct))
+                    ctx.AddFailure(nameof(CreateUserCommand.Password), error);
+            });
 
         RuleFor(x => x.FirstName)
             .NotEmpty().WithMessage("Prenumele este obligatoriu.")
@@ -32,10 +40,8 @@ public sealed class CreateUserCommandValidator : AbstractValidator<CreateUserCom
             .NotEmpty().WithMessage("Numele este obligatoriu.")
             .MaximumLength(100).WithMessage("Numele nu poate depăși 100 de caractere.");
 
-        // Exact unul din DoctorId/MedicalStaffId trebuie completat
         RuleFor(x => x)
-            .Must(x => (x.DoctorId.HasValue && !x.MedicalStaffId.HasValue)
-                    || (!x.DoctorId.HasValue && x.MedicalStaffId.HasValue))
-            .WithMessage("Selectați fie un doctor, fie un membru al personalului medical.");
+            .Must(x => new[] { x.DoctorId, x.MedicalStaffId, x.AdministrativeStaffId }.Count(id => id.HasValue) == 1)
+            .WithMessage(ErrorMessages.User.InvalidAssociation);
     }
 }

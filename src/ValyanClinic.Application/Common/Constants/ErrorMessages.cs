@@ -114,12 +114,14 @@ public static class ErrorMessages
             "Doar un administrator poate reseta parola altui utilizator.";
         public const string UseSelfServiceForOwnPassword =
             "Pentru propria parolă folosiți schimbarea din contul dumneavoastră, care cere parola curentă.";
-        public const string InvalidAssociation      = "Utilizatorul trebuie asociat fie unui doctor, fie unui membru al personalului medical.";
+        public const string InvalidAssociation      = "Utilizatorul trebuie asociat unui doctor, unui membru al personalului medical sau al personalului administrativ.";
         public const string InvalidDoctor           = "Doctorul selectat nu există sau nu aparține acestei clinici.";
         public const string InvalidMedicalStaff     = "Personalul medical selectat nu există sau nu aparține acestei clinici.";
+        public const string InvalidAdministrativeStaff = "Personalul administrativ selectat nu există sau nu aparține acestei clinici.";
         public const string InvalidRole             = "Rolul selectat nu există sau nu este activ.";
         public const string DoctorAlreadyLinked     = "Acest doctor are deja un cont de utilizator asociat.";
         public const string MedicalStaffAlreadyLinked = "Acest membru al personalului medical are deja un cont de utilizator asociat.";
+        public const string AdministrativeStaffAlreadyLinked = "Acest membru al personalului administrativ are deja un cont de utilizator asociat.";
         public const string PasswordTooShort        = "Parola trebuie să aibă minimum 6 caractere.";
     }
 
@@ -199,5 +201,13 @@ public static class ErrorMessages
         public const string InvalidDepartment   = "Departamentul selectat nu există sau nu aparține acestei clinici.";
         public const string InvalidSupervisor   = "Supervizorul (doctorul) selectat nu există sau nu aparține acestei clinici.";
         public const string InvalidMedicalTitle = "Titulatura medicală selectată nu există sau nu este activă.";
+    }
+
+    public static class AdministrativeStaffMember
+    {
+        public const string NotFound          = "Membrul personalului administrativ nu a fost găsit.";
+        public const string EmailDuplicate    = "Un membru al personalului administrativ cu această adresă de email există deja.";
+        public const string InvalidDepartment = "Departamentul selectat nu există sau nu aparține acestei clinici.";
+        public const string InvalidPosition   = "Funcția selectată nu există sau nu este activă.";
     }
 }

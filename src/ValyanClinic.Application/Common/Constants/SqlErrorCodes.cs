@@ -107,10 +107,10 @@ public static class SqlErrorCodes
     /// <summary>Refresh token-ul nu mai era activ la rotație (rotit concurent sau revocat).</summary>
     public const int RefreshTokenNotActive  = 50052;
 
-    // ====== Utilizatori (range real: 50500–50508) ======
+    // ====== Utilizatori (range real: 50500–50510) ======
     // IMPORTANT: SP-urile aruncă coduri 50500+ (nu 50060/50061 care sunt obsolete)
     public const int UserEmailDuplicate          = 50500;
-    public const int UserInvalidAssociation      = 50501; // nu poate fi și doctor și personal medical
+    public const int UserInvalidAssociation      = 50501; // exact o asociere: doctor / personal medical / personal administrativ
     public const int UserInvalidDoctor           = 50502;
     public const int UserInvalidMedicalStaff     = 50503;
     public const int UserInvalidRole             = 50504;
@@ -118,6 +118,8 @@ public static class SqlErrorCodes
     public const int UserMedicalStaffAlreadyLinked = 50506;
     public const int UserNotFound                = 50507;
     public const int UserUsernameDuplicate       = 50508;
+    public const int UserInvalidAdministrativeStaff       = 50509;
+    public const int UserAdministrativeStaffAlreadyLinked = 50510;
 
     // ====== Specialități (nomenclator) ======
     public const int SpecialtyCodeDuplicate    = 50100;
@@ -173,4 +175,10 @@ public static class SqlErrorCodes
     public const int MedicalStaffInvalidDepartment      = 50402;
     public const int MedicalStaffInvalidSupervisor      = 50403;
     public const int MedicalStaffAlreadyLinkedToUser    = 50406;
+
+    // ====== Personal administrativ (range 50700–50703) ======
+    public const int AdministrativeStaffNotFound          = 50700;
+    public const int AdministrativeStaffEmailDuplicate    = 50701;
+    public const int AdministrativeStaffInvalidDepartment = 50702;
+    public const int AdministrativeStaffInvalidPosition   = 50703;
 }

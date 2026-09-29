@@ -27,6 +27,8 @@ const ClinicPage         = lazy(() => import('../features/clinic/pages/ClinicPag
 const DepartmentsPage    = lazy(() => import('../features/departments/pages/DepartmentsPage'))
 const MedicalStaffPage       = lazy(() => import('../features/medicalStaff/pages/MedicalStaffListPage'))
 const MedicalStaffDetailPage = lazy(() => import('../features/medicalStaff/pages/MedicalStaffDetailPage'))
+const AdministrativeStaffPage       = lazy(() => import('../features/administrativeStaff/pages/AdministrativeStaffListPage'))
+const AdministrativeStaffDetailPage = lazy(() => import('../features/administrativeStaff/pages/AdministrativeStaffDetailPage'))
 const RolePermissionsPage = lazy(() => import('../features/permissions/pages/RolePermissionsPage').then(m => ({ default: m.RolePermissionsPage })))
 const UserOverridesPage   = lazy(() => import('../features/permissions/pages/UserOverridesPage'))
 const SecuritySettingsPage = lazy(() => import('../features/settings/pages/SecuritySettingsPage'))
@@ -82,6 +84,8 @@ export const AppRoutes = () => (
           <Route path="/departments"    element={<DepartmentsPage />} />
           <Route path="/medical-staff"     element={<MedicalStaffPage />} />
           <Route path="/medical-staff/:id"  element={<MedicalStaffDetailPage />} />
+          <Route path="/administrative-staff"     element={<AdministrativeStaffPage />} />
+          <Route path="/administrative-staff/:id" element={<AdministrativeStaffDetailPage />} />
           <Route path="/permissions/roles" element={<RolePermissionsPage />} />
           <Route path="/permissions/users" element={<UserOverridesPage />} />
           <Route path="/settings/security"  element={<SecuritySettingsPage />} />

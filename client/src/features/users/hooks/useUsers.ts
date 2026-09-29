@@ -16,7 +16,18 @@ export const userKeys = {
   details: () => [...userKeys.all, 'detail'] as const,
   detail:  (id: string) => [...userKeys.details(), id] as const,
   roles:   () => [...userKeys.all, 'roles'] as const,
+  passwordPolicy: () => [...userKeys.all, 'passwordPolicy'] as const,
 }
+
+// ── Politica de parole (Setări securitate) ───────────────────────────────────────
+// Mereu proaspătă: o modificare în Setări securitate trebuie să se vadă la următoarea deschidere.
+export const usePasswordPolicy = (options?: { enabled?: boolean }) =>
+  useQuery({
+    queryKey: userKeys.passwordPolicy(),
+    queryFn: () => usersApi.getPasswordPolicy(),
+    staleTime: 0,
+    enabled: options?.enabled ?? true,
+  })
 
 // ── Roluri (nomenclator) ─────────────────────────────────────────────────────
 export const useRoles = (options?: { enabled?: boolean }) =>

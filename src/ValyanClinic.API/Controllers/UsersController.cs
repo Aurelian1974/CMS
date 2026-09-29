@@ -8,6 +8,7 @@ using ValyanClinic.Application.Features.Users.Commands.ResetUserPassword;
 using ValyanClinic.Application.Features.Users.Commands.CreateUser;
 using ValyanClinic.Application.Features.Users.Commands.DeleteUser;
 using ValyanClinic.Application.Features.Users.Commands.UpdateUser;
+using ValyanClinic.Application.Features.Users.Queries.GetPasswordPolicy;
 using ValyanClinic.Application.Features.Users.Queries.GetRoles;
 using ValyanClinic.Application.Features.Users.Queries.GetUserById;
 using ValyanClinic.Application.Features.Users.Queries.GetUsers;
@@ -25,6 +26,16 @@ public class UsersController : BaseApiController
         var result = await Mediator.Send(new GetRolesQuery(), ct);
         return HandleResult(result);
     }
+
+    /// <summary>
+    /// Politica de parole din Setări securitate. Deschisă oricărui cont autentificat:
+    /// formularele de creare cont și de schimbare a propriei parole o afișează, iar
+    /// modulul `settings` e acordat doar administratorului.
+    /// </summary>
+    [HttpGet("password-policy")]
+    [ProducesResponseType<ApiResponse<PasswordPolicyDto>>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetPasswordPolicy(CancellationToken ct)
+        => HandleResult(await Mediator.Send(new GetPasswordPolicyQuery(), ct));
 
     /// <summary>Listare paginată utilizatori cu căutare și filtre.</summary>
     [HttpGet]
@@ -78,6 +89,7 @@ public class UsersController : BaseApiController
             request.RoleId,
             request.DoctorId,
             request.MedicalStaffId,
+            request.AdministrativeStaffId,
             request.Username,
             request.Email,
             request.FirstName,
@@ -140,6 +152,7 @@ public sealed record UpdateUserRequest(
     Guid RoleId,
     Guid? DoctorId,
     Guid? MedicalStaffId,
+    Guid? AdministrativeStaffId,
     string Username,
     string Email,
     string FirstName,

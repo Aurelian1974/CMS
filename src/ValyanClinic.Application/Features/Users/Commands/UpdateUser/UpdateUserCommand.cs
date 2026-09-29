@@ -9,6 +9,7 @@ public sealed record UpdateUserCommand(
     Guid RoleId,
     Guid? DoctorId,
     Guid? MedicalStaffId,
+    Guid? AdministrativeStaffId,
     string Username,
     string Email,
     string FirstName,

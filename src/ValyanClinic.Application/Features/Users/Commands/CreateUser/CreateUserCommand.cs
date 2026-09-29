@@ -8,6 +8,7 @@ public sealed record CreateUserCommand(
     Guid RoleId,
     Guid? DoctorId,
     Guid? MedicalStaffId,
+    Guid? AdministrativeStaffId,
     string Username,
     string Email,
     string Password,
