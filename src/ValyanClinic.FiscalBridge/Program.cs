@@ -40,7 +40,7 @@ if (args.Contains("--show-token"))
 if (args.Contains("--rotate-token"))
 {
     Console.WriteLine(secrets.RotateToken());
-    Console.WriteLine("Token nou generat. Asociați din nou stația în ValyanClinic → Setări financiare.");
+    Console.WriteLine("Token nou generat. Asociați din nou stația în ValyanClinic → Încasări → Casa de marcat.");
     return 0;
 }
 if (args.Contains("--set-operator-password"))

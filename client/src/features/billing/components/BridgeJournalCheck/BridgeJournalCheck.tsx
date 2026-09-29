@@ -32,7 +32,7 @@ export const BridgeJournalCheck = ({ receiptId }: { receiptId: string }) => {
   const check = async () => {
     const token = getBridgeToken()
     if (!bridgeUrl || !token) {
-      setState({ kind: 'error', message: 'Acest PC nu este asociat cu fiscal bridge-ul (Setări financiare → Stația curentă).' })
+      setState({ kind: 'error', message: 'Acest PC nu este asociat cu fiscal bridge-ul (Încasări → Casa de marcat).' })
       return
     }
     setState({ kind: 'loading' })
