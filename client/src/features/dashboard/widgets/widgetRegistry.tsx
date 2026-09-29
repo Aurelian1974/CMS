@@ -19,6 +19,8 @@ import { TopServicesWidget } from '../components/widgets/TopServicesWidget'
 import { InsuranceExpiringWidget, LicensesExpiringWidget } from '../components/widgets/ExpiringItemsWidgets'
 import { LockedUsersWidget } from '../components/widgets/LockedUsersWidget'
 import { FreshnessWidget } from '../components/widgets/FreshnessWidget'
+import { PatientFlowWidget } from '../components/widgets/PatientFlowWidget'
+import { AttentionWidget } from '../components/widgets/AttentionWidget'
 
 export interface WidgetEntry {
   component: React.FC<DashboardWidgetProps>
@@ -32,6 +34,7 @@ export interface WidgetEntry {
 
 const KPI  = { group: 'kpi',  colClass: 'col-sm-6 col-xl-3' } as const
 const HALF = { group: 'card', colClass: 'col-xl-6' } as const
+const FULL = { group: 'card', colClass: 'col-12' } as const
 
 /**
  * WidgetId → componentă. Id-urile sunt sincrone cu DashboardWidgetIds.cs (verificat de
@@ -50,6 +53,8 @@ export const WIDGET_REGISTRY: Record<string, WidgetEntry> = {
   'kpi.receipts.attention':  { component: KpiReceiptsAttention,  ...KPI },
   'kpi.invoices.month':      { component: KpiInvoicesMonth,      ...KPI },
 
+  'list.patient.flow.today':  { component: PatientFlowWidget,       ...FULL },
+  'list.attention':           { component: AttentionWidget,         ...HALF },
   'list.agenda.today':        { component: AgendaWidget,            ...HALF },
   'list.consultations.open':  { component: OpenConsultationsWidget, ...HALF },
   'list.lab.results.new':     { component: LabResultsWidget,        ...HALF },

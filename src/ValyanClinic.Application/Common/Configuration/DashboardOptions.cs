@@ -25,4 +25,13 @@ public sealed class DashboardOptions
     public int BillableMonths { get; init; } = 6;
 
     public int SecurityWindowHours { get; init; } = 24;
+
+    /// <summary>Plafonul listelor din fluxul pacienților.</summary>
+    public int FlowTop { get; init; } = 50;
+
+    /// <summary>După câte minute de la ora programării un pacient neconfirmat e „întârziat”.</summary>
+    public int LateMinutes { get; init; } = 15;
+
+    /// <summary>Câte zile în urmă se caută programări rămase nerezolvate.</summary>
+    public int UnresolvedDays { get; init; } = 7;
 }

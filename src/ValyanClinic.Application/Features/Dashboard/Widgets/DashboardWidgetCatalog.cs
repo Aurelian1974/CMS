@@ -23,6 +23,9 @@ public static class DashboardWidgetCatalog
             new(W.ListConsultationsOpen,  DashboardBundle.Agenda,    Read, ModuleCodes.Consultations),
             new(W.ListLabResultsNew,      DashboardBundle.Agenda,    Read, ModuleCodes.Consultations),
 
+            new(W.ListPatientFlowToday,   DashboardBundle.Flow,      Read, ModuleCodes.Appointments),
+            new(W.ListAttention,          DashboardBundle.Flow,      Read, ModuleCodes.Appointments),
+
             new(W.KpiRevenueToday,        DashboardBundle.Financial, Read, ModuleCodes.Payments),
             new(W.KpiRevenueMonth,        DashboardBundle.Financial, Read, ModuleCodes.Payments),
             new(W.KpiUnpaidCount,         DashboardBundle.Financial, Read, ModuleCodes.Payments),

@@ -27,7 +27,7 @@ vi.mock('@/features/appointments/hooks/useCanChangeAppointmentStatus', () => ({
 const item = (overrides: Partial<DashboardAgendaItemDto> = {}): DashboardAgendaItemDto => ({
   id: 'apt-1', startTime: '2026-09-29T09:00:00', endTime: '2026-09-29T09:30:00',
   patientId: 'p1', patientName: 'Ana Ionescu', doctorId: 'd1', doctorName: 'Dr. Maria',
-  statusCode: 'PROGRAMAT', statusName: 'Programat', consultationId: null,
+  statusCode: 'PROGRAMAT', statusName: 'Programat', isLate: false,
   ...overrides,
 })
 
@@ -89,11 +89,10 @@ describe('AgendaWidget', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Tranziția de status nu este permisă.')
   })
 
-  it('should show only the badge once the consultation has started', () => {
-    renderWidget([item({ statusCode: 'CONFIRMAT', statusName: 'Confirmat', consultationId: 'c1' })])
+  it('should flag late appointments', () => {
+    renderWidget([item({ isLate: true }), item({ id: 'apt-2', patientName: 'Ion Pop', isLate: false })])
 
-    expect(actionNames()).toEqual([])
-    expect(screen.getByText('Confirmat')).toBeInTheDocument()
+    expect(screen.getAllByText('Întârziat')).toHaveLength(1)
   })
 
   it('should show only the badge for a finalized consultation', () => {

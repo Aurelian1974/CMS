@@ -45,7 +45,7 @@ describe('DashboardPage', () => {
 
     expect(renderedIds()).toEqual(['kpi.appointments.today', 'kpi.patients.new.month', 'list.agenda.today'])
     expect(screen.getByText('Programări azi')).toBeInTheDocument()
-    expect(screen.getByText('Nicio programare azi.')).toBeInTheDocument()
+    expect(screen.getByText('Toate programările de azi sunt confirmate.')).toBeInTheDocument()
   })
 
   it('should ignore unknown widget ids and render the rest', () => {

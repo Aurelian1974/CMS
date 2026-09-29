@@ -96,6 +96,14 @@ public static class DashboardResponseFilter
             }
             : null;
 
+        var flow = raw.Flow is { } fl
+            ? new DashboardFlowDto
+            {
+                Items     = Keep(W.ListPatientFlowToday, fl.Items),
+                Attention = Keep(W.ListAttention, fl.Attention),
+            }
+            : null;
+
         return new DashboardDto
         {
             GeneratedAt  = generatedAt,
@@ -106,6 +114,7 @@ public static class DashboardResponseFilter
             Financial    = financial,
             Trends       = trends,
             Health       = health,
+            Flow         = flow,
         };
     }
 

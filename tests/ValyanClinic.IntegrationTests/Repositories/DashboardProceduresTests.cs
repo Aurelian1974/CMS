@@ -47,19 +47,22 @@ public sealed class DashboardProceduresTests(IntegrationTestFixture fixture) : I
     private async Task<Guid> FirstDoctorAsync() =>
         (await Fixture.GetRepository<IDoctorRepository>().GetByClinicAsync(ClinicId, Ct)).First().Id;
 
-    // Confirmat: o consultație se poate începe doar pe o programare confirmată
-    private Task<Guid> NewAppointmentAsync(Guid patientId, Guid doctorId, int hour, string? notes = null) =>
+    // Implicit Confirmat: o consultație se poate începe doar pe o programare confirmată
+    private Task<Guid> NewAppointmentAsync(Guid patientId, Guid doctorId, int hour, string? notes = null,
+                                           Guid? statusId = null, DateTime? day = null) =>
         Fixture.GetRepository<IAppointmentRepository>().CreateAsync(
-            new AppointmentWriteData(ClinicId, patientId, doctorId, At(hour), At(hour, 30),
-                AppointmentStatusIds.Confirmed, notes, false, UserId), Ct);
+            new AppointmentWriteData(ClinicId, patientId, doctorId,
+                (day ?? TestDay).Date.AddHours(hour), (day ?? TestDay).Date.AddHours(hour).AddMinutes(30),
+                statusId ?? AppointmentStatusIds.Confirmed, notes, false, UserId), Ct);
 
-    private async Task<Guid> NewConsultationAsync(Guid patientId, Guid doctorId, Guid statusId, Guid? appointmentId = null)
+    private async Task<Guid> NewConsultationAsync(Guid patientId, Guid doctorId, Guid statusId, Guid? appointmentId = null,
+                                                  DateTime? date = null)
     {
         var finalize = statusId == ConsultationStatusIds.Completed;
         var consultations = Fixture.GetRepository<IConsultationRepository>();
         var id = await consultations.CreateAsync(
             new ConsultationCreateData(
-                ClinicId, patientId, doctorId, appointmentId, At(9),
+                ClinicId, patientId, doctorId, appointmentId, date ?? At(9),
                 null, null, finalize ? DiagnosisJson : "Text diagnostic", null, null, null, null,
                 false, false, false, null, false, null, false, false, null, null),
             UserId, Ct);
@@ -85,15 +88,27 @@ public sealed class DashboardProceduresTests(IntegrationTestFixture fixture) : I
 
     private sealed record AgendaResult(List<dynamic> Agenda, List<dynamic> Open, List<dynamic> Labs);
 
-    private async Task<AgendaResult> AgendaAsync(bool includeClinical)
+    private async Task<AgendaResult> AgendaAsync(bool includeClinical, DateTime? now = null)
     {
         await using var conn = new SqlConnection(Fixture.ConnectionString);
         using var multi = await ExecAsync(conn, "dbo.Dashboard_GetAgenda",
-            new { ClinicId, UserId, Today = TestDay.Date, OnlyMine = false, IncludeClinical = includeClinical, Top = 50 });
+            new { ClinicId, UserId, Today = TestDay.Date, OnlyMine = false, IncludeClinical = includeClinical, Top = 50,
+                  Now = now, LateMinutes = 15 });
         return new AgendaResult(
             (await multi.ReadAsync()).ToList(),
             (await multi.ReadAsync()).ToList(),
             (await multi.ReadAsync()).ToList());
+    }
+
+    private sealed record FlowResult(List<dynamic> Items, List<dynamic> Attention);
+
+    private async Task<FlowResult> FlowAsync(bool includeFinancial, DateTime? now = null)
+    {
+        await using var conn = new SqlConnection(Fixture.ConnectionString);
+        using var multi = await ExecAsync(conn, "dbo.Dashboard_GetPatientFlow",
+            new { ClinicId, UserId, Today = TestDay.Date, Now = now, OnlyMine = false,
+                  IncludeFinancial = includeFinancial, LateMinutes = 15, UnresolvedDays = 7, Top = 200 });
+        return new FlowResult((await multi.ReadAsync()).ToList(), (await multi.ReadAsync()).ToList());
     }
 
     // ── Clinical KPIs ────────────────────────────────────────────────────────
@@ -176,8 +191,9 @@ public sealed class DashboardProceduresTests(IntegrationTestFixture fixture) : I
         using var scope = NewScope();
         var patientId = await NewPatientAsync();
         var doctorId = await FirstDoctorAsync();
-        var appointmentId = await NewAppointmentAsync(patientId, doctorId, 9, notes: "Durere toracică");
-        await NewConsultationAsync(patientId, doctorId, ConsultationStatusIds.InProgress, appointmentId);
+        var appointmentId = await NewAppointmentAsync(patientId, doctorId, 9, "Durere toracică", AppointmentStatusIds.Scheduled);
+        var confirmed = await NewAppointmentAsync(patientId, doctorId, 10);
+        await NewConsultationAsync(patientId, doctorId, ConsultationStatusIds.InProgress, confirmed);
 
         var result = await AgendaAsync(includeClinical: false);
 
@@ -193,16 +209,122 @@ public sealed class DashboardProceduresTests(IntegrationTestFixture fixture) : I
         using var scope = NewScope();
         var patientId = await NewPatientAsync();
         var doctorId = await FirstDoctorAsync();
-        var appointmentId = await NewAppointmentAsync(patientId, doctorId, 9, notes: "Durere toracică");
-        var consultationId = await NewConsultationAsync(patientId, doctorId, ConsultationStatusIds.InProgress, appointmentId);
+        var appointmentId = await NewAppointmentAsync(patientId, doctorId, 9, "Durere toracică", AppointmentStatusIds.Scheduled);
+        var confirmed = await NewAppointmentAsync(patientId, doctorId, 10);
+        var consultationId = await NewConsultationAsync(patientId, doctorId, ConsultationStatusIds.InProgress, confirmed);
 
         var result = await AgendaAsync(includeClinical: true);
 
         var row = Assert.Single(result.Agenda, a => (Guid)a.Id == appointmentId);
         Assert.Equal("Durere toracică", (string)row.Notes);
-        Assert.Equal(consultationId, (Guid)row.ConsultationId);
         var open = Assert.Single(result.Open, c => (Guid)c.Id == consultationId);
         Assert.Equal("Text diagnostic", (string)open.Diagnostic);
+    }
+
+    [Fact]
+    public async Task Agenda_ListsOnlyUnconfirmed_AndFlagsLate()
+    {
+        using var scope = NewScope();
+        var patientId = await NewPatientAsync();
+        var doctorId = await FirstDoctorAsync();
+        var late = await NewAppointmentAsync(patientId, doctorId, 9, statusId: AppointmentStatusIds.Scheduled);
+        var upcoming = await NewAppointmentAsync(patientId, doctorId, 13, statusId: AppointmentStatusIds.Scheduled);
+        var confirmed = await NewAppointmentAsync(patientId, doctorId, 10);
+        var cancelled = await NewAppointmentAsync(patientId, doctorId, 11, statusId: AppointmentStatusIds.Cancelled);
+
+        var result = await AgendaAsync(includeClinical: false, now: At(12));
+
+        var ids = result.Agenda.Select(a => (Guid)a.Id).ToList();
+        Assert.Contains(late, ids);
+        Assert.Contains(upcoming, ids);
+        Assert.DoesNotContain(confirmed, ids);
+        Assert.DoesNotContain(cancelled, ids);
+        Assert.True((bool)result.Agenda.Single(a => (Guid)a.Id == late).IsLate);
+        Assert.False((bool)result.Agenda.Single(a => (Guid)a.Id == upcoming).IsLate);
+    }
+
+    // ── Fluxul pacienților ────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Flow_StageFollowsAppointmentAndConsultation()
+    {
+        using var scope = NewScope();
+        var patientId = await NewPatientAsync();
+        var doctorId = await FirstDoctorAsync();
+        var toConfirm = await NewAppointmentAsync(patientId, doctorId, 8, statusId: AppointmentStatusIds.Scheduled);
+        var waiting = await NewAppointmentAsync(patientId, doctorId, 9);
+        var inConsultation = await NewAppointmentAsync(patientId, doctorId, 10);
+        await NewConsultationAsync(patientId, doctorId, ConsultationStatusIds.InProgress, inConsultation);
+        var done = await NewAppointmentAsync(patientId, doctorId, 11);
+        await NewConsultationAsync(patientId, doctorId, ConsultationStatusIds.Completed, done);
+        var cancelled = await NewAppointmentAsync(patientId, doctorId, 12, statusId: AppointmentStatusIds.Cancelled);
+        var walkIn = await NewConsultationAsync(patientId, doctorId, ConsultationStatusIds.InProgress);
+
+        var items = (await FlowAsync(includeFinancial: false)).Items;
+
+        string StageOf(Guid appointmentId) => (string)items.Single(i => (Guid?)i.AppointmentId == appointmentId).Stage;
+        Assert.Equal(DashboardFlowStages.ToConfirm, StageOf(toConfirm));
+        Assert.Equal(DashboardFlowStages.Waiting, StageOf(waiting));
+        Assert.Equal(DashboardFlowStages.InConsultation, StageOf(inConsultation));
+        Assert.Equal(DashboardFlowStages.Done, StageOf(done));
+        Assert.Equal(DashboardFlowStages.Cancelled, StageOf(cancelled));
+        var walkInRow = Assert.Single(items, i => (Guid?)i.ConsultationId == walkIn);
+        Assert.Null(walkInRow.AppointmentId);
+        Assert.Equal(DashboardFlowStages.InConsultation, (string)walkInRow.Stage);
+    }
+
+    [Fact]
+    public async Task Flow_UnpaidFinalized_IsToPayOnlyWithFinancialAccess()
+    {
+        using var scope = NewScope();
+        var suffix = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
+        var serviceId = await Fixture.GetRepository<ITariffRepository>().CreateAsync(
+            new MedicalServiceCreateData(ClinicId, $"IT-F-{suffix}", TestPrefix + "Consultație", Consults,
+                30, null, 100m, ExemptVat, null), UserId, Ct);
+        var patientId = await NewPatientAsync();
+        var doctorId = await FirstDoctorAsync();
+        var appointmentId = await NewAppointmentAsync(patientId, doctorId, 9);
+        var consultationId = await NewConsultationAsync(patientId, doctorId, ConsultationStatusIds.Completed, appointmentId);
+        await Fixture.GetRepository<IConsultationServiceRepository>()
+            .AddAsync(ClinicId, consultationId, serviceId, 1m, UserId, Ct);
+
+        var withMoney = Assert.Single((await FlowAsync(includeFinancial: true)).Items,
+            i => (Guid?)i.ConsultationId == consultationId);
+        var withoutMoney = Assert.Single((await FlowAsync(includeFinancial: false)).Items,
+            i => (Guid?)i.ConsultationId == consultationId);
+
+        Assert.Equal(DashboardFlowStages.ToPay, (string)withMoney.Stage);
+        Assert.Equal(100m, (decimal)withMoney.AmountDue);
+        Assert.Equal(DashboardFlowStages.Done, (string)withoutMoney.Stage);
+        Assert.Null(withoutMoney.AmountDue);
+    }
+
+    [Fact]
+    public async Task Flow_Attention_ListsStaleConsultationsUnresolvedAndLateAppointments()
+    {
+        using var scope = NewScope();
+        var patientId = await NewPatientAsync();
+        var doctorId = await FirstDoctorAsync();
+        var yesterday = TestDay.AddDays(-1);
+        var staleAppointment = await NewAppointmentAsync(patientId, doctorId, 9, day: yesterday);
+        var stale = await NewConsultationAsync(patientId, doctorId, ConsultationStatusIds.InProgress, staleAppointment, yesterday);
+        var unresolved = await NewAppointmentAsync(patientId, doctorId, 10, statusId: AppointmentStatusIds.Scheduled, day: yesterday);
+        var tooOld = await NewAppointmentAsync(patientId, doctorId, 10, statusId: AppointmentStatusIds.Scheduled, day: TestDay.AddDays(-8));
+        var late = await NewAppointmentAsync(patientId, doctorId, 9, statusId: AppointmentStatusIds.Scheduled);
+        var notYetLate = await NewAppointmentAsync(patientId, doctorId, 13, statusId: AppointmentStatusIds.Scheduled);
+
+        var attention = (await FlowAsync(includeFinancial: false, now: At(12))).Attention;
+
+        var staleRow = Assert.Single(attention, a => (Guid?)a.ConsultationId == stale);
+        Assert.Equal(DashboardAttentionTypes.StaleConsultation, (string)staleRow.Type);
+        Assert.Equal(1, (int)staleRow.DaysOpen);
+        Assert.Equal(DashboardAttentionTypes.UnresolvedAppointment,
+            (string)attention.Single(a => (Guid?)a.AppointmentId == unresolved).Type);
+        Assert.Equal(DashboardAttentionTypes.LateAppointment,
+            (string)attention.Single(a => (Guid?)a.AppointmentId == late).Type);
+        Assert.DoesNotContain(attention, a => (Guid?)a.AppointmentId == tooOld);
+        Assert.DoesNotContain(attention, a => (Guid?)a.AppointmentId == notYetLate);
+        Assert.DoesNotContain(attention, a => (Guid?)a.AppointmentId == staleAppointment && a.ConsultationId == null);
     }
 
     // ── Trends ───────────────────────────────────────────────────────────────
@@ -312,18 +434,21 @@ public sealed class DashboardProceduresTests(IntegrationTestFixture fixture) : I
         using var scope = NewScope();
         var patientId = await NewPatientAsync();
         var doctorId = await FirstDoctorAsync();
-        var appointmentId = await NewAppointmentAsync(patientId, doctorId, 9, notes: "Control");
+        var unconfirmed = await NewAppointmentAsync(patientId, doctorId, 8, "Control", AppointmentStatusIds.Scheduled);
+        var appointmentId = await NewAppointmentAsync(patientId, doctorId, 9);
         await NewConsultationAsync(patientId, doctorId, ConsultationStatusIds.InProgress, appointmentId);
 
         var data = await Fixture.GetRepository<IDashboardRepository>().GetAsync(
             new DashboardQueryData(
                 ClinicId, UserId, DateOnly.FromDateTime(TestDay), DateTime.UtcNow.AddDays(-1),
                 Enum.GetValues<DashboardBundle>().ToHashSet(),
-                OnlyMine: false, IncludeClinical: true, TrendDays: 30),
+                OnlyMine: false, IncludeClinical: true, TrendDays: 30, Now: At(12), IncludeFinancial: true),
             Ct);
 
         Assert.True(data.ClinicalKpis!.AppointmentsToday >= 1);
-        Assert.Contains(data.Agenda!.Appointments!, a => a.Id == appointmentId && a.Notes == "Control");
+        Assert.Contains(data.Agenda!.Appointments!, a => a.Id == unconfirmed && a.Notes == "Control" && a.IsLate);
+        Assert.Contains(data.Flow!.Items!, i => i.AppointmentId == appointmentId && i.Stage == DashboardFlowStages.InConsultation);
+        Assert.Contains(data.Flow.Attention!, a => a.AppointmentId == unconfirmed && a.Type == DashboardAttentionTypes.LateAppointment);
         Assert.NotNull(data.Financial!.Kpis);
         Assert.Equal(30, data.Trends!.Revenue!.Count);
         Assert.Equal(DateOnly.FromDateTime(TestDay), data.Trends.Revenue[^1].Date);
@@ -348,5 +473,6 @@ public sealed class DashboardProceduresTests(IntegrationTestFixture fixture) : I
         Assert.Null(data.Financial);
         Assert.Null(data.Trends);
         Assert.Null(data.Health);
+        Assert.Null(data.Flow);
     }
 }

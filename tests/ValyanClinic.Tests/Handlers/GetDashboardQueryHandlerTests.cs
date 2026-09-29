@@ -97,7 +97,8 @@ public sealed class GetDashboardQueryHandlerTests
 
         Assert.True(result.IsSuccess);
         Assert.DoesNotContain(result.Value!.WidgetIds, id => FinancialWidgets.Contains(id));
-        Assert.Contains(W.ListAgendaToday, result.Value.WidgetIds);
+        Assert.Contains(W.ListPatientFlowToday, result.Value.WidgetIds);
+        Assert.DoesNotContain(W.ListAgendaToday, result.Value.WidgetIds);
         await _repo.Received(1).GetAsync(
             Arg.Is<DashboardQueryData>(q => !q.Bundles.Contains(DashboardBundle.Financial)),
             Arg.Any<CancellationToken>());
@@ -191,7 +192,7 @@ public sealed class GetDashboardQueryHandlerTests
     }
 
     [Fact]
-    public async Task Handle_NurseRole_RequestsOnlyClinicalAndAgendaBundles()
+    public async Task Handle_NurseRole_RequestsOnlyClinicalAgendaAndFlowBundles()
     {
         AsRole(Roles.Nurse, NurseLevels);
 
@@ -199,7 +200,32 @@ public sealed class GetDashboardQueryHandlerTests
 
         await _repo.Received(1).GetAsync(
             Arg.Is<DashboardQueryData>(q =>
-                q.Bundles.SetEquals(new[] { DashboardBundle.Clinical, DashboardBundle.Agenda })),
+                q.Bundles.SetEquals(new[] { DashboardBundle.Clinical, DashboardBundle.Agenda, DashboardBundle.Flow })
+                && !q.IncludeFinancial),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_ReceptionistRole_IncludesFinancialStageInFlow()
+    {
+        AsRole(Roles.Receptionist, ReceptionistLevels);
+
+        await CreateHandler().Handle(new GetDashboardQuery(), default);
+
+        await _repo.Received(1).GetAsync(
+            Arg.Is<DashboardQueryData>(q => q.IncludeFinancial && q.Bundles.Contains(DashboardBundle.Flow)),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_NowIsPassedInClinicTimeZone()
+    {
+        AsRole(Roles.Receptionist, ReceptionistLevels);
+
+        await CreateHandler().Handle(new GetDashboardQuery(), default);
+
+        await _repo.Received(1).GetAsync(
+            Arg.Is<DashboardQueryData>(q => q.Now == new DateTime(2026, 3, 16, 0, 30, 0)),
             Arg.Any<CancellationToken>());
     }
 

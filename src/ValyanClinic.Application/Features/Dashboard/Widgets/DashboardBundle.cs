@@ -7,5 +7,6 @@ public enum DashboardBundle
     Agenda,
     Financial,
     Trend,
-    Health
+    Health,
+    Flow
 }

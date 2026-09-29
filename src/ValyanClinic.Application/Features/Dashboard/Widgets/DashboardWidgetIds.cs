@@ -19,6 +19,10 @@ public static class DashboardWidgetIds
     public const string ListConsultationsOpen  = "list.consultations.open";
     public const string ListLabResultsNew      = "list.lab.results.new";
 
+    // Flow
+    public const string ListPatientFlowToday   = "list.patient.flow.today";
+    public const string ListAttention          = "list.attention";
+
     // Financial
     public const string KpiRevenueToday        = "kpi.revenue.today";
     public const string KpiRevenueMonth        = "kpi.revenue.month";

@@ -21990,9 +21990,7 @@ export interface components {
             statusCode?: string | null;
             statusName?: string | null;
             notes?: string | null;
-            /** Format: uuid */
-            consultationId?: string | null;
-            consultationStatusCode?: string | null;
+            isLate?: boolean;
         };
         DashboardAppointmentPointDto: {
             /** Format: date */
@@ -22005,6 +22003,25 @@ export interface components {
             cancelledCount?: number;
             /** Format: int32 */
             noShowCount?: number;
+        };
+        DashboardAttentionItemDto: {
+            type?: string | null;
+            /** Format: uuid */
+            appointmentId?: string | null;
+            /** Format: uuid */
+            consultationId?: string | null;
+            /** Format: date-time */
+            occurredAt?: string;
+            /** Format: uuid */
+            patientId?: string;
+            patientName?: string | null;
+            /** Format: uuid */
+            doctorId?: string;
+            doctorName?: string | null;
+            statusCode?: string | null;
+            statusName?: string | null;
+            /** Format: int32 */
+            daysOpen?: number;
         };
         DashboardClinicalKpisDto: {
             /** Format: int32 */
@@ -22049,6 +22066,7 @@ export interface components {
             financial?: components["schemas"]["DashboardFinancialDto"];
             trends?: components["schemas"]["DashboardTrendsDto"];
             health?: components["schemas"]["DashboardHealthDto"];
+            flow?: components["schemas"]["DashboardFlowDto"];
         };
         DashboardDtoApiResponse: {
             success?: boolean;
@@ -22101,6 +22119,32 @@ export interface components {
             outstandingTotal?: number | null;
             /** Format: int32 */
             receiptsNeedingAttentionCount?: number | null;
+        };
+        DashboardFlowDto: {
+            items?: components["schemas"]["DashboardFlowItemDto"][] | null;
+            attention?: components["schemas"]["DashboardAttentionItemDto"][] | null;
+        };
+        DashboardFlowItemDto: {
+            /** Format: uuid */
+            appointmentId?: string | null;
+            /** Format: uuid */
+            consultationId?: string | null;
+            /** Format: date-time */
+            time?: string;
+            /** Format: uuid */
+            patientId?: string;
+            patientName?: string | null;
+            /** Format: uuid */
+            doctorId?: string;
+            doctorName?: string | null;
+            appointmentStatusCode?: string | null;
+            appointmentStatusName?: string | null;
+            consultationStatusCode?: string | null;
+            /** Format: date-time */
+            startedAt?: string | null;
+            stage?: string | null;
+            /** Format: double */
+            amountDue?: number | null;
         };
         DashboardHealthDto: {
             securityEvents?: components["schemas"]["DashboardSecurityEventDto"][] | null;

@@ -42,6 +42,9 @@ public sealed class GetDashboardQueryHandler(
         // date clinice, iar un medic nu poate cere agenda altcuiva.
         var includeClinical = levels.TryGetValue(ModuleCodes.Consultations, out var consultationsLevel)
                               && consultationsLevel >= (int)AccessLevel.Read;
+        // Soldul de încasat din fluxul pacienților e informație financiară
+        var includeFinancial = levels.TryGetValue(ModuleCodes.Payments, out var paymentsLevel)
+                               && paymentsLevel >= (int)AccessLevel.Read;
         // Relevanță, nu autorizare: medicul își vede ziua, restul rolurilor clinica.
         var onlyMine = currentUser.IsInRole(Roles.Doctor);
 
@@ -54,7 +57,9 @@ public sealed class GetDashboardQueryHandler(
                 Bundles: widgets.Select(w => w.Bundle).ToHashSet(),
                 OnlyMine: onlyMine,
                 IncludeClinical: includeClinical,
-                TrendDays: request.TrendDays),
+                TrendDays: request.TrendDays,
+                Now: TimeZoneInfo.ConvertTime(nowUtc, timeZone).DateTime,
+                IncludeFinancial: includeFinancial),
             cancellationToken);
 
         return Result<DashboardDto>.Success(DashboardResponseFilter.Compose(

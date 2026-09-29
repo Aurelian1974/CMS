@@ -27,7 +27,8 @@ public sealed class DashboardRepository(DapperContext context, IOptions<Dashboar
             Agenda:       query.Bundles.Contains(DashboardBundle.Agenda)   ? await GetAgendaAsync(query, today, ct) : null,
             Financial:    query.Bundles.Contains(DashboardBundle.Financial) ? await GetFinancialAsync(query, today, ct) : null,
             Trends:       query.Bundles.Contains(DashboardBundle.Trend)    ? await GetTrendsAsync(query, today, ct) : null,
-            Health:       query.Bundles.Contains(DashboardBundle.Health)   ? await GetHealthAsync(query, today, ct) : null);
+            Health:       query.Bundles.Contains(DashboardBundle.Health)   ? await GetHealthAsync(query, today, ct) : null,
+            Flow:         query.Bundles.Contains(DashboardBundle.Flow)     ? await GetFlowAsync(query, today, ct) : null);
     }
 
     private async Task<DashboardClinicalKpisDto> GetClinicalAsync(DashboardQueryData q, DateTime today, CancellationToken ct)
@@ -62,7 +63,9 @@ public sealed class DashboardRepository(DapperContext context, IOptions<Dashboar
                     q.OnlyMine,
                     q.IncludeClinical,
                     Top = _options.AgendaTop,
-                    _options.LabDays
+                    _options.LabDays,
+                    q.Now,
+                    _options.LateMinutes
                 },
                 commandType: CommandType.StoredProcedure,
                 cancellationToken: ct));
@@ -150,6 +153,34 @@ public sealed class DashboardRepository(DapperContext context, IOptions<Dashboar
             ExpiringInsurance = (await multi.ReadAsync<DashboardExpiringInsuranceDto>()).ToList(),
             SyncFreshness     = (await multi.ReadAsync<DashboardSyncFreshnessDto>()).ToList(),
             Activity          = (await multi.ReadAsync<DashboardActivityDto>()).ToList(),
+        };
+    }
+
+    private async Task<DashboardFlowDto> GetFlowAsync(DashboardQueryData q, DateTime today, CancellationToken ct)
+    {
+        using var connection = context.CreateConnection();
+        using var multi = await connection.QueryMultipleAsync(
+            new CommandDefinition(
+                DashboardProcedures.GetPatientFlow,
+                new
+                {
+                    q.ClinicId,
+                    q.UserId,
+                    Today = today,
+                    q.Now,
+                    q.OnlyMine,
+                    q.IncludeFinancial,
+                    _options.LateMinutes,
+                    _options.UnresolvedDays,
+                    Top = _options.FlowTop
+                },
+                commandType: CommandType.StoredProcedure,
+                cancellationToken: ct));
+
+        return new DashboardFlowDto
+        {
+            Items     = (await multi.ReadAsync<DashboardFlowItemDto>()).ToList(),
+            Attention = (await multi.ReadAsync<DashboardAttentionItemDto>()).ToList(),
         };
     }
 }

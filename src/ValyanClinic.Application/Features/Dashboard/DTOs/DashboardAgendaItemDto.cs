@@ -14,6 +14,6 @@ public sealed record DashboardAgendaItemDto
     public string StatusName { get; init; } = string.Empty;
     /// <summary>Null când utilizatorul nu are acces la modulul consultations.</summary>
     public string? Notes { get; init; }
-    public Guid? ConsultationId { get; init; }
-    public string? ConsultationStatusCode { get; init; }
+    /// <summary>Ora programării a trecut de pragul configurat și pacientul tot neconfirmat.</summary>
+    public bool IsLate { get; init; }
 }

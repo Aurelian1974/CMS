@@ -7,7 +7,7 @@ GO
 -- @IncludeClinical = 0 întoarce NULL în locul câmpurilor clinice și liste goale
 -- pentru 2) și 3): ce nu iese din SQL nu poate fi citit din răspunsul HTTP.
 -- Numărul de result sets e fix, indiferent de parametri (citire pozițională în Dapper).
--- Result sets: 1) agenda zilei  2) consultații în lucru  3) buletine de analize noi
+-- Result sets: 1) programări neconfirmate azi  2) consultații în lucru  3) buletine de analize noi
 -- ============================================================================
 CREATE OR ALTER PROCEDURE dbo.Dashboard_GetAgenda
     @ClinicId        UNIQUEIDENTIFIER,
@@ -16,7 +16,10 @@ CREATE OR ALTER PROCEDURE dbo.Dashboard_GetAgenda
     @OnlyMine        BIT = 0,
     @IncludeClinical BIT = 0,
     @Top             INT = 20,
-    @LabDays         INT = 7
+    @LabDays         INT = 7,
+    -- Ora curentă în fusul clinicii; NULL = fără marcaj „întârziat”
+    @Now             DATETIME2(0) = NULL,
+    @LateMinutes     INT = 15
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -31,7 +34,7 @@ BEGIN
         FROM dbo.Users u
         WHERE u.Id = @UserId AND u.ClinicId = @ClinicId AND u.IsDeleted = 0;
 
-    -- ── 1. Agenda zilei ─────────────────────────────────────────────────────
+    -- ── 1. Programări neconfirmate azi (restul fluxului: Dashboard_GetPatientFlow) ──
     SELECT TOP (@Top)
         a.Id,
         a.StartTime,
@@ -45,23 +48,17 @@ BEGIN
         StatusName   = s.Name,
         -- Text liber de la programare: poate conține orice, deci aceeași gardă
         Notes        = CASE WHEN @IncludeClinical = 1 THEN a.Notes ELSE NULL END,
-        ConsultationId         = cons.Id,
-        ConsultationStatusCode = cons.StatusCode
+        IsLate       = CAST(CASE WHEN a.StartTime <= DATEADD(MINUTE, -@LateMinutes, @Now) THEN 1 ELSE 0 END AS BIT)
     FROM dbo.Appointments a
     INNER JOIN dbo.Patients p            ON p.Id = a.PatientId
     INNER JOIN dbo.Doctors d             ON d.Id = a.DoctorId
     INNER JOIN dbo.AppointmentStatuses s ON s.Id = a.StatusId
-    OUTER APPLY (
-        SELECT TOP (1) c.Id, cs.Code AS StatusCode
-        FROM dbo.Consultations c
-        INNER JOIN dbo.ConsultationStatuses cs ON cs.Id = c.StatusId
-        WHERE c.AppointmentId = a.Id AND c.IsDeleted = 0
-        ORDER BY c.Date DESC
-    ) cons
     WHERE a.ClinicId = @ClinicId
       AND a.IsDeleted = 0
+      AND s.Code = N'PROGRAMAT'
       AND a.StartTime >= @Today AND a.StartTime < @Tomorrow
       AND (@DoctorId IS NULL OR a.DoctorId = @DoctorId)
+      AND NOT EXISTS (SELECT 1 FROM dbo.Consultations c WHERE c.AppointmentId = a.Id AND c.IsDeleted = 0)
     ORDER BY a.StartTime;
 
     -- ── 2. Consultații în lucru (cele mai vechi primele) ────────────────────

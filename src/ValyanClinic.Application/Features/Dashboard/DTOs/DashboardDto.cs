@@ -14,4 +14,5 @@ public sealed record DashboardDto
     public DashboardFinancialDto? Financial { get; init; }
     public DashboardTrendsDto? Trends { get; init; }
     public DashboardHealthDto? Health { get; init; }
+    public DashboardFlowDto? Flow { get; init; }
 }

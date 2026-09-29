@@ -7,4 +7,5 @@ public static class DashboardProcedures
     public const string GetFinancialKpis     = "dbo.Dashboard_GetFinancialKpis";
     public const string GetTrends            = "dbo.Dashboard_GetTrends";
     public const string GetOperationalHealth = "dbo.Dashboard_GetOperationalHealth";
+    public const string GetPatientFlow       = "dbo.Dashboard_GetPatientFlow";
 }

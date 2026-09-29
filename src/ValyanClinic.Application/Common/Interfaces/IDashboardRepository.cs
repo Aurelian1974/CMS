@@ -10,8 +10,9 @@ public interface IDashboardRepository
 }
 
 /// <summary>
-/// Parametrii derivați pe server din ICurrentUser + permisiuni. OnlyMine și
-/// IncludeClinical nu vin niciodată din request.
+/// Parametrii derivați pe server din ICurrentUser + permisiuni. OnlyMine,
+/// IncludeClinical și IncludeFinancial nu vin niciodată din request.
+/// Now = ora curentă în fusul clinicii (pentru „întârziat”).
 /// </summary>
 public sealed record DashboardQueryData(
     Guid ClinicId,
@@ -21,14 +22,17 @@ public sealed record DashboardQueryData(
     IReadOnlySet<DashboardBundle> Bundles,
     bool OnlyMine,
     bool IncludeClinical,
-    int TrendDays);
+    int TrendDays,
+    DateTime? Now = null,
+    bool IncludeFinancial = false);
 
 public sealed record DashboardRawData(
     DashboardClinicalKpisDto? ClinicalKpis,
     DashboardAgendaDto? Agenda,
     DashboardFinancialDto? Financial,
     DashboardTrendsDto? Trends,
-    DashboardHealthDto? Health)
+    DashboardHealthDto? Health,
+    DashboardFlowDto? Flow = null)
 {
     public static readonly DashboardRawData Empty = new(null, null, null, null, null);
 }

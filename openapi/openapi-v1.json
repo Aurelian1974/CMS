@@ -38268,14 +38268,8 @@
             "type": "string",
             "nullable": true
           },
-          "consultationId": {
-            "type": "string",
-            "format": "uuid",
-            "nullable": true
-          },
-          "consultationStatusCode": {
-            "type": "string",
-            "nullable": true
+          "isLate": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -38300,6 +38294,58 @@
             "format": "int32"
           },
           "noShowCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardAttentionItemDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "appointmentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "consultationId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "patientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patientName": {
+            "type": "string",
+            "nullable": true
+          },
+          "doctorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "doctorName": {
+            "type": "string",
+            "nullable": true
+          },
+          "statusCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "statusName": {
+            "type": "string",
+            "nullable": true
+          },
+          "daysOpen": {
             "type": "integer",
             "format": "int32"
           }
@@ -38418,6 +38464,9 @@
           },
           "health": {
             "$ref": "#/components/schemas/DashboardHealthDto"
+          },
+          "flow": {
+            "$ref": "#/components/schemas/DashboardFlowDto"
           }
         },
         "additionalProperties": false
@@ -38568,6 +38617,88 @@
           "receiptsNeedingAttentionCount": {
             "type": "integer",
             "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardFlowDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardFlowItemDto"
+            },
+            "nullable": true
+          },
+          "attention": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DashboardAttentionItemDto"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DashboardFlowItemDto": {
+        "type": "object",
+        "properties": {
+          "appointmentId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "consultationId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "patientId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "patientName": {
+            "type": "string",
+            "nullable": true
+          },
+          "doctorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "doctorName": {
+            "type": "string",
+            "nullable": true
+          },
+          "appointmentStatusCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "appointmentStatusName": {
+            "type": "string",
+            "nullable": true
+          },
+          "consultationStatusCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "stage": {
+            "type": "string",
+            "nullable": true
+          },
+          "amountDue": {
+            "type": "number",
+            "format": "double",
             "nullable": true
           }
         },

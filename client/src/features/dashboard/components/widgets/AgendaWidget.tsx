@@ -36,12 +36,12 @@ export const AgendaWidget = ({ data }: DashboardWidgetProps) => {
 
   return (
     <WidgetCard
-      title="Agenda de azi"
+      title="De confirmat azi"
       count={items.length}
       linkTo="/appointments/scheduler"
       linkLabel="Calendar"
       isEmpty={items.length === 0}
-      emptyText="Nicio programare azi."
+      emptyText="Toate programările de azi sunt confirmate."
     >
       {statusError && <div className="alert alert-danger py-2 mb-2" role="alert">{statusError}</div>}
       <div className={styles.groups}>
@@ -67,8 +67,8 @@ export const AgendaWidget = ({ data }: DashboardWidgetProps) => {
                   <AppBadge variant={APPOINTMENT_STATUS_VARIANT[a.statusCode ?? ''] ?? 'neutral'} withDot>
                     {a.statusName}
                   </AppBadge>
-                  {/* Odată începută consultația, starea programării o conduce consultația */}
-                  {canChangeStatus && !a.consultationId && (
+                  {a.isLate && <AppBadge variant="accent">Întârziat</AppBadge>}
+                  {canChangeStatus && (
                     <AgendaStatusActions
                       appointmentId={a.id ?? ''}
                       patientName={a.patientName ?? ''}

@@ -21,6 +21,8 @@ export type DashboardExpiringLicenseDto   = Schemas['DashboardExpiringLicenseDto
 export type DashboardExpiringInsuranceDto = Schemas['DashboardExpiringInsuranceDto']
 export type DashboardSyncFreshnessDto     = Schemas['DashboardSyncFreshnessDto']
 export type DashboardActivityDto          = Schemas['DashboardActivityDto']
+export type DashboardFlowItemDto          = Schemas['DashboardFlowItemDto']
+export type DashboardAttentionItemDto     = Schemas['DashboardAttentionItemDto']
 
 export interface GetDashboardParams {
   trendDays?: number

@@ -1,0 +1,71 @@
+@import '@/styles/variables';
+
+.stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.stage {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem 0.35rem 0.8rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 2px;
+  }
+}
+
+.stageCount {
+  min-width: 1.5rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(#fff, 0.75);
+  text-align: center;
+}
+
+@mixin tone($color, $text) {
+  color: $text;
+  background: rgba($color, 0.14);
+  border-color: rgba($color, 0.5);
+
+  &:hover {
+    background: rgba($color, 0.28);
+  }
+
+  &.active {
+    color: #fff;
+    background: $text;
+    border-color: $text;
+    box-shadow: $box-shadow-sm;
+
+    .stageCount {
+      color: $text;
+      background: #fff;
+    }
+  }
+}
+
+.info    { @include tone($info,     darken($info, 30%)); }
+.primary { @include tone($primary,  $primary-dark); }
+.warning { @include tone($warning,  darken($warning, 35%)); }
+.accent  { @include tone($accent,   darken($accent, 30%)); }
+.success { @include tone($success,  darken($success, 28%)); }
+.neutral { @include tone($gray-400, $gray-600); }
+
+.emptyStage {
+  margin: 0;
+  padding: 1rem 0;
+  color: $gray-500;
+  font-size: 0.875rem;
+  text-align: center;
+}

@@ -26,7 +26,9 @@ public static class DashboardPresets
             W.KpiPrescriptionsDraft,
             // Vizibil doar cu override payments ≥ Read
             W.KpiRevenueToday,
-            W.ListAgendaToday,
+            // Fluxul include și neconfirmații medicului, deci agenda de confirmat nu mai e necesară
+            W.ListPatientFlowToday,
+            W.ListAttention,
             W.ListConsultationsOpen,
             W.ListLabResultsNew,
         ],
@@ -35,7 +37,9 @@ public static class DashboardPresets
             W.KpiAppointmentsToday,
             W.KpiConsultationsToday,
             W.KpiPatientsNewMonth,
+            W.ListPatientFlowToday,
             W.ListAgendaToday,
+            W.ListAttention,
             W.ListLabResultsNew,
         ],
         [Roles.Receptionist] =
@@ -45,7 +49,9 @@ public static class DashboardPresets
             W.KpiRevenueToday,
             W.KpiUnpaidCount,
             W.KpiReceiptsAttention,
+            W.ListPatientFlowToday,
             W.ListAgendaToday,
+            W.ListAttention,
             W.ListUnpaid,
             W.ListReceiptsFailed,
         ],
@@ -55,6 +61,7 @@ public static class DashboardPresets
             W.KpiInvoicesMonth,
             W.KpiAppointmentsToday,
             W.KpiPatientsNewMonth,
+            W.ListPatientFlowToday,
             W.ChartRevenueTrend,
             W.ChartAppointmentsWeek,
             W.PanelNoShowRate,
