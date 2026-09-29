@@ -38,8 +38,8 @@ test.describe('Consultații', () => {
     expect(errors, `Erori 401/403 pe /consultations: ${errors.join(', ')}`).toHaveLength(0);
   });
 
-  test('butonul "Consultație nouă" este vizibil pentru admin', async ({ page }) => {
-    const addBtn = page.getByRole('button', { name: /consultație nouă/i });
+  test('butonul "Nouă" (consultație nouă) este vizibil pentru admin', async ({ page }) => {
+    const addBtn = page.getByRole('button', { name: /^Nouă$/ });
     await expect(addBtn).toBeVisible({ timeout: 10_000 });
   });
 

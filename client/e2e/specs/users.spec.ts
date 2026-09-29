@@ -87,7 +87,8 @@ test.describe('Utilizatori', () => {
     await page.waitForLoadState('networkidle').catch(() => {});
 
     // Verifică că admin-ul vede butonul de adăugare
-    const addBtn = page.getByRole('button', { name: /utilizator nou|adaug|add/i });
+    // Nume exact: „Adaugă … la favorite" din sidebar s-ar potrivi cu un regex larg
+    const addBtn = page.getByRole('button', { name: /^Utilizator nou$/i });
     await expect(addBtn).toBeVisible({ timeout: 10_000 });
   });
 });
