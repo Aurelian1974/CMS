@@ -173,7 +173,7 @@
   top: 0;
   z-index: 10;
   background: $card-bg;
-  border-bottom: 2px solid $gray-200;
+  border-bottom: 2px solid $gray-300;
 }
 
 .timeHeaderLabel {
@@ -185,31 +185,30 @@
   color: $gray-500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  border-right: 1px solid $gray-200;
+  border-right: 2px solid $gray-300;
   display: flex;
   align-items: center;
   background: $gray-50;
 }
 
+// Eticheta orei stă lipită de linia de la care începe ora, nu centrată în interval
 .timeSlot {
   flex: 1;
   min-width: 100px;
-  padding: 8px 4px;
-  text-align: center;
+  padding: 8px 6px;
+  text-align: left;
   font-size: 0.78rem;
-  font-weight: 500;
-  color: $gray-500;
-  border-right: 1px solid rgba($gray-200, 0.5);
+  font-weight: 600;
+  color: $gray-600;
+  border-left: 1px solid $gray-300;
   background: $gray-50;
-
-  &:last-child { border-right: none; }
 }
 
 // ── Resource rows ─────────────────────────────────────────────────────────────
 .resourceRow {
   display: flex;
   min-height: 60px;
-  border-bottom: 1px solid rgba($gray-200, 0.6);
+  border-bottom: 1px solid $gray-300;
 
   &:last-child { border-bottom: none; }
 
@@ -226,7 +225,7 @@
   width: 200px;
   min-width: 200px;
   padding: 4px 12px;
-  border-right: 1px solid $gray-200;
+  border-right: 2px solid $gray-300;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -291,10 +290,9 @@
 .timelineCell {
   flex: 1;
   min-width: 100px;
-  border-right: 1px solid rgba($gray-200, 0.3);
+  border-left: 1px solid $gray-300;
   position: relative;
 
-  &:last-child { border-right: none; }
   &:hover { background: rgba($primary, 0.03); }
 }
 // ── Half-hour marks ─────────────────────────────────────────────────────────────────
@@ -303,7 +301,7 @@
   top: 0;
   bottom: 0;
   width: 0;
-  border-right: 1px dashed rgba($gray-300, 0.6);
+  border-right: 1px dashed $gray-300;
   pointer-events: none;
   z-index: 1;
 }
@@ -315,12 +313,12 @@
   bottom: 0;
   background: repeating-linear-gradient(
     135deg,
-    rgba(0, 0, 0, 0.035) 0px,
-    rgba(0, 0, 0, 0.035) 4px,
+    rgba($gray-400, 0.18) 0px,
+    rgba($gray-400, 0.18) 4px,
     transparent 4px,
     transparent 10px
   );
-  background-color: rgba(0, 0, 0, 0.03);
+  background-color: rgba($gray-200, 0.55);
   pointer-events: auto;
   cursor: not-allowed;
   z-index: 1;
