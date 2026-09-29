@@ -2,10 +2,12 @@ using Microsoft.AspNetCore.Mvc;
 using ValyanClinic.Application.Common.Constants;
 using ValyanClinic.Application.Common.Enums;
 using ValyanClinic.Application.Common.Models;
+using ValyanClinic.Application.Features.FinancialSettings.Commands.CreateBridgePairingTicket;
 using ValyanClinic.Application.Features.FinancialSettings.Commands.CreateInvoiceSeries;
 using ValyanClinic.Application.Features.FinancialSettings.Commands.UpdateFiscalSettings;
 using ValyanClinic.Application.Features.FinancialSettings.Commands.UpdateInvoiceSeries;
 using ValyanClinic.Application.Features.FinancialSettings.DTOs;
+using ValyanClinic.Application.Features.FinancialSettings.Queries.GetBridgePairingKey;
 using ValyanClinic.Application.Features.FinancialSettings.Queries.GetFiscalSettings;
 using ValyanClinic.Application.Features.FinancialSettings.Queries.GetInvoiceSeries;
 using ValyanClinic.Infrastructure.Authentication;
@@ -27,6 +29,21 @@ public class FinancialSettingsController : BaseApiController
     [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> UpdateFiscal([FromBody] UpdateFiscalSettingsCommand command, CancellationToken ct)
         => HandleResult(await Mediator.Send(command, ct));
+
+    // Asocierea stăției: handler-ul permite doar rolul admin
+    [HttpPost("fiscal/bridge-pairing-ticket")]
+    [HasAccess(ModuleCodes.Payments, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<BridgePairingTicketDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiResponse<string>>(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> CreateBridgePairingTicket(CancellationToken ct)
+        => HandleResult(await Mediator.Send(new CreateBridgePairingTicketCommand(), ct));
+
+    [HttpGet("fiscal/bridge-pairing-key")]
+    [HasAccess(ModuleCodes.Payments, AccessLevel.Read)]
+    [ProducesResponseType<ApiResponse<BridgePairingKeyDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiResponse<string>>(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetBridgePairingKey(CancellationToken ct)
+        => HandleResult(await Mediator.Send(new GetBridgePairingKeyQuery(), ct));
 
     [HttpGet("invoice-series")]
     [HasAccess(ModuleCodes.Invoices, AccessLevel.Read)]

@@ -53,6 +53,7 @@ public static class DependencyInjection
         services.Configure<CnasOptions>(configuration.GetSection(CnasOptions.SectionName));
         services.Configure<AnmOptions>(configuration.GetSection(AnmOptions.SectionName));
         services.Configure<DashboardOptions>(configuration.GetSection(DashboardOptions.SectionName));
+        services.Configure<FiscalBridgeOptions>(configuration.GetSection(FiscalBridgeOptions.SectionName));
 
         services.TryAddSingleton(TimeProvider.System);
 
@@ -110,6 +111,7 @@ public static class DependencyInjection
         services.AddSingleton<IPrescriptionPdfGenerator, PrescriptionPdfGenerator>();
         services.AddSingleton<IInvoicePdfGenerator, InvoicePdfGenerator>();
         services.AddSingleton<ISipeClient, DisabledSipeClient>();
+        services.AddSingleton<IBridgePairingTicketIssuer, BridgePairingTicketIssuer>();
         services.AddHostedService<CnasSyncHostedService>();
         services.AddHostedService<AnmSyncHostedService>();
         services.AddHostedService<RefreshTokenCleanupHostedService>();

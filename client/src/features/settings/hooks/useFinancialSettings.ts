@@ -10,6 +10,7 @@ export const financialSettingsKeys = {
   all:    ['financial-settings'] as const,
   fiscal: () => [...financialSettingsKeys.all, 'fiscal'] as const,
   series: () => [...financialSettingsKeys.all, 'invoice-series'] as const,
+  pairingKey: () => [...financialSettingsKeys.all, 'bridge-pairing-key'] as const,
 }
 
 // Seriile și statutul TVA apar și în nomenclatoarele de facturare (tarife)
@@ -28,6 +29,18 @@ export const useInvoiceSeries = () =>
     queryKey: financialSettingsKeys.series(),
     queryFn: () => financialSettingsApi.getInvoiceSeries(),
   })
+
+export const useBridgePairingKey = (enabled: boolean) =>
+  useQuery({
+    queryKey: financialSettingsKeys.pairingKey(),
+    queryFn: () => financialSettingsApi.getBridgePairingKey(),
+    staleTime: 5 * 60_000,
+    enabled,
+  })
+
+// Tichetul e de unică folosință și nu modifică nimic pe server — nimic de invalidat
+export const useCreateBridgePairingTicket = () =>
+  useMutation({ mutationFn: () => financialSettingsApi.createBridgePairingTicket() })
 
 const useSettingsMutation = <TVars, TResult>(mutationFn: (vars: TVars) => Promise<TResult>) => {
   const qc = useQueryClient()

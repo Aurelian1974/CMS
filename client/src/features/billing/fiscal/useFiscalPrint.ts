@@ -22,7 +22,7 @@ export const useFiscalPrint = () => {
     }
     const token = getBridgeToken()
     if (!token) {
-      return { outcome: 'NOT_STARTED', message: 'Acest PC nu este asociat cu fiscal bridge-ul. Introduceți token-ul în Încasări → Casa de marcat.' }
+      return { outcome: 'NOT_STARTED', message: 'Acest PC nu este asociat cu casa de marcat. Un administrator trebuie să îl asocieze din Încasări → Casa de marcat.' }
     }
 
     setPrintingId(receiptId)

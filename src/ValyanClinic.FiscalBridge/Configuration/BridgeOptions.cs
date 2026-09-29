@@ -11,6 +11,9 @@ public sealed class BridgeOptions
     /// <summary>Originile aplicației ValyanClinic care pot apela bridge-ul din browser (CORS).</summary>
     public string[] AllowedOrigins { get; init; } = [];
 
+    /// <summary>Cheia publică (PEM) a serverului ValyanClinic — verifică tichetele de asociere emise pentru administratori.</summary>
+    public string PairingPublicKey { get; init; } = string.Empty;
+
     /// <summary>Director pentru jurnalul bonurilor și secrete. Gol = %ProgramData%\ValyanClinic\FiscalBridge.</summary>
     public string DataDirectory { get; init; } = string.Empty;
 

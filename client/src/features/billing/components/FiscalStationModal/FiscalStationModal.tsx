@@ -3,7 +3,10 @@ import { AppModal } from '@/components/ui/AppModal'
 import { AppButton } from '@/components/ui/AppButton'
 import { AppBadge } from '@/components/ui/AppBadge'
 import { fiscalBridgeApi, type BridgeDeviceStatus } from '@/api/endpoints/fiscalBridge.api'
-import { useFiscalSettings } from '@/features/settings/hooks/useFinancialSettings'
+import { useAuthStore } from '@/store/authStore'
+import {
+  useBridgePairingKey, useCreateBridgePairingTicket, useFiscalSettings,
+} from '@/features/settings/hooks/useFinancialSettings'
 import { clearBridgeToken, getBridgeToken, setBridgeToken } from '../../fiscal/bridgeToken'
 import { InlineFeedback } from '../InlineFeedback'
 import styles from './FiscalStationModal.module.scss'
@@ -15,23 +18,30 @@ interface FiscalStationModalProps {
 
 /**
  * Asocierea PC-ului curent cu fiscal bridge-ul local și verificarea casei de marcat.
- * Token-ul se obține pe PC, cu `ValyanClinic.FiscalBridge.exe --show-token`.
+ * Doar administratorul asociază: serverul emite un tichet semnat, bridge-ul îl schimbă pe un token nou.
  */
 export const FiscalStationModal = ({ isOpen, onClose }: FiscalStationModalProps) => {
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin')
   const { data: settingsResp } = useFiscalSettings(isOpen)
   const settings = settingsResp?.data
-  const [token, setToken] = useState('')
+  const { data: keyResp } = useBridgePairingKey(isOpen && isAdmin)
+  const pairingKey = keyResp?.data
+  const createTicket = useCreateBridgePairingTicket()
   const [paired, setPaired] = useState(false)
+  const [pairing, setPairing] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [status, setStatus] = useState<BridgeDeviceStatus | null>(null)
   const [checking, setChecking] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isOpen) return
     setPaired(!!getBridgeToken())
-    setToken('')
     setStatus(null)
     setError(null)
+    setSuccess(null)
+    setCopied(false)
   }, [isOpen])
 
   const test = async (value?: string) => {
@@ -50,11 +60,29 @@ export const FiscalStationModal = ({ isOpen, onClose }: FiscalStationModalProps)
   }
 
   const pair = async () => {
-    if (!token.trim()) return
-    setBridgeToken(token)
-    setPaired(true)
-    setToken('')
-    await test(token.trim())
+    if (!settings) return
+    setPairing(true)
+    setError(null)
+    setSuccess(null)
+    try {
+      const ticket = (await createTicket.mutateAsync()).data?.ticket
+      if (!ticket) throw new Error('Tichetul de asociere nu a putut fi emis.')
+      const { token } = await fiscalBridgeApi.pair(settings.bridgeUrl, ticket)
+      setBridgeToken(token)
+      setPaired(true)
+      setSuccess('PC-ul a fost asociat cu casa de marcat.')
+      await test(token)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Asocierea a eșuat.')
+    } finally {
+      setPairing(false)
+    }
+  }
+
+  const copyKey = async () => {
+    if (!pairingKey?.publicKeyPem) return
+    await navigator.clipboard.writeText(pairingKey.publicKeyPem)
+    setCopied(true)
   }
 
   return (
@@ -66,7 +94,7 @@ export const FiscalStationModal = ({ isOpen, onClose }: FiscalStationModalProps)
       bodyClassName={styles.body}
       footer={<AppButton variant="secondary" onClick={onClose}>Închide</AppButton>}
     >
-      <InlineFeedback errorMsg={error} />
+      <InlineFeedback successMsg={success} errorMsg={error} />
 
       {!settings?.isEnabled && (
         <div className="alert alert-warning py-2 mb-0 small">Emiterea bonurilor fiscale este dezactivată din Setări financiare.</div>
@@ -84,20 +112,26 @@ export const FiscalStationModal = ({ isOpen, onClose }: FiscalStationModalProps)
           : <AppBadge variant="warning" withDot>Neasociat</AppBadge>}
       </div>
 
-      <div className={styles.pair}>
-        <input
-          type="password"
-          className="form-control"
-          placeholder={paired ? 'Token nou (doar dacă a fost regenerat)' : 'Token afișat de --show-token'}
-          value={token}
-          autoComplete="off"
-          onChange={(e) => setToken(e.target.value)}
-        />
-        <AppButton variant="primary" onClick={() => { void pair() }} disabled={!token.trim()}>Asociază</AppButton>
-        {paired && (
-          <AppButton variant="ghost" onClick={() => { clearBridgeToken(); setPaired(false); setStatus(null) }}>Dezasociază</AppButton>
-        )}
-      </div>
+      {isAdmin ? (
+        <div className={styles.pair}>
+          <AppButton
+            variant="primary"
+            onClick={() => { void pair() }}
+            isLoading={pairing}
+            loadingText="Se asociază…"
+            disabled={!settings}
+          >
+            {paired ? 'Reasociază acest PC' : 'Asociază acest PC'}
+          </AppButton>
+          {paired && (
+            <AppButton variant="ghost" onClick={() => { clearBridgeToken(); setPaired(false); setStatus(null) }}>Dezasociază</AppButton>
+          )}
+        </div>
+      ) : !paired && (
+        <div className="alert alert-info py-2 mb-0 small">
+          Asocierea acestui PC cu casa de marcat se face de un administrator, din această fereastră.
+        </div>
+      )}
 
       {paired && (
         <div className={styles.statusBox}>
@@ -121,9 +155,30 @@ export const FiscalStationModal = ({ isOpen, onClose }: FiscalStationModalProps)
         </div>
       )}
 
+      {isAdmin && pairingKey && (
+        <details className={styles.setup}>
+          <summary>Configurare bridge la instalare (o singură dată pe PC)</summary>
+          {pairingKey.isConfigured && pairingKey.publicKeyPem ? (
+            <>
+              <p className={styles.hint}>
+                Cheia publică de mai jos se pune în <code>Bridge:PairingPublicKey</code> din appsettings.json-ul
+                bridge-ului (sau <code>install-service.ps1 -PairingPublicKey</code>), apoi se repornește serviciul.
+              </p>
+              <pre className={styles.key}>{pairingKey.publicKeyPem}</pre>
+              <AppButton size="sm" variant="outline-primary" onClick={() => { void copyKey() }}>
+                {copied ? 'Copiat' : 'Copiază cheia'}
+              </AppButton>
+            </>
+          ) : (
+            <div className="alert alert-warning py-2 mb-0 small">
+              Cheia de asociere nu este configurată pe server (<code>FiscalBridge:PairingPrivateKey</code>).
+            </div>
+          )}
+        </details>
+      )}
+
       <p className={styles.hint}>
-        Token-ul se păstrează doar în acest browser, pe acest PC. Dacă serviciul regenerează token-ul
-        (<code>--rotate-token</code>), asociați din nou.
+        Asocierea se păstrează doar în acest browser, pe acest PC. O reasociere invalidează asocierea anterioară a PC-ului.
       </p>
     </AppModal>
   )

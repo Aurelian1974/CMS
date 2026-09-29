@@ -54,3 +54,27 @@
   font-size: 0.78rem;
   color: $gray-500;
 }
+
+.setup {
+  padding: 0.75rem 1rem;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius;
+
+  summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: $gray-600;
+  }
+
+  &[open] summary { margin-bottom: 0.5rem; }
+}
+
+.key {
+  margin: 0.5rem 0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.72rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background: $gray-50;
+  border-radius: $border-radius-sm;
+}

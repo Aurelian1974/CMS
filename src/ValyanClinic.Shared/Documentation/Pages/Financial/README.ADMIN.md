@@ -50,6 +50,7 @@ Scriptul publică aplicația, creează serviciul `ValyanClinicFiscalBridge` (por
 |---|---|---|
 | `Bridge:Port` | 5199 | Același port ca în Setări financiare |
 | `Bridge:AllowedOrigins` | `["http://server-cabinet:5173"]` | Adresa exactă din bara browserului |
+| `Bridge:PairingPublicKey` | PEM | Cheia publică copiată din **Încasări → Casa de marcat → Configurare bridge** (cont admin) |
 | `Printer:Driver` | `Datecs` | `Mock` = simulare (fără bon real) |
 | `Printer:Transport` | `Serial` / `Tcp` | |
 | `Printer:PortName`, `BaudRate` | `COM3`, `115200` | Din Device Manager / service |
@@ -60,12 +61,15 @@ Parola operatorului **nu** se scrie în fișier:
 
 ```powershell
 C:\ValyanClinic\FiscalBridge\ValyanClinic.FiscalBridge.exe --set-operator-password   # citită de la tastatură, salvată cu DPAPI
-C:\ValyanClinic\FiscalBridge\ValyanClinic.FiscalBridge.exe --show-token              # token de asociere
-C:\ValyanClinic\FiscalBridge\ValyanClinic.FiscalBridge.exe --rotate-token            # invalidează asocierile existente
 Restart-Service ValyanClinicFiscalBridge
 ```
 
-Asocierea: pe PC-ul recepției, **Încasări → Casa de marcat** → token → **Asociază** → **Verifică**.
+Pe server, cheia privată de semnare a tichetelor de asociere (ECDSA P-256, PEM) se pune în
+`FiscalBridge:PairingPrivateKey` (user-secrets / variabilă de mediu `FiscalBridge__PairingPrivateKey`), niciodată în appsettings.json.
+
+Asocierea: pe PC-ul recepției, autentificat ca **administrator**, **Încasări → Casa de marcat** → **Asociază acest PC** → **Verifică**.
+Serverul emite un tichet semnat (60 s, de unică folosință), bridge-ul îl verifică cu cheia publică și întoarce un token nou;
+o reasociere invalidează asocierea anterioară. Asocierea rămâne în browserul PC-ului și după delogarea administratorului.
 
 Date locale: `%ProgramData%\ValyanClinic\FiscalBridge\` (jurnalul bonurilor `journal\*.json`, secretele criptate). Includeți directorul în backup-ul PC-ului — jurnalul e sursa de adevăr la reconciliere.
 

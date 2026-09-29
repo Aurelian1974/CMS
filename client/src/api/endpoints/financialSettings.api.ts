@@ -1,6 +1,8 @@
 import api from '@/api/axiosInstance'
 import type { ApiResponse } from '@/types/common.types'
 import type {
+  BridgePairingKeyDto,
+  BridgePairingTicketDto,
   CreateInvoiceSeriesPayload,
   FiscalSettingsDto,
   InvoiceSeriesDto,
@@ -16,6 +18,12 @@ export const financialSettingsApi = {
 
   updateFiscal: (payload: UpdateFiscalSettingsPayload): Promise<ApiResponse<boolean>> =>
     api.put(`${BASE}/fiscal`, payload),
+
+  createBridgePairingTicket: (): Promise<ApiResponse<BridgePairingTicketDto>> =>
+    api.post(`${BASE}/fiscal/bridge-pairing-ticket`),
+
+  getBridgePairingKey: (): Promise<ApiResponse<BridgePairingKeyDto>> =>
+    api.get(`${BASE}/fiscal/bridge-pairing-key`),
 
   getInvoiceSeries: (): Promise<ApiResponse<InvoiceSeriesDto[]>> =>
     api.get(`${BASE}/invoice-series`),

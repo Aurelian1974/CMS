@@ -58,7 +58,7 @@ const TOKEN_HEADER = 'X-Bridge-Token'
 const STATUS_TIMEOUT_MS = 5_000
 const PRINT_TIMEOUT_MS = 90_000
 
-const request = async <T>(baseUrl: string, path: string, token: string, init: RequestInit, timeoutMs: number): Promise<T> => {
+const request = async <T>(baseUrl: string, path: string, token: string | null, init: RequestInit, timeoutMs: number): Promise<T> => {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   let response: Response
@@ -66,7 +66,7 @@ const request = async <T>(baseUrl: string, path: string, token: string, init: Re
     response = await fetch(`${baseUrl.replace(/\/+$/, '')}${path}`, {
       ...init,
       signal: controller.signal,
-      headers: { 'Content-Type': 'application/json', [TOKEN_HEADER]: token, ...init.headers },
+      headers: { 'Content-Type': 'application/json', ...(token ? { [TOKEN_HEADER]: token } : {}), ...init.headers },
     })
   } catch {
     throw new BridgeUnreachableError('Fiscal bridge-ul nu răspunde. Verificați că serviciul rulează pe acest PC.')
@@ -82,6 +82,10 @@ const request = async <T>(baseUrl: string, path: string, token: string, init: Re
 }
 
 export const fiscalBridgeApi = {
+  /** Schimbă tichetul semnat de server (doar pentru administratori) pe un token nou al stăției. */
+  pair: (baseUrl: string, ticket: string) =>
+    request<{ token: string }>(baseUrl, '/api/pair', null, { method: 'POST', body: JSON.stringify({ ticket }) }, STATUS_TIMEOUT_MS),
+
   getStatus: (baseUrl: string, token: string) =>
     request<BridgeDeviceStatus>(baseUrl, '/api/status', token, { method: 'GET' }, STATUS_TIMEOUT_MS),
 

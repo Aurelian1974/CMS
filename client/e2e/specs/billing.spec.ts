@@ -24,7 +24,7 @@ test.describe('Financiar — pagini și dialoguri', () => {
 
     await page.getByRole('button', { name: /Casa de marcat/ }).click();
     await expect(page.getByRole('heading', { name: /stația curentă/ })).toBeVisible();
-    await expect(page.getByPlaceholder(/--show-token|Token nou/)).toBeVisible();
+    await expect(page.getByRole('button', { name: /sociază acest PC/ })).toBeVisible();
   });
 
   test('Facturi: filtrul de status și exportul sunt disponibile', async ({ page }) => {

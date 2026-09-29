@@ -64,6 +64,7 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p => p
 
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<ISecretStore>(secrets);
+builder.Services.AddSingleton<PairingTicketVerifier>();
 builder.Services.AddSingleton(sp => new ReceiptJournal(Path.Combine(dataDirectory, "journal"), sp.GetRequiredService<TimeProvider>()));
 builder.Services.AddSingleton(FiscalPrinterFactory.Create);
 builder.Services.AddSingleton<ReceiptPrintService>();

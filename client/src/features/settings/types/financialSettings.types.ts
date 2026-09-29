@@ -13,6 +13,9 @@ export type FiscalSettingsDto = ApiDto<Omit<Schemas['FiscalSettingsDto'], 'vatMa
 
 export type InvoiceSeriesDto = ApiDto<Schemas['InvoiceSeriesDto']>
 
+export type BridgePairingTicketDto = ApiDto<Schemas['BridgePairingTicketDto']>
+export type BridgePairingKeyDto = ApiDto<Schemas['BridgePairingKeyDto'], 'publicKeyPem'>
+
 export interface UpdateFiscalSettingsPayload {
   isEnabled: boolean
   bridgeUrl: string

@@ -2,7 +2,9 @@
 
 | Simptom | Cauză probabilă | Soluție |
 |---|---|---|
-| „Acest PC nu este asociat cu fiscal bridge-ul" | Token lipsă în browserul curent | Încasări → Casa de marcat → introduceți token-ul (`--show-token` pe PC) |
+| „Acest PC nu este asociat cu casa de marcat" | Asociere lipsă în browserul curent | Un administrator: Încasări → Casa de marcat → **Asociază acest PC** |
+| „Bridge-ul nu are configurată cheia publică" / „Tichet de asociere invalid" | `Bridge:PairingPublicKey` lipsă sau diferită de cheia serverului | Copiați cheia din Casa de marcat → Configurare bridge în appsettings.json-ul bridge-ului, reporniți serviciul |
+| „Cheia de asociere … nu este configurată pe server" | `FiscalBridge:PairingPrivateKey` lipsă pe API | Configurați cheia privată ECDSA P-256 (user-secrets / variabilă de mediu) |
 | „Fiscal bridge-ul nu răspunde" | Serviciul oprit / alt port | `Get-Service ValyanClinicFiscalBridge`; `Start-Service …`; verificați `Bridge:Port` vs Setări financiare |
 | Eroare CORS în consola browserului | Originea aplicației lipsește din `Bridge:AllowedOrigins` | Adăugați adresa exactă (protocol + host + port), reporniți serviciul |
 | 401 de la bridge | Token regenerat (`--rotate-token`) | Asociați din nou stația |

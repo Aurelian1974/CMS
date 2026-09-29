@@ -90,6 +90,14 @@ public static class ErrorMessages
         public const string InvoiceSeriesNotFound       = "Seria de facturi nu a fost găsită.";
     }
 
+    public static class FiscalBridge
+    {
+        public const string PairingRequiresAdmin =
+            "Doar un administrator poate asocia o stație cu casa de marcat.";
+        public const string PairingKeyNotConfigured =
+            "Cheia de asociere a casei de marcat nu este configurată pe server (FiscalBridge:PairingPrivateKey).";
+    }
+
     public static class Auth
     {
         public const string InvalidCredentials = "Email/username sau parola incorectă.";
