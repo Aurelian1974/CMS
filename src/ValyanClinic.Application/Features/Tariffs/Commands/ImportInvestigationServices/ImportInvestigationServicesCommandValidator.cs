@@ -11,17 +11,16 @@ public sealed class ImportInvestigationServicesCommandValidator : AbstractValida
         RuleFor(x => x.Items)
             .Must(items => items.Count <= MaxItems).WithMessage($"Se pot importa cel mult {MaxItems} de investigații odată.")
             .Must(items => items
-                    .Select(i => i.InvestigationTypeCode?.Trim())
-                    .Distinct(StringComparer.Ordinal)
+                    .Select(i => i.InvestigationTypeId)
+                    .Distinct()
                     .Count() == items.Count)
                 .WithMessage("O investigație apare de mai multe ori în listă.")
             .When(x => x.Items is not null);
 
         RuleForEach(x => x.Items).ChildRules(item =>
         {
-            item.RuleFor(i => i.InvestigationTypeCode)
-                .NotEmpty().WithMessage("Tipul investigației este obligatoriu.")
-                .MaximumLength(50).WithMessage("Codul tipului de investigație nu poate depăși 50 de caractere.");
+            item.RuleFor(i => i.InvestigationTypeId)
+                .NotEmpty().WithMessage("Tipul investigației este obligatoriu.");
 
             item.RuleFor(i => i.Price)
                 .GreaterThanOrEqualTo(0).WithMessage("Prețul nu poate fi negativ.")

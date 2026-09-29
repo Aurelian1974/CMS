@@ -78,9 +78,10 @@ BEGIN
             @MaxSort + ROW_NUMBER() OVER (ORDER BY ci.InvestigationDate, ci.CreatedAt),
             GETDATE(), @UserId
         FROM dbo.ConsultationInvestigations ci
+        INNER JOIN dbo.InvestigationTypeDefinitions d ON d.TypeCode = ci.InvestigationType
         INNER JOIN dbo.MedicalServices ms
                 ON ms.ClinicId = @ClinicId
-               AND ms.InvestigationTypeCode = ci.InvestigationType
+               AND ms.InvestigationTypeId = d.Id
                AND ms.IsDeleted = 0
                AND ms.IsActive = 1
         CROSS APPLY (

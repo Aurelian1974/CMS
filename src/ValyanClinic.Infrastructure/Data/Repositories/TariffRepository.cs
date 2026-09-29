@@ -70,7 +70,7 @@ public sealed class TariffRepository(DapperContext context) : ITariffRepository
                     data.Name,
                     data.CategoryId,
                     data.DurationMinutes,
-                    data.InvestigationTypeCode,
+                    data.InvestigationTypeId,
                     data.Price,
                     data.VatRateId,
                     ValidFrom = data.ValidFrom?.ToDateTime(TimeOnly.MinValue),
@@ -94,7 +94,7 @@ public sealed class TariffRepository(DapperContext context) : ITariffRepository
                     data.Name,
                     data.CategoryId,
                     data.DurationMinutes,
-                    data.InvestigationTypeCode,
+                    data.InvestigationTypeId,
                     data.RowVersion,
                     UpdatedBy = updatedBy
                 },
@@ -229,7 +229,7 @@ public sealed class TariffRepository(DapperContext context) : ITariffRepository
         // Numele proprietăților JSON sunt citite explicit de SP (OPENJSON / JSON_VALUE)
         var items = JsonSerializer.Serialize(data.Items.Select(i => new
         {
-            i.InvestigationTypeCode,
+            i.InvestigationTypeId,
             i.Price
         }));
 

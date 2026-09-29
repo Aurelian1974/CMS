@@ -37362,8 +37362,9 @@
             "format": "int32",
             "nullable": true
           },
-          "investigationTypeCode": {
+          "investigationTypeId": {
             "type": "string",
+            "format": "uuid",
             "nullable": true
           },
           "price": {
@@ -39892,6 +39893,10 @@
       "ImportableInvestigationTypeDto": {
         "type": "object",
         "properties": {
+          "investigationTypeId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "typeCode": {
             "type": "string",
             "nullable": true
@@ -40142,9 +40147,9 @@
       "InvestigationServiceImportItem": {
         "type": "object",
         "properties": {
-          "investigationTypeCode": {
+          "investigationTypeId": {
             "type": "string",
-            "nullable": true
+            "format": "uuid"
           },
           "price": {
             "type": "number",
@@ -41127,8 +41132,9 @@
             "format": "int32",
             "nullable": true
           },
-          "investigationTypeCode": {
+          "investigationTypeId": {
             "type": "string",
+            "format": "uuid",
             "nullable": true
           },
           "investigationTypeName": {
@@ -41234,8 +41240,9 @@
             "format": "int32",
             "nullable": true
           },
-          "investigationTypeCode": {
+          "investigationTypeId": {
             "type": "string",
+            "format": "uuid",
             "nullable": true
           },
           "isActive": {
@@ -45206,8 +45213,9 @@
             "format": "int32",
             "nullable": true
           },
-          "investigationTypeCode": {
+          "investigationTypeId": {
             "type": "string",
+            "format": "uuid",
             "nullable": true
           },
           "rowVersion": {

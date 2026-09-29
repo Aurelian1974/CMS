@@ -62,7 +62,7 @@ export const ServiceLinesEditor = ({
   // Doar serviciile cu preț în vigoare (altfel serverul refuză cu 50612) și nelegate de investigații
   const options = useMemo(
     () => (servicesResp?.data?.pagedResult?.items ?? [])
-      .filter((s) => s.currentPrice != null && !s.investigationTypeCode),
+      .filter((s) => s.currentPrice != null && !s.investigationTypeId),
     [servicesResp],
   )
   const canSync = canEdit && !!onSyncInvestigations

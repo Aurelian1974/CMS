@@ -8,7 +8,7 @@ GO
 -- (categoria INVESTIGATIE, denumirea din nomenclator) pentru FIECARE tip facturabil
 -- activ care nu are încă serviciu în clinică. Codul se generează INV-001, INV-002, ...
 -- Prețul e opțional: serviciile fără preț nu se pot factura până nu primesc unul.
--- @Items: prețurile inițiale, JSON [{ "InvestigationTypeCode": "...", "Price": 120.00 }]
+-- @Items: prețurile inițiale, JSON [{ "InvestigationTypeId": "guid", "Price": 120.00 }]
 -- ============================================================================
 CREATE OR ALTER PROCEDURE dbo.MedicalService_ImportInvestigations
     @ClinicId  UNIQUEIDENTIFIER,
@@ -25,11 +25,11 @@ BEGIN
     DECLARE @Today DATE = CAST(GETDATE() AS DATE);
     SET @ValidFrom = ISNULL(@ValidFrom, @Today);
 
-    DECLARE @Prices TABLE (TypeCode NVARCHAR(50) NOT NULL, Price DECIMAL(18,2) NULL);
+    DECLARE @Prices TABLE (TypeId UNIQUEIDENTIFIER NULL, Price DECIMAL(18,2) NULL);
 
     DECLARE @Rows TABLE (
         RowNo    INT              NOT NULL,
-        TypeCode NVARCHAR(50)     NOT NULL,
+        TypeId   UNIQUEIDENTIFIER NOT NULL,
         Name     NVARCHAR(200)    NOT NULL,
         Price    DECIMAL(18,2)    NULL,
         NewId    UNIQUEIDENTIFIER NOT NULL DEFAULT NEWID(),
@@ -39,8 +39,8 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        INSERT INTO @Prices (TypeCode, Price)
-        SELECT LTRIM(RTRIM(JSON_VALUE(j.value, '$.InvestigationTypeCode'))),
+        INSERT INTO @Prices (TypeId, Price)
+        SELECT TRY_CAST(JSON_VALUE(j.value, '$.InvestigationTypeId') AS UNIQUEIDENTIFIER),
                TRY_CAST(JSON_VALUE(j.value, '$.Price') AS DECIMAL(18,2))
         FROM OPENJSON(ISNULL(@Items, N'[]')) j;
 
@@ -55,8 +55,8 @@ BEGIN
         IF EXISTS (
             SELECT 1 FROM @Prices p
             LEFT JOIN dbo.InvestigationTypeDefinitions d
-                   ON d.TypeCode = p.TypeCode AND d.IsActive = 1 AND d.IsBillable = 1
-            WHERE d.TypeCode IS NULL)
+                   ON d.Id = p.TypeId AND d.IsActive = 1 AND d.IsBillable = 1
+            WHERE d.Id IS NULL)
         BEGIN
             ;THROW 50650, N'Una dintre investigațiile selectate nu există, nu este activă sau nu se facturează.', 1;
         END;
@@ -65,7 +65,7 @@ BEGIN
 
         SELECT TOP (1) @Msg = CONCAT(N'Investigația „', d.DisplayName, N'” apare de mai multe ori în listă.')
         FROM @Prices p
-        INNER JOIN dbo.InvestigationTypeDefinitions d ON d.TypeCode = p.TypeCode
+        INNER JOIN dbo.InvestigationTypeDefinitions d ON d.Id = p.TypeId
         GROUP BY d.DisplayName
         HAVING COUNT(*) > 1;
 
@@ -79,8 +79,8 @@ BEGIN
         SELECT TOP (1) @Msg = CONCAT(N'Investigația „', d.DisplayName, N'” are deja serviciul ', ms.Code,
                                      N' în tarife; prețul se schimbă din istoricul de prețuri.')
         FROM dbo.MedicalServices ms WITH (UPDLOCK, HOLDLOCK)
-        INNER JOIN @Prices p ON p.TypeCode = ms.InvestigationTypeCode
-        INNER JOIN dbo.InvestigationTypeDefinitions d ON d.TypeCode = p.TypeCode
+        INNER JOIN @Prices p ON p.TypeId = ms.InvestigationTypeId
+        INNER JOIN dbo.InvestigationTypeDefinitions d ON d.Id = p.TypeId
         WHERE ms.ClinicId = @ClinicId AND ms.IsDeleted = 0;
 
         IF @Msg IS NOT NULL
@@ -88,17 +88,17 @@ BEGIN
             ;THROW 50651, @Msg, 1;
         END;
 
-        INSERT INTO @Rows (RowNo, TypeCode, Name, Price)
+        INSERT INTO @Rows (RowNo, TypeId, Name, Price)
         SELECT
             ROW_NUMBER() OVER (ORDER BY d.ParentTab, d.SortOrder, d.DisplayName),
-            d.TypeCode, LEFT(d.DisplayName, 200), p.Price
+            d.Id, LEFT(d.DisplayName, 200), p.Price
         FROM dbo.InvestigationTypeDefinitions d
-        LEFT JOIN @Prices p ON p.TypeCode = d.TypeCode
+        LEFT JOIN @Prices p ON p.TypeId = d.Id
         WHERE d.IsActive = 1
           AND d.IsBillable = 1
           AND NOT EXISTS (
               SELECT 1 FROM dbo.MedicalServices ms WITH (UPDLOCK, HOLDLOCK)
-              WHERE ms.ClinicId = @ClinicId AND ms.IsDeleted = 0 AND ms.InvestigationTypeCode = d.TypeCode);
+              WHERE ms.ClinicId = @ClinicId AND ms.IsDeleted = 0 AND ms.InvestigationTypeId = d.Id);
 
         IF EXISTS (SELECT 1 FROM @Prices WHERE Price IS NOT NULL)
         BEGIN
@@ -127,8 +127,8 @@ BEGIN
         UPDATE @Rows SET Code = CONCAT(@CodePrefix, FORMAT(@LastNo + RowNo, '000'));
 
         INSERT INTO dbo.MedicalServices
-            (Id, ClinicId, Code, Name, CategoryId, DurationMinutes, InvestigationTypeCode, IsActive, CreatedAt, CreatedBy)
-        SELECT NewId, @ClinicId, Code, Name, @CategoryId, NULL, TypeCode, 1, GETDATE(), @CreatedBy
+            (Id, ClinicId, Code, Name, CategoryId, DurationMinutes, InvestigationTypeId, IsActive, CreatedAt, CreatedBy)
+        SELECT NewId, @ClinicId, Code, Name, @CategoryId, NULL, TypeId, 1, GETDATE(), @CreatedBy
         FROM @Rows;
 
         INSERT INTO dbo.MedicalServicePrices (ClinicId, MedicalServiceId, Price, VatRateId, ValidFrom, ValidTo, CreatedAt, CreatedBy)
@@ -139,7 +139,7 @@ BEGIN
         INSERT INTO dbo.AuditLogs (ClinicId, EntityType, EntityId, Action, OldValues, NewValues, ChangedBy)
         SELECT @ClinicId, N'MedicalService', r.NewId, N'Create', NULL,
                (SELECT r.Code AS Code, r.Name AS Name, @CategoryId AS CategoryId,
-                       r.TypeCode AS InvestigationTypeCode, r.Price AS Price,
+                       r.TypeId AS InvestigationTypeId, r.Price AS Price,
                        CASE WHEN r.Price IS NULL THEN NULL ELSE @VatRateId END AS VatRateId,
                        CASE WHEN r.Price IS NULL THEN NULL ELSE @ValidFrom END AS ValidFrom
                 FOR JSON PATH, WITHOUT_ARRAY_WRAPPER),

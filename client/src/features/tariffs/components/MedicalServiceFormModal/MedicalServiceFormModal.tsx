@@ -29,7 +29,7 @@ const emptyForm = (lookups: BillingLookupsDto | undefined): MedicalServiceFormDa
   name: '',
   categoryId: '',
   durationMinutes: '',
-  investigationTypeCode: '',
+  investigationTypeId: '',
   price: 0,
   vatRateId: lookups?.vatRates[0]?.id ?? '',
   validFrom: toLocalDateISO(new Date()),
@@ -44,7 +44,7 @@ export const MedicalServiceFormModal = ({
   editData,
 }: MedicalServiceFormModalProps) => {
   const isEdit = !!editData
-  const isInvestigation = !!editData?.investigationTypeCode
+  const isInvestigation = !!editData?.investigationTypeId
 
   const { control, handleSubmit, reset } = useForm<MedicalServiceFormData>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -60,7 +60,7 @@ export const MedicalServiceFormModal = ({
         name: editData.name,
         categoryId: editData.categoryId ?? '',
         durationMinutes: editData.durationMinutes ?? '',
-        investigationTypeCode: editData.investigationTypeCode ?? '',
+        investigationTypeId: editData.investigationTypeId ?? '',
         // Prețul nu se editează aici — valorile doar satisfac schema
         price: editData.currentPrice ?? 0,
         vatRateId: editData.currentVatRateId ?? lookups?.vatRates[0]?.id ?? '',
@@ -102,7 +102,7 @@ export const MedicalServiceFormModal = ({
     >
       {isInvestigation && (
         <p className={styles.hint}>
-          Serviciu legat 1:1 de investigația paraclinică „{editData?.investigationTypeName ?? editData?.investigationTypeCode}”.
+          Serviciu legat 1:1 de investigația paraclinică „{editData?.investigationTypeName}”.
           Denumirea și categoria vin din nomenclatorul de investigații; se pot modifica doar codul, durata și prețul.
         </p>
       )}

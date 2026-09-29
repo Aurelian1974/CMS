@@ -11,7 +11,7 @@ CREATE OR ALTER PROCEDURE dbo.MedicalService_Create
     @Name                  NVARCHAR(200),
     @CategoryId            UNIQUEIDENTIFIER,
     @DurationMinutes       INT              = NULL,
-    @InvestigationTypeCode NVARCHAR(50)     = NULL,
+    @InvestigationTypeId   UNIQUEIDENTIFIER = NULL,
     @Price                 DECIMAL(18,2),
     @VatRateId             UNIQUEIDENTIFIER,
     @ValidFrom             DATE             = NULL,
@@ -33,7 +33,7 @@ BEGIN
             ;THROW 50610, N'Există deja un serviciu cu acest cod.', 1;
         END;
 
-        IF @InvestigationTypeCode IS NOT NULL
+        IF @InvestigationTypeId IS NOT NULL
            OR @CategoryId = (SELECT Id FROM dbo.ServiceCategories WHERE Code = N'INVESTIGATIE')
         BEGIN
             ;THROW 50653, N'Serviciile pentru investigații paraclinice se creează doar din Tarife → Importă investigații.', 1;
@@ -57,9 +57,9 @@ BEGIN
         DECLARE @NewId UNIQUEIDENTIFIER = NEWID();
 
         INSERT INTO dbo.MedicalServices
-            (Id, ClinicId, Code, Name, CategoryId, DurationMinutes, InvestigationTypeCode, IsActive, CreatedAt, CreatedBy)
+            (Id, ClinicId, Code, Name, CategoryId, DurationMinutes, InvestigationTypeId, IsActive, CreatedAt, CreatedBy)
         VALUES
-            (@NewId, @ClinicId, @Code, @Name, @CategoryId, @DurationMinutes, @InvestigationTypeCode, 1, GETDATE(), @CreatedBy);
+            (@NewId, @ClinicId, @Code, @Name, @CategoryId, @DurationMinutes, @InvestigationTypeId, 1, GETDATE(), @CreatedBy);
 
         INSERT INTO dbo.MedicalServicePrices (ClinicId, MedicalServiceId, Price, VatRateId, ValidFrom, ValidTo, CreatedAt, CreatedBy)
         VALUES (@ClinicId, @NewId, @Price, @VatRateId, @ValidFrom, NULL, GETDATE(), @CreatedBy);

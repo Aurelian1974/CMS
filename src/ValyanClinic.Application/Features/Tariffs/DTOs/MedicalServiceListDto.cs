@@ -10,7 +10,7 @@ public sealed class MedicalServiceListDto
     public string CategoryName { get; init; } = string.Empty;
     public string CategoryCode { get; init; } = string.Empty;
     public int? DurationMinutes { get; init; }
-    public string? InvestigationTypeCode { get; init; }
+    public Guid? InvestigationTypeId { get; init; }
     public bool IsActive { get; init; }
     public decimal? CurrentPrice { get; init; }
     public Guid? CurrentVatRateId { get; init; }

@@ -64,7 +64,7 @@ public class TariffsController : BaseApiController
     {
         var command = new UpdateMedicalServiceCommand(
             id, request.Code, request.Name, request.CategoryId, request.DurationMinutes,
-            request.InvestigationTypeCode, request.RowVersion);
+            request.InvestigationTypeId, request.RowVersion);
         return HandleResult(await Mediator.Send(command, ct));
     }
 

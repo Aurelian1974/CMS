@@ -8,7 +8,7 @@ public sealed record MedicalServiceDetailDto
     public Guid CategoryId { get; init; }
     public string CategoryName { get; init; } = string.Empty;
     public int? DurationMinutes { get; init; }
-    public string? InvestigationTypeCode { get; init; }
+    public Guid? InvestigationTypeId { get; init; }
     public string? InvestigationTypeName { get; init; }
     public bool IsActive { get; init; }
     /// <summary>Base64 — se trimite înapoi la update pentru concurență optimistă.</summary>

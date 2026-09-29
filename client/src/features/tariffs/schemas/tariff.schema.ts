@@ -17,7 +17,7 @@ export const medicalServiceSchema = z.object({
     z.literal(''),
     z.coerce.number().int('Durata trebuie să fie un număr întreg').min(1, 'Minim 1 minut').max(1440, 'Maxim 1440 de minute'),
   ]),
-  investigationTypeCode: z.string(),
+  investigationTypeId: z.string(),
   // Doar la creare — la editare prețul se schimbă din istoricul de prețuri
   price,
   vatRateId: z.string().min(1, 'Regimul TVA este obligatoriu'),
@@ -55,7 +55,7 @@ export const importInvestigationsSchema = z.object({
   vatRateId: z.string(),
   validFrom: isoDate,
   rows: z.array(z.object({
-    typeCode: z.string(),
+    typeId: z.string(),
     isNew: z.boolean(),
     price: z.string(),
   })),

@@ -21,9 +21,6 @@ public sealed class CreateMedicalServiceCommandValidator : AbstractValidator<Cre
             .InclusiveBetween(1, 1440).WithMessage("Durata trebuie să fie între 1 și 1440 de minute.")
             .When(x => x.DurationMinutes.HasValue);
 
-        RuleFor(x => x.InvestigationTypeCode)
-            .MaximumLength(50).When(x => !string.IsNullOrEmpty(x.InvestigationTypeCode));
-
         RuleFor(x => x.Price)
             .GreaterThanOrEqualTo(0).WithMessage("Prețul nu poate fi negativ.")
             .LessThan(10_000_000).WithMessage("Prețul depășește valoarea maximă permisă.")

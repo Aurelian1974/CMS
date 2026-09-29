@@ -23,7 +23,7 @@ public sealed class UpdateMedicalServiceCommandHandler(
                     request.Name.Trim(),
                     request.CategoryId,
                     request.DurationMinutes,
-                    string.IsNullOrWhiteSpace(request.InvestigationTypeCode) ? null : request.InvestigationTypeCode,
+                    request.InvestigationTypeId,
                     request.RowVersion),
                 currentUser.Id,
                 cancellationToken);

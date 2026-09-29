@@ -10,6 +10,6 @@ public sealed record UpdateMedicalServiceCommand(
     string Name,
     Guid CategoryId,
     int? DurationMinutes,
-    string? InvestigationTypeCode,
+    Guid? InvestigationTypeId,
     byte[] RowVersion)
     : IRequest<Result<bool>>;

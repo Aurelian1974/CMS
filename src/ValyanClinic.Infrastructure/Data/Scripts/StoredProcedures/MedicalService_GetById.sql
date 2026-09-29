@@ -17,12 +17,12 @@ BEGIN
 
     SELECT
         ms.Id, ms.Code, ms.Name, ms.CategoryId, sc.Name AS CategoryName,
-        ms.DurationMinutes, ms.InvestigationTypeCode, it.DisplayName AS InvestigationTypeName,
+        ms.DurationMinutes, ms.InvestigationTypeId, it.DisplayName AS InvestigationTypeName,
         ms.IsActive, ms.RowVersion, ms.CreatedAt, ms.UpdatedAt,
         cur.Price AS CurrentPrice, cur.VatRateId AS CurrentVatRateId, cv.Name AS CurrentVatRateName
     FROM dbo.MedicalServices ms
     INNER JOIN dbo.ServiceCategories sc ON sc.Id = ms.CategoryId
-    LEFT JOIN dbo.InvestigationTypeDefinitions it ON it.TypeCode = ms.InvestigationTypeCode
+    LEFT JOIN dbo.InvestigationTypeDefinitions it ON it.Id = ms.InvestigationTypeId
     OUTER APPLY (
         SELECT TOP (1) p.Price, p.VatRateId
         FROM dbo.MedicalServicePrices p

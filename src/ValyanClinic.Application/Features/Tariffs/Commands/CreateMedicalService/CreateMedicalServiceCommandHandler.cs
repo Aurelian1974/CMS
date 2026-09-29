@@ -22,7 +22,7 @@ public sealed class CreateMedicalServiceCommandHandler(
                     request.Name.Trim(),
                     request.CategoryId,
                     request.DurationMinutes,
-                    string.IsNullOrWhiteSpace(request.InvestigationTypeCode) ? null : request.InvestigationTypeCode,
+                    request.InvestigationTypeId,
                     request.Price,
                     request.VatRateId,
                     request.ValidFrom),

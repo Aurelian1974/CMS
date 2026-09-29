@@ -35,7 +35,7 @@ BEGIN
     OUTER APPLY (
         SELECT TOP (1) s.Id, s.Code, s.IsActive
         FROM dbo.MedicalServices s
-        WHERE s.ClinicId = @ClinicId AND s.IsDeleted = 0 AND s.InvestigationTypeCode = ci.InvestigationType
+        WHERE s.ClinicId = @ClinicId AND s.IsDeleted = 0 AND s.InvestigationTypeId = d.Id
         ORDER BY s.IsActive DESC
     ) ms
     OUTER APPLY (

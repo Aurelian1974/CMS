@@ -14,7 +14,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    SELECT d.TypeCode, d.DisplayName, d.Category, d.ParentTab, d.SortOrder,
+    SELECT d.Id AS InvestigationTypeId, d.TypeCode, d.DisplayName, d.Category, d.ParentTab, d.SortOrder,
            ex.Code AS ExistingServiceCode, ex.IsActive AS ExistingServiceIsActive
     FROM dbo.InvestigationTypeDefinitions d
     OUTER APPLY (
@@ -22,7 +22,7 @@ BEGIN
         FROM dbo.MedicalServices ms
         WHERE ms.ClinicId = @ClinicId
           AND ms.IsDeleted = 0
-          AND ms.InvestigationTypeCode = d.TypeCode
+          AND ms.InvestigationTypeId = d.Id
         ORDER BY ms.IsActive DESC, ms.CreatedAt
     ) ex
     WHERE d.IsActive = 1

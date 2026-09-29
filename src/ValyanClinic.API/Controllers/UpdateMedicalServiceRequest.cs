@@ -5,5 +5,5 @@ public sealed record UpdateMedicalServiceRequest(
     string Name,
     Guid CategoryId,
     int? DurationMinutes,
-    string? InvestigationTypeCode,
+    Guid? InvestigationTypeId,
     byte[] RowVersion);

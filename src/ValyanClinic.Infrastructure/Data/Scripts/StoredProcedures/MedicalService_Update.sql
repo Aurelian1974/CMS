@@ -15,7 +15,7 @@ CREATE OR ALTER PROCEDURE dbo.MedicalService_Update
     @Name                  NVARCHAR(200),
     @CategoryId            UNIQUEIDENTIFIER,
     @DurationMinutes       INT              = NULL,
-    @InvestigationTypeCode NVARCHAR(50)     = NULL,
+    @InvestigationTypeId   UNIQUEIDENTIFIER = NULL,
     @RowVersion            BINARY(8),
     @UpdatedBy             UNIQUEIDENTIFIER
 AS
@@ -26,8 +26,8 @@ BEGIN
     BEGIN TRY
         BEGIN TRANSACTION;
 
-        DECLARE @CurrentVersion BINARY(8), @CurrentTypeCode NVARCHAR(50);
-        SELECT @CurrentVersion = RowVersion, @CurrentTypeCode = InvestigationTypeCode
+        DECLARE @CurrentVersion BINARY(8), @CurrentTypeId UNIQUEIDENTIFIER;
+        SELECT @CurrentVersion = RowVersion, @CurrentTypeId = InvestigationTypeId
         FROM dbo.MedicalServices WITH (UPDLOCK)
         WHERE Id = @Id AND ClinicId = @ClinicId AND IsDeleted = 0;
 
@@ -41,7 +41,8 @@ BEGIN
             ;THROW 50613, N'Serviciul a fost modificat între timp de alt utilizator. Reîncărcați datele.', 1;
         END;
 
-        IF ISNULL(@InvestigationTypeCode, N'') <> ISNULL(@CurrentTypeCode, N'')
+        IF (@InvestigationTypeId IS NULL AND @CurrentTypeId IS NOT NULL)
+           OR (@InvestigationTypeId IS NOT NULL AND (@CurrentTypeId IS NULL OR @InvestigationTypeId <> @CurrentTypeId))
         BEGIN
             ;THROW 50653, N'Legătura dintre serviciu și investigația paraclinică nu se poate modifica.', 1;
         END;
@@ -49,9 +50,9 @@ BEGIN
         DECLARE @InvestigationCategoryId UNIQUEIDENTIFIER =
             (SELECT Id FROM dbo.ServiceCategories WHERE Code = N'INVESTIGATIE');
 
-        IF @CurrentTypeCode IS NOT NULL
+        IF @CurrentTypeId IS NOT NULL
         BEGIN
-            SELECT @Name = LEFT(DisplayName, 200) FROM dbo.InvestigationTypeDefinitions WHERE TypeCode = @CurrentTypeCode;
+            SELECT @Name = LEFT(DisplayName, 200) FROM dbo.InvestigationTypeDefinitions WHERE Id = @CurrentTypeId;
             SET @CategoryId = @InvestigationCategoryId;
         END
         ELSE IF @CategoryId = @InvestigationCategoryId
@@ -71,7 +72,7 @@ BEGIN
         END;
 
         DECLARE @OldValues NVARCHAR(MAX) = (
-            SELECT Code, Name, CategoryId, DurationMinutes, InvestigationTypeCode
+            SELECT Code, Name, CategoryId, DurationMinutes, InvestigationTypeId
             FROM dbo.MedicalServices WHERE Id = @Id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER);
 
         UPDATE dbo.MedicalServices SET
@@ -79,14 +80,14 @@ BEGIN
             Name                  = @Name,
             CategoryId            = @CategoryId,
             DurationMinutes       = @DurationMinutes,
-            InvestigationTypeCode = @InvestigationTypeCode,
+            InvestigationTypeId   = @InvestigationTypeId,
             UpdatedAt             = GETDATE(),
             UpdatedBy             = @UpdatedBy
         WHERE Id = @Id AND ClinicId = @ClinicId;
 
         INSERT INTO dbo.AuditLogs (ClinicId, EntityType, EntityId, Action, OldValues, NewValues, ChangedBy)
         VALUES (@ClinicId, N'MedicalService', @Id, N'Update', @OldValues,
-                (SELECT Code, Name, CategoryId, DurationMinutes, InvestigationTypeCode
+                (SELECT Code, Name, CategoryId, DurationMinutes, InvestigationTypeId
                  FROM dbo.MedicalServices WHERE Id = @Id FOR JSON PATH, WITHOUT_ARRAY_WRAPPER),
                 @UpdatedBy);
 

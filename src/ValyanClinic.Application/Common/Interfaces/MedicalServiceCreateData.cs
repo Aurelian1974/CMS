@@ -6,7 +6,7 @@ public sealed record MedicalServiceCreateData(
     string Name,
     Guid CategoryId,
     int? DurationMinutes,
-    string? InvestigationTypeCode,
+    Guid? InvestigationTypeId,
     decimal Price,
     Guid VatRateId,
     DateOnly? ValidFrom);

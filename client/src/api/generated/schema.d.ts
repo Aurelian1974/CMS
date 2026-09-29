@@ -21598,7 +21598,8 @@ export interface components {
             categoryId?: string;
             /** Format: int32 */
             durationMinutes?: number | null;
-            investigationTypeCode?: string | null;
+            /** Format: uuid */
+            investigationTypeId?: string | null;
             /** Format: double */
             price?: number;
             /** Format: uuid */
@@ -22440,6 +22441,8 @@ export interface components {
             validFrom?: string | null;
         };
         ImportableInvestigationTypeDto: {
+            /** Format: uuid */
+            investigationTypeId?: string;
             typeCode?: string | null;
             displayName?: string | null;
             category?: string | null;
@@ -22521,7 +22524,8 @@ export interface components {
             } | null;
         };
         InvestigationServiceImportItem: {
-            investigationTypeCode?: string | null;
+            /** Format: uuid */
+            investigationTypeId?: string;
             /** Format: double */
             price?: number;
         };
@@ -22850,7 +22854,8 @@ export interface components {
             categoryName?: string | null;
             /** Format: int32 */
             durationMinutes?: number | null;
-            investigationTypeCode?: string | null;
+            /** Format: uuid */
+            investigationTypeId?: string | null;
             investigationTypeName?: string | null;
             isActive?: boolean;
             /** Format: byte */
@@ -22885,7 +22890,8 @@ export interface components {
             categoryCode?: string | null;
             /** Format: int32 */
             durationMinutes?: number | null;
-            investigationTypeCode?: string | null;
+            /** Format: uuid */
+            investigationTypeId?: string | null;
             isActive?: boolean;
             /** Format: double */
             currentPrice?: number | null;
@@ -24196,7 +24202,8 @@ export interface components {
             categoryId?: string;
             /** Format: int32 */
             durationMinutes?: number | null;
-            investigationTypeCode?: string | null;
+            /** Format: uuid */
+            investigationTypeId?: string | null;
             /** Format: byte */
             rowVersion?: string | null;
         };

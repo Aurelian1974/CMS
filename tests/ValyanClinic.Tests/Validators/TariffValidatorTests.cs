@@ -19,7 +19,7 @@ public sealed class TariffValidatorTests
         Name: "Consultație pneumologie",
         CategoryId: Guid.NewGuid(),
         DurationMinutes: 30,
-        InvestigationTypeCode: null,
+        InvestigationTypeId: null,
         Price: 100m,
         VatRateId: Guid.NewGuid(),
         ValidFrom: null);
@@ -68,8 +68,10 @@ public sealed class TariffValidatorTests
 
     private readonly ImportInvestigationServicesCommandValidator _importValidator = new();
 
+    private static readonly Guid EcgTypeId = Guid.Parse("F7000000-0000-0000-0000-000000000006");
+
     private static ImportInvestigationServicesCommand ValidImport(params InvestigationServiceImportItem[] items) => new(
-        Items: items.Length > 0 ? items : [new InvestigationServiceImportItem("ECG", 80m)],
+        Items: items.Length > 0 ? items : [new InvestigationServiceImportItem(EcgTypeId, 80m)],
         VatRateId: Guid.NewGuid(),
         ValidFrom: null);
 
@@ -85,14 +87,14 @@ public sealed class TariffValidatorTests
     [Fact]
     public void Import_DuplicateType_HasError()
         => _importValidator.TestValidate(ValidImport(
-                new InvestigationServiceImportItem("ECG", 10m),
-                new InvestigationServiceImportItem("ECG", 20m)))
+                new InvestigationServiceImportItem(EcgTypeId, 10m),
+                new InvestigationServiceImportItem(EcgTypeId, 20m)))
             .ShouldHaveValidationErrorFor(x => x.Items)
             .WithErrorMessage("O investigație apare de mai multe ori în listă.");
 
     [Fact]
     public void Import_NegativePrice_HasError()
-        => _importValidator.TestValidate(ValidImport(new InvestigationServiceImportItem("ECG", -5m)))
+        => _importValidator.TestValidate(ValidImport(new InvestigationServiceImportItem(EcgTypeId, -5m)))
             .ShouldHaveValidationErrorFor("Items[0].Price")
             .WithErrorMessage("Prețul nu poate fi negativ.");
 

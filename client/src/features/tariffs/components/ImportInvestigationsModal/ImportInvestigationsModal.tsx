@@ -72,7 +72,7 @@ export const ImportInvestigationsModal = ({
     reset({
       vatRateId: lookups?.vatRates[0]?.id ?? '',
       validFrom: toLocalDateISO(new Date()),
-      rows: types.map((t) => ({ typeCode: t.typeCode, isNew: !t.existingServiceCode, price: '' })),
+      rows: types.map((t) => ({ typeId: t.investigationTypeId, isNew: !t.existingServiceCode, price: '' })),
     })
   }, [isOpen, resp, types, lookups, reset])
 
@@ -87,7 +87,7 @@ export const ImportInvestigationsModal = ({
   const onSubmit = (data: ImportInvestigationsFormData) => {
     const items = data.rows
       .filter((r) => r.isNew && r.price.trim() !== '')
-      .map((r) => ({ investigationTypeCode: r.typeCode, price: Number(r.price) }))
+      .map((r) => ({ investigationTypeId: r.typeId, price: Number(r.price) }))
 
     importMut.mutate(
       {

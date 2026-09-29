@@ -28,7 +28,7 @@ BEGIN
     ;WITH Filtered AS (
         SELECT
             ms.Id, ms.Code, ms.Name, ms.CategoryId, sc.Name AS CategoryName, sc.Code AS CategoryCode,
-            ms.DurationMinutes, ms.InvestigationTypeCode, ms.IsActive,
+            ms.DurationMinutes, ms.InvestigationTypeId, ms.IsActive,
             cur.Price AS CurrentPrice, cur.VatRateId AS CurrentVatRateId, cv.Name AS CurrentVatRateName,
             cv.[Percent] AS CurrentVatPercent, cur.ValidFrom AS CurrentValidFrom,
             nxt.Price AS NextPrice, nxt.ValidFrom AS NextValidFrom

@@ -121,7 +121,7 @@ export const TariffsListPage = () => {
   const handleSubmit = (data: MedicalServiceFormData) => {
     const durationMinutes = data.durationMinutes === '' ? null : data.durationMinutes
     // Legătura cu investigația se stabilește doar la import și nu se modifică (MedicalService_Update → 50653)
-    const investigationTypeCode = editing?.investigationTypeCode ?? null
+    const investigationTypeId = editing?.investigationTypeId ?? null
     const done = (msg: string) => ({
       onSuccess: () => { setFormOpen(false); setEditing(null); showSuccess(msg) },
       onError: showError,
@@ -134,7 +134,7 @@ export const TariffsListPage = () => {
         name: data.name,
         categoryId: data.categoryId,
         durationMinutes,
-        investigationTypeCode,
+        investigationTypeId,
         rowVersion: editing.rowVersion,
       }, done('Serviciul a fost actualizat.'))
     } else {
@@ -143,7 +143,7 @@ export const TariffsListPage = () => {
         name: data.name,
         categoryId: data.categoryId,
         durationMinutes,
-        investigationTypeCode,
+        investigationTypeId,
         price: data.price,
         vatRateId: data.vatRateId,
         validFrom: data.validFrom,

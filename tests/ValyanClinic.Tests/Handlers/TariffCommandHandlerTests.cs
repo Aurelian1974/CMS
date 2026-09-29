@@ -19,6 +19,8 @@ public sealed class TariffCommandHandlerTests
     private static readonly Guid ServiceId  = Guid.Parse("C7000001-0000-0000-0000-000000000001");
     private static readonly Guid CategoryId = Guid.Parse("F2000000-0000-0000-0000-000000000001");
     private static readonly Guid VatRateId  = Guid.Parse("F1000000-0000-0000-0000-000000000001");
+    private static readonly Guid SpirometryTypeId = Guid.Parse("F7000000-0000-0000-0000-000000000001");
+    private static readonly Guid EcgTypeId        = Guid.Parse("F7000000-0000-0000-0000-000000000006");
 
     private readonly ITariffRepository _repo        = Substitute.For<ITariffRepository>();
     private readonly ICurrentUser      _currentUser = Substitute.For<ICurrentUser>();
@@ -34,7 +36,7 @@ public sealed class TariffCommandHandlerTests
         Name: "Spirometrie",
         CategoryId: CategoryId,
         DurationMinutes: 20,
-        InvestigationTypeCode: "Spirometry",
+        InvestigationTypeId: null,
         Price: 50m,
         VatRateId: VatRateId,
         ValidFrom: null);
@@ -75,7 +77,7 @@ public sealed class TariffCommandHandlerTests
 
         var command = new UpdateMedicalServiceCommand(
             Id: ServiceId, Code: "SPIRO", Name: "Spirometrie", CategoryId: CategoryId,
-            DurationMinutes: null, InvestigationTypeCode: null, RowVersion: new byte[8]);
+            DurationMinutes: null, InvestigationTypeId: null, RowVersion: new byte[8]);
 
         var result = await new UpdateMedicalServiceCommandHandler(_repo, _currentUser).Handle(command, default);
 
@@ -90,7 +92,7 @@ public sealed class TariffCommandHandlerTests
 
         var command = new UpdateMedicalServiceCommand(
             Id: ServiceId, Code: "SPIRO", Name: "Spirometrie", CategoryId: CategoryId,
-            DurationMinutes: null, InvestigationTypeCode: null, RowVersion: new byte[8]);
+            DurationMinutes: null, InvestigationTypeId: null, RowVersion: new byte[8]);
 
         var result = await new UpdateMedicalServiceCommandHandler(_repo, _currentUser).Handle(command, default);
 
@@ -129,8 +131,8 @@ public sealed class TariffCommandHandlerTests
     private static ImportInvestigationServicesCommand ValidImport() => new(
         Items:
         [
-            new InvestigationServiceImportItem(InvestigationTypeCode: " ECG ", Price: 80m),
-            new InvestigationServiceImportItem(InvestigationTypeCode: "Spirometry", Price: 50m),
+            new InvestigationServiceImportItem(InvestigationTypeId: EcgTypeId, Price: 80m),
+            new InvestigationServiceImportItem(InvestigationTypeId: SpirometryTypeId, Price: 50m),
         ],
         VatRateId: VatRateId,
         ValidFrom: null);
@@ -150,7 +152,7 @@ public sealed class TariffCommandHandlerTests
             Arg.Is<InvestigationServicesImportData>(d =>
                 d.ClinicId == ClinicId
                 && d.Items.Count == 2
-                && d.Items[0].InvestigationTypeCode == "ECG"
+                && d.Items[0].InvestigationTypeId == EcgTypeId
                 && d.Items[1].Price == 50m),
             UserId,
             Arg.Any<CancellationToken>());

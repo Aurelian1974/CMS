@@ -9,7 +9,7 @@ public sealed record CreateMedicalServiceCommand(
     string Name,
     Guid CategoryId,
     int? DurationMinutes,
-    string? InvestigationTypeCode,
+    Guid? InvestigationTypeId,
     decimal Price,
     Guid VatRateId,
     DateOnly? ValidFrom)

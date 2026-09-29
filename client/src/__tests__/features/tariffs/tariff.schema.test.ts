@@ -11,7 +11,7 @@ const validService = {
   name: 'Consultație pneumologie',
   categoryId: 'F2000000-0000-0000-0000-000000000001',
   durationMinutes: '',
-  investigationTypeCode: '',
+  investigationTypeId: '',
   price: '100',
   vatRateId: 'F1000000-0000-0000-0000-000000000001',
   validFrom: '2026-09-27',
@@ -63,8 +63,8 @@ describe('vatRateSchema', () => {
 })
 
 describe('importInvestigationsSchema', () => {
-  const row = (overrides: Partial<{ typeCode: string; isNew: boolean; price: string }> = {}) => ({
-    typeCode: 'ECG', isNew: true, price: '', ...overrides,
+  const row = (overrides: Partial<{ typeId: string; isNew: boolean; price: string }> = {}) => ({
+    typeId: 'F7000000-0000-0000-0000-000000000006', isNew: true, price: '', ...overrides,
   })
   const form = (rows: ReturnType<typeof row>[], vatRateId = 'F1000000-0000-0000-0000-000000000001') => ({
     vatRateId, validFrom: '2026-09-29', rows,
@@ -76,7 +76,7 @@ describe('importInvestigationsSchema', () => {
 
   it('should ignore values on rows that already have a service', () => {
     const result = importInvestigationsSchema.safeParse(
-      form([row(), row({ typeCode: 'MRI', isNew: false, price: '-3' })]))
+      form([row(), row({ typeId: 'F7000000-0000-0000-0000-000000000017', isNew: false, price: '-3' })]))
     expect(result.success).toBe(true)
   })
 
