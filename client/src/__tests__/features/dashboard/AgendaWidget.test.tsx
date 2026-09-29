@@ -44,20 +44,39 @@ describe('AgendaWidget', () => {
     mockCanChange = true
   })
 
-  it('should offer only the transitions allowed from the current status', () => {
+  const actionNames = () => screen.queryAllByRole('button').map(b => b.getAttribute('aria-label'))
+
+  it('should show the allowed transitions as buttons, main action first', () => {
     renderWidget([item()])
 
-    const select = screen.getByRole('combobox', { name: 'Stare programare Ana Ionescu' })
-    const options = Array.from(select.querySelectorAll('option')).map(o => o.textContent)
-    expect(options).toEqual(['Programat', 'Confirmat', 'Anulat', 'Neprezentare'])
+    expect(actionNames()).toEqual(['Confirmă Ana Ionescu', 'Anulează Ana Ionescu', 'Neprezentare Ana Ionescu'])
+    expect(screen.getByText('Programat')).toBeInTheDocument()
   })
 
-  it('should send the target status id when the status is changed', () => {
+  it('should confirm with a single click', () => {
     renderWidget([item()])
 
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'CONFIRMAT' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmă Ana Ionescu' }))
 
     expect(mockMutate).toHaveBeenCalledWith({ id: 'apt-1', statusId: 's2' }, expect.any(Object))
+  })
+
+  it('should require a second click to cancel', () => {
+    renderWidget([item()])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Anulează Ana Ionescu' }))
+    expect(mockMutate).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Sigur? Anulează Ana Ionescu' }))
+    expect(mockMutate).toHaveBeenCalledWith({ id: 'apt-1', statusId: 's4' }, expect.any(Object))
+  })
+
+  it('should offer withdrawing the confirmation on a confirmed appointment', () => {
+    renderWidget([item({ statusCode: 'CONFIRMAT', statusName: 'Confirmat' })])
+
+    expect(actionNames()).toEqual([
+      'Retrage confirmarea Ana Ionescu', 'Anulează Ana Ionescu', 'Neprezentare Ana Ionescu',
+    ])
   })
 
   it('should show the server error returned by the status change', () => {
@@ -65,22 +84,22 @@ describe('AgendaWidget', () => {
       opts.onError(new Error('Tranziția de status nu este permisă.')))
     renderWidget([item()])
 
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'ANULAT' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmă Ana Ionescu' }))
 
     expect(screen.getByRole('alert')).toHaveTextContent('Tranziția de status nu este permisă.')
   })
 
-  it('should show a read-only badge once the consultation has started', () => {
+  it('should show only the badge once the consultation has started', () => {
     renderWidget([item({ statusCode: 'CONFIRMAT', statusName: 'Confirmat', consultationId: 'c1' })])
 
-    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(actionNames()).toEqual([])
     expect(screen.getByText('Confirmat')).toBeInTheDocument()
   })
 
-  it('should show a read-only badge for a finalized consultation', () => {
+  it('should show only the badge for a finalized consultation', () => {
     renderWidget([item({ statusCode: 'FINALIZAT', statusName: 'Consultație finalizată' })])
 
-    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(actionNames()).toEqual([])
     expect(screen.getByText('Consultație finalizată')).toBeInTheDocument()
   })
 
@@ -88,7 +107,7 @@ describe('AgendaWidget', () => {
     mockCanChange = false
     renderWidget([item()])
 
-    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(actionNames()).toEqual([])
   })
 
   it('should group appointments by doctor, sorted by doctor name, keeping time order', () => {

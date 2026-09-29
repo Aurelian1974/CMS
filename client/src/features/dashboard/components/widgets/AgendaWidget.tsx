@@ -4,7 +4,7 @@ import { Clock } from 'lucide-react'
 import { AppBadge } from '@/components/ui/AppBadge'
 import { useCanChangeAppointmentStatus } from '@/features/appointments/hooks/useCanChangeAppointmentStatus'
 import { WidgetCard } from '../WidgetCard'
-import { AgendaStatusSelect } from './AgendaStatusSelect'
+import { AgendaStatusActions } from './AgendaStatusActions'
 import { APPOINTMENT_STATUS_VARIANT } from './statusVariants'
 import { formatTime } from '../../utils/dashboardFormat'
 import type { DashboardAgendaItemDto, DashboardWidgetProps } from '../../types/dashboard.types'
@@ -52,38 +52,32 @@ export const AgendaWidget = ({ data }: DashboardWidgetProps) => {
               <span className={styles.groupCount}>{group.items.length}</span>
             </h6>
             <ul className={styles.list}>
-              {group.items.map((a) => {
-                const badge = (
+              {group.items.map((a) => (
+                <li key={a.id} className={styles.row}>
+                  <Link to={`/appointments/${a.id}`} className={styles.rowLink}>
+                    <span className={styles.time}>
+                      <Clock size={15} aria-hidden />
+                      {formatTime(a.startTime)}
+                    </span>
+                    <span className={styles.info}>
+                      <span className={styles.primary}>{a.patientName}</span>
+                      {a.notes && <span className={styles.secondary}>{a.notes}</span>}
+                    </span>
+                  </Link>
                   <AppBadge variant={APPOINTMENT_STATUS_VARIANT[a.statusCode ?? ''] ?? 'neutral'} withDot>
                     {a.statusName}
                   </AppBadge>
-                )
-                return (
-                  <li key={a.id} className={styles.row}>
-                    <Link to={`/appointments/${a.id}`} className={styles.rowLink}>
-                      <span className={styles.time}>
-                        <Clock size={15} aria-hidden />
-                        {formatTime(a.startTime)}
-                      </span>
-                      <span className={styles.info}>
-                        <span className={styles.primary}>{a.patientName}</span>
-                        {a.notes && <span className={styles.secondary}>{a.notes}</span>}
-                      </span>
-                    </Link>
-                    {/* Odată începută consultația, starea programării o conduce consultația */}
-                    {canChangeStatus && !a.consultationId ? (
-                      <AgendaStatusSelect
-                        appointmentId={a.id ?? ''}
-                        patientName={a.patientName ?? ''}
-                        statusCode={a.statusCode ?? ''}
-                        statusName={a.statusName ?? ''}
-                        fallback={badge}
-                        onError={setStatusError}
-                      />
-                    ) : badge}
-                  </li>
-                )
-              })}
+                  {/* Odată începută consultația, starea programării o conduce consultația */}
+                  {canChangeStatus && !a.consultationId && (
+                    <AgendaStatusActions
+                      appointmentId={a.id ?? ''}
+                      patientName={a.patientName ?? ''}
+                      statusCode={a.statusCode ?? ''}
+                      onError={setStatusError}
+                    />
+                  )}
+                </li>
+              ))}
             </ul>
           </section>
         ))}
