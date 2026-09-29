@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { AgendaWidget } from '@/features/dashboard/components/widgets/AgendaWidget'
 import type { DashboardDto, DashboardAgendaItemDto } from '@/features/dashboard/types/dashboard.types'
@@ -89,5 +89,19 @@ describe('AgendaWidget', () => {
     renderWidget([item()])
 
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+  })
+
+  it('should group appointments by doctor, sorted by doctor name, keeping time order', () => {
+    renderWidget([
+      item({ id: 'a1', doctorId: 'd2', doctorName: 'Popa Ion',     patientName: 'Pacient 1', startTime: '2026-09-29T08:00:00' }),
+      item({ id: 'a2', doctorId: 'd1', doctorName: 'Albu Maria',   patientName: 'Pacient 2', startTime: '2026-09-29T09:00:00' }),
+      item({ id: 'a3', doctorId: 'd2', doctorName: 'Popa Ion',     patientName: 'Pacient 3', startTime: '2026-09-29T10:00:00' }),
+    ])
+
+    const groups = screen.getAllByRole('region').filter(r => r.getAttribute('aria-label')?.startsWith('Programări '))
+    expect(groups.map(g => g.getAttribute('aria-label'))).toEqual(['Programări Albu Maria', 'Programări Popa Ion'])
+    const popa = within(groups[1])
+    expect(popa.getAllByText(/^Pacient \d$/).map(e => e.textContent)).toEqual(['Pacient 1', 'Pacient 3'])
+    expect(popa.getByText('2')).toBeInTheDocument()
   })
 })
