@@ -25,9 +25,9 @@ public sealed class ModuleAccessAuthorizationHandler(IEffectivePermissions effec
 
         var permissions = await effectivePermissions.GetLevelsAsync(userId, roleId, CancellationToken.None);
 
-        // Verificare: nivelul efectiv >= nivelul minim cerut
-        if (permissions.TryGetValue(requirement.Module, out var userLevel)
-            && userLevel >= (int)requirement.MinimumLevel)
+        // Verificare: nivelul efectiv >= nivelul minim cerut, pe oricare dintre modulele cerute
+        if (requirement.Modules.Any(module =>
+                permissions.TryGetValue(module, out var userLevel) && userLevel >= (int)requirement.MinimumLevel))
         {
             context.Succeed(requirement);
         }

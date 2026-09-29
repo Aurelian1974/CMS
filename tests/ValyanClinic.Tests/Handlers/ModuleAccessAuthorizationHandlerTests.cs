@@ -269,4 +269,45 @@ public sealed class ModuleAccessAuthorizationHandlerTests
         Assert.False(ctxInvoices.HasSucceeded);
         Assert.False(ctxUsers.HasSucceeded);
     }
+
+    // ── Oricare dintre mai multe module ───────────────────────────────────────
+
+    [Fact]
+    public async Task HandleAsync_AnyOfModules_SucceedsWhenOneModuleGrantsAccess()
+    {
+        // Recepția citește programul clinicii prin modulul appointments, fără acces la clinic
+        var user = MakeUser(UserId.ToString(), RoleId.ToString());
+        SetupRepo((ModuleCodes.Clinic, (int)AccessLevel.None), (ModuleCodes.Appointments, (int)AccessLevel.Full));
+        var context = MakeContext(user,
+            new ModuleAccessRequirement([ModuleCodes.Clinic, ModuleCodes.Appointments], AccessLevel.Read));
+
+        await CreateHandler().HandleAsync(context);
+
+        Assert.True(context.HasSucceeded);
+    }
+
+    [Fact]
+    public async Task HandleAsync_AnyOfModules_FailsWhenNoModuleGrantsAccess()
+    {
+        var user = MakeUser(UserId.ToString(), RoleId.ToString());
+        SetupRepo((ModuleCodes.Patients, (int)AccessLevel.Full));
+        var context = MakeContext(user,
+            new ModuleAccessRequirement([ModuleCodes.Clinic, ModuleCodes.Appointments], AccessLevel.Read));
+
+        await CreateHandler().HandleAsync(context);
+
+        Assert.False(context.HasSucceeded);
+    }
+
+    [Fact]
+    public async Task PolicyProvider_CommaSeparatedModules_BuildsAnyOfRequirement()
+    {
+        var provider = new ModuleAccessPolicyProvider(Options.Create(new AuthorizationOptions()));
+
+        var policy = await provider.GetPolicyAsync($"Module:{ModuleCodes.Clinic},{ModuleCodes.Appointments}:1");
+
+        var requirement = Assert.IsType<ModuleAccessRequirement>(Assert.Single(policy!.Requirements));
+        Assert.Equal([ModuleCodes.Clinic, ModuleCodes.Appointments], requirement.Modules);
+        Assert.Equal(AccessLevel.Read, requirement.MinimumLevel);
+    }
 }

@@ -14,9 +14,10 @@ namespace ValyanClinic.API.Controllers;
 public class ScheduleController : BaseApiController
 {
     // ── Program clinică ───────────────────────────────────────────────────────
+    // Citirea programului e necesară și la programări (scheduler, formular), nu doar la administrarea clinicii
 
     [HttpGet("clinic")]
-    [HasAccess(ModuleCodes.Clinic, AccessLevel.Read)]
+    [HasAccess(AccessLevel.Read, ModuleCodes.Clinic, ModuleCodes.Appointments)]
     [ProducesResponseType<ApiResponse<IEnumerable<ClinicScheduleDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetClinicSchedule(CancellationToken ct)
     {
@@ -37,7 +38,7 @@ public class ScheduleController : BaseApiController
     // ── Program medici (vedere globală) ──────────────────────────────────────
 
     [HttpGet("doctors")]
-    [HasAccess(ModuleCodes.Clinic, AccessLevel.Read)]
+    [HasAccess(AccessLevel.Read, ModuleCodes.Clinic, ModuleCodes.Appointments)]
     [ProducesResponseType<ApiResponse<IEnumerable<DoctorScheduleDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDoctorScheduleByClinic(CancellationToken ct)
     {
@@ -48,7 +49,7 @@ public class ScheduleController : BaseApiController
     // ── Program medic individual ──────────────────────────────────────────────
 
     [HttpGet("doctors/{doctorId:guid}")]
-    [HasAccess(ModuleCodes.Clinic, AccessLevel.Read)]
+    [HasAccess(AccessLevel.Read, ModuleCodes.Clinic, ModuleCodes.Appointments)]
     [ProducesResponseType<ApiResponse<IEnumerable<DoctorDayDto>>>(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetDoctorSchedule(Guid doctorId, CancellationToken ct)
     {

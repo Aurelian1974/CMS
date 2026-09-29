@@ -20,16 +20,17 @@ public sealed class ModuleAccessPolicyProvider : IAuthorizationPolicyProvider
 
     public Task<AuthorizationPolicy?> GetPolicyAsync(string policyName)
     {
-        // Pattern: "Module:{moduleCode}:{accessLevel}"
+        // Pattern: "Module:{moduleCode}[,{moduleCode}...]:{accessLevel}" — mai multe module = oricare dintre ele
         if (policyName.StartsWith(PolicyPrefix, StringComparison.OrdinalIgnoreCase))
         {
             var parts = policyName[PolicyPrefix.Length..].Split(':');
-            if (parts.Length == 2
-                && !string.IsNullOrEmpty(parts[0])
-                && int.TryParse(parts[1], out var level))
+            var modules = parts.Length == 2
+                ? parts[0].Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                : [];
+            if (modules.Length > 0 && int.TryParse(parts[1], out var level))
             {
                 var policy = new AuthorizationPolicyBuilder()
-                    .AddRequirements(new ModuleAccessRequirement(parts[0], (AccessLevel)level))
+                    .AddRequirements(new ModuleAccessRequirement(modules, (AccessLevel)level))
                     .Build();
 
                 return Task.FromResult<AuthorizationPolicy?>(policy);
