@@ -69,6 +69,10 @@ public sealed class UpdateConsultationCommandHandler(
         {
             return Result<bool>.Conflict(ErrorMessages.Consultation.AppointmentDuplicate);
         }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.ConsultationAppointmentNotConfirmed)
+        {
+            return Result<bool>.Conflict(ErrorMessages.Consultation.AppointmentNotConfirmed);
+        }
         catch (SqlException ex) when (ex.Number >= 50000 && ex.Number < 60000)
         {
             return Result<bool>.Failure(ex.Message);

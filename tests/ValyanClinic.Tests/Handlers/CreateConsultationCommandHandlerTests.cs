@@ -105,6 +105,18 @@ public sealed class CreateConsultationCommandHandlerTests
     }
 
     [Fact]
+    public async Task Handle_AppointmentNotConfirmed_ReturnsConflict()
+    {
+        _repo.CreateAsync(Arg.Any<ConsultationCreateData>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+             .Throws(SqlExceptionHelper.Make(SqlErrorCodes.ConsultationAppointmentNotConfirmed));
+
+        var result = await CreateHandler().Handle(ValidCommand(), default);
+
+        Assert.Equal(409, result.StatusCode);
+        Assert.Equal(ErrorMessages.Consultation.AppointmentNotConfirmed, result.Error);
+    }
+
+    [Fact]
     public async Task Handle_GenericSqlError_ReturnsFailure()
     {
         _repo.CreateAsync(Arg.Any<ConsultationCreateData>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())

@@ -101,6 +101,7 @@ public sealed class UpdateConsultationCommandHandlerTests
     [Theory]
     [InlineData(SqlErrorCodes.ConsultationLocked)]
     [InlineData(SqlErrorCodes.ConsultationAppointmentDuplicate)]
+    [InlineData(SqlErrorCodes.ConsultationAppointmentNotConfirmed)]
     public async Task Handle_StateConflict_ReturnsConflict(int sqlError)
     {
         _repo.UpdateAsync(Arg.Any<ConsultationUpdateData>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())

@@ -60,9 +60,15 @@ BEGIN
 
     IF @AppointmentId IS NOT NULL
     BEGIN
-        IF NOT EXISTS (SELECT 1 FROM dbo.Appointments
-                       WHERE Id = @AppointmentId AND ClinicId = @ClinicId AND IsDeleted = 0
-                         AND PatientId = @PatientId)
+        -- UPDLOCK pe programare: starea nu se poate schimba între verificare și INSERT
+        DECLARE @AppointmentStatusCode NVARCHAR(50);
+        SELECT @AppointmentStatusCode = s.Code
+        FROM dbo.Appointments a WITH (UPDLOCK)
+        INNER JOIN dbo.AppointmentStatuses s ON s.Id = a.StatusId
+        WHERE a.Id = @AppointmentId AND a.ClinicId = @ClinicId AND a.IsDeleted = 0
+          AND a.PatientId = @PatientId;
+
+        IF @AppointmentStatusCode IS NULL
         BEGIN
             ;THROW 50011, N'Programarea nu a fost găsită.', 1;
         END;
@@ -72,6 +78,11 @@ BEGIN
                    WHERE AppointmentId = @AppointmentId AND IsDeleted = 0)
         BEGIN
             ;THROW 50033, N'Există deja o consultație pentru această programare.', 1;
+        END;
+
+        IF @AppointmentStatusCode <> 'CONFIRMAT'
+        BEGIN
+            ;THROW 50035, N'Consultația poate fi începută doar pentru o programare confirmată.', 1;
         END;
     END;
 

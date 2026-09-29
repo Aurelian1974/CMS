@@ -47,9 +47,11 @@ public sealed class DashboardProceduresTests(IntegrationTestFixture fixture) : I
     private async Task<Guid> FirstDoctorAsync() =>
         (await Fixture.GetRepository<IDoctorRepository>().GetByClinicAsync(ClinicId, Ct)).First().Id;
 
+    // Confirmat: o consultație se poate începe doar pe o programare confirmată
     private Task<Guid> NewAppointmentAsync(Guid patientId, Guid doctorId, int hour, string? notes = null) =>
         Fixture.GetRepository<IAppointmentRepository>().CreateAsync(
-            new AppointmentWriteData(ClinicId, patientId, doctorId, At(hour), At(hour, 30), null, notes, false, UserId), Ct);
+            new AppointmentWriteData(ClinicId, patientId, doctorId, At(hour), At(hour, 30),
+                AppointmentStatusIds.Confirmed, notes, false, UserId), Ct);
 
     private async Task<Guid> NewConsultationAsync(Guid patientId, Guid doctorId, Guid statusId, Guid? appointmentId = null)
     {

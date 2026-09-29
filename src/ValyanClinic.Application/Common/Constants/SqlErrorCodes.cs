@@ -29,6 +29,7 @@ public static class SqlErrorCodes
     public const int ConsultationDeleteBlocked           = 50032;
     public const int ConsultationAppointmentDuplicate    = 50033;
     public const int ConsultationMissingPrimaryDiagnosis = 50034;
+    public const int ConsultationAppointmentNotConfirmed = 50035;
 
     // ====== Investigații paraclinice ======
     public const int InvestigationTypeInvalid = 50022;

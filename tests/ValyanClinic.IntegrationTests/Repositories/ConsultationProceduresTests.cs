@@ -41,10 +41,11 @@ public sealed class ConsultationProceduresTests(IntegrationTestFixture fixture) 
     private async Task<Guid> FirstDoctorAsync() =>
         (await Fixture.GetRepository<IDoctorRepository>().GetByClinicAsync(ClinicId, Ct)).First().Id;
 
-    private Task<Guid> NewAppointmentAsync(Guid patientId, Guid doctorId) =>
+    private Task<Guid> NewAppointmentAsync(Guid patientId, Guid doctorId, Guid? statusId = null) =>
         Fixture.GetRepository<IAppointmentRepository>().CreateAsync(
             new AppointmentWriteData(ClinicId, patientId, doctorId,
-                TestDay.AddHours(10), TestDay.AddHours(10).AddMinutes(30), null, null, false, UserId), Ct);
+                TestDay.AddHours(10), TestDay.AddHours(10).AddMinutes(30),
+                statusId ?? AppointmentStatusIds.Confirmed, null, false, UserId), Ct);
 
     private ConsultationCreateData Data(Guid patientId, Guid doctorId, Guid? appointmentId = null, string? diagnostic = null) =>
         new(ClinicId, patientId, doctorId, appointmentId, TestDay,
@@ -183,6 +184,36 @@ public sealed class ConsultationProceduresTests(IntegrationTestFixture fixture) 
         var number = await SqlErrorOf(() => Consultations.CreateAsync(Data(patientId, doctorId, appointmentId), UserId, Ct));
 
         Assert.Equal(SqlErrorCodes.ConsultationAppointmentDuplicate, number);
+    }
+
+    // ── Flux programare ↔ consultație ─────────────────────────────────────────
+
+    [Fact]
+    public async Task Create_AppointmentNotConfirmed_Throws50035()
+    {
+        using var scope = NewScope();
+        var doctorId = await FirstDoctorAsync();
+        var patientId = await NewPatientAsync();
+        var appointmentId = await NewAppointmentAsync(patientId, doctorId, AppointmentStatusIds.Scheduled);
+
+        var number = await SqlErrorOf(() => Consultations.CreateAsync(Data(patientId, doctorId, appointmentId), UserId, Ct));
+
+        Assert.Equal(SqlErrorCodes.ConsultationAppointmentNotConfirmed, number);
+    }
+
+    [Fact]
+    public async Task Finalize_SetsLinkedAppointmentToFinalized()
+    {
+        using var scope = NewScope();
+        var doctorId = await FirstDoctorAsync();
+        var patientId = await NewPatientAsync();
+        var appointmentId = await NewAppointmentAsync(patientId, doctorId);
+        var id = await Consultations.CreateAsync(Data(patientId, doctorId, appointmentId, DiagnosisJson), UserId, Ct);
+
+        await Consultations.FinalizeAsync(id, ClinicId, UserId, Ct);
+
+        var appointment = await Fixture.GetRepository<IAppointmentRepository>().GetByIdAsync(appointmentId, ClinicId, Ct);
+        Assert.Equal(AppointmentStatusIds.Completed, appointment!.StatusId);
     }
 
     // ── Diagnostice normalizate ──────────────────────────────────────────────

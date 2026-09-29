@@ -44,6 +44,18 @@ BEGIN
             ;THROW 50034, N'Diagnosticul principal este obligatoriu la finalizare.', 1;
         END;
 
+        -- Programarea legată se blochează înainte de UPDATE-ul consultației — aceeași ordine
+        -- de lock ca Appointment_UpdateStatus (programare → consultație), fără deadlock
+        DECLARE @AppointmentId       UNIQUEIDENTIFIER,
+                @AppointmentStatusId UNIQUEIDENTIFIER;
+        DECLARE @AppointmentFinalizedId UNIQUEIDENTIFIER =
+            (SELECT Id FROM dbo.AppointmentStatuses WHERE Code = 'FINALIZAT');
+
+        SELECT @AppointmentId = a.Id, @AppointmentStatusId = a.StatusId
+        FROM dbo.Consultations c
+        INNER JOIN dbo.Appointments a WITH (UPDLOCK) ON a.Id = c.AppointmentId
+        WHERE c.Id = @Id AND a.ClinicId = @ClinicId AND a.IsDeleted = 0;
+
         DECLARE @FinalizedStatusId UNIQUEIDENTIFIER =
             (SELECT Id FROM dbo.ConsultationStatuses WHERE Code = 'FINALIZATA');
 
@@ -60,6 +72,23 @@ BEGIN
 
         INSERT INTO dbo.AuditLogs (ClinicId, EntityType, EntityId, Action, OldValues, NewValues, ChangedBy)
         VALUES (@ClinicId, N'Consultation', @Id, N'Finalize', @OldValues, @NewValues, @FinalizedBy);
+
+        -- Tranziție de sistem, în afara matricei manuale: FINALIZAT nu se setează altfel
+        IF @AppointmentId IS NOT NULL AND @AppointmentStatusId <> @AppointmentFinalizedId
+        BEGIN
+            UPDATE dbo.Appointments SET
+                StatusId  = @AppointmentFinalizedId,
+                UpdatedAt = SYSDATETIME(),
+                UpdatedBy = @FinalizedBy
+            WHERE Id = @AppointmentId AND ClinicId = @ClinicId;
+
+            INSERT INTO dbo.AuditLogs (ClinicId, EntityType, EntityId, Action, OldValues, NewValues, ChangedBy)
+            VALUES (
+                @ClinicId, N'Appointment', @AppointmentId, N'UpdateStatus',
+                (SELECT @AppointmentStatusId    AS StatusId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER),
+                (SELECT @AppointmentFinalizedId AS StatusId FOR JSON PATH, WITHOUT_ARRAY_WRAPPER),
+                @FinalizedBy);
+        END;
 
         -- Investigațiile care au primit tarif după ce au fost introduse intră acum la plată
         EXEC dbo.ConsultationService_SyncFromInvestigations

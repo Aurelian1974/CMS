@@ -2825,9 +2825,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["StringApiResponse"];
-                        "application/json": components["schemas"]["StringApiResponse"];
-                        "text/json": components["schemas"]["StringApiResponse"];
+                        "text/plain": components["schemas"]["BooleanApiResponse"];
+                        "application/json": components["schemas"]["BooleanApiResponse"];
+                        "text/json": components["schemas"]["BooleanApiResponse"];
                     };
                 };
                 /** @description Not Found */

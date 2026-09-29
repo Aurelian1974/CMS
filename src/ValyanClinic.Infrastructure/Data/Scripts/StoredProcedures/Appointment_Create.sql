@@ -49,6 +49,11 @@ BEGIN
         ;THROW 50014, N'Statusul selectat nu este valid.', 1;
     END;
 
+    IF EXISTS (SELECT 1 FROM dbo.AppointmentStatuses WHERE Id = @StatusId AND Code = 'FINALIZAT')
+    BEGIN
+        ;THROW 50017, N'Programarea se finalizează automat, la finalizarea consultației.', 1;
+    END;
+
     IF @EnforceSchedule = 1
     BEGIN
         IF CAST(@StartTime AS DATE) <> CAST(@EndTime AS DATE)

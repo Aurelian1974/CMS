@@ -6,6 +6,7 @@ import { AppDataGrid } from '@/components/data-display/AppDataGrid'
 import type { ColDef, GridApi, PaginationChangedEvent, SortChangedEvent } from '@/components/data-display/AppDataGrid'
 import type { AppointmentDto, CreateAppointmentPayload, UpdateAppointmentPayload } from '../types/appointment.types'
 import { useAppointments, useAppointmentStatuses, useDeleteAppointment, useCreateAppointment, useUpdateAppointment } from '../hooks/useAppointments'
+import { useCanChangeAppointmentStatus } from '../hooks/useCanChangeAppointmentStatus'
 import { useDoctorLookup } from '@/features/doctors/hooks/useDoctors'
 import { usePatientLookup } from '@/features/patients/hooks/usePatients'
 import { ActionButtons } from '@/components/data-display/ActionButtons'
@@ -93,6 +94,7 @@ export const AppointmentsListPage = () => {
   const { canWrite, hasFull } = useHasAccess()
   const canEdit = canWrite(MODULE.Appointments)
   const canDelete = hasFull(MODULE.Appointments)
+  const canChangeStatus = useCanChangeAppointmentStatus()
 
   // Mini form pentru filtrele de dată (necesar pentru FormDatePicker)
   const { control: filterDateControl } = useForm<{ dateFrom: string; dateTo: string }>({
@@ -498,7 +500,7 @@ export const AppointmentsListPage = () => {
         onClose={() => setDetailAppointmentId(null)}
         appointmentId={detailAppointmentId}
         onEdit={canEdit ? handleEditFromDetail : undefined}
-        canWrite={canEdit}
+        canWrite={canChangeStatus}
         onStatusChanged={showSuccess}
       />
 

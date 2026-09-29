@@ -8,8 +8,8 @@ import { renderHook, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createElement, type ReactNode } from 'react'
 import { dashboardKeys } from '@/features/dashboard/hooks/useDashboard'
-import { useCreateAppointment } from '@/features/appointments/hooks/useAppointments'
-import { useUpdateConsultation } from '@/features/consultations/hooks/useConsultations'
+import { appointmentKeys, useCreateAppointment } from '@/features/appointments/hooks/useAppointments'
+import { useFinalizeConsultation, useUpdateConsultation } from '@/features/consultations/hooks/useConsultations'
 import { useCancelPayment } from '@/features/billing/hooks/useBilling'
 import { useStornoInvoice } from '@/features/invoices/hooks/useInvoices'
 import type { UpdateConsultationPayload } from '@/features/consultations/types/consultation.types'
@@ -19,7 +19,10 @@ vi.mock('@/api/endpoints/appointments.api', () => ({
   appointmentsApi: { create: vi.fn(() => Promise.resolve({ success: true, data: 'id' })) },
 }))
 vi.mock('@/api/endpoints/consultations.api', () => ({
-  consultationsApi: { update: vi.fn(() => Promise.resolve({ success: true, data: true })) },
+  consultationsApi: {
+    update: vi.fn(() => Promise.resolve({ success: true, data: true })),
+    finalize: vi.fn(() => Promise.resolve({ success: true, data: true })),
+  },
 }))
 vi.mock('@/api/endpoints/billing.api', () => ({
   billingApi: { cancelPayment: vi.fn(() => Promise.resolve({ success: true, data: true })) },
@@ -61,4 +64,10 @@ describe('dashboard invalidation', () => {
 
   it('should invalidate dashboard after a storno invoice', () =>
     expectDashboardInvalidated(useStornoInvoice, { id: 'i1', reason: 'test' } as StornoInvoicePayload))
+
+  it('should invalidate dashboard and appointments after finalizing a consultation', async () => {
+    await expectDashboardInvalidated(useFinalizeConsultation, 'c1')
+    const keys = vi.mocked(qc.invalidateQueries).mock.calls.map(([f]) => JSON.stringify(f?.queryKey))
+    expect(keys).toContain(JSON.stringify(appointmentKeys.all))
+  })
 })

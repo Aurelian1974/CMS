@@ -332,6 +332,16 @@ describe('ConsultationsListPage', () => {
       render(<ConsultationsListPage />)
       expect(screen.getByText('Programări azi')).toBeInTheDocument()
     })
+
+    it('nu începe consultația pe o programare neconfirmată', async () => {
+      vi.mocked(consultationsApi.getByAppointmentId).mockResolvedValue({ success: true, data: null, message: null, errors: null })
+      render(<ConsultationsListPage />)
+
+      fireEvent.click(screen.getByText('Ana Ionescu'))
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(/doar pentru o programare confirmată/)
+      expect(screen.getByText('Nicio consultație selectată')).toBeInTheDocument()
+    })
   })
 
   // ── Detail panel (empty state) ────────────────────────────────────────────

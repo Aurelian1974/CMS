@@ -135,13 +135,17 @@ public class AppointmentsController : BaseApiController
         return HandleResult(result);
     }
 
-    /// <summary>Actualizare status programare.</summary>
+    /// <summary>Actualizare status programare (Write pe programări sau rol asistentă).</summary>
     [HttpPatch("{id:guid}/status")]
-    [HasAccess(ModuleCodes.Appointments, AccessLevel.Write)]
+    [HasAccess(ModuleCodes.Appointments, AccessLevel.Read)]
     [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ApiResponse<bool>>(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> UpdateStatus(
         Guid id, [FromBody] UpdateAppointmentStatusRequest request, CancellationToken ct)
     {
+        if (!await CanChangeStatusAsync())
+            return Forbidden<bool>(ErrorMessages.Appointment.StatusChangeForbidden);
+
         var command = new UpdateAppointmentStatusCommand(id, request.StatusId);
         var result = await Mediator.Send(command, ct);
         return HandleResult(result);
@@ -158,17 +162,26 @@ public class AppointmentsController : BaseApiController
     }
 
     // Suprascrierea programului de lucru (urgențe) cere acces Full pe modul
-    private async Task<bool> CanOverrideScheduleAsync()
+    private Task<bool> CanOverrideScheduleAsync() => HasModuleAccessAsync(AccessLevel.Full);
+
+    // Asistenta are doar Read pe programări, dar gestionează fluxul pacienților (sosire, confirmare)
+    private async Task<bool> CanChangeStatusAsync() =>
+        await HasModuleAccessAsync(AccessLevel.Write)
+        || HttpContext.RequestServices.GetRequiredService<ICurrentUser>().IsInRole(Roles.Nurse);
+
+    private async Task<bool> HasModuleAccessAsync(AccessLevel level)
     {
         var authorization = HttpContext.RequestServices.GetRequiredService<IAuthorizationService>();
         var outcome = await authorization.AuthorizeAsync(
-            User, null, new ModuleAccessRequirement(ModuleCodes.Appointments, AccessLevel.Full));
+            User, null, new ModuleAccessRequirement(ModuleCodes.Appointments, level));
         return outcome.Succeeded;
     }
 
     private ObjectResult ScheduleOverrideForbidden<T>() =>
-        StatusCode(StatusCodes.Status403Forbidden,
-            new ApiResponse<T>(false, default, ErrorMessages.Appointment.ScheduleOverrideForbidden, null));
+        Forbidden<T>(ErrorMessages.Appointment.ScheduleOverrideForbidden);
+
+    private ObjectResult Forbidden<T>(string message) =>
+        StatusCode(StatusCodes.Status403Forbidden, new ApiResponse<T>(false, default, message, null));
 }
 
 // ===== Request models (separare de MediatR command — omite Id, vine din rută) =====

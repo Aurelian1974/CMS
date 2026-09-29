@@ -23,6 +23,8 @@ public static class ErrorMessages
         public const string Concurrency       = "Programarea a fost modificată de alt utilizator. Reîncarcă datele.";
         public const string ScheduleOverrideForbidden =
             "Nu aveți dreptul să creați programări în afara programului de lucru.";
+        public const string StatusChangeForbidden =
+            "Nu aveți dreptul să modificați starea programărilor.";
     }
 
     public static class Consultation
@@ -33,6 +35,8 @@ public static class ErrorMessages
         public const string HasPayments          = "Consultația are încasări înregistrate și nu poate fi ștearsă.";
         public const string AppointmentDuplicate = "Există deja o consultație pentru această programare.";
         public const string MissingPrimaryDiagnosis = "Diagnosticul principal este obligatoriu la finalizare.";
+        public const string AppointmentNotConfirmed =
+            "Consultația poate fi începută doar pentru o programare confirmată.";
     }
 
     public static class Investigation

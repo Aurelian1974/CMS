@@ -172,12 +172,15 @@ export const AppointmentFormModal = ({
   const { data: doctorSchedulesResp } = useDoctorSchedules()
 
   const statuses = useMemo(() => statusesResp?.data ?? [], [statusesResp])
-  // La editare se oferă doar statusul curent + tranzițiile permise din el
+  // La editare se oferă doar statusul curent + tranzițiile permise din el; la creare, orice
+  // status în care se poate ajunge manual (FINALIZAT vine doar din finalizarea consultației)
   const statusOptions = useMemo(() => {
     const current = editData ? statuses.find(s => s.id === editData.statusId) : undefined
-    const allowed = current ? new Set((current.allowedNextCodes ?? '').split(',').filter(Boolean)) : null
+    const allowed = current
+      ? new Set((current.allowedNextCodes ?? '').split(',').filter(Boolean))
+      : new Set(statuses.flatMap(s => (s.allowedNextCodes ?? '').split(',').filter(Boolean)))
     return statuses
-      .filter(s => !allowed || s.id === current!.id || allowed.has(s.code))
+      .filter(s => (current && s.id === current.id) || allowed.has(s.code) || s.id === statuses[0]?.id)
       .map(s => ({ value: s.id, label: s.name }))
   }, [statuses, editData])
   // Status implicit la creare = primul din nomenclator (SortOrder minim)

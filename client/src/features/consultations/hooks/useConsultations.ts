@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { consultationsApi } from '@/api/endpoints/consultations.api'
 import { dashboardKeys } from '@/features/dashboard/hooks/useDashboard'
+import { appointmentKeys } from '@/features/appointments/hooks/useAppointments'
 import { billingKeys } from '@/features/billing/hooks/useBilling'
 import type {
   GetConsultationsParams,
@@ -72,6 +73,8 @@ export const useFinalizeConsultation = () => {
       qc.invalidateQueries({ queryKey: dashboardKeys.all })
       // Consultația finalizată devine facturabilă
       qc.invalidateQueries({ queryKey: billingKeys.all })
+      // Programarea legată trece automat în „Consultație finalizată"
+      qc.invalidateQueries({ queryKey: appointmentKeys.all })
     },
   })
 }

@@ -14,8 +14,8 @@ vi.mock('@/features/dashboard/hooks/useDashboard', () => ({
 }))
 
 vi.mock('@/store/authStore', () => ({
-  useAuthStore: (selector: (s: { user: { fullName: string } }) => unknown) =>
-    selector({ user: { fullName: 'Ana Pop' } }),
+  useAuthStore: (selector: (s: { user: { fullName: string; role: string }; permissions: unknown[] }) => unknown) =>
+    selector({ user: { fullName: 'Ana Pop', role: 'receptionist' }, permissions: [] }),
 }))
 
 const ok = (data: DashboardDto) => ({

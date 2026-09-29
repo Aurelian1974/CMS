@@ -70,6 +70,14 @@ public sealed class AppointmentProceduresTests(IntegrationTestFixture fixture) :
         return ex.Number;
     }
 
+    private Task<Guid> NewConsultationAsync(Guid patientId, Guid doctorId, Guid appointmentId) =>
+        Fixture.GetRepository<IConsultationRepository>().CreateAsync(
+            new ConsultationCreateData(
+                ClinicId, patientId, doctorId, appointmentId, TestDay,
+                null, null, null, null, null, null, null,
+                false, false, false, null, false, null, false, false, null, null),
+            UserId, Ct);
+
     // ── Tenancy ──────────────────────────────────────────────────────────────
 
     [Fact]
@@ -205,18 +213,32 @@ public sealed class AppointmentProceduresTests(IntegrationTestFixture fixture) :
     }
 
     [Fact]
-    public async Task UpdateStatus_FinalizatToProgramat_Throws50017()
+    public async Task UpdateStatus_ManualFinalize_Throws50017()
     {
         using var scope = NewScope();
         var patientId = await NewPatientAsync();
         var doctorId = (await DoctorIdsAsync()).First();
-        var id = await Appointments.CreateAsync(Data(patientId, doctorId, At(10), At(10, 30)), Ct);
-        await Appointments.UpdateStatusAsync(id, ClinicId, AppointmentStatusIds.Completed, UserId, Ct);
+        var id = await Appointments.CreateAsync(Data(patientId, doctorId, At(10), At(10, 30), AppointmentStatusIds.Confirmed), Ct);
 
         var number = await SqlErrorOf(() =>
-            Appointments.UpdateStatusAsync(id, ClinicId, AppointmentStatusIds.Scheduled, UserId, Ct));
+            Appointments.UpdateStatusAsync(id, ClinicId, AppointmentStatusIds.Completed, UserId, Ct));
 
         Assert.Equal(SqlErrorCodes.AppointmentInvalidTransition, number);
+    }
+
+    [Fact]
+    public async Task UpdateStatus_WithStartedConsultation_Throws50015()
+    {
+        using var scope = NewScope();
+        var patientId = await NewPatientAsync();
+        var doctorId = (await DoctorIdsAsync()).First();
+        var id = await Appointments.CreateAsync(Data(patientId, doctorId, At(10), At(10, 30), AppointmentStatusIds.Confirmed), Ct);
+        await NewConsultationAsync(patientId, doctorId, id);
+
+        var number = await SqlErrorOf(() =>
+            Appointments.UpdateStatusAsync(id, ClinicId, AppointmentStatusIds.Cancelled, UserId, Ct));
+
+        Assert.Equal(SqlErrorCodes.AppointmentHasConsultation, number);
     }
 
     [Fact]
@@ -260,13 +282,8 @@ public sealed class AppointmentProceduresTests(IntegrationTestFixture fixture) :
         using var scope = NewScope();
         var patientId = await NewPatientAsync();
         var doctorId = (await DoctorIdsAsync()).First();
-        var id = await Appointments.CreateAsync(Data(patientId, doctorId, At(10), At(10, 30)), Ct);
-        await Fixture.GetRepository<IConsultationRepository>().CreateAsync(
-            new ConsultationCreateData(
-                ClinicId, patientId, doctorId, id, TestDay,
-                null, null, null, null, null, null, null,
-                false, false, false, null, false, null, false, false, null, null),
-            UserId, Ct);
+        var id = await Appointments.CreateAsync(Data(patientId, doctorId, At(10), At(10, 30), AppointmentStatusIds.Confirmed), Ct);
+        await NewConsultationAsync(patientId, doctorId, id);
 
         var number = await SqlErrorOf(() => Appointments.DeleteAsync(id, ClinicId, UserId, Ct));
 

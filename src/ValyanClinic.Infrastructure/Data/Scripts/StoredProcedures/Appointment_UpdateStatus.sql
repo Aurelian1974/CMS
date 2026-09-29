@@ -46,6 +46,13 @@ BEGIN
             RETURN;
         END;
 
+        -- Cu o consultație începută, starea e condusă de consultație (Consultation_Finalize)
+        IF EXISTS (SELECT 1 FROM dbo.Consultations
+                   WHERE AppointmentId = @Id AND ClinicId = @ClinicId AND IsDeleted = 0)
+        BEGIN
+            ;THROW 50015, N'Programarea are o consultație începută — starea se actualizează automat la finalizarea consultației.', 1;
+        END;
+
         IF NOT EXISTS (SELECT 1 FROM dbo.AppointmentStatusTransitions
                        WHERE FromStatusId = @CurStatusId AND ToStatusId = @StatusId)
         BEGIN

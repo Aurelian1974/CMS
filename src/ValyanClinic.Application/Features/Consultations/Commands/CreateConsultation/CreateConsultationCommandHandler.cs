@@ -60,6 +60,10 @@ public sealed class CreateConsultationCommandHandler(
         {
             return Result<Guid>.Conflict(ErrorMessages.Consultation.AppointmentDuplicate);
         }
+        catch (SqlException ex) when (ex.Number == SqlErrorCodes.ConsultationAppointmentNotConfirmed)
+        {
+            return Result<Guid>.Conflict(ErrorMessages.Consultation.AppointmentNotConfirmed);
+        }
         catch (SqlException ex) when (ex.Number >= 50000 && ex.Number < 60000)
         {
             return Result<Guid>.Failure(ex.Message);

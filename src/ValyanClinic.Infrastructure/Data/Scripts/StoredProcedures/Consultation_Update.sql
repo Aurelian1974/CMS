@@ -92,6 +92,16 @@ BEGIN
         BEGIN
             ;THROW 50033, N'Există deja o consultație pentru această programare.', 1;
         END;
+
+        -- Doar o legătură nouă cere programare confirmată; cea existentă rămâne validă
+        IF NOT EXISTS (SELECT 1 FROM dbo.Consultations
+                       WHERE Id = @Id AND ClinicId = @ClinicId AND AppointmentId = @AppointmentId)
+           AND NOT EXISTS (SELECT 1 FROM dbo.Appointments a
+                           INNER JOIN dbo.AppointmentStatuses s ON s.Id = a.StatusId
+                           WHERE a.Id = @AppointmentId AND a.ClinicId = @ClinicId AND s.Code = 'CONFIRMAT')
+        BEGIN
+            ;THROW 50035, N'Consultația poate fi începută doar pentru o programare confirmată.', 1;
+        END;
     END;
 
     DECLARE @OldValues NVARCHAR(MAX);
